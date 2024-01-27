@@ -34,7 +34,7 @@ filelist = glob.glob(os.path.join("../../experiments/memory_bucket/", "*.xml"))
 for f in filelist:
     os.remove(f)
 
-agent = Agent(1, "model placeholder", "Health Minister")
+agent = Agent(1, "Model Placeholder", "Health Minister")
 agent.updateMemory(1, "I like tea.")
 agent.updateMemory(2, "I like milk.")
 agent.updateMemory(1, "Tea and milk is nice.")
