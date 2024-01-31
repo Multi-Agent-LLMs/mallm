@@ -6,8 +6,7 @@ class Agent():
         self.id = id
         self.llm = llm_model
         self.persona = persona
-        import xml.etree.ElementTree as ET
-        self.memory_bucket= "../../experiments/memory_bucket/{}.xml".format(self.id)
+        self.memory_bucket= "/beegfs/wahle/github/MALLM/experiments/memory_bucket/{}.xml".format(self.id)
         root = ET.Element("root")
         tree = ET.ElementTree(root)
         ET.SubElement(root, 'agent_id').text = str(self.id)
