@@ -5,7 +5,7 @@
 #SBATCH --partition=gpu
 #SBATCH -N 1
 #SBATCH --cpus-per-gpu 2
-#SBATCH --gpus 1
+#SBATCH --gpus 8
 
 echo $1
 echo $2

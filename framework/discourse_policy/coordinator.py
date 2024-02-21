@@ -1,17 +1,13 @@
 import sys, os, ast
 os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
 sys.path.append("/beegfs/wahle/github/MALLM")
-#sys.path.append("/beegfs/wahle/github/MALLM/framework")
-#sys.path.append("/beegfs/wahle/github/MALLM/framework/discourse_policy")
-#sys.path.append("/beegfs/wahle/github/MALLM/framework/decision_making")
-#sys.path.append("/beegfs/wahle/github/MALLM/framework/agents")
-#sys.path.append("/beegfs/wahle/github/MALLM/framework/models")
-#sys.path.append("/beegfs/wahle/github/MALLM/models/llama")
 from framework.agents.agent import *
 from framework.agents.panelist import *
 from framework.agents.moderator import *
 from framework.decision_making.consensus import *
 from framework.prompts import coordinator_prompts
+from langchain_core.prompts import PromptTemplate
+from langchain.chains import LLMChain
 import fire
 import dbm
 import ast
@@ -23,7 +19,7 @@ import transformers
 from setup import *
 
 class Coordinator():
-    def __init__(self, task_name, task_description, decision_threshold, use_moderator = True):
+    def __init__(self, use_moderator = True):
         self.personas = None
         self.panelists = []
         self.agents = []
@@ -32,16 +28,44 @@ class Coordinator():
         self.memory_bucket = memory_bucket_dir+"global"
         self.decision_making = None
         self.llm = self.create_llm()
+        
+        self.chain_identify_personas = LLMChain(llm=self.llm, prompt=PromptTemplate.from_template(coordinator_prompts.identify_personas()))
     
 
     def initAgents(self, task_name, task_description, task_instruction, source_text, persona_type = "expert", use_moderator = True):
-        res = self.llm.invoke(self.updateGlobalMemory(0, 0, 0, None, coordinator_prompts.identify_personas(task_instruction, source_text)))
-        print(res)
+        '''
+        Instantiates the agents by
+        1) identify helpful personas
+        2) create agents with the personas
+        Gives true if the automatic assignment was successfull.
+        Returns bool
+        '''
+        res = self.chain_identify_personas.invoke({"task_instruction": task_instruction, "source_text": source_text})["text"]
+        self.updateGlobalMemory(0, 0, None, None, res)
+        
         personas_string = re.search(r"\{.*?\}", res, re.DOTALL)
         if not personas_string:
-            return False
-        self.personas = ast.literal_eval(personas_string.group())
-        print(self.personas)
+            print(f"LLM failed to provide personas in the correct format - Continue with placeholder personas...")
+            personas_string = '''{
+                "Poet": "A person who studies and creates poetry. The poet is familiar with the rules and formats of poetry and can provide guidance on how to write a poem.",
+                "Computer Scientist": "A scholar who specializes in the academic study of computer science. The computer scientist is familiar with the concept of a quantum computer and can provide guidance on how to explain it.",
+                "Ten year old child": "A child with a limited English vocabulary and little knowledge about complicated concepts, such as a quantum computer."
+                }'''
+            self.personas = ast.literal_eval(personas_string)
+            #return False
+        else:
+            try:
+                self.personas = ast.literal_eval(personas_string.group())
+            except Exception as e:
+                print(f"Failed to parse the string to identify personas: {e} - Continue with placeholder personas...")
+                personas_string = '''{
+                "Poet": "A person who studies and creates poetry. The poet is familiar with the rules and formats of poetry and can provide guidance on how to write a poem.",
+                "Computer Scientist": "A scholar who specializes in the academic study of computer science. The computer scientist is familiar with the concept of a quantum computer and can provide guidance on how to explain it.",
+                "Ten year old child": "A child with a limited English vocabulary and little knowledge about complicated concepts, such as a quantum computer."
+                }'''
+                self.personas = ast.literal_eval(personas_string)
+                pass
+
         if use_moderator:
             self.moderator = Moderator(0, self.llm, self)  # Agent ID 0 is reserved for the moderator
         for i, p in enumerate(self.personas):
@@ -54,6 +78,13 @@ class Coordinator():
         return True
 
     def create_llm(self):
+        '''
+        Initializes the LLM that the agents are using to generate their outputs. 
+        The LLM is set in evaluation mode. Thus, it immediately forgets everything that happened. 
+        It allows for an all-fresh reprompting at each iteration of the discussion.
+        Any model within the huggingface format can be loaded.
+        Returns HuggingFacePipeline
+        '''
         device = f'cuda:{cuda.current_device()}' if cuda.is_available() else 'cpu'
         print(f"Running on device: {device}")
         bnb_config = transformers.BitsAndBytesConfig(
@@ -63,11 +94,11 @@ class Coordinator():
             bnb_4bit_compute_dtype=bfloat16
         )
         model_config = transformers.AutoConfig.from_pretrained(
-            ckpt_dir_llama2
+            ckpt_dir
         )
         if device == "cpu": # not recommended but useful for developing with no GPU available
             model = transformers.AutoModelForCausalLM.from_pretrained(
-                ckpt_dir_llama2,
+                ckpt_dir,
                 trust_remote_code=True,
                 config=model_config,
                 offload_folder="offload",
@@ -75,7 +106,7 @@ class Coordinator():
             )
         else:
             model = transformers.AutoModelForCausalLM.from_pretrained(
-                ckpt_dir_llama2,
+                ckpt_dir,
                 trust_remote_code=True,
                 config=model_config,
                 quantization_config=bnb_config,
@@ -85,7 +116,7 @@ class Coordinator():
         print(f"Model loaded on {device}")
 
         tokenizer = transformers.AutoTokenizer.from_pretrained(
-            ckpt_dir_llama2
+            ckpt_dir
         )
         
         pipeline = transformers.pipeline(
@@ -95,17 +126,22 @@ class Coordinator():
             task='text-generation',
             pad_token_id=tokenizer.eos_token_id,
             # model parameters
-            max_new_tokens=512,  # max number of tokens to generate in the output
-            repetition_penalty=1.1,  # without this output begins repeating
+            max_new_tokens=128,  # max number of tokens to generate in the output
+            min_new_tokens=3,   # always answer something (no empty responses)
+            repetition_penalty=1.5,  # without this output begins repeating
         )
 
         return HuggingFacePipeline(pipeline=pipeline)
     
     def updateGlobalMemory(self, unique_id, turn, agent_id, agent_persona, text):
+        '''
+        Updates the dbm memory with another discussion entry.
+        Returns string
+        '''
         with dbm.open(self.memory_bucket, 'c') as db:
-            db[str(unique_id)] = f'''{{"turn": {turn}, "agent_id": {agent_id}, "agent_persona": "{agent_persona}", "text": "{text}"}}'''
+            db[str(unique_id)] = f'''{{"turn": {turn}, "agent_id": {agent_id}, "agent_persona": "{str(agent_persona).replace('"',"'")}", "text": "{str(text).replace('"',"'")}"}}'''
+            print(db[str(unique_id)])
         self.saveGlobalMemoryToJson()
-        return text
     
     def getGlobalMemory(self):
         '''
@@ -115,8 +151,7 @@ class Coordinator():
         memory = {}
         with dbm.open(self.memory_bucket, 'r') as db:
             for key in db.keys():
-                print(ast.literal_eval(db[key].decode()))
-                memory[key.decode()] = ast.literal_eval(db[key].decode())
+                memory[key.decode()] = ast.literal_eval(db[key].decode().replace("\n", "\\n").replace("\t", "\\t"))
         return memory
     
     def saveGlobalMemoryToJson(self):
@@ -129,12 +164,12 @@ class Coordinator():
         except Exception as e:
             print(f"Failed to save agent memory to {self.memory_bucket}: {e}")
 
-    def discuss(self, task_name, task_description, task_instruction, source_text, decision_threshold, use_moderator, avg_feedback_length = 3, paradigm="memory"):
+    def discuss(self, task_name, task_instruction, source_text, decision_threshold, use_moderator, avg_feedback_length = 3, paradigm="memory"):
         # 1) Assign agents and personas
         # 2) Create first draft
         # 3) Iterative feedback loop (drafting and checking for decision-making after turn)
 
-        if not self.initAgents(task_name, task_description, task_instruction, source_text):
+        if not self.initAgents(task_name, task_instruction, task_instruction, source_text):
             print("Failed to intialize agents.")
             return None # if the LLM failed to initialize the agents, do not discuss
         self.decision_making = Consensus(self.agents, decision_threshold, use_moderator)
@@ -145,7 +180,7 @@ class Coordinator():
         feedbacks = []
 
         for p in self.panelists:
-            feedbacks.append(p.brainstorm(unique_id, turn, task_name, task_description, avg_feedback_length, self.agents, source_text))
+            feedbacks.append(p.brainstorm(unique_id, turn, task_name, task_instruction, avg_feedback_length, self.agents, source_text))
             unique_id = unique_id + 1
 
         if paradigm == "memory":
@@ -161,23 +196,22 @@ class Coordinator():
             └───┘◄──────┴───┴──────►└───┘
             '''
 
-            while not decision or turn < 40:
+            while not decision and turn < 30:
                 if self.use_moderator:
-                    current_draft = self.moderator.createDraft(unique_id, turn, task_name, task_description, source_text, self.agents, context_length=None, use_moderator=True)
+                    current_draft = self.moderator.createDraft(unique_id, turn, task_instruction, source_text, self.agents, context_length=None)
                 else:
-                    current_draft = self.panelists[0].createDraft(unique_id, turn, task_name, task_description, source_text, self.agents, context_length=None, use_moderator=False)
+                    current_draft = self.panelists[0].createDraft(unique_id, turn, task_instruction, source_text, self.agents, context_length=None)
                 unique_id = unique_id + 1
                 turn = turn + 1
                 agreements = []
                 # TODO
                 for p in self.panelists:
-                    feedback, agreement = p.generateFeedback(unique_id, turn, task_name, task_description, current_draft, avg_feedback_length, self.agents, source_text)
+                    feedback, agreement = p.generateFeedback(unique_id, turn, task_name, task_instruction, current_draft, avg_feedback_length, self.agents, source_text)
                     feedbacks.append(feedback)
                     agreements.append(agreement)
                     unique_id = unique_id + 1
                 
                 decision = self.decision_making.decide(agreements)
-
 
         elif paradigm == "report":
             '''
@@ -223,7 +257,7 @@ class Coordinator():
 
 
 
-def main(task_name = "Paraphrasing", task_description = "In paraphrasing you need to modify the source text while not changing its meaning.", decision_threshold = None, use_moderator = True):
+def main(task_name = "Summarization", task_instruction = "Summarize the text.", decision_threshold = None, use_moderator = True):
     filelist = glob.glob(os.path.join(memory_bucket_dir, "*.bak"))
     for f in filelist:
         os.remove(f)
@@ -237,10 +271,10 @@ def main(task_name = "Paraphrasing", task_description = "In paraphrasing you nee
     for f in filelist:
         os.remove(f)
     
-    coordinator = Coordinator(task_name, task_description, decision_threshold, use_moderator)
+    coordinator = Coordinator(use_moderator)
     source_text = '''The 24-year-old spent six seasons with the north London side and has previously spent time playing in the second tier with Bedford Blues. The Exiles have not disclosed the length of the former England under-20 international's contract. "Ben is a great acquisition," director of rugby Nick Kennedy said. "He has Championship experience which will be very useful as we gear up for what will be a very competitive campaign."'''
-    task_instruction = "Summarize this text:"
-    answer = coordinator.discuss(task_name, task_description, task_instruction, source_text, decision_threshold, use_moderator, avg_feedback_length = 3, paradigm="memory")
+    task_instruction = "Summarize the text."
+    answer = coordinator.discuss(task_name, task_instruction, source_text, decision_threshold, use_moderator, avg_feedback_length = 3, paradigm="memory")
     print("FINAL ANSWER: ")
     print(answer)
 
