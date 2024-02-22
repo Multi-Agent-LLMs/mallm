@@ -14,4 +14,4 @@ source ~/.bashrc
 conda activate mallm
 nvidia-smi
 
-python3 -m torch.distributed.run --nnodes 1 --nproc_per_node 1 framework/discourse_policy/coordinator.py
+python3 -m torch.distributed.run --nnodes 1 --nproc_per_node 1 framework/run.py --task_name=Summarization --data=experiments/data/test_experiment.json --out=experiments/out/test_result.json

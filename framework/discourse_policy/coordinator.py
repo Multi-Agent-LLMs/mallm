@@ -14,7 +14,6 @@ import ast
 import re
 from langchain_community.llms import HuggingFacePipeline
 from torch import cuda, bfloat16
-import torch
 import transformers
 from setup import *
 
@@ -32,7 +31,7 @@ class Coordinator():
         self.chain_identify_personas = LLMChain(llm=self.llm, prompt=PromptTemplate.from_template(coordinator_prompts.identify_personas()))
     
 
-    def initAgents(self, task_name, task_description, task_instruction, source_text, persona_type = "expert", use_moderator = True):
+    def initAgents(self, task_instruction, input, persona_type = "expert", use_moderator = True):
         '''
         Instantiates the agents by
         1) identify helpful personas
@@ -40,8 +39,18 @@ class Coordinator():
         Gives true if the automatic assignment was successfull.
         Returns bool
         '''
-        res = self.chain_identify_personas.invoke({"task_instruction": task_instruction, "source_text": source_text})["text"]
-        self.updateGlobalMemory(0, 0, None, None, res)
+        res = self.chain_identify_personas.invoke(
+            {
+                "task_instruction": task_instruction, 
+                "input": input
+            })["text"]
+        
+        # repair dictionary in string if the LLM did mess up the formatting
+        if "{" in res and "}" not in res:
+            print("Looks like the LLM did not get the formatting quite right. Trying to repair the dictionary...")
+            res = res + "}"
+
+        self.updateGlobalMemory(0, 0, None, None, "persona_identification", res)
         
         personas_string = re.search(r"\{.*?\}", res, re.DOTALL)
         if not personas_string:
@@ -113,11 +122,12 @@ class Coordinator():
                 device_map='auto'
             )
         model.eval()
-        print(f"Model loaded on {device}")
+        print(f"Model {ckpt_dir} loaded on {device}")
 
         tokenizer = transformers.AutoTokenizer.from_pretrained(
             ckpt_dir
         )
+        print("Using this tokenizer: " + str(type(tokenizer)))
         
         pipeline = transformers.pipeline(
             model=model, 
@@ -126,21 +136,23 @@ class Coordinator():
             task='text-generation',
             pad_token_id=tokenizer.eos_token_id,
             # model parameters
-            max_new_tokens=128,  # max number of tokens to generate in the output
-            min_new_tokens=3,   # always answer something (no empty responses)
-            repetition_penalty=1.5,  # without this output begins repeating
+            do_sample=True,
+            temperature = 0.9,
+            max_new_tokens=256,  # max number of tokens to generate in the output
+            min_new_tokens=2,   # always answer something (no empty responses)
+            repetition_penalty=1.1,  # without this output begins repeating
         )
 
         return HuggingFacePipeline(pipeline=pipeline)
     
-    def updateGlobalMemory(self, unique_id, turn, agent_id, agent_persona, text):
+    def updateGlobalMemory(self, unique_id, turn, agent_id, agent_persona, contribution, text):
         '''
         Updates the dbm memory with another discussion entry.
         Returns string
         '''
         with dbm.open(self.memory_bucket, 'c') as db:
-            db[str(unique_id)] = f'''{{"turn": {turn}, "agent_id": {agent_id}, "agent_persona": "{str(agent_persona).replace('"',"'")}", "text": "{str(text).replace('"',"'")}"}}'''
-            print(db[str(unique_id)])
+            db[str(unique_id)] = f'''{{"turn": {turn}, "agent_id": {agent_id}, "agent_persona": "{str(agent_persona).replace('"',"'")}", "contribution": "{contribution}", "text": "{str(text).replace('"',"'")}"}}'''
+            print(db[str(unique_id)])   # logging
         self.saveGlobalMemoryToJson()
     
     def getGlobalMemory(self):
@@ -163,16 +175,32 @@ class Coordinator():
                 json.dump(self.getGlobalMemory(), f)
         except Exception as e:
             print(f"Failed to save agent memory to {self.memory_bucket}: {e}")
+            print(self.getGlobalMemory())
 
-    def discuss(self, task_name, task_instruction, source_text, decision_threshold, use_moderator, avg_feedback_length = 3, paradigm="memory"):
+    def discuss(self, task_name, task_instruction, input, decision_threshold, use_moderator, avg_feedback_length = 3, paradigm="memory", max_turns = None):
         # 1) Assign agents and personas
         # 2) Create first draft
         # 3) Iterative feedback loop (drafting and checking for decision-making after turn)
 
-        if not self.initAgents(task_name, task_instruction, task_instruction, source_text):
+        if not self.initAgents(task_instruction, input):
             print("Failed to intialize agents.")
             return None # if the LLM failed to initialize the agents, do not discuss
         self.decision_making = Consensus(self.agents, decision_threshold, use_moderator)
+
+        personas = [a.persona for a in self.agents]
+        print(f'''
+                Starting discussion...
+                -------------
+                Task: {task_name}
+                Instruction: {task_instruction}
+                Input: {input}
+                Average feedback length: {str(avg_feedback_length)}
+                Decision-making: {self.decision_making.__class__.__name__}
+                Maximum turns: {max_turns}
+                Agents: {str(personas)}
+                -------------
+        ''')
+        
         decision = None
         current_draft = None
         turn = 0
@@ -180,11 +208,11 @@ class Coordinator():
         feedbacks = []
 
         for p in self.panelists:
-            feedbacks.append(p.brainstorm(unique_id, turn, task_name, task_instruction, avg_feedback_length, self.agents, source_text))
+            feedbacks.append(p.brainstorm(unique_id, turn, task_name, task_instruction, avg_feedback_length, self.agents, input))
             unique_id = unique_id + 1
 
         if paradigm == "memory":
-            '''
+            print('''Paradigm: Memory
                         ┌───┐
                         │A 1│
                         ├───┘
@@ -194,24 +222,33 @@ class Coordinator():
             ┌───┬──────►┌───┤◄──────┬───┐
             │A 3│       │MEM│       │A 2│
             └───┘◄──────┴───┴──────►└───┘
-            '''
+            ''')
 
-            while not decision and turn < 30:
+            while (not decision and max_turns is None) or (max_turns is not None and turn <= max_turns):
                 if self.use_moderator:
-                    current_draft = self.moderator.createDraft(unique_id, turn, task_instruction, source_text, self.agents, context_length=None)
+                    current_draft = self.moderator.createDraft(unique_id, turn, task_instruction, input, self.agents, context_length=None)
                 else:
-                    current_draft = self.panelists[0].createDraft(unique_id, turn, task_instruction, source_text, self.agents, context_length=None)
+                    current_draft = self.panelists[0].createDraft(unique_id, turn, task_instruction, input, self.agents, context_length=None)
                 unique_id = unique_id + 1
                 turn = turn + 1
                 agreements = []
-                # TODO
+
                 for p in self.panelists:
-                    feedback, agreement = p.generateFeedback(unique_id, turn, task_name, task_instruction, current_draft, avg_feedback_length, self.agents, source_text)
+                    feedback, agreement, agreement_reason = p.generateFeedback(
+                        unique_id = unique_id, 
+                        turn = turn, 
+                        task_instruction = task_instruction, 
+                        current_draft = current_draft, 
+                        feedback_sentences = avg_feedback_length, 
+                        agents_to_update = self.agents, 
+                        input = input
+                        )
                     feedbacks.append(feedback)
                     agreements.append(agreement)
                     unique_id = unique_id + 1
                 
-                decision = self.decision_making.decide(agreements)
+                if max_turns is None:
+                    decision = self.decision_making.decide(agreements)
 
         elif paradigm == "report":
             '''
@@ -253,30 +290,17 @@ class Coordinator():
             └───┘◄──────────────────┴───┘
             '''
             print("This feature has not been implemented yet.")
-        return current_draft
+
+        globalMem = self.getGlobalMemory()
+        agentMems = []
+        for a in self.agents:
+            agentMems.append(a.getMemory())
+        return current_draft, globalMem, agentMems
 
 
 
-def main(task_name = "Summarization", task_instruction = "Summarize the text.", decision_threshold = None, use_moderator = True):
-    filelist = glob.glob(os.path.join(memory_bucket_dir, "*.bak"))
-    for f in filelist:
-        os.remove(f)
-    filelist = glob.glob(os.path.join(memory_bucket_dir, "*.dat"))
-    for f in filelist:
-        os.remove(f)
-    filelist = glob.glob(os.path.join(memory_bucket_dir, "*.dir"))
-    for f in filelist:
-        os.remove(f)
-    filelist = glob.glob(os.path.join(memory_bucket_dir, "*.json"))
-    for f in filelist:
-        os.remove(f)
-    
-    coordinator = Coordinator(use_moderator)
-    source_text = '''The 24-year-old spent six seasons with the north London side and has previously spent time playing in the second tier with Bedford Blues. The Exiles have not disclosed the length of the former England under-20 international's contract. "Ben is a great acquisition," director of rugby Nick Kennedy said. "He has Championship experience which will be very useful as we gear up for what will be a very competitive campaign."'''
-    task_instruction = "Summarize the text."
-    answer = coordinator.discuss(task_name, task_instruction, source_text, decision_threshold, use_moderator, avg_feedback_length = 3, paradigm="memory")
-    print("FINAL ANSWER: ")
-    print(answer)
+def main():
+    pass
 
 if __name__ == "__main__":
     fire.Fire(main)

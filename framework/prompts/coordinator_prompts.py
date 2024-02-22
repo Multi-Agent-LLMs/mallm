@@ -1,9 +1,6 @@
 def identify_personas():
-    '''
-    Inspired by https://github.com/MikeWangWZHL/Solo-Performance-Prompting/
-    '''
     template = '''
-    When faced with a task, begin by identifying the participants who will contribute to solving the task. Provide profiles of the participants, describing their expertise or needs, as a python dictionary.
+    <<SYS>>When faced with a task, begin by identifying the participants who will contribute to solving the task. Provide profiles of the participants, describing their expertise or needs, formatted as a dictionary.
 
     Here are some examples:
     ---
@@ -15,7 +12,7 @@ def identify_personas():
         "Math expert": "A person who is good at math games, arithmetic calculation, and long-term planning."
     }}
     ---
-    Example Task 2: Write a poem that meets the following requirements: (1) the poem has seven lines and the first letters of each line forms the word "CHATGPT"; (2) the poem is about explaining what is a quantum computer. (3) the poem needs to be easy to understand by a ten years old kid.
+    Example Task 2: Write a poem that meets the following requirements: (1) the poem has seven lines, and the first letters of each line form the word "CHATGPT"; (2) the poem is about explaining what is a quantum computer. (3) the poem needs to be easy to understand by a ten year old kid.
 
     Profiles: {{
         "Poet": "A person who studies and creates poetry. The poet is familiar with the rules and formats of poetry and can provide guidance on how to write a poem.",
@@ -24,10 +21,10 @@ def identify_personas():
     }}
     ---
 
-    Now, identify the participants and provide their profiles. Remember to present your final output after the prefix "Profiles:".
+    Now, identify participants relevant to the task and provide their profiles as a dictionary. Remember to present your final output after the prefix "Profiles:". Format the result as a dictionary within curly braces { }.
 
     Task: {task_instruction} 
-    Input: {source_text}
+    Input: {input}
 
-    Profiles: '''
+    Profiles: <</SYS>>'''
     return template

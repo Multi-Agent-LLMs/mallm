@@ -21,36 +21,47 @@ class Agent():
         self.chain_decide = LLMChain(llm=self.llm, prompt=PromptTemplate.from_template(agent_prompts.decide_boolean()))
         self.chain_draft = LLMChain(llm=self.llm, prompt=PromptTemplate.from_template(agent_prompts.draft()))
 
-    def createDraft(self, unique_id, turn, task_instruction, source_text, agents_to_update, context_length=None):
+    def createDraft(self, unique_id, turn, task_instruction, input, agents_to_update, context_length=None):
         '''
         Initiates the creation of a draft by the agent. The draft takes preliminary discussion into account.
         Returns: string
         '''
         memory_string = self.getMemoryString(context_length)
-        draft = self.chain_draft.invoke({"task_instruction": task_instruction, "persona": self.persona, "source_text": source_text, "agent_memory": memory_string})["text"]
+        draft = self.chain_draft.invoke(
+            {
+                "task_instruction": task_instruction, 
+                "persona": self.persona, 
+                "input": input, 
+                "agent_memory": memory_string
+            })["text"]
         for a in agents_to_update:
-            a.updateMemory(unique_id, turn, self.id, self.persona, draft)
-        self.coordinator.updateGlobalMemory(unique_id, turn, self.id, self.persona, draft)
+            a.updateMemory(unique_id, turn, self.id, self.persona, "draft", draft)
+        self.coordinator.updateGlobalMemory(unique_id, turn, self.id, self.persona, "draft", draft)
         return draft
     
-    def brainstorm(self, unique_id, turn, task_name, task_instruction, avg_feedback_length, agents_to_update, source_text, context_length=None):
+    def brainstorm(self, unique_id, turn, task_name, task_instruction, avg_feedback_length, agents_to_update, input, context_length=None):
         '''
         Initiates brainstorming for the agents with no preliminary discussion
         Returns: string
         '''
-        res = self.chain_brainstorm.invoke({"task_instruction": task_instruction, "persona": self.persona, "source_text": source_text})["text"]
+        res = self.chain_brainstorm.invoke(
+            {
+                "task_instruction": task_instruction, 
+                "persona": self.persona, 
+                "input": input
+            })["text"]
         for a in agents_to_update:
-            a.updateMemory(unique_id, turn, self.id, self.persona, res)
-        self.coordinator.updateGlobalMemory(unique_id, turn, self.id, self.persona, res)
+            a.updateMemory(unique_id, turn, self.id, self.persona, "brainstorm", res)
+        self.coordinator.updateGlobalMemory(unique_id, turn, self.id, self.persona, "brainstorm", res)
         return res
 
-    def updateMemory(self, unique_id, turn, agent_id, agent_persona, text):
+    def updateMemory(self, unique_id, turn, agent_id, agent_persona, contribution, text):
         '''
         Updates the dbm memory with another discussion entry.
         Returns string
         '''
         with dbm.open(self.memory_bucket, 'c') as db:
-            db[str(unique_id)] = f'''{{"turn": {turn}, "agent_id": {agent_id}, "agent_persona": "{str(agent_persona).replace('"',"'")}", "text": "{str(text).replace('"',"'")}"}}'''
+            db[str(unique_id)] = f'''{{"turn": {turn}, "agent_id": {agent_id}, "agent_persona": "{str(agent_persona).replace('"',"'")}", "contribution": "{contribution}", "text": "{str(text).replace('"',"'")}"}}'''
         self.saveMemoryToJson()
     
     def getMemory(self, context_length=None):
@@ -74,21 +85,30 @@ class Agent():
         memory = self.getMemory(context_length)
         memory_string = ""
         for key in memory:
-            print(memory[key])
-            memory_string = memory_string + f"\n{memory[key]["agent_persona"]}: {memory[key]["text"]}"
+            if memory[key]["agent_persona"] != self.persona:
+                memory_string = memory_string + f"\n[INST]{memory[key]["agent_persona"]}: {memory[key]["text"]}[/INST]"
+            else:
+                memory_string = memory_string + f"\n{memory[key]["agent_persona"]}: {memory[key]["text"]}"
         if personalized:
             memory_string = memory_string.replace(f"{self.persona}:", f"{self.persona} (you):")
         return memory_string
     
-    def saveMemoryToJson(self):
+    def saveMemoryToJson(self, out=None):
         '''
         Converts the memory bucket dbm data to json format
         '''
-        try:
-            with open(self.memory_bucket+".json", "w") as f: 
-                json.dump(self.getMemory(), f)
-        except Exception as e:
-            print(f"Failed to save agent memory to {self.memory_bucket}: {e}")
+        if out:
+            try:
+                with open(out, "w") as f: 
+                    json.dump(self.getMemory(), f)
+            except Exception as e:
+                print(f"Failed to save agent memory to {out}: {e}")
+        else:
+            try:
+                with open(self.memory_bucket+".json", "w") as f: 
+                    json.dump(self.getMemory(), f)
+            except Exception as e:
+                print(f"Failed to save agent memory to {self.memory_bucket}: {e}")
 
 def main():
     pass

@@ -1,6 +1,6 @@
 def draft():
     template = '''
-    When faced with a task, you are also provided with the preliminary discussion. Generate a draft that is the best possible solution to the task.
+    <<SYS>>When faced with a task, you are also provided with the preliminary discussion. Generate a draft that is the best possible solution to the task.
         
     Here are some examples:
     ---
@@ -8,7 +8,7 @@ def draft():
     Input: 6 12 1 1
     Your role: Moderator
 
-
+    Conversation:
     Math Expert: Let's analyze the task in detail. You need to make sure that you meet the requirement, that you need to use exactly the four numbers (6 12 1 1) to construct 24. To reach 24, you can think of the common divisors of 24 such as 4, 6, 8, 3 and try to construct these first. Also you need to think of potential additions that can reach 24, such as 12 + 12.
     Moderator (you): Thanks for the hints! Here's one initial solution: (12 / (1 + 1)) * 6 = 24
     Math Expert: Let's check the answer step by step. (1+1) = 2, (12 / 2) = 6, 6 * 6 = 36 which is not 24! The answer is not correct. Can you fix this by considering other combinations? Please do not make similar mistakes.
@@ -27,6 +27,7 @@ def draft():
     Example Task 2: Write a poem that meets the following requirements: (1) the poem has seven lines and the first letters of each line forms the word "CHATGPT"; (2) the poem is about explaining what is a quantum computer. (3) the poem needs to be easy to understand by a ten years old kid.
     Your role: Moderator
     
+    Conversation:
     Poet: Make sure that you write the poem with seven lines, and the first letters of the lines should be C, H, A, T, G, P, T.
     Computer Scientist: A quantum computer is an advanced computing device that uses the principles of quantum mechanics to process and store information. Unlike classical computers that use bits to represent information as 0s and 1s, quantum computers use quantum bits or qubits. Qubits can exist in multiple states simultaneously, due to a quantum phenomenon called superposition. You can consider using these information for the poem.
     Ten year old child: I hope the poem to be fun and easy to understanding. I don't want to see a lot of jargons or complicated concepts.
@@ -72,49 +73,50 @@ def draft():
     Now, finish collaboration and provide a final answer to incorporate the other participants feedback. Remember to present your solution after the prefix "Draft:".
 
     Task: {task_instruction}
-    Input: {source_text}
+    Input: {input}
     Your role: {persona}
 
+    Conversation:<</SYS>>
     {agent_memory}
 
-    Finish collaboration!
+    <<SYS>>Finish collaboration!
 
-    Draft: '''
+    Draft: <</SYS>>'''
     return template
 
 
 def feedback():
     template = '''
-    When faced with a task, you are also provided with the preliminary discussion. Generate constructive feedback on how to improve the most recent draft to solve the task.
+    <<SYS>>When faced with a task, you are also provided with the preliminary discussion. Generate constructive feedback on how to improve the most recent draft to solve the task.
         
     Here are some examples:
     ---
     Example Task 1: Use numbers and basic arithmetic operations (+ - * /) to obtain 24. You need to use all numbers, and each number can only be used once.
     Input: 6 12 1 1
-    Your role: Math Expert
 
-
-    Math Expert: Let's analyze the task in detail. You need to make sure that you meet the requirement, that you need to use exactly the four numbers (6 12 1 1) to construct 24. To reach 24, you can think of the common divisors of 24 such as 4, 6, 8, 3 and try to construct these first. Also you need to think of potential additions that can reach 24, such as 12 + 12.
+    Conversation:
+    Math Expert (you): Let's analyze the task in detail. You need to make sure that you meet the requirement, that you need to use exactly the four numbers (6 12 1 1) to construct 24. To reach 24, you can think of the common divisors of 24 such as 4, 6, 8, 3 and try to construct these first. Also you need to think of potential additions that can reach 24, such as 12 + 12.
     Moderator: Thanks for the hints! Here's one initial solution. Draft: (12 / (1 + 1)) * 6 = 24
-    Math Expert: Let's check the answer step by step. (1+1) = 2, (12 / 2) = 6, 6 * 6 = 36 which is not 24! The answer is not correct. Can you fix this by considering other combinations? Please do not make similar mistakes.
+    Math Expert (you): Let's check the answer step by step. (1+1) = 2, (12 / 2) = 6, 6 * 6 = 36 which is not 24! The answer is not correct. Can you fix this by considering other combinations? Please do not make similar mistakes.
     Moderator: Thanks for pointing out the mistake. Draft: Here is a revised solution considering 24 can also be reached by 3 * 8: (6 + 1 + 1) * (12 / 4) = 24.
     Math Expert (you): Let's first check if the calculation is correct. (6 + 1 + 1) = 8, 12 / 4 = 3, 8 * 3 = 24. The calculation is correct, but you used 6 1 1 12 4 which is not the same as the input 6 12 1 1. Can you avoid using a number that is not part of the input?
     Moderator: You are right, here is a revised solution considering 24 can be reached by 12 + 12 and without using any additional numbers. Draft: 6 * (1 - 1) + 12 = 24.
     
+    Your role: Math Expert
+
     Generate feedback!
 
     Feedback: Let's check the answer again. 1 - 1 = 0, 6 * 0 = 0, 0 + 12 = 12. I believe you are very close, here is a hint: try to change the "1 - 1" to "1 + 1".
 
     ---
     Example Task 2: Write a poem that meets the following requirements: (1) the poem has seven lines and the first letters of each line forms the word "CHATGPT"; (2) the poem is about explaining what is a quantum computer. (3) the poem needs to be easy to understand by a ten years old kid.
-    Your role: Ten year old child
     
+    Conversation:
     Poet: Make sure that you write the poem with seven lines, and the first letters of the lines should be C, H, A, T, G, P, T.
     Computer Scientist: A quantum computer is an advanced computing device that uses the principles of quantum mechanics to process and store information. Unlike classical computers that use bits to represent information as 0s and 1s, quantum computers use quantum bits or qubits. Qubits can exist in multiple states simultaneously, due to a quantum phenomenon called superposition. You can consider using these information for the poem.
     Ten year old child (you): I hope the poem to be fun and easy to understanding. I don't want to see a lot of jargons or complicated concepts.
     Moderator: Thanks for the guidance! Here's my initial attempt at the poem. 
-    Draft:
-    Computational wonder of our age,
+    Draft: Computational wonder of our age,
     Harnessing the quantum world's strange ways,
     Atoms dance, entwined in dual state,
     Tapping secrets hidden in their haze.
@@ -137,27 +139,31 @@ def feedback():
     Problems that confuse the brightest minds,
     Transforming our future, we await.
 
+    Your role: Ten year old child
+
     Generate feedback!
 
     Feedback: You used simple and fun language. I like this version a lot!
 
     ---
-    Now, provide feedback considering the most recent draft and your assigned role. Remember to present your output after the prefix "Feedback:".
+    Now, provide feedback considering the most recent draft and your assigned role. Reply in {sentences} sentences or less. Remember to present your output after the prefix "Feedback:".
 
     Task: {task_instruction}
-    Input: {source_text}
-    Your role: {persona}
+    Input: {input}
 
+    Conversation:<</SYS>>
     {agent_memory}
+    
+    <<SYS>>Your role: {persona}
 
     Generate feedback!
 
-    Feedback: '''
+    Feedback: <</SYS>>'''
     return template
 
 def brainstorm():
     template = '''
-    When faced with a task, you should provide brainstorming ideas about how to solve the task. THe brainstorming should fit your assigned role.
+    <<SYS>>When faced with a task, you should provide brainstorming ideas about how to solve the task. The brainstorming should fit your assigned role.
         
     Here are some examples:
     ---
@@ -177,46 +183,37 @@ def brainstorm():
     Now, brainstorm about how to solve the task. Remember to present your final output after the prefix "Brainstorming:".
 
     Task: {task_instruction}
-    Input: {source_text}
+    Input: {input}
     Your role: {persona}
 
-    Brainstorming: '''
+    Brainstorming: <</SYS>>'''
     return template
 
 def decide_boolean():
     template = '''
-    You are provided a feedback text from a discussion. Decide whether the feedback means an agreement (AGREE) or if further modifications are desired (DISAGREE) to the solution of the task. 
+    <<SYS>>You are provided a feedback text from a discussion. Decide whether the feedback means an agreement (YES) or if further modifications are desired (NO). 
         
     Here are some examples:
     ---
-    Example Task 1: Use numbers and basic arithmetic operations (+ - * /) to obtain 24. You need to use all numbers, and each number can only be used once.
-    Input: 6 12 1 1
-    Solution: Sure, here is the corrected answer:  6 * (1+1) + 12 = 24
     Feedback: Let's verify the solution. 1 + 1 = 2, 6 * 2 = 12, 12 + 12 = 12. You used 1 1 6 12 which is identical to the input 6 12 1 1. Everything looks good!
 
-    Decision: AGREE
+    Decide!
+
+    Decision: (YES)
 
     ---
-    Example Task 2: Write a poem that meets the following requirements: (1) the poem has seven lines and the first letters of each line forms the word "CHATGPT"; (2) the poem is about explaining what is a quantum computer. (3) the poem needs to be easy to understand by a ten years old kid.
-    Solution: Computational wonder of our age,
-    Harnessing the quantum world's strange ways,
-    Atoms dance, entwined in dual state,
-    Tapping secrets hidden in their haze.
-
-    Grand power to solve, simulate,
-    Profound problems that perplex the wise,
-    Transforming our future, we await.
     Feedback: I don't know what does perplex mean. Can you make the use of words easier to understand?
 
-    Decision: DISAGREE
+    Decide!
+
+    Decision: (NO)
 
     ---
-    Now, finish collaboration and provide the final answer based on the feedback. Remember to present your final output after the prefix "Decision:".
+    Now, give the decision based on the feedback. Remember to present your final output after the prefix "Decision:". Use either (YES) or (NO) in your response.
 
-    Task: {task_instruction}
-    Input: {source_text}
-    Solution: {current_draft}
     Feedback: {feedback}
 
-    Decision: '''
+    Decide!
+    
+    Decision: <</SYS>>'''
     return template
