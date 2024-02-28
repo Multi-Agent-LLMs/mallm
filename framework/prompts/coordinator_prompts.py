@@ -21,10 +21,18 @@ def identify_personas():
     }}
     ---
 
-    Now, identify participants relevant to the task and provide their profiles as a dictionary. Remember to present your final output after the prefix "Profiles:". Format the result as a dictionary within curly braces { }.
+    Now, identify participants relevant to the task and provide their profiles as a dictionary in curly braces {{ }}. Remember to present your final output after the prefix "Profiles:".
 
-    Task: {task_instruction} 
+    Task: {task_instruction}
     Input: {input}
 
     Profiles: <</SYS>>'''
+    return template
+
+def extract_result():
+    template = '''
+    Extract the final result from the provided text. Do not output any additional text and remove the explanation. Only copy the result from the provided text without modifications.
+    {result}
+
+    Now extract the final result: '''
     return template

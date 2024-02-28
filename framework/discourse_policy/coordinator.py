@@ -29,6 +29,7 @@ class Coordinator():
         self.llm = self.create_llm()
         
         self.chain_identify_personas = LLMChain(llm=self.llm, prompt=PromptTemplate.from_template(coordinator_prompts.identify_personas()))
+        self.chain_extract_result = LLMChain(llm=self.llm, prompt=PromptTemplate.from_template(coordinator_prompts.extract_result()))
     
 
     def initAgents(self, task_instruction, input, persona_type = "expert", use_moderator = True):
@@ -40,17 +41,17 @@ class Coordinator():
         Returns bool
         '''
         res = self.chain_identify_personas.invoke(
-            {
-                "task_instruction": task_instruction, 
+            { 
+                "task_instruction": task_instruction,
                 "input": input
             })["text"]
         
         # repair dictionary in string if the LLM did mess up the formatting
         if "{" in res and "}" not in res:
-            print("Looks like the LLM did not get the formatting quite right. Trying to repair the dictionary...")
+            print("Looks like the LLM did not provide a valid dictionary (maybe the last brace is missing?). Trying to repair the dictionary...")
             res = res + "}"
 
-        self.updateGlobalMemory(0, 0, None, None, "persona_identification", res)
+        self.updateGlobalMemory(0, 0, None, None, "persona_identification", res, [])
         
         personas_string = re.search(r"\{.*?\}", res, re.DOTALL)
         if not personas_string:
@@ -63,22 +64,32 @@ class Coordinator():
             self.personas = ast.literal_eval(personas_string)
             #return False
         else:
-            try:
-                self.personas = ast.literal_eval(personas_string.group())
-            except Exception as e:
-                print(f"Failed to parse the string to identify personas: {e} - Continue with placeholder personas...")
-                personas_string = '''{
-                "Poet": "A person who studies and creates poetry. The poet is familiar with the rules and formats of poetry and can provide guidance on how to write a poem.",
-                "Computer Scientist": "A scholar who specializes in the academic study of computer science. The computer scientist is familiar with the concept of a quantum computer and can provide guidance on how to explain it.",
-                "Ten year old child": "A child with a limited English vocabulary and little knowledge about complicated concepts, such as a quantum computer."
-                }'''
-                self.personas = ast.literal_eval(personas_string)
-                pass
+            personas_string = personas_string.group()
+            for i in [0,1]:
+                try:
+                    self.personas = ast.literal_eval(personas_string)
+                except Exception as e:
+                    if i == 0:
+                        print("Looks like the LLM did not get the formatting quite right. Trying to repair the dictionary string...")
+                        personas_string = personas_string.replace("\'\n", "\',\n")
+                        personas_string = personas_string.replace('\"\n', '\",\n')
+                        print("Repaired string: \n" + str(personas_string))
+                        continue
+                    elif i == 1:
+                        print(f"Failed to parse the string to identify personas: {e} - Continue with placeholder personas...")
+                        personas_string = '''{
+                        "Poet": "A person who studies and creates poetry. The poet is familiar with the rules and formats of poetry and can provide guidance on how to write a poem.",
+                        "Computer Scientist": "A scholar who specializes in the academic study of computer science. The computer scientist is familiar with the concept of a quantum computer and can provide guidance on how to explain it.",
+                        "Ten year old child": "A child with a limited English vocabulary and little knowledge about complicated concepts, such as a quantum computer."
+                        }'''
+                        self.personas = ast.literal_eval(personas_string)
+                        continue
 
+        self.panelists = []
         if use_moderator:
             self.moderator = Moderator(0, self.llm, self)  # Agent ID 0 is reserved for the moderator
         for i, p in enumerate(self.personas):
-            self.panelists.append(Panelist(i+1, self.llm, p, self))
+            self.panelists.append(Panelist(i+1, self.llm, p, self.personas[p], self))
 
         if use_moderator:
             self.agents = self.panelists + [self.moderator]
@@ -127,7 +138,7 @@ class Coordinator():
         tokenizer = transformers.AutoTokenizer.from_pretrained(
             ckpt_dir
         )
-        print("Using this tokenizer: " + str(type(tokenizer)))
+        print("Using this tokenizer: " + str(tokenizer.__class__.__name__))
         
         pipeline = transformers.pipeline(
             model=model, 
@@ -138,20 +149,20 @@ class Coordinator():
             # model parameters
             do_sample=True,
             temperature = 0.9,
-            max_new_tokens=256,  # max number of tokens to generate in the output
+            max_new_tokens=512,  # max number of tokens to generate in the output
             min_new_tokens=2,   # always answer something (no empty responses)
             repetition_penalty=1.1,  # without this output begins repeating
         )
 
         return HuggingFacePipeline(pipeline=pipeline)
     
-    def updateGlobalMemory(self, unique_id, turn, agent_id, agent_persona, contribution, text):
+    def updateGlobalMemory(self, unique_id, turn, agent_id, agent_persona, contribution, text, memory_ids):
         '''
         Updates the dbm memory with another discussion entry.
         Returns string
         '''
         with dbm.open(self.memory_bucket, 'c') as db:
-            db[str(unique_id)] = f'''{{"turn": {turn}, "agent_id": {agent_id}, "agent_persona": "{str(agent_persona).replace('"',"'")}", "contribution": "{contribution}", "text": "{str(text).replace('"',"'")}"}}'''
+            db[str(unique_id)] = f'''{{"turn": {turn}, "agent_id": {agent_id}, "agent_persona": "{str(agent_persona).replace('"',"'")}", "contribution": "{contribution}", "memory_ids": {memory_ids}, "text": "{str(text).replace('"',"'")}"}}'''
             print(db[str(unique_id)])   # logging
         self.saveGlobalMemoryToJson()
     
@@ -177,28 +188,42 @@ class Coordinator():
             print(f"Failed to save agent memory to {self.memory_bucket}: {e}")
             print(self.getGlobalMemory())
 
-    def discuss(self, task_name, task_instruction, input, decision_threshold, use_moderator, avg_feedback_length = 3, paradigm="memory", max_turns = None):
+    def cleanMemoryBucket(self):
+        filelist = glob.glob(os.path.join(memory_bucket_dir, "*.bak"))
+        for f in filelist:
+            os.remove(f)
+        filelist = glob.glob(os.path.join(memory_bucket_dir, "*.dat"))
+        for f in filelist:
+            os.remove(f)
+        filelist = glob.glob(os.path.join(memory_bucket_dir, "*.dir"))
+        for f in filelist:
+            os.remove(f)
+        filelist = glob.glob(os.path.join(memory_bucket_dir, "*.json"))
+        for f in filelist:
+            os.remove(f)
+        print("Cleaned the memory bucket.")
+
+    def discuss(self, task_instruction, input, decision_threshold, use_moderator, avg_feedback_length = 3, paradigm="memory", max_turns = None):
         # 1) Assign agents and personas
         # 2) Create first draft
         # 3) Iterative feedback loop (drafting and checking for decision-making after turn)
 
-        if not self.initAgents(task_instruction, input):
+        if not self.initAgents(task_instruction, input, use_moderator=use_moderator):
             print("Failed to intialize agents.")
             return None # if the LLM failed to initialize the agents, do not discuss
-        self.decision_making = Consensus(self.agents, decision_threshold, use_moderator)
+        self.decision_making = MajorityConsensus(self.agents, use_moderator)
 
         personas = [a.persona for a in self.agents]
         print(f'''
-                Starting discussion...
-                -------------
-                Task: {task_name}
-                Instruction: {task_instruction}
-                Input: {input}
-                Average feedback length: {str(avg_feedback_length)}
-                Decision-making: {self.decision_making.__class__.__name__}
-                Maximum turns: {max_turns}
-                Agents: {str(personas)}
-                -------------
+            Starting discussion...
+            -------------
+            Instruction: {task_instruction}
+            Input: {input}
+            Average feedback length: {str(avg_feedback_length)}
+            Maximum turns: {max_turns}
+            Agents: {str(personas)}
+            Decision-making: {self.decision_making.__class__.__name__}
+            -------------
         ''')
         
         decision = None
@@ -206,10 +231,12 @@ class Coordinator():
         turn = 0
         unique_id = 1
         feedbacks = []
+        feedback_ids = []
+        agreements = []
 
-        for p in self.panelists:
-            feedbacks.append(p.brainstorm(unique_id, turn, task_name, task_instruction, avg_feedback_length, self.agents, input))
-            unique_id = unique_id + 1
+        #for p in self.panelists:
+        #    feedbacks.append(p.brainstorm(unique_id, turn, task_instruction, avg_feedback_length, self.agents, input))
+        #    unique_id = unique_id + 1
 
         if paradigm == "memory":
             print('''Paradigm: Memory
@@ -223,7 +250,40 @@ class Coordinator():
             │A 3│       │MEM│       │A 2│
             └───┘◄──────┴───┴──────►└───┘
             ''')
+            while not decision and (turn < max_turns or max_turns is None):
+                turn = turn + 1
+                for p in self.panelists:
+                    res = p.improve(
+                        unique_id = unique_id, 
+                        turn = turn, 
+                        task_instruction = task_instruction, 
+                        current_draft = current_draft, 
+                        feedback_sentences = avg_feedback_length, 
+                        agents_to_update = self.agents,
+                        input = input,
+                        feedbacks = feedbacks,
+                        feedback_ids = feedback_ids,
+                        context_length = len(self.panelists)-1
+                        )
+                    feedbacks.append(p.persona + ": " + res)
+                    feedback_ids.append(unique_id)
 
+                    if "AGREE" in res and "DISAGREE" not in res:
+                        agreements.append(True)
+                    else:
+                        current_draft = self.chain_extract_result.invoke(
+                            {
+                                "result": res
+                            })["text"]
+                        agreements.append(False)
+                    if len(agreements) > len(self.panelists):
+                        agreements = agreements[len(agreements)-len(self.panelists):]   # only keep recent agreements
+                    unique_id = unique_id + 1
+                
+                decision = self.decision_making.decide(agreements, turn)
+
+        elif paradigm == "memory_BACKUP":
+    
             while (not decision and max_turns is None) or (max_turns is not None and turn <= max_turns):
                 if self.use_moderator:
                     current_draft = self.moderator.createDraft(unique_id, turn, task_instruction, input, self.agents, context_length=None)
@@ -295,9 +355,11 @@ class Coordinator():
         agentMems = []
         for a in self.agents:
             agentMems.append(a.getMemory())
-        return current_draft, globalMem, agentMems
 
+        if turn >= max_turns and max_turns is not None: # if no agreement was reached
+            current_draft = None
 
+        return current_draft, globalMem, agentMems, turn
 
 def main():
     pass

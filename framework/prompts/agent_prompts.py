@@ -161,6 +161,21 @@ def feedback():
     Feedback: <</SYS>>'''
     return template
 
+def improve():
+    template = '''
+    <<SYS>>Please consider the example provided and think it step by step.
+    Task: {task_instruction}
+    Input: {input}
+    This is the recent feedback by others:
+    {agent_memory}
+    Here is the current solution you need to consider:
+    Solution: [INST]{current_draft}[/INST]
+    Based on the current solution, carefully re-examine your previous answer while considering your assigned role.
+    Your role: {persona} ({persona_description})
+    Utilize your talent and critical thinking to provide a new solution in {feedback_sentences} sentences or less. If you agree, just answer with [AGREE]. If you [DISAGREE], explain why.
+    <</SYS>>'''
+    return template
+
 def brainstorm():
     template = '''
     <<SYS>>When faced with a task, you should provide brainstorming ideas about how to solve the task. The brainstorming should fit your assigned role.

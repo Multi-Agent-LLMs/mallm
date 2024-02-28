@@ -4,28 +4,16 @@ sys.path.append("/beegfs/wahle/github/MALLM")
 import fire, glob
 from tqdm import tqdm
 from setup import *
+import time
 from framework.discourse_policy.coordinator import *
 
-def main(task_name, data, out, decision_threshold = None, use_moderator = True, max_turns = 10, feedback_length = 3, paradigm = "memory"):
+def main(task_name, data, out, decision_threshold = None, use_moderator = False, max_turns = 20, feedback_length = 3, paradigm = "memory"):
     if not os.path.exists(data):
         print("The input file you provided does not exist. Please specify a json lines file using --data.")
+        return
     if not data.endswith(".json"):
         print("The input file you provided is not a json file. Please specify a json lines file using --data.")
-    
-    # Cleaning up the memory bucket
-    filelist = glob.glob(os.path.join(memory_bucket_dir, "*.bak"))
-    for f in filelist:
-        os.remove(f)
-    filelist = glob.glob(os.path.join(memory_bucket_dir, "*.dat"))
-    for f in filelist:
-        os.remove(f)
-    filelist = glob.glob(os.path.join(memory_bucket_dir, "*.dir"))
-    for f in filelist:
-        os.remove(f)
-    filelist = glob.glob(os.path.join(memory_bucket_dir, "*.json"))
-    for f in filelist:
-        os.remove(f)
-    print("Cleaned the memory bucket.")
+        return
 
     # Cleaning other files
     if os.path.exists(out):
@@ -44,10 +32,13 @@ def main(task_name, data, out, decision_threshold = None, use_moderator = True, 
     print(f"Found {len(d)} samples to discuss.")
     
     coordinator = Coordinator(use_moderator)
+    output_dicts = []
 
     for sample in tqdm(d):
-        answer, globalMem, agentMems = coordinator.discuss(
-            task_name, 
+        coordinator.cleanMemoryBucket()
+        start_time = time.time()
+
+        answer, globalMem, agentMems, turn = coordinator.discuss(
             sample["task_instruction"], 
             sample["input"],
             decision_threshold, 
@@ -56,18 +47,23 @@ def main(task_name, data, out, decision_threshold = None, use_moderator = True, 
             paradigm = paradigm, 
             max_turns = max_turns
         )
+
+        discussion_time = time.time() - start_time
         print("--> Final answer: " + str(answer))
 
-        with open(out, 'a') as file:
-            file.write(json.dumps(
-                {
-                    "task_instruction": sample["task_instruction"], 
-                    "input": sample["input"], 
+        output_dicts.append({
+                    "task_instruction": sample["task_instruction"],
+                    "personas": coordinator.personas,
+                    "input": sample["input"],
                     "answer": answer,
+                    "turns": turn,
+                    "time": discussion_time,
                     "global_memory": globalMem,
                     "agent_memory": agentMems
-                }))
-            file.write('\n')
+                })
+        with open(out, 'w') as file:
+            file.write(json.dumps(output_dicts))
+            file.truncate()
 
 if __name__ == "__main__":
     fire.Fire(main)
