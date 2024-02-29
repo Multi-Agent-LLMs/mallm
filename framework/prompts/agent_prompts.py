@@ -162,18 +162,18 @@ def feedback():
     return template
 
 def improve():
-    template = '''
-    <<SYS>>Please consider the example provided and think it step by step.
-    Task: {task_instruction}
-    Input: {input}
-    This is the recent feedback by others:
-    {agent_memory}
-    Here is the current solution you need to consider:
-    Solution: [INST]{current_draft}[/INST]
-    Based on the current solution, carefully re-examine your previous answer while considering your assigned role.
-    Your role: {persona} ({persona_description})
-    Utilize your talent and critical thinking to provide a new solution in {feedback_sentences} sentences or less. If you agree, just answer with [AGREE]. If you [DISAGREE], explain why.
-    <</SYS>>'''
+    template = '''\
+{sys_s}Please consider the example provided and think it step by step.
+Task: {task_instruction}
+Input: {input}
+This is the recent feedback by others:
+{agent_memory}
+Here is the current solution you need to consider:
+Solution: {inst_s}{current_draft}{inst_e}
+Based on the current solution, carefully re-examine your previous answer while considering your assigned role.
+Your role: {persona} ({persona_description})
+Utilize your talent and critical thinking to provide a new solution in {feedback_sentences} sentences or less. If you agree, just answer with [AGREE]. If you [DISAGREE], explain why.{sys_e}\
+'''
     return template
 
 def brainstorm():
@@ -206,7 +206,7 @@ def brainstorm():
 
 def decide_boolean():
     template = '''
-    <<SYS>>You are provided a feedback text from a discussion. Decide whether the feedback means an agreement (YES) or if further modifications are desired (NO). 
+    {sys_s}You are provided a feedback text from a discussion. Decide whether the feedback means an agreement (YES) or if further modifications are desired (NO). 
         
     Here are some examples:
     ---
@@ -230,5 +230,5 @@ def decide_boolean():
 
     Decide!
     
-    Decision: <</SYS>>'''
+    Decision: {sys_e}'''
     return template

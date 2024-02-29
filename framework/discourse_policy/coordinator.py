@@ -26,11 +26,20 @@ class Coordinator():
         self.moderator = None
         self.memory_bucket = memory_bucket_dir+"global"
         self.decision_making = None
+        self.llm_tokenizer = None
         self.llm = self.create_llm()
         
-        self.chain_identify_personas = LLMChain(llm=self.llm, prompt=PromptTemplate.from_template(coordinator_prompts.identify_personas()))
-        self.chain_extract_result = LLMChain(llm=self.llm, prompt=PromptTemplate.from_template(coordinator_prompts.extract_result()))
-    
+        if "llama" in self.llm_tokenizer.__class__.__name__.lower():    # use <<SYS>> and [INST] tokens for llama models
+            partial_variables = {"sys_s": "<<SYS>>", "sys_e": "<</SYS>>", "inst_s": "[INST]", "inst_e": "[/INST]"}
+        else:
+            partial_variables = {"sys_s": "", "sys_e": "", "inst_s": "", "inst_e": ""}
+
+        self.chain_identify_personas = LLMChain(llm=self.llm, prompt=PromptTemplate.from_template(
+            template=coordinator_prompts.identify_personas(), 
+            partial_variables=partial_variables))
+        self.chain_extract_result = LLMChain(llm=self.llm, prompt=PromptTemplate.from_template(
+            template=coordinator_prompts.extract_result(), 
+            partial_variables=partial_variables))
 
     def initAgents(self, task_instruction, input, persona_type = "expert", use_moderator = True):
         '''
@@ -46,6 +55,8 @@ class Coordinator():
                 "input": input
             })["text"]
         
+        # TODO: Use grammar to force LLM output in the correct JSON format. Example with llama.ccp: https://til.simonwillison.net/llms/llama-cpp-python-grammars
+
         # repair dictionary in string if the LLM did mess up the formatting
         if "{" in res and "}" not in res:
             print("Looks like the LLM did not provide a valid dictionary (maybe the last brace is missing?). Trying to repair the dictionary...")
@@ -135,17 +146,17 @@ class Coordinator():
         model.eval()
         print(f"Model {ckpt_dir} loaded on {device}")
 
-        tokenizer = transformers.AutoTokenizer.from_pretrained(
+        self.llm_tokenizer = transformers.AutoTokenizer.from_pretrained(
             ckpt_dir
         )
-        print("Using this tokenizer: " + str(tokenizer.__class__.__name__))
+        print("Using this tokenizer: " + str(self.llm_tokenizer.__class__.__name__))
         
         pipeline = transformers.pipeline(
             model=model, 
-            tokenizer=tokenizer,
+            tokenizer=self.llm_tokenizer,
             return_full_text=True,  # langchain expects the full text
             task='text-generation',
-            pad_token_id=tokenizer.eos_token_id,
+            pad_token_id=self.llm_tokenizer.eos_token_id,
             # model parameters
             do_sample=True,
             temperature = 0.9,

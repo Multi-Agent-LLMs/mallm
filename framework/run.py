@@ -5,6 +5,7 @@ import fire, glob
 from tqdm import tqdm
 from setup import *
 import time
+from datetime import timedelta
 from framework.discourse_policy.coordinator import *
 
 def main(task_name, data, out, decision_threshold = None, use_moderator = False, max_turns = 20, feedback_length = 3, paradigm = "memory"):
@@ -36,7 +37,7 @@ def main(task_name, data, out, decision_threshold = None, use_moderator = False,
 
     for sample in tqdm(d):
         coordinator.cleanMemoryBucket()
-        start_time = time.time()
+        start_time = time.perf_counter()
 
         answer, globalMem, agentMems, turn = coordinator.discuss(
             sample["task_instruction"], 
@@ -48,8 +49,8 @@ def main(task_name, data, out, decision_threshold = None, use_moderator = False,
             max_turns = max_turns
         )
 
-        discussion_time = time.time() - start_time
-        print("--> Final answer: " + str(answer))
+        discussion_time = timedelta(seconds=time.perf_counter() - start_time)
+        print(f"--> Job took {discussion_time} to get the final answer: \n" + str(answer))
 
         output_dicts.append({
                     "task_instruction": sample["task_instruction"],

@@ -17,11 +17,21 @@ class Agent():
         self.coordinator = coordinator
         self.llm = llm
 
-        self.chain_brainstorm = LLMChain(llm=self.llm, prompt=PromptTemplate.from_template(agent_prompts.brainstorm()))
-        self.chain_feedback = LLMChain(llm=self.llm, prompt=PromptTemplate.from_template(agent_prompts.feedback()))
-        self.chain_decide = LLMChain(llm=self.llm, prompt=PromptTemplate.from_template(agent_prompts.decide_boolean()))
-        self.chain_draft = LLMChain(llm=self.llm, prompt=PromptTemplate.from_template(agent_prompts.draft()))
-        self.chain_improve = LLMChain(llm=self.llm, prompt=PromptTemplate.from_template(agent_prompts.improve()))
+        #self.chain_brainstorm = LLMChain(llm=self.llm, prompt=PromptTemplate.from_template(agent_prompts.brainstorm()))
+        #self.chain_feedback = LLMChain(llm=self.llm, prompt=PromptTemplate.from_template(agent_prompts.feedback()))
+        #self.chain_draft = LLMChain(llm=self.llm, prompt=PromptTemplate.from_template(agent_prompts.draft()))
+
+        if "llama" in coordinator.llm_tokenizer.__class__.__name__.lower():    # use <<SYS>> and [INST] tokens for llama models
+            partial_variables = {"sys_s": "<<SYS>>", "sys_e": "<</SYS>>", "inst_s": "[INST]", "inst_e": "[/INST]"}
+        else:
+            partial_variables = {"sys_s": "", "sys_e": "", "inst_s": "", "inst_e": ""}
+            
+        self.chain_improve = LLMChain(llm=self.llm, prompt=PromptTemplate.from_template(
+                template=agent_prompts.improve(), 
+                partial_variables=partial_variables))
+        self.chain_decide = LLMChain(llm=self.llm, prompt=PromptTemplate.from_template(
+            template=agent_prompts.decide_boolean(), 
+            partial_variables=partial_variables))
 
     def createDraft(self, unique_id, turn, task_instruction, input, agents_to_update, context_length=None):
         '''
@@ -44,8 +54,6 @@ class Agent():
     def improve(self, unique_id, turn, task_instruction, feedback_sentences, agents_to_update, input, current_draft, feedbacks, feedback_ids, context_length):
         memory_string = "\n".join(feedbacks[max(0, len(feedbacks)-1-context_length):])
         memory_ids = feedback_ids[max(0, len(feedback_ids)-1-context_length):]
-        print("Memory: ")
-        print(memory_string)
         res = self.chain_improve.invoke(
             {
                 "task_instruction": task_instruction,
