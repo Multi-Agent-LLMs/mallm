@@ -8,10 +8,7 @@ from framework.decision_making.consensus import *
 from framework.prompts import coordinator_prompts
 from langchain_core.prompts import PromptTemplate
 from langchain.chains import LLMChain
-import fire
-import dbm
-import ast
-import re
+import fire, glob, dbm, re
 from langchain_community.llms import HuggingFacePipeline
 from torch import cuda, bfloat16
 import transformers
@@ -41,7 +38,7 @@ class Coordinator():
             template=coordinator_prompts.extract_result(), 
             partial_variables=partial_variables))
 
-    def initAgents(self, task_instruction, input, persona_type = "expert", use_moderator = True):
+    def initAgents(self, task_instruction, input, use_moderator, persona_type = "expert"):
         '''
         Instantiates the agents by
         1) identify helpful personas
@@ -149,6 +146,7 @@ class Coordinator():
         self.llm_tokenizer = transformers.AutoTokenizer.from_pretrained(
             ckpt_dir
         )
+        self.llm_tokenizer.pad_token_id = model.config.eos_token_id
         print("Using this tokenizer: " + str(self.llm_tokenizer.__class__.__name__))
         
         pipeline = transformers.pipeline(
@@ -157,6 +155,7 @@ class Coordinator():
             return_full_text=True,  # langchain expects the full text
             task='text-generation',
             pad_token_id=self.llm_tokenizer.eos_token_id,
+            batch_size=8,
             # model parameters
             do_sample=True,
             temperature = 0.9,
@@ -174,7 +173,7 @@ class Coordinator():
         '''
         with dbm.open(self.memory_bucket, 'c') as db:
             db[str(unique_id)] = f'''{{"turn": {turn}, "agent_id": {agent_id}, "agent_persona": "{str(agent_persona).replace('"',"'")}", "contribution": "{contribution}", "memory_ids": {memory_ids}, "text": "{str(text).replace('"',"'")}"}}'''
-            print(db[str(unique_id)])   # logging
+            print(str(unique_id) + ": " + str(db[str(unique_id)]))   # logging
         self.saveGlobalMemoryToJson()
     
     def getGlobalMemory(self):
@@ -214,7 +213,23 @@ class Coordinator():
             os.remove(f)
         print("Cleaned the memory bucket.")
 
-    def discuss(self, task_instruction, input, decision_threshold, use_moderator, avg_feedback_length = 3, paradigm="memory", max_turns = None):
+    def updateMemories(self, memories, agents_to_update):
+        for c in memories:
+            for a in agents_to_update:
+                a.updateMemory(c["unique_id"], c["turn"], c["id"], c["persona"], c["contribution"], c["text"], c["memory_ids"])
+        return []
+
+    def agree(self, res, agreements, is_moderator=False):
+        if ("agree" in res.lower() and "disagree" not in res.lower()) and (not is_moderator):
+            agreements.append(True)
+        elif not is_moderator:
+                agreements.append(False)
+
+        if len(agreements) > len(self.panelists):
+            agreements = agreements[len(agreements)-len(self.panelists):]
+        return agreements
+
+    def discuss(self, task_instruction, input, use_moderator, feedback_sentences = [3,4], paradigm="memory", max_turns = None, context_length = 1, include_current_turn_in_memory=False):
         # 1) Assign agents and personas
         # 2) Create first draft
         # 3) Iterative feedback loop (drafting and checking for decision-making after turn)
@@ -230,7 +245,7 @@ class Coordinator():
             -------------
             Instruction: {task_instruction}
             Input: {input}
-            Average feedback length: {str(avg_feedback_length)}
+            Feedback sentences: {str(feedback_sentences)}
             Maximum turns: {max_turns}
             Agents: {str(personas)}
             Decision-making: {self.decision_making.__class__.__name__}
@@ -238,18 +253,12 @@ class Coordinator():
         ''')
         
         decision = None
-        current_draft = None
         turn = 0
         unique_id = 1
-        feedbacks = []
-        feedback_ids = []
+        memories = []
         agreements = []
 
-        #for p in self.panelists:
-        #    feedbacks.append(p.brainstorm(unique_id, turn, task_instruction, avg_feedback_length, self.agents, input))
-        #    unique_id = unique_id + 1
-
-        if paradigm == "memory":
+        if paradigm == "memory": #-----------------------------------------------
             print('''Paradigm: Memory
                         ┌───┐
                         │A 1│
@@ -263,66 +272,53 @@ class Coordinator():
             ''')
             while not decision and (turn < max_turns or max_turns is None):
                 turn = turn + 1
-                for p in self.panelists:
-                    res = p.improve(
-                        unique_id = unique_id, 
-                        turn = turn, 
-                        task_instruction = task_instruction, 
-                        current_draft = current_draft, 
-                        feedback_sentences = avg_feedback_length, 
-                        agents_to_update = self.agents,
-                        input = input,
-                        feedbacks = feedbacks,
-                        feedback_ids = feedback_ids,
-                        context_length = len(self.panelists)-1
-                        )
-                    feedbacks.append(p.persona + ": " + res)
-                    feedback_ids.append(unique_id)
 
-                    if "AGREE" in res and "DISAGREE" not in res:
-                        agreements.append(True)
-                    else:
-                        current_draft = self.chain_extract_result.invoke(
-                            {
-                                "result": res
-                            })["text"]
-                        agreements.append(False)
-                    if len(agreements) > len(self.panelists):
-                        agreements = agreements[len(agreements)-len(self.panelists):]   # only keep recent agreements
+                if use_moderator:
+                    memory_string, memory_ids, current_draft = self.moderator.getMemoryString(
+                        context_length=context_length, 
+                        turn=turn, 
+                        include_this_turn=include_current_turn_in_memory
+                        )
+
+                    template_filling = {
+                        "task_instruction": task_instruction,
+                        "input": input,
+                        "current_draft": current_draft,
+                        "persona": self.moderator.persona,
+                        "persona_description": self.moderator.persona_description,
+                        "agent_memory": memory_string
+                    }
+                    res, memory = self.moderator.draft(unique_id, turn, memory_ids, template_filling)
+                    memories.append(memory)
+                    memories = self.updateMemories(memories, self.agents)
+                    agreements = self.agree(res, agreements, is_moderator=True)
+                    unique_id = unique_id + 1
+
+                for p in self.panelists:
+                    
+                    memory_string, memory_ids, current_draft = p.getMemoryString(
+                        context_length=context_length, 
+                        turn=turn,
+                        include_this_turn=include_current_turn_in_memory
+                        )
+                    template_filling = {
+                        "task_instruction": task_instruction,
+                        "input": input,
+                        "current_draft": current_draft,
+                        "persona": p.persona,
+                        "persona_description": p.persona_description,
+                        "sents_min": feedback_sentences[0],
+                        "sents_max": feedback_sentences[1],
+                        "agent_memory": memory_string
+                    }
+
+                    memories, agreements = p.participate(use_moderator, memories, agreements, unique_id, turn, memory_ids, template_filling)
                     unique_id = unique_id + 1
                 
                 decision = self.decision_making.decide(agreements, turn)
 
-        elif paradigm == "memory_BACKUP":
-    
-            while (not decision and max_turns is None) or (max_turns is not None and turn <= max_turns):
-                if self.use_moderator:
-                    current_draft = self.moderator.createDraft(unique_id, turn, task_instruction, input, self.agents, context_length=None)
-                else:
-                    current_draft = self.panelists[0].createDraft(unique_id, turn, task_instruction, input, self.agents, context_length=None)
-                unique_id = unique_id + 1
-                turn = turn + 1
-                agreements = []
-
-                for p in self.panelists:
-                    feedback, agreement, agreement_reason = p.generateFeedback(
-                        unique_id = unique_id, 
-                        turn = turn, 
-                        task_instruction = task_instruction, 
-                        current_draft = current_draft, 
-                        feedback_sentences = avg_feedback_length, 
-                        agents_to_update = self.agents, 
-                        input = input
-                        )
-                    feedbacks.append(feedback)
-                    agreements.append(agreement)
-                    unique_id = unique_id + 1
-                
-                if max_turns is None:
-                    decision = self.decision_making.decide(agreements)
-
-        elif paradigm == "report":
-            '''
+        elif paradigm == "report": #-----------------------------------------------
+            print('''Paradigm: Report
                         ┌───┐
                         │A 1│
                 ┌──────►└┼─┼┘◄──────┐
@@ -332,11 +328,10 @@ class Coordinator():
             ┌───┼────────┘ └───────►├───┐
             │A 3│                   │A 2│
             └───┘                   └───┘
-            '''
+            ''')
             print("This feature has not been implemented yet.")
-
-        elif paradigm == "relay":
-            '''
+        elif paradigm == "relay": #-----------------------------------------------
+            print('''Paradigm: Relay
                         ┌───┐
               ┌────────►│A 1│─────────┐
               │         └───┘         │
@@ -346,10 +341,10 @@ class Coordinator():
             ┌─┴─┐                   ┌───┐
             │A 3│◄──────────────────┤A 2│
             └───┘                   └───┘
-            '''
+            ''')
             print("This feature has not been implemented yet.")
-        elif paradigm == "debate":
-            '''
+        elif paradigm == "debate": #-----------------------------------------------
+            print('''Paradigm: Debate
                         ┌───┐
               ┌────────►│A 1│◄────────┐
               │         └───┘         │
@@ -359,7 +354,7 @@ class Coordinator():
             ┌─┴─┬──────────────────►┌─┴─┐
             │A 3│                   │A 2│
             └───┘◄──────────────────┴───┘
-            '''
+            ''')
             print("This feature has not been implemented yet.")
 
         globalMem = self.getGlobalMemory()

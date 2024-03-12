@@ -6,17 +6,14 @@ from framework.agents.agent import *
 class Moderator(Agent):
     def __init__(self, id, llm, coordinator, persona = "Moderator"):
         self.id = id
-        self.llm = llm
         self.persona = persona
-        self.persona_description = "A super-intelligent individual with critical thinking that is neutral."
+        self.persona_description = "A super-intelligent individual with critical thinking who has a neutral position at all times. He acts as a mediator between other discussion participants."
         self.memory_bucket = memory_bucket_dir+"agent_{}".format(self.id)
         self.coordinator = coordinator
+        self.moderator = self
+        self.llm = llm
+        self.init_chains()
 
-        self.chain_brainstorm = LLMChain(llm=self.llm, prompt=PromptTemplate.from_template(agent_prompts.brainstorm()))
-        self.chain_feedback = LLMChain(llm=self.llm, prompt=PromptTemplate.from_template(agent_prompts.feedback()))
-        self.chain_decide = LLMChain(llm=self.llm, prompt=PromptTemplate.from_template(agent_prompts.decide_boolean()))
-        self.chain_draft = LLMChain(llm=self.llm, prompt=PromptTemplate.from_template(agent_prompts.draft()))
-        self.chain_improve = LLMChain(llm=self.llm, prompt=PromptTemplate.from_template(agent_prompts.improve()))
 def main():
     pass
 
