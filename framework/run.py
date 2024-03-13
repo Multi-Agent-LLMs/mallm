@@ -8,7 +8,7 @@ import time
 from datetime import timedelta
 from framework.discourse_policy.coordinator import *
 
-def main(data, out, use_moderator = False, max_turns = 20, feedback_sentences = [3,4], paradigm = "memory", context_length = 1, include_current_turn_in_memory = False):
+def main(data, out, use_moderator = False, max_turns = 10, feedback_sentences = [3,4], paradigm = "memory", context_length = 1, include_current_turn_in_memory = False):
     if not os.path.exists(data):
         print("The input file you provided does not exist. Please specify a json lines file using --data.")
         return

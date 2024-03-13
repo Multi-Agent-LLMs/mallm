@@ -7,6 +7,7 @@ import fire
 from framework.prompts import agent_prompts
 from langchain_core.prompts import PromptTemplate
 from langchain.chains import LLMChain
+from langchain.callbacks.tracers import ConsoleCallbackHandler
 
 class Agent():
     def __init__(self, id, llm, persona, persona_description, coordinator, moderator = None):
@@ -34,14 +35,17 @@ class Agent():
         self.chain_feedback = LLMChain(llm=self.llm, prompt=PromptTemplate.from_template(
             template=agent_prompts.feedback(), 
             partial_variables=partial_variables))
-        self.chain_decide = LLMChain(llm=self.llm, prompt=PromptTemplate.from_template(
-            template=agent_prompts.decide_boolean(), 
-            partial_variables=partial_variables))
     
-    def improve(self, unique_id, turn, memory_ids, template_filling):
+    def improve(self, unique_id, turn, memory_ids, template_filling, extract_all_drafts):
         res = self.chain_improve.invoke(template_filling)["text"]
         #for a in agents_to_update:
         #    a.updateMemory(unique_id, turn, self.id, self.persona, "improve", res, memory_ids)
+        current_draft = None
+        if extract_all_drafts:
+            current_draft = self.coordinator.chain_extract_result.invoke(
+                {
+                    "result": res
+                })["text"]
         memory = {
             "unique_id": unique_id, 
             "turn":turn, 
@@ -49,16 +53,23 @@ class Agent():
             "persona":self.persona, 
             "contribution":"improve", 
             "text":res, 
-            "memory_ids":memory_ids
+            "extracted_draft": current_draft,
+            "memory_ids":memory_ids,
+            "template_filling":template_filling
         }
-        self.coordinator.updateGlobalMemory(unique_id, turn, self.id, self.persona, "improve", res, memory_ids)
+        self.coordinator.updateGlobalMemory(unique_id, turn, self.id, self.persona, "improve", res, current_draft, memory_ids, template_filling)
         return res, memory
     
-    def draft(self, unique_id, turn, memory_ids, template_filling):
+    def draft(self, unique_id, turn, memory_ids, template_filling, extract_all_drafts):
         res = self.chain_draft.invoke(template_filling)["text"]
         #for a in agents_to_update:
         #    a.updateMemory(unique_id, turn, self.id, self.persona, "draft", res, memory_ids)
-        self.coordinator.updateGlobalMemory(unique_id, turn, self.id, self.persona, "draft", res, memory_ids)
+        current_draft = None
+        if extract_all_drafts:
+            current_draft = self.coordinator.chain_extract_result.invoke(
+                {
+                    "result": res
+                })["text"]
         memory = {
             "unique_id": unique_id, 
             "turn":turn, 
@@ -66,15 +77,15 @@ class Agent():
             "persona":self.persona, 
             "contribution":"draft", 
             "text":res, 
-            "memory_ids":memory_ids
+            "extracted_draft": current_draft,
+            "memory_ids":memory_ids,
+            "template_filling":template_filling
         }
+        self.coordinator.updateGlobalMemory(unique_id, turn, self.id, self.persona, "draft", res, current_draft, memory_ids, template_filling)
         return res, memory
 
-    def feedback(self, unique_id, turn, memory_ids, template_filling):
+    def feedback(self, unique_id, turn, memory_ids, template_filling, extract_all_drafts):
         res = self.chain_feedback.invoke(template_filling)["text"]
-        #for a in agents_to_update:
-        #    a.updateMemory(unique_id, turn, self.id, self.persona, "feedback", res, memory_ids)
-        self.coordinator.updateGlobalMemory(unique_id, turn, self.id, self.persona, "feedback", res, memory_ids)
         memory = {
             "unique_id": unique_id, 
             "turn":turn, 
@@ -82,20 +93,23 @@ class Agent():
             "persona":self.persona, 
             "contribution":"feedback", 
             "text":res, 
-            "memory_ids":memory_ids
+            "extracted_draft": None,
+            "memory_ids":memory_ids,
+            "template_filling":template_filling
         }
+        self.coordinator.updateGlobalMemory(unique_id, turn, self.id, self.persona, "feedback", res, None, memory_ids, template_filling)
         return res, memory
 
-    def updateMemory(self, unique_id, turn, agent_id, agent_persona, contribution, text, memory_ids):
+    def updateMemory(self, unique_id, turn, agent_id, agent_persona, contribution, text, extracted_draft, memory_ids, prompt_args):
         '''
         Updates the dbm memory with another discussion entry.
         Returns string
         '''
         with dbm.open(self.memory_bucket, 'c') as db:
-            db[str(unique_id)] = f'''{{"turn": {turn}, "agent_id": {agent_id}, "agent_persona": "{str(agent_persona).replace('"',"'")}", "contribution": "{contribution}", "memory_ids": {memory_ids}, "text": "{str(text).replace('"',"'")}"}}'''
+            db[str(unique_id)] = f'''{{"turn": {turn}, "agent_id": {agent_id}, "persona": "{str(agent_persona).replace('"',"'")}", "prompt_args":{prompt_args}, "contribution": "{contribution}", "memory_ids": {memory_ids}, "text": "{str(text).replace('"',"'")}", "extracted_draft": "{str(extracted_draft).replace('"',"'")}"}}'''
         self.saveMemoryToJson()
 
-    def getMemory(self, context_length=None, turn=None, include_this_turn=False):
+    def getMemory(self, context_length=None, turn=None, include_this_turn=False, extract_draft=False):
         '''
         Retrieves memory from the agents memory bucket as a dictionary
         Returns: dict
@@ -115,50 +129,43 @@ class Agent():
                         if turn > m[1]["turn"] or include_this_turn:
                             context_memory.append(m)
                             memory_ids.append(int(m[0]))
-                            if m[1]["contribution"] == "draft" or (m[1]["contribution"] == "improve" and "disagree" in m[1]["text"].lower() and not self.moderator):
+                            if m[1]["contribution"] == "draft" or (m[1]["contribution"] == "improve" and "disagree" in m[1]["text"].lower()):
                                 current_draft = m[1]["text"]
                 else:
                     context_memory.append(m)
                     memory_ids.append(int(m[0]))
-                    if m[1]["contribution"] == "draft" or (m[1]["contribution"] == "improve" and "disagree" in m[1]["text"].lower() and not self.moderator):
+                    if m[1]["contribution"] == "draft" or (m[1]["contribution"] == "improve" and "disagree" in m[1]["text"].lower()):
                         current_draft = m[1]["text"]
 
             context_memory = dict(context_memory)
         else:
             context_memory = None
         
-        if current_draft:
-            #print("before")
-            #print(current_draft)
+        if current_draft and extract_draft:
             current_draft = self.coordinator.chain_extract_result.invoke(
                 {
                     "result": current_draft
                 })["text"]
-            
-            #print("after")
-            #print(current_draft)
         return context_memory, memory_ids, current_draft
 
-    def getMemoryString(self, context_length=None,  turn=None, personalized = True, include_this_turn=False):
+    def getMemoryString(self, context_length=None,  turn=None, personalized = True, include_this_turn=False, extract_draft=False):
         '''
         Retrieves memory from the agents memory bucket as a string
         context_length refers to the amount of turns the agent can use as rationale
         Returns: string
         '''
-        memory, memory_ids, current_draft = self.getMemory(context_length=context_length, turn=turn, include_this_turn=include_this_turn)
+        memory, memory_ids, current_draft = self.getMemory(context_length=context_length, turn=turn, include_this_turn=include_this_turn, extract_draft=extract_draft)
         if memory:
             memory_string = ""
             for key in memory:
-                if memory[key]["agent_persona"] != self.persona:
-                    memory_string = memory_string + f"\n[INST]{memory[key]["agent_persona"]}: {memory[key]["text"]}[/INST]"
+                if memory[key]["persona"] != self.persona:
+                    memory_string = memory_string + f"\n[INST]{memory[key]["persona"]}: {memory[key]["text"]}[/INST]"
                 else:
-                    memory_string = memory_string + f"\n{memory[key]["agent_persona"]}: {memory[key]["text"]}"
+                    memory_string = memory_string + f"\n{memory[key]["persona"]}: {memory[key]["text"]}"
             if personalized:
                 memory_string = memory_string.replace(f"{self.persona}:", f"{self.persona} (you):")
         else:
             memory_string = "None"
-        #print("--------> MEMORY:")
-        #print(memory_string)
         return memory_string, memory_ids, current_draft
     
     def saveMemoryToJson(self, out=None):

@@ -4,7 +4,7 @@ from framework.agents.agent import *
 
 class Panelist(Agent):
     
-    def participate(self, use_moderator, memories, agreements, unique_id, turn, memory_ids, template_filling):
+    def participate(self, use_moderator, memories, agreements, unique_id, turn, memory_ids, template_filling, extract_all_drafts):
         '''
         Either calls feedback() or improve() depending on wether a moderator is present 
         '''
@@ -13,14 +13,16 @@ class Panelist(Agent):
                 unique_id = unique_id, 
                 turn = turn, 
                 memory_ids = memory_ids,
-                template_filling = template_filling
+                template_filling = template_filling,
+                extract_all_drafts=extract_all_drafts
                 )
         else:
             res, memory = self.improve(
                 unique_id = unique_id, 
                 turn = turn, 
                 memory_ids = memory_ids,
-                template_filling = template_filling
+                template_filling = template_filling,
+                extract_all_drafts=extract_all_drafts
                 )
         memories.append(memory)
         memories = self.coordinator.updateMemories(memories, self.coordinator.agents)
