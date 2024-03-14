@@ -12,11 +12,12 @@ Profiles: {{
     "Math expert": "A person who is good at math games, arithmetic calculation, and long-term planning."
 }}
 ---
-Example Task 2: Write a poem that meets the following requirements: (1) the poem has seven lines, and the first letters of each line form the word "CHATGPT"; (2) the poem is about explaining what is a quantum computer. (3) the poem needs to be easy to understand by a ten year old kid.
+Example Task 2: Write a poem that meets the following requirements.
+Input: (1) the poem has seven lines, and the first letters of each line form the word "CHATGPT"; (2) the poem is about explaining what is a quantum computer. (3) the poem needs to be easy to understand by a ten year old kid.
 
 Profiles: {{
     "Poet": "A person who studies and creates poetry. The poet is familiar with the rules and formats of poetry and can provide guidance on how to write a poem.",
-    "Computer Scientist": "A scholar who specializes in the academic study of computer science. The computer scientist is familiar with the concept of a quantum computer and can provide guidance on how to explain it.",
+    "Computer scientist": "A scholar who specializes in the academic study of computer science. The computer scientist is familiar with the concept of a quantum computer and can provide guidance on how to explain it.",
     "Ten year old child": "A child with a limited English vocabulary and little knowledge about complicated concepts, such as a quantum computer."
 }}
 ---
@@ -36,5 +37,14 @@ def extract_result():
 {result}
 
 Now extract the final result: {sys_e}\
+'''
+    return template
+
+def baseline():
+    template = '''\
+{sys_s}Please consider the example provided and think it step by step.
+Task: {task_instruction}
+Input: {input}
+Utilize your talent and critical thinking to provide a solution. {sys_e}\
 '''
     return template

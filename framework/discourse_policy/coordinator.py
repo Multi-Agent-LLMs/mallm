@@ -37,6 +37,9 @@ class Coordinator():
         self.chain_extract_result = LLMChain(llm=self.llm, prompt=PromptTemplate.from_template(
             template=coordinator_prompts.extract_result(), 
             partial_variables=partial_variables))
+        self.chain_baseline = LLMChain(llm=self.llm, prompt=PromptTemplate.from_template(
+            template=coordinator_prompts.baseline(), 
+            partial_variables=partial_variables))
 
     def initAgents(self, task_instruction, input, use_moderator, persona_type = "expert"):
         '''
@@ -102,7 +105,7 @@ class Coordinator():
             self.panelists.append(Panelist(i+1, self.llm, p, self.personas[p], self))
 
         if use_moderator:
-            self.agents = self.panelists + [self.moderator]
+            self.agents = [self.moderator] + self.panelists
         else:
             self.agents = self.panelists
         return True
@@ -172,9 +175,11 @@ class Coordinator():
         Updates the dbm memory with another discussion entry.
         Returns string
         '''
+        if extracted_draft:
+            extracted_draft = str(extracted_draft).replace('"',"'")
         with dbm.open(self.memory_bucket, 'c') as db:
-            db[str(unique_id)] = f'''{{"turn": {turn}, "agent_id": {agent_id}, "persona": "{str(agent_persona).replace('"',"'")}", "prompt_args":{prompt_args}, "contribution": "{contribution}", "memory_ids": {memory_ids}, "text": "{str(text).replace('"',"'")}", "extracted_draft": "{str(extracted_draft).replace('"',"'")}"}}'''
-            print(str(unique_id) + ": " + json.dumps(json.loads(str(db[str(unique_id)])), indent=2))   # logging
+            db[str(unique_id)] = f'''{{"turn": {turn}, "agent_id": {agent_id}, "persona": "{str(agent_persona).replace('"',"'")}", "prompt_args":{prompt_args}, "contribution": "{contribution}", "memory_ids": {memory_ids}, "text": "{str(text).replace('"',"'")}", "extracted_draft": "{extracted_draft}"}}'''
+            print(str(unique_id) + ": " + str(db[str(unique_id)]))   # logging
         self.saveGlobalMemoryToJson()
     
     def getGlobalMemory(self):
@@ -220,11 +225,13 @@ class Coordinator():
                 a.updateMemory(c["unique_id"], c["turn"], c["id"], c["persona"], c["contribution"], c["text"], c["extracted_draft"], c["memory_ids"], c["template_filling"])
         return []
 
-    def agree(self, res, agreements, is_moderator=False):
+    def agree(self, res, agreements, is_moderator=False, self_drafted=False):
         if ("agree" in res.lower() and "disagree" not in res.lower()) and (not is_moderator):
             agreements.append(True)
+        elif self_drafted:
+            agreements.append(True)
         elif not is_moderator:
-                agreements.append(False)
+            agreements.append(False)
 
         if len(agreements) > len(self.panelists):
             agreements = agreements[len(agreements)-len(self.panelists):]
@@ -238,9 +245,14 @@ class Coordinator():
         if not self.initAgents(task_instruction, input, use_moderator=use_moderator):
             print("Failed to intialize agents.")
             return None, None, None, None # if the LLM failed to initialize the agents, do not discuss
-        self.decision_making = MajorityConsensus(self.agents, use_moderator)
 
         personas = [a.persona for a in self.agents]
+        if len(personas) <= 1:
+            print("Only one or zero personas were generated. No discussion is possible.")
+            return None, None, None, None # if the LLM failed to initialize the agents, do not discuss
+        
+        self.decision_making = MajorityConsensus(self.agents, use_moderator)
+
         print(f'''
             Starting discussion...
             -------------
@@ -312,7 +324,7 @@ class Coordinator():
                         "agent_memory": memory_string
                     }
 
-                    memories, agreements = p.participate(use_moderator, memories, agreements, unique_id, turn, memory_ids, template_filling, extract_all_drafts)
+                    memories, agreements = p.participate(use_moderator, memories, agreements, unique_id, turn, memory_ids, template_filling, extract_all_drafts, self.agents)
                     unique_id = unique_id + 1
                 
                 decision = self.decision_making.decide(agreements, turn)
@@ -325,14 +337,77 @@ class Coordinator():
                 │        │ │        │
                 │        │ │        │
                 │        │ │        │
-            ┌───┼────────┘ └───────►├───┐
+            ┌───┼◄───────┘ └───────►├───┐
             │A 3│                   │A 2│
             └───┘                   └───┘
             ''')
-            print("This feature has not been implemented yet.")
+
             while not decision and (turn < max_turns or max_turns is None):
                 turn = turn + 1
 
+                # ---- Agent A1
+                if use_moderator:
+                    memory_string, memory_ids, current_draft = self.moderator.getMemoryString(
+                        context_length=context_length, 
+                        turn=turn, 
+                        include_this_turn=include_current_turn_in_memory
+                        )
+
+                    template_filling = {
+                        "task_instruction": task_instruction,
+                        "input": input,
+                        "current_draft": current_draft,
+                        "persona": self.moderator.persona,
+                        "persona_description": self.moderator.persona_description,
+                        "agent_memory": memory_string
+                    }
+                    res, memory = self.moderator.draft(unique_id, turn, memory_ids, template_filling, extract_all_drafts)
+                    memories.append(memory)
+                    memories = self.updateMemories(memories, self.agents)
+                    agreements = self.agree(res, agreements, is_moderator=True)
+                    unique_id = unique_id + 1
+                else:
+                    memory_string, memory_ids, current_draft = self.panelists[0].getMemoryString(
+                        context_length=context_length, 
+                        turn=turn, 
+                        include_this_turn=include_current_turn_in_memory
+                        )
+                    template_filling = {
+                        "task_instruction": task_instruction,
+                        "input": input,
+                        "current_draft": current_draft,
+                        "persona": self.panelists[0].persona,
+                        "persona_description": self.panelists[0].persona_description,
+                        "agent_memory": memory_string
+                    }
+                    res, memory = self.panelists[0].draft(unique_id, turn, memory_ids, template_filling, extract_all_drafts)
+                    memories.append(memory)
+                    memories = self.updateMemories(memories, self.agents)
+                    agreements = self.agree(res, agreements, is_moderator=True, self_drafted=True) # for this paradigm to work, agent 1 has to act as (non-neutral) moderator
+                    unique_id = unique_id + 1
+
+                # ---- Agents A2, A3, A4, ...
+                for p in self.agents[1:]:
+                    memory_string, memory_ids, current_draft = p.getMemoryString(
+                        context_length=context_length, 
+                        turn=turn,
+                        include_this_turn=include_current_turn_in_memory
+                        )
+                    template_filling = {
+                        "task_instruction": task_instruction,
+                        "input": input,
+                        "current_draft": current_draft,
+                        "persona": p.persona,
+                        "persona_description": p.persona_description,
+                        "sents_min": feedback_sentences[0],
+                        "sents_max": feedback_sentences[1],
+                        "agent_memory": memory_string
+                    }
+
+                    memories, agreements = p.participate(True, memories, agreements, unique_id, turn, memory_ids, template_filling, extract_all_drafts, [self.agents[0], p])
+                    unique_id = unique_id + 1
+
+                decision = self.decision_making.decide(agreements, turn)
 
         elif paradigm == "relay": #-----------------------------------------------
             print('''Paradigm: Relay
@@ -346,7 +421,48 @@ class Coordinator():
             │A 3│◄──────────────────┤A 2│
             └───┘                   └───┘
             ''')
-            print("This feature has not been implemented yet.")
+
+            while not decision and (turn < max_turns or max_turns is None):
+                turn = turn + 1
+
+                for i, a in enumerate(self.agents):
+                    memory_string, memory_ids, current_draft = a.getMemoryString(
+                        context_length=context_length, 
+                        turn=turn,
+                        include_this_turn=include_current_turn_in_memory
+                        )
+                    next_a = i+1
+                    if i == len(self.agents)-1:
+                        next_a = 0  # start again with agent 0 (loop)
+                    if a == self.moderator:
+                        template_filling = {
+                            "task_instruction": task_instruction,
+                            "input": input,
+                            "current_draft": current_draft,
+                            "persona": self.moderator.persona,
+                            "persona_description": self.moderator.persona_description,
+                            "agent_memory": memory_string
+                        }
+                        res, memory = self.moderator.draft(unique_id, turn, memory_ids, template_filling, extract_all_drafts)
+                        memories.append(memory)
+                        memories = self.updateMemories(memories, [a, self.agents[next_a]])
+                        agreements = self.agree(res, agreements, is_moderator=True)
+                    else:
+                        template_filling = {
+                            "task_instruction": task_instruction,
+                            "input": input,
+                            "current_draft": current_draft,
+                            "persona": a.persona,
+                            "persona_description": a.persona_description,
+                            "sents_min": feedback_sentences[0],
+                            "sents_max": feedback_sentences[1],
+                            "agent_memory": memory_string
+                        }
+                        memories, agreements = a.participate(use_moderator, memories, agreements, unique_id, turn, memory_ids, template_filling, extract_all_drafts, [a, self.agents[next_a]])
+                    unique_id = unique_id + 1
+                
+                decision = self.decision_making.decide(agreements, turn)
+
         elif paradigm == "debate": #-----------------------------------------------
             print('''Paradigm: Debate
                         ┌───┐
@@ -364,12 +480,12 @@ class Coordinator():
         globalMem = self.getGlobalMemory()
         agentMems = []
         for a in self.agents:
-            agentMems.append(a.getMemory())
+            agentMems.append(a.getMemory()[0])
 
         if turn >= max_turns: # if no agreement was reached
             current_draft = None
         else:
-            current_draft = self.coordinator.chain_extract_result.invoke(
+            current_draft = self.chain_extract_result.invoke(
                 {
                     "result": current_draft
                 })["text"]

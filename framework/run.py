@@ -56,6 +56,7 @@ def main(data, out, use_moderator = False, max_turns = 10, feedback_sentences = 
         output_dicts.append({
                     "task_instruction": sample["task_instruction"],
                     "personas": coordinator.personas,
+                    "paradigm": paradigm,
                     "input": sample["input"],
                     "answer": answer,
                     "turns": turn,

@@ -23,7 +23,7 @@ class MajorityConsensus():
 
     def decide(self, agreements, turn):
         if len(self.agents) - self.use_moderator <= 3 and turn < 5:
-            return len([a for a in agreements if a is True]) == 3   # all agents need to agree in the first 5 turns (except draft proposer)
+            return len([a for a in agreements if a is True]) == len(self.agents) - self.use_moderator   # all agents need to agree in the first 5 turns (except draft proposer)
         else:
             return len([a for a in agreements if a is True]) > (len(self.agents) - self.use_moderator)/2  # more than half of the agents need to agree (except moderator and draft proposer)
         

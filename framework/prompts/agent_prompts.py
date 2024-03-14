@@ -7,9 +7,9 @@ This is the recent feedback by others:
 {agent_memory}
 Here is the current solution you need to consider:
 Solution: {inst_s}{current_draft}{inst_e}
-Based on the current solution, give constructive feedback while considering your assigned role.
+Based on the current solution, give constructive feedback while considering your assigned role. Be open to compromise too.
 Your role: {persona} ({persona_description})
-Utilize your talent and critical thinking to provide feedback in {sents_min}-{sents_max} sentences. If you agree, just answer with [AGREE]. If you [DISAGREE], explain why.{sys_e}\
+Utilize your talent and critical thinking to provide feedback in {sents_min}-{sents_max} sentences. If you agree, answer with [AGREE] and repeat the solution. If you [DISAGREE], explain why.{sys_e}\
 '''
     return template
 
@@ -22,9 +22,9 @@ This is the recent feedback by others:
 {agent_memory}
 Here is the current solution you need to consider:
 Solution: {inst_s}{current_draft}{inst_e}
-Based on the current solution, carefully re-examine your previous answer while considering your assigned role.
+Based on the current solution, carefully re-examine your previous answer while considering your assigned role. Be open to compromise too.
 Your role: {persona} ({persona_description})
-Utilize your talent and critical thinking to provide feedback in {sents_min}-{sents_max} sentences and a new solution in as many sentences as you need. If you agree, just answer with [AGREE]. If you [DISAGREE], explain why.{sys_e}\
+Utilize your talent and critical thinking to provide feedback in {sents_min}-{sents_max} sentences and a new solution in as many sentences as you need. If you agree, answer with [AGREE] and repeat the solution. If you [DISAGREE], explain why.{sys_e}\
 '''
     return template
 

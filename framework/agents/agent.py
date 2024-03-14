@@ -84,7 +84,7 @@ class Agent():
         self.coordinator.updateGlobalMemory(unique_id, turn, self.id, self.persona, "draft", res, current_draft, memory_ids, template_filling)
         return res, memory
 
-    def feedback(self, unique_id, turn, memory_ids, template_filling, extract_all_drafts):
+    def feedback(self, unique_id, turn, memory_ids, template_filling):
         res = self.chain_feedback.invoke(template_filling)["text"]
         memory = {
             "unique_id": unique_id, 
@@ -105,11 +105,13 @@ class Agent():
         Updates the dbm memory with another discussion entry.
         Returns string
         '''
+        if extracted_draft:
+            extracted_draft = str(extracted_draft).replace('"',"'")
         with dbm.open(self.memory_bucket, 'c') as db:
-            db[str(unique_id)] = f'''{{"turn": {turn}, "agent_id": {agent_id}, "persona": "{str(agent_persona).replace('"',"'")}", "prompt_args":{prompt_args}, "contribution": "{contribution}", "memory_ids": {memory_ids}, "text": "{str(text).replace('"',"'")}", "extracted_draft": "{str(extracted_draft).replace('"',"'")}"}}'''
+            db[str(unique_id)] = f'''{{"turn": {turn}, "agent_id": {agent_id}, "persona": "{str(agent_persona).replace('"',"'")}", "prompt_args":{prompt_args}, "contribution": "{contribution}", "memory_ids": {memory_ids}, "text": "{str(text).replace('"',"'")}", "extracted_draft": "{extracted_draft}"}}'''
         self.saveMemoryToJson()
 
-    def getMemory(self, context_length=None, turn=None, include_this_turn=False, extract_draft=False):
+    def getMemory(self, context_length=None, turn=None, include_this_turn=True, extract_draft=False):
         '''
         Retrieves memory from the agents memory bucket as a dictionary
         Returns: dict
@@ -148,7 +150,7 @@ class Agent():
                 })["text"]
         return context_memory, memory_ids, current_draft
 
-    def getMemoryString(self, context_length=None,  turn=None, personalized = True, include_this_turn=False, extract_draft=False):
+    def getMemoryString(self, context_length=None,  turn=None, personalized = True, include_this_turn=True, extract_draft=False):
         '''
         Retrieves memory from the agents memory bucket as a string
         context_length refers to the amount of turns the agent can use as rationale
