@@ -9,7 +9,8 @@ Input: 6 12 1 1
 
 Profiles: {{
     "Puzzle master": "A super-intelligent person who is capable of solving complex puzzles that require high cognitive skills.",
-    "Math expert": "A person who is good at math games, arithmetic calculation, and long-term planning."
+    "Math expert": "A person who is good at math games, arithmetic calculation, and long-term planning.",
+    "Artificial Intelligence": "A highly capable computer program that does not make any human mistakes.",
 }}
 ---
 Example Task 2: Write a poem that meets the following requirements.
@@ -22,7 +23,7 @@ Profiles: {{
 }}
 ---
 
-Now, identify participants relevant to the task and provide their profiles as a dictionary in curly braces {{ }} using correct quotation marks for strings. Remember to present your final output after the prefix "Profiles:".
+Now, identify at least 3 participants relevant to the task and provide their profiles as a dictionary in curly braces {{ }} using correct quotation marks for strings. Remember to present your final output after the prefix "Profiles:".
 
 Task: {task_instruction}
 Input: {input}

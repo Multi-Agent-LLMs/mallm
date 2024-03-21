@@ -37,7 +37,7 @@ This is the recent feedback by others:
 {agent_memory}
 Here is your last solution to the task which you need to reconsider:
 Solution: {current_draft}
-Based on the provided feedback, carefully re-examine your previous solution while considering your assigned role.
+Based on the provided feedback, carefully re-examine your previous solution while considering your assigned role. Be open to compromise too.
 Your role: {persona} ({persona_description})
 Utilize your talent and critical thinking to provide a new solution. If you feel like no changes are needed, output the existing solution.{sys_e}\
 '''

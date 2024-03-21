@@ -7,7 +7,6 @@ import fire
 from framework.prompts import agent_prompts
 from langchain_core.prompts import PromptTemplate
 from langchain.chains import LLMChain
-from langchain.callbacks.tracers import ConsoleCallbackHandler
 
 class Agent():
     def __init__(self, id, llm, persona, persona_description, coordinator, moderator = None):
@@ -36,10 +35,9 @@ class Agent():
             template=agent_prompts.feedback(), 
             partial_variables=partial_variables))
     
-    def improve(self, unique_id, turn, memory_ids, template_filling, extract_all_drafts):
+    def improve(self, unique_id, turn, memory_ids, template_filling, extract_all_drafts, agreements):
         res = self.chain_improve.invoke(template_filling)["text"]
-        #for a in agents_to_update:
-        #    a.updateMemory(unique_id, turn, self.id, self.persona, "improve", res, memory_ids)
+        agreements = self.coordinator.agree(res, agreements)
         current_draft = None
         if extract_all_drafts:
             current_draft = self.coordinator.chain_extract_result.invoke(
@@ -53,23 +51,27 @@ class Agent():
             "persona":self.persona, 
             "contribution":"improve", 
             "text":res, 
+            "agreement":agreements[-1], 
             "extracted_draft": current_draft,
             "memory_ids":memory_ids,
             "template_filling":template_filling
         }
-        self.coordinator.updateGlobalMemory(unique_id, turn, self.id, self.persona, "improve", res, current_draft, memory_ids, template_filling)
-        return res, memory
+        self.coordinator.updateGlobalMemory(unique_id, turn, self.id, self.persona, "improve", res, agreements[-1], None, memory_ids, template_filling)
+        return res, memory, agreements
     
-    def draft(self, unique_id, turn, memory_ids, template_filling, extract_all_drafts):
+    def draft(self, unique_id, turn, memory_ids, template_filling, extract_all_drafts, agreements, is_moderator=False):
         res = self.chain_draft.invoke(template_filling)["text"]
-        #for a in agents_to_update:
-        #    a.updateMemory(unique_id, turn, self.id, self.persona, "draft", res, memory_ids)
+        agreements = self.coordinator.agree(res, agreements, is_moderator, self_drafted=True)
         current_draft = None
         if extract_all_drafts:
             current_draft = self.coordinator.chain_extract_result.invoke(
                 {
                     "result": res
                 })["text"]
+        if is_moderator:
+            agreement = None
+        else:
+            agreement = agreements[-1]
         memory = {
             "unique_id": unique_id, 
             "turn":turn, 
@@ -77,15 +79,17 @@ class Agent():
             "persona":self.persona, 
             "contribution":"draft", 
             "text":res, 
+            "agreement":agreement, 
             "extracted_draft": current_draft,
             "memory_ids":memory_ids,
             "template_filling":template_filling
         }
-        self.coordinator.updateGlobalMemory(unique_id, turn, self.id, self.persona, "draft", res, current_draft, memory_ids, template_filling)
-        return res, memory
+        self.coordinator.updateGlobalMemory(unique_id, turn, self.id, self.persona, "draft", res, agreement, None, memory_ids, template_filling)
+        return res, memory, agreements
 
-    def feedback(self, unique_id, turn, memory_ids, template_filling):
+    def feedback(self, unique_id, turn, memory_ids, template_filling, agreements):
         res = self.chain_feedback.invoke(template_filling)["text"]
+        agreements = self.coordinator.agree(res, agreements)
         memory = {
             "unique_id": unique_id, 
             "turn":turn, 
@@ -93,14 +97,15 @@ class Agent():
             "persona":self.persona, 
             "contribution":"feedback", 
             "text":res, 
+            "agreement":agreements[-1], 
             "extracted_draft": None,
             "memory_ids":memory_ids,
             "template_filling":template_filling
         }
-        self.coordinator.updateGlobalMemory(unique_id, turn, self.id, self.persona, "feedback", res, None, memory_ids, template_filling)
-        return res, memory
+        self.coordinator.updateGlobalMemory(unique_id, turn, self.id, self.persona, "feedback", res, agreements[-1], None, memory_ids, template_filling)
+        return res, memory, agreements
 
-    def updateMemory(self, unique_id, turn, agent_id, agent_persona, contribution, text, extracted_draft, memory_ids, prompt_args):
+    def updateMemory(self, unique_id, turn, agent_id, persona, contribution, text, agreement, extracted_draft, memory_ids, prompt_args):
         '''
         Updates the dbm memory with another discussion entry.
         Returns string
@@ -108,7 +113,7 @@ class Agent():
         if extracted_draft:
             extracted_draft = str(extracted_draft).replace('"',"'")
         with dbm.open(self.memory_bucket, 'c') as db:
-            db[str(unique_id)] = f'''{{"turn": {turn}, "agent_id": {agent_id}, "persona": "{str(agent_persona).replace('"',"'")}", "prompt_args":{prompt_args}, "contribution": "{contribution}", "memory_ids": {memory_ids}, "text": "{str(text).replace('"',"'")}", "extracted_draft": "{extracted_draft}"}}'''
+            db[str(unique_id)] = f'''{{"turn": {turn}, "agent_id": {agent_id}, "persona": "{str(persona).replace('"',"'")}", "prompt_args":{prompt_args}, "contribution": "{contribution}", "memory_ids": {memory_ids}, "text": "{str(text).replace('"',"'")}", "agreement": {agreement}, "extracted_draft": "{str(extracted_draft).replace('"', "'")}"}}'''
         self.saveMemoryToJson()
 
     def getMemory(self, context_length=None, turn=None, include_this_turn=True, extract_draft=False):

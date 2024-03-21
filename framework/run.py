@@ -39,7 +39,7 @@ def main(data, out, use_moderator = False, max_turns = 10, feedback_sentences = 
         coordinator.cleanMemoryBucket()
         start_time = time.perf_counter()
 
-        answer, globalMem, agentMems, turn = coordinator.discuss(
+        answer, globalMem, agentMems, turn, agreements = coordinator.discuss(
             sample["task_instruction"], 
             sample["input"],
             use_moderator, 
@@ -50,20 +50,21 @@ def main(data, out, use_moderator = False, max_turns = 10, feedback_sentences = 
             include_current_turn_in_memory=include_current_turn_in_memory
         )
 
-        discussion_time = timedelta(seconds=time.perf_counter() - start_time).total_seconds()
-        print(f"--> Job took {discussion_time} to get the final answer: \n" + str(answer))
+        discussion_time = '%.2f' % timedelta(seconds=time.perf_counter() - start_time).total_seconds()
+        print(f"--> Agents discussed for {discussion_time} seconds to get the final answer: \n" + str(answer))
 
         output_dicts.append({
-                    "task_instruction": sample["task_instruction"],
-                    "personas": coordinator.personas,
-                    "paradigm": paradigm,
-                    "input": sample["input"],
-                    "answer": answer,
-                    "turns": turn,
-                    "time": discussion_time,
-                    "global_memory": globalMem,
-                    "agent_memory": agentMems
-                })
+            "task_instruction": sample["task_instruction"],
+            "personas": coordinator.personas,
+            "paradigm": paradigm,
+            "input": sample["input"],
+            "answer": answer,
+            "agreements": agreements,
+            "turns": turn,
+            "time": discussion_time,
+            "global_memory": globalMem,
+            "agent_memory": agentMems
+        })
         with open(out, 'w') as file:
             file.write(json.dumps(output_dicts))
             file.truncate()
