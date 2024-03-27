@@ -12,10 +12,11 @@ import fire, glob, dbm, re
 from langchain_community.llms import HuggingFacePipeline
 from torch import cuda, bfloat16
 import transformers
+transformers.logging.set_verbosity_error()
 from setup import *
 
 class Coordinator():
-    def __init__(self, use_moderator = True):
+    def __init__(self, use_moderator = True, verbose = False):
         self.personas = None
         self.panelists = []
         self.agents = []
@@ -25,6 +26,7 @@ class Coordinator():
         self.decision_making = None
         self.llm_tokenizer = None
         self.llm = self.create_llm()
+        self.verbose = verbose
         
         if "llama" in self.llm_tokenizer.__class__.__name__.lower():    # use <<SYS>> and [INST] tokens for llama models
             partial_variables = {"sys_s": "<<SYS>>", "sys_e": "<</SYS>>", "inst_s": "[INST]", "inst_e": "[/INST]"}
@@ -58,7 +60,9 @@ class Coordinator():
         }
 
         res = self.chain_identify_personas.invoke(template_filling)["text"]
-        
+        if self.verbose:
+            print(res)
+
         # TODO: Use grammar to force LLM output in the correct JSON format. Example with llama.ccp: https://til.simonwillison.net/llms/llama-cpp-python-grammars
 
         # repair dictionary in string if the LLM did mess up the formatting
@@ -181,7 +185,8 @@ class Coordinator():
         '''
         with dbm.open(self.memory_bucket, 'c') as db:
             db[str(unique_id)] = f'''{{"turn": {turn}, "agent_id": {agent_id}, "persona": "{str(persona).replace('"',"'")}", "prompt_args":{prompt_args}, "contribution": "{contribution}", "memory_ids": {memory_ids}, "text": "{str(text).replace('"',"'")}", "agreement": {agreement}, "extracted_draft": "{str(extracted_draft).replace('"', "'")}"}}'''
-            print(str(unique_id) + ": " + str(db[str(unique_id)]))   # logging
+            if self.verbose:
+                print(str(unique_id) + ": " + str(db[str(unique_id)]))   # logging
         self.saveGlobalMemoryToJson()
     
     def getGlobalMemory(self):
@@ -207,6 +212,9 @@ class Coordinator():
             print(self.getGlobalMemory())
 
     def cleanMemoryBucket(self):
+        '''
+        Deletes all stored global memory
+        '''
         filelist = glob.glob(os.path.join(memory_bucket_dir, "*.bak"))
         for f in filelist:
             os.remove(f)
@@ -222,12 +230,19 @@ class Coordinator():
         print("Cleaned the memory bucket.")
 
     def updateMemories(self, memories, agents_to_update):
+        '''
+        Updates the memories of all declared agents.
+        '''
         for c in memories:
             for a in agents_to_update:
                 a.updateMemory(c["unique_id"], c["turn"], c["id"], c["persona"], c["contribution"], c["text"], c["agreement"], c["extracted_draft"], c["memory_ids"], c["template_filling"])
         return []
 
     def agree(self, res, agreements, is_moderator=False, self_drafted=False):
+        '''
+        Determines whether a string given by an agent means an agreement or disagreement.
+        Returns bool
+        '''
         if ("agree" in res.lower() and "disagree" not in res.lower()) and (not is_moderator):
             agreements.append(True)
         elif self_drafted and not is_moderator:
@@ -239,10 +254,19 @@ class Coordinator():
             agreements = agreements[-len(self.panelists):]
         return agreements
 
-    def discuss(self, task_instruction, input, use_moderator, feedback_sentences = [3,4], paradigm="memory", max_turns = None, context_length = 1, include_current_turn_in_memory=False, extract_all_drafts=False, debate_rounds = 1):
-        # 1) Assign agents and personas
-        # 2) Create first draft
-        # 3) Iterative feedback loop (drafting and checking for decision-making after turn)
+    def discuss(self, task_instruction, input, context, use_moderator, feedback_sentences = [3,4], paradigm="memory", max_turns = None, context_length = 1, include_current_turn_in_memory=False, extract_all_drafts=False, debate_rounds = 1):
+        '''
+        The routine responsible for the discussion between agents to solve a task.
+
+        The routine is organized as follows:
+        1) Create agents with personas
+        2) Discuss the problem based on the given paradigm (iteratively check for agreement between agents)
+        3) After max turns or agreement reached: return the final result to the task sample
+        
+        Returns the final response agreed on, the global memory, agent specific memory, turns needed, last agreements of agents
+        '''
+        if context:
+            task_instruction += "\n" + "Context: " + context
 
         if not self.initAgents(task_instruction, input, use_moderator=use_moderator):
             print("Failed to intialize agents.")
@@ -256,16 +280,15 @@ class Coordinator():
         self.decision_making = MajorityConsensus(self.panelists)
 
         print(f'''
-            Starting discussion...
-            -------------
-            Instruction: {task_instruction}
-            Input: {input}
-            Feedback sentences: {str(feedback_sentences)}
-            Maximum turns: {max_turns}
-            Agents: {str(personas)}
-            Decision-making: {self.decision_making.__class__.__name__}
-            -------------
-        ''')
+Starting discussion...
+-------------
+Instruction: {task_instruction}
+Input: {input}
+Feedback sentences: {str(feedback_sentences)}
+Maximum turns: {max_turns}
+Agents: {str(personas)}
+Decision-making: {self.decision_making.__class__.__name__}
+-------------''')
         
         decision = None
         turn = 0
@@ -287,6 +310,10 @@ class Coordinator():
             ''')
             while not decision and (turn < max_turns or max_turns is None):
                 turn = turn + 1
+                log = "Ongoing. Current turn: " + str(turn)
+                if not self.verbose:
+                    log = "\r" + log + "        "
+                print (log, end='')
 
                 if use_moderator:
                     memory_string, memory_ids, current_draft = self.moderator.getMemoryString(
@@ -345,6 +372,10 @@ class Coordinator():
 
             while not decision and (turn < max_turns or max_turns is None):
                 turn = turn + 1
+                log = "Ongoing. Current turn: " + str(turn)
+                if not self.verbose:
+                    log = "\r" + log + "        "
+                print (log, end='')
 
                 # ---- Agent A1
                 if use_moderator:
@@ -423,6 +454,10 @@ class Coordinator():
 
             while not decision and (turn < max_turns or max_turns is None):
                 turn = turn + 1
+                log = "Ongoing. Current turn: " + str(turn)
+                if not self.verbose:
+                    log = "\r" + log + "        "
+                print (log, end='')
 
                 for i, a in enumerate(self.agents):
                     memory_string, memory_ids, current_draft = a.getMemoryString(
@@ -478,6 +513,10 @@ class Coordinator():
 
             while not decision and (turn < max_turns or max_turns is None):
                 turn = turn + 1
+                log = "Ongoing. Current turn: " + str(turn)
+                if not self.verbose:
+                    log = "\r" + log + "        "
+                print (log, end='')
 
                 # ---- Agent A1
                 if use_moderator:
