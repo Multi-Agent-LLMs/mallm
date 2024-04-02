@@ -6,3 +6,6 @@ ckpt_dir = "/beegfs/wahle/llama-2-weights/llama-2-70b-chat-hf"
 
 memory_bucket_dir = "/beegfs/wahle/github/MALLM/experiments/memory_bucket/"
 
+PARADIGMS = ["memory", "report", "relay", "debate"]
+
+sample_size = 30    # how many samples to extract from the dataset. Choose 30 because of the central limit theorem
