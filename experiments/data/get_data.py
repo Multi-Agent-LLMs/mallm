@@ -54,8 +54,10 @@ random.shuffle(dataset)
 json_str = ""
 for s in dataset[sample_size:]:
     ref = [k for k, v in s["target_scores"].items() if v == 1]
-    print(ref)
-    json_str += f'''{{ "id":"{str(uuid.uuid4())}", "input":{json.dumps(s['input'])}, "context": null, "references": {json.dumps(ref[0])}, "personas": null }}\n'''
+    multiple_choice_str =  " Answer Choices:"
+    for i, (k, v) in enumerate(s["target_scores"].items()):
+        multiple_choice_str += " " + f"{chr(ord('A') + i)}) " + k
+    json_str += f'''{{ "id":"{str(uuid.uuid4())}", "input":{json.dumps(s['input']+multiple_choice_str)}, "context": null, "references": {json.dumps(ref[0])}, "personas": null }}\n'''
 with open("experiments/data/simple_ethical_questions.json", 'w') as file:
     file.write(json_str)
 
@@ -66,7 +68,11 @@ dataset = json.loads(open("experiments/data/strategyqa.json").read())["examples"
 random.shuffle(dataset)
 json_str = ""
 for s in dataset[sample_size:]:
-    json_str += f'''{{ "id":"{str(uuid.uuid4())}", "input":{json.dumps(s['input'])}, "context": null, "references": {json.dumps(s['target'])}, "personas": null }}\n'''
+    ref = [k for k, v in s["target_scores"].items() if v == 1]
+    multiple_choice_str =  " Answer Choices:"
+    for i, (k, v) in enumerate(s["target_scores"].items()):
+        multiple_choice_str += " " + f"{chr(ord('A') + i)}) " + k
+    json_str += f'''{{ "id":"{str(uuid.uuid4())}", "input":{json.dumps(s['input']+multiple_choice_str)}, "context": null, "references": {json.dumps(s['target'])}, "personas": null }}\n'''
 with open("experiments/data/strategyqa.json", 'w') as file:
     file.write(json_str)
 
