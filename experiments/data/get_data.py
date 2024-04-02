@@ -2,7 +2,6 @@ from datasets import load_dataset
 import sys, os
 sys.path.append("/beegfs/wahle/github/MALLM")
 from setup import *
-from experiments.data.etpc import *
 import urllib.request
 import json, random, uuid
 
@@ -23,7 +22,7 @@ for s in dataset.select(range(sample_size)).iter(batch_size=1):
     json_str += f'''{{ "id":"{str(uuid.uuid4())}", "input":{json.dumps(s['question'][0])}, "context": null, "references": {json.dumps(s['answer'][0])}, "personas": null }}\n'''
 with open("experiments/data/gsm8k.json", 'w') as file:
     file.write(json_str)
-    
+
 print("Downloading Europarl...")
 # Europarl (german to english) (Translation)
 dataset = load_dataset("Helsinki-NLP/europarl", "de-en")
