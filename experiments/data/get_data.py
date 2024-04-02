@@ -13,6 +13,17 @@ import json, random, uuid
 #dataset = dataset["validation"].shuffle(seed=42).select(range(sample_size))
 #dataset.to_json("experiments/data/wmt19.json") 
 
+print("Downloading GSM8K...")
+# GSM8K (Math QA) 
+dataset = load_dataset("gsm8k", 'main')
+dataset.save_to_disk("experiments/data/gsm8k.hf")
+dataset = dataset["test"].shuffle(seed=42).select(range(sample_size))
+json_str = ""
+for s in dataset.select(range(sample_size)).iter(batch_size=1):
+    json_str += f'''{{ "id":"{str(uuid.uuid4())}", "input":{json.dumps(s['question'][0])}, "context": null, "references": {json.dumps(s['answer'][0])}, "personas": null }}\n'''
+with open("experiments/data/gsm8k.json", 'w') as file:
+    file.write(json_str)
+    
 print("Downloading Europarl...")
 # Europarl (german to english) (Translation)
 dataset = load_dataset("Helsinki-NLP/europarl", "de-en")
