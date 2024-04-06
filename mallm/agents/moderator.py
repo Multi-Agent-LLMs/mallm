@@ -1,4 +1,4 @@
-from framework.agents.agent import *
+from mallm.agents.agent import *
 
 
 class Moderator(Agent):

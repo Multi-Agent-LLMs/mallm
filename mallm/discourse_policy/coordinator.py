@@ -6,10 +6,10 @@ from langchain.chains import LLMChain
 from langchain_community.llms import HuggingFacePipeline
 from torch import cuda, bfloat16
 
-from framework.agents.moderator import *
-from framework.agents.panelist import *
-from framework.decision_making.consensus import *
-from framework.prompts import coordinator_prompts
+from mallm.agents.moderator import *
+from mallm.agents.panelist import *
+from mallm.decision_making.consensus import *
+from mallm.prompts import coordinator_prompts
 
 transformers.logging.set_verbosity_error()
 os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"

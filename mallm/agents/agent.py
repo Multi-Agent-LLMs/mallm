@@ -4,7 +4,7 @@ import dbm
 import json
 import ast
 import fire
-from framework.prompts import agent_prompts
+from mallm.prompts import agent_prompts
 from langchain_core.prompts import PromptTemplate
 from langchain.chains import LLMChain
 

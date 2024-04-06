@@ -3,7 +3,7 @@ from datetime import timedelta
 
 from tqdm import tqdm
 
-from framework.discourse_policy.coordinator import *
+from mallm.discourse_policy.coordinator import *
 
 os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
 
