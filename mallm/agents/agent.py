@@ -1,5 +1,5 @@
 import os
-from config import *
+from mallm.config import *
 import dbm
 import json
 import ast

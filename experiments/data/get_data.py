@@ -5,7 +5,7 @@ import uuid
 
 from datasets import load_dataset
 
-from config import *
+from mallm.config import *
 
 # WMT19 (Translation)
 #print("Downloading WMT19...")
