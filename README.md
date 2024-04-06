@@ -3,7 +3,7 @@ Multi-Agent LLMs For Conversational Task-Solving: Framework
 
 ## Install
 Create an environment with
-`conda create --name mallm --file requirements.txt`
+`conda env create -f environment.yml`
 
 You also need the checkpoints for the LLM you want to use. Currently, LLaMA-2-70b-chat has been tested and is working.
 
