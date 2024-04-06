@@ -1,9 +1,11 @@
-from datasets import load_dataset
-import sys, os
-sys.path.append("/beegfs/wahle/github/MALLM")
-from setup import *
+import json
+import random
 import urllib.request
-import json, random, uuid
+import uuid
+
+from datasets import load_dataset
+
+from config import *
 
 # WMT19 (Translation)
 #print("Downloading WMT19...")

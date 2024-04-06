@@ -13,6 +13,7 @@ Utilize your talent and critical thinking to provide feedback in {sents_min}-{se
 '''
     return template
 
+
 def improve():
     template = '''\
 {sys_s}Please consider the example provided and think it step by step.
@@ -27,6 +28,7 @@ Your role: {persona} ({persona_description})
 Utilize your talent and critical thinking to provide feedback in {sents_min}-{sents_max} sentences and a new solution in as many sentences as you need. If you agree, answer with [AGREE] and repeat the solution. If you [DISAGREE], explain why.{sys_e}\
 '''
     return template
+
 
 def draft():
     template = '''\

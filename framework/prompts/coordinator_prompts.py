@@ -32,6 +32,7 @@ Profiles: {sys_e}\
 '''
     return template
 
+
 def extract_result():
     template = '''\
 {sys_s}Extract the final result from the provided text. Do not output any additional text and remove the explanation. Only copy the result from the provided text without modifications.
@@ -40,6 +41,7 @@ def extract_result():
 Now extract the final result: {sys_e}\
 '''
     return template
+
 
 def baseline():
     template = '''\
