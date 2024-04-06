@@ -1,0 +1,19 @@
+name: mallm
+channels:
+  - conda-forge
+  - nvidia
+  - pytorch
+dependencies:
+  - pip
+  - fire
+  - tqdm
+  - langchain-core
+  - langchain
+  - pytorch
+  - torchvision
+  - torchaudio
+  - pytorch-cuda=12.1
+  - transformers
+  - accelerate
+  - pip:
+      - bitsandbytes
