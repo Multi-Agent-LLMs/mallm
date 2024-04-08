@@ -4,7 +4,7 @@ channels:
   - nvidia
   - pytorch
 dependencies:
-  - pip
+  - python=3.12
   - fire
   - tqdm
   - langchain-core
@@ -15,5 +15,7 @@ dependencies:
   - pytorch-cuda=12.1
   - transformers
   - accelerate
+  - pip
   - pip:
+      - -e .
       - bitsandbytes
