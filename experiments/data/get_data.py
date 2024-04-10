@@ -19,7 +19,7 @@ dataset.save_to_disk("experiments/data/gsm8k.hf")
 dataset = dataset["test"].shuffle(seed=42).select(range(sample_size))
 json_str = ""
 for s in dataset.select(range(sample_size)).iter(batch_size=1):
-    json_str += f'''{{ "id":"{str(uuid.uuid4())}", "input":{json.dumps(s['question'][0])}, "context": null, "references": {json.dumps(s['answer'][0])}, "personas": null }}\n'''
+    json_str += f'''{{ "exampleId":"{str(uuid.uuid4())}", "datasetId": null, "input":{json.dumps(s['question'][0])}, "context": null, "references": {json.dumps(s['answer'][0])}, "personas": null }}\n'''
 with open("experiments/data/gsm8k.json", 'w') as file:
     file.write(json_str)
 
@@ -30,10 +30,9 @@ dataset.save_to_disk("./europarl.hf")
 dataset = dataset["train"].shuffle(seed=42).select(range(sample_size))
 json_str = ""
 for s in dataset.select(range(sample_size)).iter(batch_size=1):
-    json_str += f'''{{ "id":"{str(uuid.uuid4())}", "input":{json.dumps(s['translation'][0]['de'])}, "context": null, "references": {json.dumps(s['translation'][0]['en'])}, "personas": null }}\n'''
+    json_str += f'''{{ "exampleId":"{str(uuid.uuid4())}", "datasetId": null, "input":{json.dumps(s['translation'][0]['de'])}, "context": null, "references": {json.dumps(s['translation'][0]['en'])}, "personas": null }}\n'''
 with open("experiments/data/europarl.json", 'w') as file:
     file.write(json_str)
-
 
 print("Downloading SQuAD 2.0...")
 # SQuAD 2.0 (QA)
@@ -42,7 +41,7 @@ dataset.save_to_disk("./squad_v2.hf")
 dataset = dataset["validation"].shuffle(seed=42).select(range(sample_size))
 json_str = ""
 for s in dataset.select(range(sample_size)).iter(batch_size=1):
-    json_str += f'''{{ "id":"{s["id"][0]}", "input":{json.dumps(s['question'][0])}, "context": {json.dumps(s['context'][0])}, "references": {json.dumps(s['answers'][0]["text"])}, "personas": null }}\n'''
+    json_str += f'''{{ "exampleId":"{str(uuid.uuid4())}", "datasetId": "{s["id"][0]}", "input":{json.dumps(s['question'][0])}, "context": {json.dumps(s['context'][0])}, "references": {json.dumps(s['answers'][0]["text"])}, "personas": null }}\n'''
 with open("experiments/data/squad_v2.json", 'w') as file:
     file.write(json_str)
 
@@ -57,7 +56,7 @@ for s in dataset[sample_size:]:
     multiple_choice_str =  " Answer Choices:"
     for i, (k, v) in enumerate(s["target_scores"].items()):
         multiple_choice_str += " " + f"{chr(ord('A') + i)}) " + k
-    json_str += f'''{{ "id":"{str(uuid.uuid4())}", "input":{json.dumps(s['input']+multiple_choice_str)}, "context": null, "references": {json.dumps(ref[0])}, "personas": null }}\n'''
+    json_str += f'''{{ "exampleId":"{str(uuid.uuid4())}", "datasetId": null, "input":{json.dumps(s['input']+multiple_choice_str)}, "context": null, "references": {json.dumps(ref[0])}, "personas": null }}\n'''
 with open("experiments/data/simple_ethical_questions.json", 'w') as file:
     file.write(json_str)
 
@@ -72,7 +71,7 @@ for s in dataset[sample_size:]:
     multiple_choice_str =  " Answer Choices:"
     for i, (k, v) in enumerate(s["target_scores"].items()):
         multiple_choice_str += " " + f"{chr(ord('A') + i)}) " + k
-    json_str += f'''{{ "id":"{str(uuid.uuid4())}", "input":{json.dumps(s['input']+multiple_choice_str)}, "context": null, "references": {json.dumps(s['target'])}, "personas": null }}\n'''
+    json_str += f'''{{ "exampleId":"{str(uuid.uuid4())}", "datasetId": null, "input":{json.dumps(s['input']+multiple_choice_str)}, "context": null, "references": {json.dumps(s['target'])}, "personas": null }}\n'''
 with open("experiments/data/strategyqa.json", 'w') as file:
     file.write(json_str)
 
@@ -83,7 +82,7 @@ dataset.save_to_disk("./xsum.hf")
 dataset = dataset["test"].shuffle(seed=42).select(range(sample_size))
 json_str = ""
 for s in dataset.select(range(sample_size)).iter(batch_size=1):
-    json_str += f'''{{ "id":"{s["xsum_id"][0]}", "input":{json.dumps(s['document'][0])}, "context": null, "references": {json.dumps(s['references'][0])}, "personas": null }}\n'''
+    json_str += f'''{{ "exampleId":"{str(uuid.uuid4())}", "datasetId": "{s["xsum_id"][0]}", "input":{json.dumps(s['document'][0])}, "context": null, "references": {json.dumps(s['references'][0])}, "personas": null }}\n'''
 with open("experiments/data/xsum.json", 'w') as file:
     file.write(json_str)
 
@@ -94,6 +93,6 @@ dataset.save_to_disk("./etpc.hf")
 dataset = dataset["train"].shuffle(seed=42).select(range(sample_size))
 json_str = ""
 for s in dataset.select(range(sample_size)).iter(batch_size=1):
-    json_str += f'''{{ "id":"{s["idx"][0]}", "input":{json.dumps(s['sentence1'][0])}, "context": null, "references": {json.dumps(s['sentence2'][0])}, "personas": null }}\n'''
+    json_str += f'''{{ "exampleId":"{str(uuid.uuid4())}", "datasetId": "{s["idx"][0]}", "input":{json.dumps(s['sentence1'][0])}, "context": null, "references": {json.dumps(s['sentence2'][0])}, "personas": null }}\n'''
 with open("experiments/data/etpc.json", 'w') as file:
     file.write(json_str)

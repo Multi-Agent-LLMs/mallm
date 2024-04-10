@@ -62,6 +62,9 @@ def main(data, out, instruction, use_moderator = False, max_turns = 10, feedback
         print(f"--> Agents discussed for {'%.2f' % discussion_time} seconds ({'%.2f' % (float(discussion_time)/60.0)} minutes) to get the final answer: \n" + str(answer))
 
         output_dicts.append({
+            "dataset": os.path.basename(data),
+            "exampleId": sample["id"],
+            "datasetId": sample["datasetId"],
             "instruction": instruction,
             "personas": coordinator.personas,
             "paradigm": paradigm,
@@ -72,8 +75,8 @@ def main(data, out, instruction, use_moderator = False, max_turns = 10, feedback
             "agreements": agreements,
             "turns": turn,
             "time": '%.2f' % discussion_time,
-            "global_memory": globalMem,
-            "agent_memory": agentMems
+            "globalMemory": globalMem,
+            "agentMemory": agentMems
         })
         with open(out, 'w') as file:
             file.write(json.dumps(output_dicts))
