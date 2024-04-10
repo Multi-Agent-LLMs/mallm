@@ -1,18 +1,19 @@
-import os, sys
-os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
-sys.path.append("/beegfs/wahle/github/MALLM")
-import fire, glob
-from tqdm import tqdm
-from setup import *
 import time
 from datetime import timedelta
-from framework.discourse_policy.coordinator import *
 
-def main(data, out, instruction, use_moderator = False, max_turns = 10, feedback_sentences = [3,4], paradigm = "memory", context_length = 1, include_current_turn_in_memory = False, verbose = False):
+from tqdm import tqdm
+
+from mallm.discourse_policy.coordinator import *
+
+os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
+
+
+def main(data, out, instruction, use_moderator=False, max_turns=10, feedback_sentences=[3, 4], paradigm="memory",
+         context_length=1, include_current_turn_in_memory=False, verbose=False):
     '''
     The routine that starts the discussion between LLM agents iteratively on the provided data.
     '''
-    
+
     if not os.path.exists(data):
         print("The input file you provided does not exist. Please specify a json lines file using --data.")
         return
@@ -38,7 +39,7 @@ def main(data, out, instruction, use_moderator = False, max_turns = 10, feedback
             except ValueError as e:
                 print(f"Invalid JSON in {data}! Please provide the input data in json lines format: {e}")
     print(f"Found {len(d)} samples to discuss.")
-    
+
     coordinator = Coordinator(use_moderator=use_moderator, verbose=verbose)
     output_dicts = []
 
@@ -47,19 +48,21 @@ def main(data, out, instruction, use_moderator = False, max_turns = 10, feedback
         start_time = time.perf_counter()
 
         answer, globalMem, agentMems, turn, agreements = coordinator.discuss(
-            instruction, 
+            instruction,
             sample["input"],
             sample["context"],
-            use_moderator, 
-            feedback_sentences = feedback_sentences, 
-            paradigm = paradigm, 
-            max_turns = max_turns,
-            context_length = context_length,
+            use_moderator,
+            feedback_sentences=feedback_sentences,
+            paradigm=paradigm,
+            max_turns=max_turns,
+            context_length=context_length,
             include_current_turn_in_memory=include_current_turn_in_memory
         )
 
         discussion_time = timedelta(seconds=time.perf_counter() - start_time).total_seconds()
-        print(f"--> Agents discussed for {'%.2f' % discussion_time} seconds ({'%.2f' % (float(discussion_time)/60.0)} minutes) to get the final answer: \n" + str(answer))
+        print(
+            f"--> Agents discussed for {'%.2f' % discussion_time} seconds ({'%.2f' % (float(discussion_time) / 60.0)} minutes) to get the final answer: \n" + str(
+                answer))
 
         output_dicts.append({
             "dataset": os.path.basename(data),
@@ -81,6 +84,7 @@ def main(data, out, instruction, use_moderator = False, max_turns = 10, feedback
         with open(out, 'w') as file:
             file.write(json.dumps(output_dicts))
             file.truncate()
+
 
 if __name__ == "__main__":
     fire.Fire(main)

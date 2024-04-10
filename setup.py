@@ -1,11 +1,29 @@
-OPENAI_API_KEY = None
-ckpt_dir = "/beegfs/wahle/llama-2-weights/llama-2-70b-chat-hf"
-#ckpt_dir = "microsoft/DialoGPT-medium"
-#ckpt_dir = "microsoft/GODEL-v1_1-base-seq2seq"
-#ckpt_dir = "PY007/TinyLlama-1.1B-step-50K-105b"
+from setuptools import setup, find_packages
 
-memory_bucket_dir = "/beegfs/wahle/github/MALLM/experiments/memory_bucket/"
-
-PARADIGMS = ["memory", "report", "relay", "debate"]
-
-sample_size = 30    # how many samples to extract from the dataset. Choose 30 because of the central limit theorem
+setup(
+    name="mallm",
+    version="0.1.0",
+    author="TODO",
+    author_email="TODO",
+    description="MALLM",
+    long_description=open("README.md").read(),
+    long_description_content_type="text/markdown",
+    url="https://github.com/jonas-becker/mallm",
+    packages=find_packages(),
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+    ],
+    python_requires='>=3.12',
+    install_requires=[
+        "fire",
+        "tqdm",
+        "transformers",
+        "accelerate",
+        "torch",
+        "torchvision",
+        "torchaudio",
+        "bitsandbytes; platform_system == 'Linux'",  # Conditional dependency for Linux systems
+    ]
+)
