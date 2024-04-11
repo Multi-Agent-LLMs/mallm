@@ -12,11 +12,11 @@ class MajorityConsensus:
 
     def decide(self, agreements, turn):
         if len(self.panelists) <= 3 and turn < 5:
-            return sum(agreements) == len(
-                self.panelists)  # all agents need to agree in the first 5 turns (except moderator)
+            # all agents need to agree in the first 5 turns (except moderator)
+            return sum([a["agreement"] for a in agreements]) == len(self.panelists)
         else:
-            return sum(agreements) > len(
-                self.panelists) / 2  # more than half of the agents need to agree (except moderator)
+            # more than half of the agents need to agree (except moderator)
+            return sum([a["agreement"] for a in agreements]) > len(self.panelists) / 2
 
 
 def main():

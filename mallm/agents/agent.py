@@ -7,21 +7,23 @@ import fire
 from mallm.prompts import agent_prompts
 from langchain_core.prompts import PromptTemplate
 from langchain.chains import LLMChain
+import uuid
 
 
 class Agent:
-    def __init__(self, id, llm, persona, persona_description, coordinator, moderator=None):
-        self.id = id
+    def __init__(self, llm, llm_tokenizer, persona, persona_description, coordinator, moderator=None):
+        self.id = str(uuid.uuid4())
         self.persona = persona
         self.persona_description = persona_description
         self.memory_bucket = memory_bucket_dir + "agent_{}".format(self.id)
         self.coordinator = coordinator
         self.moderator = moderator
         self.llm = llm
+        self.llm_tokenizer = llm_tokenizer
         self.init_chains()
 
     def init_chains(self):
-        if "llama" in self.coordinator.llm_tokenizer.__class__.__name__.lower():  # use <<SYS>> and [INST] tokens for llama models
+        if "llama" in self.llm_tokenizer.__class__.__name__.lower():  # use <<SYS>> and [INST] tokens for llama models
             partial_variables = {"sys_s": "<<SYS>>", "sys_e": "<</SYS>>", "inst_s": "[INST]", "inst_e": "[/INST]"}
         else:
             partial_variables = {"sys_s": "", "sys_e": "", "inst_s": "", "inst_e": ""}
@@ -36,9 +38,25 @@ class Agent:
             template=agent_prompts.feedback(),
             partial_variables=partial_variables))
 
+    def agree(self, res, agreements, self_drafted=False):
+        '''
+        Determines whether a string given by an agent means an agreement or disagreement.
+        Returns bool
+        '''
+        if ("agree" in res.lower() and "disagree" not in res.lower()) and (not self == self.moderator):
+            agreements.append({ "agentId": self.id, "persona": self.persona, "agreement": True })
+        elif self_drafted and not self == self.moderator:
+            agreements.append({ "agentId": self.id, "persona": self.persona, "agreement": True })
+        elif not self == self.moderator:
+            agreements.append({ "agentId": self.id, "persona": self.persona, "agreement": False })
+
+        if len(agreements) > len(self.coordinator.panelists):
+            agreements = agreements[-len(self.coordinator.panelists):]
+        return agreements
+    
     def improve(self, unique_id, turn, memory_ids, template_filling, extract_all_drafts, agreements):
         res = self.chain_improve.invoke(template_filling)["text"]
-        agreements = self.coordinator.agree(res, agreements)
+        agreements = self.agree(res, agreements)
         current_draft = None
         if extract_all_drafts:
             current_draft = self.coordinator.chain_extract_result.invoke(
@@ -46,24 +64,24 @@ class Agent:
                     "result": res
                 })["text"]
         memory = {
-            "unique_id": unique_id,
+            "messageId": unique_id,
             "turn": turn,
-            "id": self.id,
+            "agentId": self.id,
             "persona": self.persona,
             "contribution": "improve",
             "text": res,
-            "agreement": agreements[-1],
-            "extracted_draft": current_draft,
-            "memory_ids": memory_ids,
-            "template_filling": template_filling
+            "agreement": agreements[-1]["agreement"],
+            "extractedDraft": current_draft,
+            "memoryIds": memory_ids,
+            "additionalArgs": template_filling
         }
-        self.coordinator.updateGlobalMemory(unique_id, turn, self.id, self.persona, "improve", res, agreements[-1],
+        self.coordinator.updateGlobalMemory(unique_id, turn, self.id, self.persona, "improve", res, agreements[-1]["agreement"],
                                             None, memory_ids, template_filling)
         return res, memory, agreements
 
     def draft(self, unique_id, turn, memory_ids, template_filling, extract_all_drafts, agreements, is_moderator=False):
         res = self.chain_draft.invoke(template_filling)["text"]
-        agreements = self.coordinator.agree(res, agreements, is_moderator, self_drafted=True)
+        agreements = self.agree(res, agreements, self_drafted=True)
         current_draft = None
         if extract_all_drafts:
             current_draft = self.coordinator.chain_extract_result.invoke(
@@ -75,37 +93,37 @@ class Agent:
         else:
             agreement = agreements[-1]
         memory = {
-            "unique_id": unique_id,
+            "messageId": unique_id,
             "turn": turn,
-            "id": self.id,
+            "agentId": self.id,
             "persona": self.persona,
             "contribution": "draft",
             "text": res,
-            "agreement": agreement,
-            "extracted_draft": current_draft,
-            "memory_ids": memory_ids,
-            "template_filling": template_filling
+            "agreement": agreement["agreement"],
+            "extractedDraft": current_draft,
+            "memoryIds": memory_ids,
+            "additionalArgs": template_filling
         }
-        self.coordinator.updateGlobalMemory(unique_id, turn, self.id, self.persona, "draft", res, agreement, None,
+        self.coordinator.updateGlobalMemory(unique_id, turn, self.id, self.persona, "draft", res, agreement["agreement"], None,
                                             memory_ids, template_filling)
         return res, memory, agreements
 
     def feedback(self, unique_id, turn, memory_ids, template_filling, agreements):
         res = self.chain_feedback.invoke(template_filling)["text"]
-        agreements = self.coordinator.agree(res, agreements)
+        agreements = self.agree(res, agreements)
         memory = {
-            "unique_id": unique_id,
+            "messageId": unique_id,
             "turn": turn,
-            "id": self.id,
+            "agentId": self.id,
             "persona": self.persona,
             "contribution": "feedback",
             "text": res,
-            "agreement": agreements[-1],
-            "extracted_draft": None,
-            "memory_ids": memory_ids,
-            "template_filling": template_filling
+            "agreement": agreements[-1]["agreement"],
+            "extractedDraft": None,
+            "memoryIds": memory_ids,
+            "additionalArgs": template_filling
         }
-        self.coordinator.updateGlobalMemory(unique_id, turn, self.id, self.persona, "feedback", res, agreements[-1],
+        self.coordinator.updateGlobalMemory(unique_id, turn, self.id, self.persona, "feedback", res, agreements[-1]["agreement"],
                                             None, memory_ids, template_filling)
         return res, memory, agreements
 
@@ -119,7 +137,7 @@ class Agent:
             extracted_draft = str(extracted_draft).replace('"', "'")
         with dbm.open(self.memory_bucket, 'c') as db:
             db[
-                str(unique_id)] = f'''{{"turn": {turn}, "agent_id": {agent_id}, "persona": "{str(persona).replace('"', "'")}", "prompt_args":{prompt_args}, "contribution": "{contribution}", "memory_ids": {memory_ids}, "text": "{str(text).replace('"', "'")}", "agreement": {agreement}, "extracted_draft": "{str(extracted_draft).replace('"', "'")}"}}'''
+                str(unique_id)] = f'''{{"messageId": {unique_id}, "turn": {turn}, "agentId": "{agent_id}", "persona": "{str(persona).replace('"', "'")}", "additionalArgs": {prompt_args}, "contribution": "{contribution}", "memoryIds": {memory_ids}, "text": "{str(text).replace('"', "'")}", "agreement": {agreement}, "extractedDraft": "{str(extracted_draft).replace('"', "'")}"}}'''
         self.saveMemoryToJson()
 
     def getMemory(self, context_length=None, turn=None, include_this_turn=True, extract_draft=False):
@@ -127,32 +145,32 @@ class Agent:
         Retrieves memory from the agents memory bucket as a dictionary
         Returns: dict
         '''
-        memory = {}
+        memory = []
         memory_ids = []
         current_draft = None
         if os.path.exists(self.memory_bucket + ".dat"):
             with dbm.open(self.memory_bucket, 'r') as db:
                 for key in db.keys():
-                    memory[key.decode()] = ast.literal_eval(db[key].decode().replace("\n", "\\n").replace("\t", "\\t"))
-            memory = sorted(memory.items(), key=lambda x: x, reverse=False)
+                    memory.append(ast.literal_eval(db[key].decode().replace("\n", "\\n").replace("\t", "\\t"))) #TODO: Maybe reverse sort
+            #memory = sorted(memory.items(), key=lambda x: x["messageId"], reverse=False)
             context_memory = []
             for m in memory:
                 if context_length:
-                    if m[1]["turn"] >= turn - context_length:
-                        if turn > m[1]["turn"] or include_this_turn:
+                    if m["turn"] >= turn - context_length:
+                        if turn > m["turn"] or include_this_turn:
                             context_memory.append(m)
-                            memory_ids.append(int(m[0]))
-                            if m[1]["contribution"] == "draft" or (
-                                    m[1]["contribution"] == "improve" and "disagree" in m[1]["text"].lower()):
-                                current_draft = m[1]["text"]
+                            memory_ids.append(int(m["messageId"]))
+                            if m["contribution"] == "draft" or (
+                                    m["contribution"] == "improve" and "disagree" in m["text"].lower()):
+                                current_draft = m["text"]
                 else:
                     context_memory.append(m)
-                    memory_ids.append(int(m[0]))
-                    if m[1]["contribution"] == "draft" or (
-                            m[1]["contribution"] == "improve" and "disagree" in m[1]["text"].lower()):
-                        current_draft = m[1]["text"]
+                    memory_ids.append(int(m["messageId"]))
+                    if m["contribution"] == "draft" or (
+                            m["contribution"] == "improve" and "disagree" in m["text"].lower()):
+                        current_draft = m["text"]
 
-            context_memory = dict(context_memory)
+            #context_memory = dict(context_memory)
         else:
             context_memory = None
 
@@ -175,11 +193,11 @@ class Agent:
                                                            extract_draft=extract_draft)
         if memory:
             memory_string = ""
-            for key in memory:
-                if memory[key]["persona"] != self.persona:
-                    memory_string = memory_string + f"\n[INST]{memory[key]["persona"]}: {memory[key]["text"]}[/INST]"
+            for m in memory:
+                if m["persona"] != self.persona:
+                    memory_string = memory_string + f"\n[INST]{m["persona"]}: {m["text"]}[/INST]"
                 else:
-                    memory_string = memory_string + f"\n{memory[key]["persona"]}: {memory[key]["text"]}"
+                    memory_string = memory_string + f"\n{m["persona"]}: {m["text"]}"
             if personalized:
                 memory_string = memory_string.replace(f"{self.persona}:", f"{self.persona} (you):")
         else:
