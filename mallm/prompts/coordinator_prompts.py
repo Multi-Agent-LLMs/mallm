@@ -25,7 +25,7 @@ Profiles: {{
 
 Now, identify at least 3 participants relevant to the task and provide their profiles as a dictionary in curly braces {{ }} using correct quotation marks for strings. Remember to present your final output after the prefix "Profiles:".
 
-Task: {task_instruction}
+Task: {taskInstruction}
 Input: {input}
 
 Profiles: {sys_e}\
@@ -46,7 +46,7 @@ Now extract the final result: {sys_e}\
 def baseline():
     template = '''\
 {sys_s}Please consider the example provided and think it step by step.
-Task: {task_instruction}
+Task: {taskInstruction}
 Input: {input}
 Utilize your talent and critical thinking to provide a solution. {sys_e}\
 '''

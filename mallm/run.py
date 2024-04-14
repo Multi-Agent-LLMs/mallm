@@ -1,8 +1,4 @@
-import time
-from datetime import timedelta
-
 from tqdm import tqdm
-
 from mallm.discourse_policy.coordinator import *
 
 os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
@@ -45,9 +41,8 @@ def main(data, out, instruction, use_moderator=False, max_turns=10, feedback_sen
 
     for sample in tqdm(d):
         coordinator.cleanMemoryBucket()
-        start_time = time.perf_counter()
 
-        answer, globalMem, agentMems, turn, agreements = coordinator.discuss(
+        answer, globalMem, agentMems, turn, agreements, discussionTime = coordinator.discuss(
             instruction,
             sample["input"],
             sample["context"],
@@ -59,17 +54,16 @@ def main(data, out, instruction, use_moderator=False, max_turns=10, feedback_sen
             include_current_turn_in_memory=include_current_turn_in_memory
         )
 
-        discussion_time = timedelta(seconds=time.perf_counter() - start_time).total_seconds()
         print(
-            f"--> Agents discussed for {'%.2f' % discussion_time} seconds ({'%.2f' % (float(discussion_time) / 60.0)} minutes) to get the final answer: \n" + str(
+            f"--> Agents discussed for {'%.2f' % discussionTime} seconds ({'%.2f' % (float(discussionTime) / 60.0)} minutes) to get the final answer: \n" + str(
                 answer))
 
         output_dicts.append({
             "dataset": os.path.basename(data),
-            "exampleId": sample["id"],
+            "exampleId": sample["exampleId"],
             "datasetId": sample["datasetId"],
             "instruction": instruction,
-            "personas": coordinator.personas,
+            "personas": coordinator.getAgents(),
             "paradigm": paradigm,
             "input": sample["input"],
             "context": sample["context"],
@@ -77,7 +71,7 @@ def main(data, out, instruction, use_moderator=False, max_turns=10, feedback_sen
             "references": sample["references"],
             "agreements": agreements,
             "turns": turn,
-            "time": '%.2f' % discussion_time,
+            "clockSeconds": float('%.2f' % discussionTime),
             "globalMemory": globalMem,
             "agentMemory": agentMems
         })
