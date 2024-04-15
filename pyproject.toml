@@ -18,6 +18,7 @@ accelerate = "^0.29.2"
 bitsandbytes = "^0.43.1"
 fire = "^0.6.0"
 tqdm = "^4.66.2"
+datasets = "^2.18.0"
 
 [tool.poetry.group.dev.dependencies]
 fire = "^0.6.0"
