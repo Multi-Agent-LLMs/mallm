@@ -62,7 +62,7 @@ def find_downloader_classes(module):
         if attribute_name == "DatasetDownloader":
             continue
         attribute = getattr(module, attribute_name)
-        if isinstance(attribute, type) and "Downloader" in attribute_name:
+        if isinstance(attribute, type) and isinstance(attribute, DatasetDownloader.__class__):
             return attribute
     return None
 
