@@ -7,5 +7,3 @@ ckpt_dir = "PY007/TinyLlama-1.1B-step-50K-105b"
 memory_bucket_dir = "./experiments/memory_bucket/"
 
 PARADIGMS = ["memory", "report", "relay", "debate"]
-
-sample_size = 30  # how many samples to extract from the dataset. Choose 30 because of the central limit theorem

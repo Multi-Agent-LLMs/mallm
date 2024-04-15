@@ -163,4 +163,5 @@ cython_debug/
 /experiments/memory_bucket/*.dir
 /experiments/memory_bucket/*.dat
 /experiments/memory_bucket/*.json
-/experiments/data/datasets
+/experiments/data/datasets/*
+!/experiments/data/datasets/.gitkeep
