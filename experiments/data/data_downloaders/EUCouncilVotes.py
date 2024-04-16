@@ -16,14 +16,22 @@ class EUCouncilVotesDownloader(DatasetDownloader):
             self.dataset_path + ".zip")
         with zipfile.ZipFile(self.dataset_path + ".zip", 'r') as zip_ref:
             zip_ref.extractall(self.dataset_path)
-        with gzip.open(self.dataset_path + "/VotingResultsNew.ttl.gz", 'rb') as f_in:
-            with open(self.dataset_path + "/VotingResultsNew.ttl", 'wb') as f_out:
+        with gzip.open(self.dataset_path + "/VotingResults.ttl.gz", 'rb') as f_in:
+            with open(self.dataset_path + "/VotingResults.ttl", 'wb') as f_out:
                 shutil.copyfileobj(f_in, f_out)
         g = Graph()
-        g.parse(self.dataset_path + "/VotingResultsNew.ttl")
-        v = g.serialize(self.dataset_path + "/VotingResultsNew.json", format="json-ld")
-        v = g.serialize(self.dataset_path + "/VotingResultsNew.xml", format="xml")
-        print(v)
+        g.parse(self.dataset_path + "/VotingResults.ttl")
+        v = g.serialize(self.dataset_path + "/VotingResults.json", format="json-ld")
+        f = open(self.dataset_path + "/VotingResults.json")
+        v = json.load(f)
+        print(len(v))
+        print(v[0])
+        v = [x for x in v if "http://www.w3.org/2004/02/skos/core#definition" in x]
+        print(len(v))
+        print(v[0]["@type"])
+        v = [x for x in v if "http://data.consilium.europa.eu/data/public_voting/rdf/schema/Act" in x["@type"]]
+        print(len(v))
+
 
     def __init__(self):
         super().__init__('eu_council_votes', hf_dataset=False)
