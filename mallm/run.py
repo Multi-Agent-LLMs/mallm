@@ -1,5 +1,20 @@
 from tqdm import tqdm
 from mallm.discourse_policy.coordinator import *
+import logging
+
+# Configure logging for the library
+library_logger = logging.getLogger("mallm")
+library_logger.setLevel(logging.INFO)
+
+# Add handlers to the logger
+stream_handler = logging.StreamHandler()
+
+# Optionally set a formatter
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+stream_handler.setFormatter(formatter)
+
+# Attach the handler to the logger
+library_logger.addHandler(stream_handler)
 
 os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
 

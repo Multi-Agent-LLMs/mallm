@@ -16,6 +16,8 @@ from mallm.prompts import coordinator_prompts
 transformers.logging.set_verbosity_error()
 os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
 
+logger = logging.getLogger("mallm")
+
 
 class Coordinator():
     def __init__(self, use_moderator=True, verbose=False):
@@ -65,13 +67,13 @@ class Coordinator():
 
         res = self.chain_identify_personas.invoke(template_filling)["text"]
         if self.verbose:
-            print(res)
+            logger.info(res)
 
         # TODO: Use grammar to force LLM output in the correct JSON format. Example with llama.ccp: https://til.simonwillison.net/llms/llama-cpp-python-grammars
 
         # repair dictionary in string if the LLM did mess up the formatting
         if "{" in res and "}" not in res:
-            print(
+            logger.error(
                 "Looks like the LLM did not provide a valid dictionary (maybe the last brace is missing?). Trying to repair the dictionary...")
             res = res + "}"
 
@@ -79,7 +81,7 @@ class Coordinator():
 
         personas_string = re.search(r"\{.*?\}", res, re.DOTALL)
         if not personas_string:
-            print(f"LLM failed to provide personas in the correct format - Skipping this sample...")
+            logger.error(f"LLM failed to provide personas in the correct format - Skipping this sample...")
             # personas_string = '''{
             #    "Poet": "A person who studies and creates poetry. The poet is familiar with the rules and formats of poetry and can provide guidance on how to write a poem.",
             #    "Computer Scientist": "A scholar who specializes in the academic study of computer science. The computer scientist is familiar with the concept of a quantum computer and can provide guidance on how to explain it.",
@@ -94,15 +96,15 @@ class Coordinator():
                     self.personas = ast.literal_eval(personas_string)
                 except Exception as e:
                     if i == 0:
-                        print(
+                        logger.error(
                             "Looks like the LLM did not get the formatting quite right. Trying to repair the dictionary string...")
                         personas_string = personas_string.replace("\'\n", "\',\n")
                         personas_string = personas_string.replace('\"\n', '\",\n')
                         personas_string = personas_string.replace('\";', '\",')
-                        print("Repaired string: \n" + str(personas_string))
+                        logger.info("Repaired string: \n" + str(personas_string))
                         continue
                     elif i == 1:
-                        print(f"Failed to parse the string to identify personas: {e} - Skipping this sample...")
+                        logger.error(f"Failed to parse the string to identify personas: {e} - Skipping this sample...")
                         # personas_string = '''{
                         # "Poet": "A person who studies and creates poetry. The poet is familiar with the rules and formats of poetry and can provide guidance on how to write a poem.",
                         # "Computer Scientist": "A scholar who specializes in the academic study of computer science. The computer scientist is familiar with the concept of a quantum computer and can provide guidance on how to explain it.",
@@ -146,7 +148,7 @@ class Coordinator():
         Returns HuggingFacePipeline
         '''
         device = f'cuda:{cuda.current_device()}' if cuda.is_available() else 'cpu'
-        print(f"Running on device: {device}")
+        logger.info(f"Running on device: {device}")
         bnb_config = transformers.BitsAndBytesConfig(
             load_in_4bit=True,
             bnb_4bit_quant_type='nf4',
@@ -173,13 +175,13 @@ class Coordinator():
                 device_map='auto'
             )
         model.eval()
-        print(f"Model {ckpt_dir} loaded on {device}")
+        logger.info(f"Model {ckpt_dir} loaded on {device}")
 
         self.llm_tokenizer = transformers.AutoTokenizer.from_pretrained(
             ckpt_dir
         )
         # self.llm_tokenizer.pad_token_id = model.config.eos_token_id
-        print("Using this tokenizer: " + str(self.llm_tokenizer.__class__.__name__))
+        logger.info("Using this tokenizer: " + str(self.llm_tokenizer.__class__.__name__))
 
         pipeline = transformers.pipeline(
             model=model,
@@ -207,7 +209,7 @@ class Coordinator():
             db[
                 str(unique_id)] = f'''{{"messageId": {unique_id}, "turn": {turn}, "agentId": "{agent_id}", "persona": "{str(persona).replace('"', "'")}", "additionalArgs":{prompt_args}, "contribution": "{contribution}", "memoryIds": {memory_ids}, "text": "{str(text).replace('"', "'")}", "agreement": {agreement}, "extractedDraft": "{str(extracted_draft).replace('"', "'")}"}}'''
             if self.verbose:
-                print(str(db[str(unique_id)]))  # logging
+                logger.info(str(db[str(unique_id)]))  # logging
         self.saveGlobalMemoryToJson()
 
     def getGlobalMemory(self):
@@ -229,8 +231,8 @@ class Coordinator():
             with open(self.memory_bucket + ".json", "w") as f:
                 json.dump(self.getGlobalMemory(), f)
         except Exception as e:
-            print(f"Failed to save agent memory to {self.memory_bucket}: {e}")
-            print(self.getGlobalMemory())
+            logger.error(f"Failed to save agent memory to {self.memory_bucket}: {e}")
+            logger.error(self.getGlobalMemory())
 
     def cleanMemoryBucket(self):
         '''
@@ -248,7 +250,7 @@ class Coordinator():
         filelist = glob.glob(os.path.join(memory_bucket_dir, "*.json"))
         for f in filelist:
             os.remove(f)
-        print("Cleaned the memory bucket.")
+        logger.info("Cleaned the memory bucket.")
 
     def updateMemories(self, memories, agents_to_update):
         '''
@@ -268,7 +270,7 @@ class Coordinator():
         memories = []
         agreements = []
 
-        print('''Paradigm: Memory
+        logger.info('''Paradigm: Memory
                     ┌───┐
                     │A 1│
                     ├───┘
@@ -284,7 +286,7 @@ class Coordinator():
             log = "Ongoing. Current turn: " + str(turn)
             if not self.verbose:
                 log = "\r" + log + "        "
-            print(log, end='')
+            logger.info(log)
 
             if use_moderator:
                 memory_string, memory_ids, current_draft = self.moderator.getMemoryString(
@@ -340,7 +342,7 @@ class Coordinator():
         memories = []
         agreements = []
 
-        print('''Paradigm: Report
+        logger.info('''Paradigm: Report
                     ┌───┐
                     │A 1│
             ┌──────►└┼─┼┘◄──────┐
@@ -357,7 +359,7 @@ class Coordinator():
             log = "Ongoing. Current turn: " + str(turn)
             if not self.verbose:
                 log = "\r" + log + "        "
-            print(log, end='')
+            logger.info(log)
 
             # ---- Agent A1
             if use_moderator:
@@ -433,7 +435,7 @@ class Coordinator():
         memories = []
         agreements = []
 
-        print('''Paradigm: Relay
+        logger.info('''Paradigm: Relay
                     ┌───┐
           ┌────────►│A 1│─────────┐
           │         └───┘         │
@@ -450,7 +452,7 @@ class Coordinator():
             log = "Ongoing. Current turn: " + str(turn)
             if not self.verbose:
                 log = "\r" + log + "        "
-            print(log, end='')
+            logger.info(log)
 
             for i, a in enumerate(self.agents):
                 memory_string, memory_ids, current_draft = a.getMemoryString(
@@ -503,7 +505,7 @@ class Coordinator():
         memories = []
         agreements = []
 
-        print(f'''Paradigm: Debate (rounds: {debate_rounds})
+        logger.info(f'''Paradigm: Debate (rounds: {debate_rounds})
                     ┌───┐
           ┌────────►│A 1│◄────────┐
           │         └───┘         │
@@ -515,14 +517,14 @@ class Coordinator():
         └───┘◄──────────────────┴───┘
         ''')
 
-        print("Debate rounds between agents A2, ..., An: " + str(debate_rounds))
+        logger.info("Debate rounds between agents A2, ..., An: " + str(debate_rounds))
 
         while not decision and (turn < max_turns or max_turns is None):
             turn = turn + 1
             log = "Ongoing. Current turn: " + str(turn)
             if not self.verbose:
                 log = "\r" + log + "        "
-            print(log, end='')
+            logger.info(log)
 
             # ---- Agent A1
             if use_moderator:
@@ -566,7 +568,7 @@ class Coordinator():
                 unique_id = unique_id + 1
 
             for r in range(debate_rounds):  # ---- Agents A2, A3, ...
-                print("Debate round: " + str(r))
+                logger.info("Debate round: " + str(r))
                 debate_agreements = []
                 for i, a in enumerate(self.agents[1:]):  # similar to relay paradigm
                     memory_string, memory_ids, current_draft = a.getMemoryString(
@@ -623,17 +625,17 @@ class Coordinator():
             task_instruction += "\n" + "Context: " + context
 
         if not self.initAgents(task_instruction, input, use_moderator=use_moderator):
-            print("Failed to intialize agents.")
+            logger.error("Failed to intialize agents.")
             return None, None, None, None, None, None  # if the LLM failed to initialize the agents, do not discuss
 
         personas = [a.persona for a in self.agents]
         if len(personas) <= 2:
-            print("Only two or less personas were generated. No discussion is executed.")
+            logger.error("Only two or less personas were generated. No discussion is executed.")
             return None, None, None, None, None, None  # if the LLM failed to initialize the agents, do not discuss
 
         self.decision_making = MajorityConsensus(self.panelists)
 
-        print(f'''
+        logger.info(f'''
 Starting discussion...
 -------------
 Instruction: {task_instruction}

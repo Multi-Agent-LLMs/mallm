@@ -10,12 +10,13 @@ from langchain.chains import LLMChain
 import uuid
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("mallm")
 
 
 class Agent:
     def __init__(self, llm, llm_tokenizer, persona, persona_description, coordinator, moderator=None):
         self.id = str(uuid.uuid4())
+        self.short_id = self.id[:4]
         self.persona = persona
         self.persona_description = persona_description
         self.memory_bucket = memory_bucket_dir + "agent_{}".format(self.id)
@@ -24,6 +25,7 @@ class Agent:
         self.llm = llm
         self.llm_tokenizer = llm_tokenizer
         self.init_chains()
+        logger.info(f"Creating agent {self.short_id} with personality \"{self.persona_description}\"")
 
     def init_chains(self):
         if "llama" in self.llm_tokenizer.__class__.__name__.lower():  # use <<SYS>> and [INST] tokens for llama models
@@ -48,10 +50,13 @@ class Agent:
         '''
         if ("agree" in res.lower() and "disagree" not in res.lower()) and (not self == self.moderator):
             agreements.append({"agentId": self.id, "persona": self.persona, "agreement": True})
+            logger.info(f"Agent {self.short_id} agreed")
         elif self_drafted and not self == self.moderator:
             agreements.append({"agentId": self.id, "persona": self.persona, "agreement": True})
+            logger.info(f"Agent {self.short_id} agreed")
         elif not self == self.moderator:
             agreements.append({"agentId": self.id, "persona": self.persona, "agreement": False})
+            logger.info(f"Agent {self.short_id} disagreed")
 
         if len(agreements) > len(self.coordinator.panelists):
             agreements = agreements[-len(self.coordinator.panelists):]
@@ -78,6 +83,7 @@ class Agent:
             "memoryIds": memory_ids,
             "additionalArgs": template_filling
         }
+        logger.info(f"Agent {self.short_id} is improving answer")
         self.coordinator.updateGlobalMemory(unique_id, turn, self.id, self.persona, "improve", res,
                                             agreements[-1]["agreement"],
                                             None, memory_ids, template_filling)
@@ -108,6 +114,7 @@ class Agent:
             "memoryIds": memory_ids,
             "additionalArgs": template_filling
         }
+        logger.info(f"Agent {self.short_id} is drafting")
         self.coordinator.updateGlobalMemory(unique_id, turn, self.id, self.persona, "draft", res,
                                             agreement["agreement"], None,
                                             memory_ids, template_filling)
@@ -128,6 +135,7 @@ class Agent:
             "memoryIds": memory_ids,
             "additionalArgs": template_filling
         }
+        logger.info(f"Agent {self.short_id} provides feedback to another agent")
         self.coordinator.updateGlobalMemory(unique_id, turn, self.id, self.persona, "feedback", res,
                                             agreements[-1]["agreement"],
                                             None, memory_ids, template_filling)
