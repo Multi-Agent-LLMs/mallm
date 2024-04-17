@@ -8,11 +8,15 @@ from mallm.prompts import agent_prompts
 from langchain_core.prompts import PromptTemplate
 from langchain.chains import LLMChain
 import uuid
+import logging
+
+logger = logging.getLogger("mallm")
 
 
 class Agent:
     def __init__(self, llm, llm_tokenizer, persona, persona_description, coordinator, moderator=None):
         self.id = str(uuid.uuid4())
+        self.short_id = self.id[:4]
         self.persona = persona
         self.persona_description = persona_description
         self.memory_bucket = memory_bucket_dir + "agent_{}".format(self.id)
@@ -21,6 +25,7 @@ class Agent:
         self.llm = llm
         self.llm_tokenizer = llm_tokenizer
         self.init_chains()
+        logger.info(f"Creating agent {self.short_id} with personality \"{self.persona_description}\"")
 
     def init_chains(self):
         if "llama" in self.llm_tokenizer.__class__.__name__.lower():  # use <<SYS>> and [INST] tokens for llama models
@@ -44,16 +49,19 @@ class Agent:
         Returns bool
         '''
         if ("agree" in res.lower() and "disagree" not in res.lower()) and (not self == self.moderator):
-            agreements.append({ "agentId": self.id, "persona": self.persona, "agreement": True })
+            agreements.append({"agentId": self.id, "persona": self.persona, "agreement": True})
+            logger.info(f"Agent {self.short_id} agreed")
         elif self_drafted and not self == self.moderator:
-            agreements.append({ "agentId": self.id, "persona": self.persona, "agreement": True })
+            agreements.append({"agentId": self.id, "persona": self.persona, "agreement": True})
+            logger.info(f"Agent {self.short_id} agreed")
         elif not self == self.moderator:
-            agreements.append({ "agentId": self.id, "persona": self.persona, "agreement": False })
+            agreements.append({"agentId": self.id, "persona": self.persona, "agreement": False})
+            logger.info(f"Agent {self.short_id} disagreed")
 
         if len(agreements) > len(self.coordinator.panelists):
             agreements = agreements[-len(self.coordinator.panelists):]
         return agreements
-    
+
     def improve(self, unique_id, turn, memory_ids, template_filling, extract_all_drafts, agreements):
         res = self.chain_improve.invoke(template_filling)["text"]
         agreements = self.agree(res, agreements)
@@ -75,7 +83,9 @@ class Agent:
             "memoryIds": memory_ids,
             "additionalArgs": template_filling
         }
-        self.coordinator.updateGlobalMemory(unique_id, turn, self.id, self.persona, "improve", res, agreements[-1]["agreement"],
+        logger.info(f"Agent {self.short_id} is improving answer")
+        self.coordinator.updateGlobalMemory(unique_id, turn, self.id, self.persona, "improve", res,
+                                            agreements[-1]["agreement"],
                                             None, memory_ids, template_filling)
         return res, memory, agreements
 
@@ -104,7 +114,9 @@ class Agent:
             "memoryIds": memory_ids,
             "additionalArgs": template_filling
         }
-        self.coordinator.updateGlobalMemory(unique_id, turn, self.id, self.persona, "draft", res, agreement["agreement"], None,
+        logger.info(f"Agent {self.short_id} is drafting")
+        self.coordinator.updateGlobalMemory(unique_id, turn, self.id, self.persona, "draft", res,
+                                            agreement["agreement"], None,
                                             memory_ids, template_filling)
         return res, memory, agreements
 
@@ -123,7 +135,9 @@ class Agent:
             "memoryIds": memory_ids,
             "additionalArgs": template_filling
         }
-        self.coordinator.updateGlobalMemory(unique_id, turn, self.id, self.persona, "feedback", res, agreements[-1]["agreement"],
+        logger.info(f"Agent {self.short_id} provides feedback to another agent")
+        self.coordinator.updateGlobalMemory(unique_id, turn, self.id, self.persona, "feedback", res,
+                                            agreements[-1]["agreement"],
                                             None, memory_ids, template_filling)
         return res, memory, agreements
 
@@ -151,8 +165,9 @@ class Agent:
         if os.path.exists(self.memory_bucket + ".dat"):
             with dbm.open(self.memory_bucket, 'r') as db:
                 for key in db.keys():
-                    memory.append(ast.literal_eval(db[key].decode().replace("\n", "\\n").replace("\t", "\\t"))) #TODO: Maybe reverse sort
-            #memory = sorted(memory.items(), key=lambda x: x["messageId"], reverse=False)
+                    memory.append(ast.literal_eval(
+                        db[key].decode().replace("\n", "\\n").replace("\t", "\\t")))  # TODO: Maybe reverse sort
+            # memory = sorted(memory.items(), key=lambda x: x["messageId"], reverse=False)
             context_memory = []
             for m in memory:
                 if context_length:
@@ -170,7 +185,7 @@ class Agent:
                             m["contribution"] == "improve" and "disagree" in m["text"].lower()):
                         current_draft = m["text"]
 
-            #context_memory = dict(context_memory)
+            # context_memory = dict(context_memory)
         else:
             context_memory = None
 
