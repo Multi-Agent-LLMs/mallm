@@ -66,21 +66,13 @@ class ETPC(datasets.GeneratorBasedBuilder):
                 "idx": datasets.Value("string"),
                 "sentence1": datasets.Value("string"),
                 "sentence2": datasets.Value("string"),
-                "sentence1_tokenized": datasets.Sequence(
-                    datasets.Value("string")
-                ),
-                "sentence2_tokenized": datasets.Sequence(
-                    datasets.Value("string")
-                ),
+                "sentence1_tokenized": datasets.Sequence(datasets.Value("string")),
+                "sentence2_tokenized": datasets.Sequence(datasets.Value("string")),
                 "etpc_label": datasets.Value("int8"),
                 "mrpc_label": datasets.Value("int8"),
                 "negation": datasets.Value("int8"),
-                "paraphrase_types": datasets.Sequence(
-                    datasets.Value("string")
-                ),
-                "paraphrase_type_ids": datasets.Sequence(
-                    datasets.Value("string")
-                ),
+                "paraphrase_types": datasets.Sequence(datasets.Value("string")),
+                "paraphrase_type_ids": datasets.Sequence(datasets.Value("string")),
                 "sentence1_segment_location": datasets.Sequence(
                     datasets.Value("int32")
                 ),
@@ -93,12 +85,8 @@ class ETPC(datasets.GeneratorBasedBuilder):
                 "sentence2_segment_location_indices": datasets.Sequence(
                     datasets.Sequence(datasets.Value("int32"))
                 ),
-                "sentence1_segment_text": datasets.Sequence(
-                    datasets.Value("string")
-                ),
-                "sentence2_segment_text": datasets.Sequence(
-                    datasets.Value("string")
-                ),
+                "sentence1_segment_text": datasets.Sequence(datasets.Value("string")),
+                "sentence2_segment_text": datasets.Sequence(datasets.Value("string")),
             }
         )
 
@@ -129,9 +117,7 @@ class ETPC(datasets.GeneratorBasedBuilder):
         parser = etree.XMLParser(encoding="utf-8", recover=True)
 
         tree_text_pairs = etree.parse(text_pairs_path, parser=parser)
-        tree_paraphrase_types = etree.parse(
-            paraphrase_types_path, parser=parser
-        )
+        tree_paraphrase_types = etree.parse(paraphrase_types_path, parser=parser)
 
         root_text_pairs = tree_text_pairs.getroot()
         root_paraphrase_types = tree_paraphrase_types.getroot()
@@ -159,19 +145,11 @@ class ETPC(datasets.GeneratorBasedBuilder):
                 f".//pair_id[text()='{current_pair_id}']/parent::relation/s2_text/text()"
             )
 
-            sentence1_tokenized = row.find(".//sent1_tokenized").text.split(
-                " "
-            )
-            sentence2_tokenized = row.find(".//sent2_tokenized").text.split(
-                " "
-            )
+            sentence1_tokenized = row.find(".//sent1_tokenized").text.split(" ")
+            sentence2_tokenized = row.find(".//sent2_tokenized").text.split(" ")
 
-            sentence1_segment_location_full = np.zeros(
-                len(sentence1_tokenized)
-            )
-            sentence2_segment_location_full = np.zeros(
-                len(sentence2_tokenized)
-            )
+            sentence1_segment_location_full = np.zeros(len(sentence1_tokenized))
+            sentence2_segment_location_full = np.zeros(len(sentence2_tokenized))
 
             sentence1_segment_indices = []
             sentence2_segment_indices = []

@@ -2,10 +2,10 @@ import fire
 
 
 class MajorityConsensus:
-    '''
+    """
     The Majority Consensus imitates the implementation by Yin et. al.
     Paper: https://arxiv.org/abs/2312.01823
-    '''
+    """
 
     def __init__(self, panelists):
         self.panelists = panelists
