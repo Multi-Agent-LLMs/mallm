@@ -1,5 +1,5 @@
 def identify_personas():
-    template = '''\
+    template = """\
 {sys_s}When faced with a task, begin by identifying the participants who will contribute to solving the task. Provide profiles of the participants, describing their expertise or needs, formatted as a dictionary.
 
 Here are some examples:
@@ -29,25 +29,25 @@ Task: {taskInstruction}
 Input: {input}
 
 Profiles: {sys_e}\
-'''
+"""
     return template
 
 
 def extract_result():
-    template = '''\
+    template = """\
 {sys_s}Extract the final result from the provided text. Do not output any additional text and remove the explanation. Only copy the result from the provided text without modifications.
 {result}
 
 Now extract the final result: {sys_e}\
-'''
+"""
     return template
 
 
 def baseline():
-    template = '''\
+    template = """\
 {sys_s}Please consider the example provided and think it step by step.
 Task: {taskInstruction}
 Input: {input}
 Utilize your talent and critical thinking to provide a solution. {sys_e}\
-'''
+"""
     return template
