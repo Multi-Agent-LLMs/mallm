@@ -66,3 +66,10 @@ stream_handler.setFormatter(formatter)
 # Attach the handler to the logger
 library_logger.addHandler(stream_handler)
 ```
+
+## Contributing
+If you want to contribute please use this pre-commit hook to ensure the same formatting for everyone
+```bash
+pip install pre-commit
+pre-commit install
+```
