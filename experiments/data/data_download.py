@@ -7,12 +7,19 @@ from datasets import load_dataset
 
 
 class DatasetDownloader(ABC):
-    def __init__(self, name: str, hf_dataset: bool = True, dataset_name: str = None, version: str = 'main',
-                 sample_size: int = 30, trust_remote_code: bool = False):
+    def __init__(
+        self,
+        name: str,
+        hf_dataset: bool = True,
+        dataset_name: str = None,
+        version: str = "main",
+        sample_size: int = 1000,
+        trust_remote_code: bool = False,
+    ):
         self.name = name
         self.version = version
         self.dataset_path = f"datasets/{name}"
-        self.output_path = f"{name}.json"
+        self.output_path = f"datasets/{name}.json"
         self.dataset = None
         self.sample_size = sample_size
         if dataset_name is None:
@@ -35,7 +42,9 @@ class DatasetDownloader(ABC):
             return False
 
     def hf_download(self):
-        self.dataset = load_dataset(self.dataset_name, self.version, trust_remote_code=self.trust_remote_code)
+        self.dataset = load_dataset(
+            self.dataset_name, self.version, trust_remote_code=self.trust_remote_code
+        )
         self.dataset.save_to_disk(self.dataset_path)
 
     @abstractmethod
@@ -47,10 +56,10 @@ class DatasetDownloader(ABC):
         pass
 
     def save_to_json(self, data):
-        with open(self.output_path, 'w') as file:
+        with open(self.output_path, "w") as file:
             file.write(data)
 
-    def shuffle_and_select(self, split='train'):
+    def shuffle_and_select(self, split="train"):
         if self.dataset:
             return self.dataset[split].shuffle(seed=42).select(range(self.sample_size))
         else:
