@@ -4,7 +4,6 @@ import os, sys
 from langchain_community.llms import HuggingFaceEndpoint
 from multiprocessing.pool import ThreadPool
 import os
-import time
 import requests
 import httpx
 from langchain_community.llms.huggingface_endpoint import HuggingFaceEndpoint
@@ -24,13 +23,6 @@ stream_handler.setFormatter(formatter)
 library_logger.addHandler(stream_handler)
 
 logger = logging.getLogger("mallm")
-
-# Environment setup
-MAX_CONCURRENT_REQUESTS = 100
-MIN_ROUNDS = 15
-MAX_ROUNDS = 30
-NUM_DISCUSSIONS = 1000
-GLOBAL_START_TIME = time.time()
 
 output_dicts = []
 
