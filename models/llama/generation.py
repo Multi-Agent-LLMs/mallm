@@ -373,9 +373,9 @@ class Llama:
                 {
                     "generation": {
                         "role": "assistant",
-                        "content": self.tokenizer.decode(t)
-                        if not unsafe
-                        else UNSAFE_ERROR,
+                        "content": (
+                            self.tokenizer.decode(t) if not unsafe else UNSAFE_ERROR
+                        ),
                     },
                     "tokens": [self.tokenizer.decode(x) for x in t],
                     "logprobs": logprobs_i,
