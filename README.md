@@ -37,7 +37,7 @@ MALLM relies on an external API (Text Generation Inference by Huggingface).
 Check the information [here (tg-hpc)](https://github.com/Multi-Agent-LLMs/tgi-hpc) or [here (tgi-scc)](https://github.com/Multi-Agent-LLMs/tgi-scc) about how to host a model yourself.
 
 Once the endpoint is available, your can initiate all discussions by a single script. Example:
-`python mallm/run_async.py --data=datasets/etpc.json --out=experiments/result.json --instruction="Paraphrase the input text." --endpoint_url="http://127.0.0.1:8080" --hf_api_token="your token" --max_concurrent_requests=100`
+`python mallm/run_async.py --data=experiments/data/datasets/etpc.json --out=experiments/result.json --instruction="Paraphrase the input text." --endpoint_url="http://127.0.0.1:8080" --hf_api_token="your token" --max_concurrent_requests=100`
 While each discussion is sequential, multiple discussions can be processed in parallel for significant speedup. Please set `max_concurrent_requests` to a reasonable number so that you do not block the GPU for all other users of the TGI instance.
 
 More parameters:

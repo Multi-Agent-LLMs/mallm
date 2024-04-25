@@ -1,12 +1,16 @@
-from mallm.discourse_policy.coordinator import *
-import logging
-import os, sys
-from langchain_community.llms import HuggingFaceEndpoint
+import sys
 from multiprocessing.pool import ThreadPool
-import os
-import requests
+
 import httpx
+import requests
+from colorama import just_fix_windows_console
+from langchain_community.llms import HuggingFaceEndpoint
 from langchain_community.llms.huggingface_endpoint import HuggingFaceEndpoint
+
+from mallm.discourse_policy.coordinator import *
+from mallm.utils.CustomFormatter import CustomFormatter
+
+just_fix_windows_console()
 
 # Configure logging for the library
 library_logger = logging.getLogger("mallm")
@@ -16,8 +20,7 @@ library_logger.setLevel(logging.INFO)
 stream_handler = logging.StreamHandler()
 
 # Optionally set a formatter
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-stream_handler.setFormatter(formatter)
+stream_handler.setFormatter(CustomFormatter())
 
 # Attach the handler to the logger
 library_logger.addHandler(stream_handler)

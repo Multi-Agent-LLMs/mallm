@@ -166,3 +166,8 @@ cython_debug/
 /experiments/data/datasets
 /datasets
 experiments/out/exp1/exp1_etpc_memory.json
+
+/notebooks/data
+!/notebooks/data/.gitkeep
+
+experiments/
