@@ -84,13 +84,13 @@ class Coordinator:
         res = self.chain_identify_personas.invoke(template_filling, client=self.client)[
             "text"
         ]
-        logger.info(res)
+        logger.debug(res)
 
         # TODO: Use grammar to force LLM output in the correct JSON format. Example with llama.ccp: https://til.simonwillison.net/llms/llama-cpp-python-grammars
 
         # repair dictionary in string if the LLM did mess up the formatting
         if "{" in res and "}" not in res:
-            logger.info(
+            logger.debug(
                 "Looks like the LLM did not provide a valid dictionary (maybe the last brace is missing?). Trying to repair the dictionary..."
             )
             res = res + "}"
@@ -116,13 +116,13 @@ class Coordinator:
                     self.personas = ast.literal_eval(personas_string)
                 except Exception as e:
                     if i == 0:
-                        logger.info(
+                        logger.debug(
                             "Looks like the LLM did not get the formatting quite right. Trying to repair the dictionary string..."
                         )
                         personas_string = personas_string.replace("'\n", "',\n")
                         personas_string = personas_string.replace('"\n', '",\n')
                         personas_string = personas_string.replace('";', '",')
-                        logger.info("Repaired string: \n" + str(personas_string))
+                        logger.debug("Repaired string: \n" + str(personas_string))
                         continue
                     elif i == 1:
                         logger.error(
@@ -330,7 +330,7 @@ class Coordinator:
         memories = []
         agreements = []
 
-        logger.info(
+        logger.debug(
             """Paradigm: Memory
                     ┌───┐
                     │A 1│
@@ -430,7 +430,7 @@ class Coordinator:
         memories = []
         agreements = []
 
-        logger.info(
+        logger.debug(
             """Paradigm: Report
                     ┌───┐
                     │A 1│
@@ -446,8 +446,7 @@ class Coordinator:
 
         while not decision and (turn < max_turns or max_turns is None):
             turn = turn + 1
-            log = "Ongoing. Current turn: " + str(turn)
-            logger.info(log)
+            logger.info("Ongoing. Current turn: " + str(turn))
 
             # ---- Agent A1
             if use_moderator:
@@ -558,7 +557,7 @@ class Coordinator:
         memories = []
         agreements = []
 
-        logger.info(
+        logger.debug(
             """Paradigm: Relay
                     ┌───┐
           ┌────────►│A 1│─────────┐
@@ -574,8 +573,7 @@ class Coordinator:
 
         while not decision and (turn < max_turns or max_turns is None):
             turn = turn + 1
-            log = "Ongoing. Current turn: " + str(turn)
-            logger.info(log)
+            logger.info("Ongoing. Current turn: " + str(turn))
 
             for i, a in enumerate(self.agents):
                 memory_string, memory_ids, current_draft = a.getMemoryString(
@@ -652,7 +650,7 @@ class Coordinator:
         memories = []
         agreements = []
 
-        logger.info(
+        logger.debug(
             f"""Paradigm: Debate (rounds: {debate_rounds})
                     ┌───┐
           ┌────────►│A 1│◄────────┐
@@ -671,7 +669,7 @@ class Coordinator:
         while not decision and (turn < max_turns or max_turns is None):
             turn = turn + 1
             log = "Ongoing. Current turn: " + str(turn)
-            logger.info(log)
+            logger.info("Ongoing. Current turn: " + str(turn))
 
             # ---- Agent A1
             if use_moderator:
@@ -733,7 +731,7 @@ class Coordinator:
                 unique_id = unique_id + 1
 
             for r in range(debate_rounds):  # ---- Agents A2, A3, ...
-                logger.info("Debate round: " + str(r))
+                logger.debug("Debate round: " + str(r))
                 debate_agreements = []
                 for i, a in enumerate(self.agents[1:]):  # similar to relay paradigm
                     memory_string, memory_ids, current_draft = a.getMemoryString(
@@ -837,7 +835,7 @@ class Coordinator:
 
         logger.info(
             f"""
-Starting discussion...
+Starting discussion with coordinator {self.id}...
 -------------
 Instruction: {task_instruction}
 Input: {input}

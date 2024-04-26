@@ -72,17 +72,17 @@ class Agent:
             agreements.append(
                 {"agentId": self.id, "persona": self.persona, "agreement": True}
             )
-            logger.info(f"Agent {self.short_id} agreed")
+            logger.debug(f"Agent {self.short_id} agreed")
         elif self_drafted and not self == self.moderator:
             agreements.append(
                 {"agentId": self.id, "persona": self.persona, "agreement": True}
             )
-            logger.info(f"Agent {self.short_id} agreed")
+            logger.debug(f"Agent {self.short_id} agreed")
         elif not self == self.moderator:
             agreements.append(
                 {"agentId": self.id, "persona": self.persona, "agreement": False}
             )
-            logger.info(f"Agent {self.short_id} disagreed")
+            logger.debug(f"Agent {self.short_id} disagreed")
 
         if len(agreements) > len(self.coordinator.panelists):
             agreements = agreements[-len(self.coordinator.panelists) :]
@@ -116,7 +116,7 @@ class Agent:
             "memoryIds": memory_ids,
             "additionalArgs": template_filling,
         }
-        logger.info(f"Agent {self.short_id} is improving answer")
+        logger.debug(f"Agent {self.short_id} is improving answer")
         self.coordinator.updateGlobalMemory(
             unique_id,
             turn,
@@ -164,7 +164,7 @@ class Agent:
             "memoryIds": memory_ids,
             "additionalArgs": template_filling,
         }
-        logger.info(f"Agent {self.short_id} is drafting")
+        logger.debug(f"Agent {self.short_id} is drafting")
         self.coordinator.updateGlobalMemory(
             unique_id,
             turn,
@@ -194,7 +194,7 @@ class Agent:
             "memoryIds": memory_ids,
             "additionalArgs": template_filling,
         }
-        logger.info(f"Agent {self.short_id} provides feedback to another agent")
+        logger.debug(f"Agent {self.short_id} provides feedback to another agent")
         self.coordinator.updateGlobalMemory(
             unique_id,
             turn,
