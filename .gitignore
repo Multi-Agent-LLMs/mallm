@@ -171,3 +171,4 @@ experiments/out/exp1/exp1_etpc_memory.json
 !/notebooks/data/.gitkeep
 
 experiments/
+log.txt

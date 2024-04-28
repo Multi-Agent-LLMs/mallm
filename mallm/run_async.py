@@ -45,6 +45,7 @@ def run_discussion(
     paradigm="memory",
     context_length=1,
     include_current_turn_in_memory=False,
+    memory_bucket_dir="./experiments/memory_bucket/",
 ):
     """
     Runs a single discussion between agents on a sample.
@@ -52,7 +53,12 @@ def run_discussion(
 
     logger.info(f"""Starting discussion of sample {sample["exampleId"]}""")
     try:
-        coordinator = Coordinator(use_moderator=use_moderator, model=llm, client=client)
+        coordinator = Coordinator(
+            use_moderator=use_moderator,
+            model=llm,
+            client=client,
+            memory_bucket_dir=memory_bucket_dir,
+        )
     except Exception as e:
         logger.error("Failed intializing coordinator.")
         print(e)
@@ -136,6 +142,7 @@ def manage_discussions(
     context_length,
     include_current_turn_in_memory,
     max_concurrent_requests=100,
+    memory_bucket_dir="./experiments/memory_bucket/",
 ):
     """
     Manages all discussions on the data.
@@ -175,6 +182,7 @@ def manage_discussions(
                         paradigm,
                         context_length,
                         include_current_turn_in_memory,
+                        memory_bucket_dir,
                     ),
                 )
             )
@@ -191,6 +199,25 @@ def manage_discussions(
             logger.error("Process %s failed!" % i)
 
 
+def cleanMemoryBucket(memory_bucket_dir):
+    """
+    Deletes all stored global memory
+    """
+    filelist = glob.glob(os.path.join(memory_bucket_dir, "*.bak"))
+    for f in filelist:
+        os.remove(f)
+    filelist = glob.glob(os.path.join(memory_bucket_dir, "*.dat"))
+    for f in filelist:
+        os.remove(f)
+    filelist = glob.glob(os.path.join(memory_bucket_dir, "*.dir"))
+    for f in filelist:
+        os.remove(f)
+    filelist = glob.glob(os.path.join(memory_bucket_dir, "*.json"))
+    for f in filelist:
+        os.remove(f)
+    logger.info("Cleaned the memory bucket.")
+
+
 def main(
     data,
     out,
@@ -204,6 +231,8 @@ def main(
     context_length=1,
     include_current_turn_in_memory=False,
     max_concurrent_requests=100,
+    clear_memory_bucket=True,
+    memory_bucket_dir="./experiments/memory_bucket/",
 ):
     """
     The routine that starts the discussions between LLM agents iteratively on the provided data.
@@ -245,6 +274,10 @@ def main(
         os.remove(out)
         logger.info(f"""The file {out} has been deleted.""")
 
+    # Cleaning the memory bucked from previous runs
+    if clear_memory_bucket:
+        cleanMemoryBucket(memory_bucket_dir)
+
     # Read input data (format: json lines)
     logger.info(f"""Reading {data}...""")
     d = []
@@ -273,6 +306,7 @@ def main(
             context_length,
             include_current_turn_in_memory,
             max_concurrent_requests,
+            memory_bucket_dir,
         )
 
 

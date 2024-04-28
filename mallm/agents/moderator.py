@@ -7,7 +7,7 @@ class Moderator(Agent):
         self.short_id = self.id[:4]
         self.persona = persona
         self.persona_description = "A super-intelligent individual with critical thinking who has a neutral position at all times. He acts as a mediator between other discussion participants."
-        self.memory_bucket = memory_bucket_dir + "agent_{}".format(self.id)
+        self.memory_bucket = coordinator.memory_bucket_dir + "agent_{}".format(self.id)
         self.coordinator = coordinator
         self.moderator = self
         self.llm = llm

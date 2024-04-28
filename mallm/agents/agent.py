@@ -21,7 +21,7 @@ class Agent:
         self.short_id = self.id[:4]
         self.persona = persona
         self.persona_description = persona_description
-        self.memory_bucket = memory_bucket_dir + "agent_{}".format(self.id)
+        self.memory_bucket = coordinator.memory_bucket_dir + "agent_{}".format(self.id)
         self.coordinator = coordinator
         self.moderator = moderator
         self.llm = llm

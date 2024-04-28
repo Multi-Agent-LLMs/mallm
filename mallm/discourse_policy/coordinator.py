@@ -21,7 +21,13 @@ logger = logging.getLogger("mallm")
 
 
 class Coordinator:
-    def __init__(self, model, client, use_moderator=False):
+    def __init__(
+        self,
+        model,
+        client,
+        use_moderator=False,
+        memory_bucket_dir="./experiments/memory_bucket/",
+    ):
         self.personas = None
         self.id = str(uuid.uuid4())
         self.short_id = self.id[:4]
@@ -29,7 +35,8 @@ class Coordinator:
         self.agents = []
         self.use_moderator = use_moderator
         self.moderator = None
-        self.memory_bucket = memory_bucket_dir + "global_" + self.id
+        self.memory_bucket_dir = memory_bucket_dir
+        self.memory_bucket = self.memory_bucket_dir + "global_" + self.id
         self.decision_making = None
         self.llm = model
         self.client = client
@@ -281,24 +288,6 @@ class Coordinator:
         except Exception as e:
             logger.error(f"Failed to save agent memory to {self.memory_bucket}: {e}")
             logger.error(self.getGlobalMemory())
-
-    def cleanMemoryBucket(self):
-        """
-        Deletes all stored global memory
-        """
-        filelist = glob.glob(os.path.join(memory_bucket_dir, "*.bak"))
-        for f in filelist:
-            os.remove(f)
-        filelist = glob.glob(os.path.join(memory_bucket_dir, "*.dat"))
-        for f in filelist:
-            os.remove(f)
-        filelist = glob.glob(os.path.join(memory_bucket_dir, "*.dir"))
-        for f in filelist:
-            os.remove(f)
-        filelist = glob.glob(os.path.join(memory_bucket_dir, "*.json"))
-        for f in filelist:
-            os.remove(f)
-        logger.info("Cleaned the memory bucket.")
 
     def updateMemories(self, memories, agents_to_update):
         """
