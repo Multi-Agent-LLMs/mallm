@@ -84,7 +84,7 @@ class Coordinator:
         res = self.chain_identify_personas.invoke(template_filling, client=self.client)[
             "text"
         ]
-        logger.debug(res)
+        logger.debug("Identifying personas... LLM output: " + res)
 
         # TODO: Use grammar to force LLM output in the correct JSON format. Example with llama.ccp: https://til.simonwillison.net/llms/llama-cpp-python-grammars
 
@@ -125,7 +125,7 @@ class Coordinator:
                         logger.debug("Repaired string: \n" + str(personas_string))
                         continue
                     elif i == 1:
-                        logger.error(
+                        logger.warning(
                             f"Failed to parse the string to identify personas: {e} - Skipping this sample..."
                         )
                         # personas_string = '''{
@@ -241,11 +241,22 @@ class Coordinator:
         Updates the dbm memory with another discussion entry.
         Returns string
         """
-        with dbm.open(self.memory_bucket, "c") as db:
-            db[str(unique_id)] = (
-                f"""{{"messageId": {unique_id}, "turn": {turn}, "agentId": "{agent_id}", "persona": "{str(persona).replace('"', "'")}", "additionalArgs":{prompt_args}, "contribution": "{contribution}", "memoryIds": {memory_ids}, "text": "{str(text).replace('"', "'")}", "agreement": {agreement}, "extractedDraft": "{str(extracted_draft).replace('"', "'")}"}}"""
-            )
 
+        data_dict = {
+            "messageId": unique_id,
+            "turn": turn,
+            "agentId": agent_id,
+            "persona": str(persona).replace('"', "'"),
+            "additionalArgs": prompt_args,
+            "contribution": contribution,
+            "memoryIds": memory_ids,
+            "text": str(text).replace('"', "'"),
+            "agreement": agreement,
+            "extractedDraft": str(extracted_draft).replace('"', "'"),
+        }
+
+        with dbm.open(self.memory_bucket, "c") as db:
+            db[str(unique_id)] = json.dumps(data_dict)
             logger.debug(str(db[str(unique_id)]))
         self.saveGlobalMemoryToJson()
 
@@ -257,11 +268,7 @@ class Coordinator:
         memory = []
         with dbm.open(self.memory_bucket, "r") as db:
             for key in db.keys():
-                memory.append(
-                    ast.literal_eval(
-                        db[key].decode().replace("\n", "\\n").replace("\t", "\\t")
-                    )
-                )
+                memory.append(json.loads(db[key].decode()))
         return memory
 
     def saveGlobalMemoryToJson(self):

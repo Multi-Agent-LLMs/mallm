@@ -25,6 +25,7 @@ stream_handler.setFormatter(CustomFormatter())
 # Attach the handler to the logger
 library_logger.addHandler(stream_handler)
 
+logging.basicConfig(filename="log.txt", filemode="w")
 logger = logging.getLogger("mallm")
 
 output_dicts = []

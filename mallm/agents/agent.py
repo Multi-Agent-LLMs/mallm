@@ -226,12 +226,22 @@ class Agent:
         Updates the dbm memory with another discussion entry.
         Returns string
         """
-        if extracted_draft:
-            extracted_draft = str(extracted_draft).replace('"', "'")
+
+        data_dict = {
+            "messageId": unique_id,
+            "turn": turn,
+            "agentId": agent_id,
+            "persona": str(persona).replace('"', "'"),
+            "additionalArgs": prompt_args,
+            "contribution": contribution,
+            "memoryIds": memory_ids,
+            "text": "\n udszua \t shssh super cool \n\\n okay",  # str(text).replace('"', "'"),
+            "agreement": agreement,
+            "extractedDraft": str(extracted_draft).replace('"', "'"),
+        }
+
         with dbm.open(self.memory_bucket, "c") as db:
-            db[str(unique_id)] = (
-                f"""{{"messageId": {unique_id}, "turn": {turn}, "agentId": "{agent_id}", "persona": "{str(persona).replace('"', "'")}", "additionalArgs": {prompt_args}, "contribution": "{contribution}", "memoryIds": {memory_ids}, "text": "{str(text).replace('"', "'")}", "agreement": {agreement}, "extractedDraft": "{str(extracted_draft).replace('"', "'")}"}}"""
-            )
+            db[str(unique_id)] = json.dumps(data_dict)
         self.saveMemoryToJson()
 
     def getMemory(
@@ -252,9 +262,7 @@ class Agent:
             with dbm.open(self.memory_bucket, "r") as db:
                 for key in db.keys():
                     memory.append(
-                        ast.literal_eval(
-                            db[key].decode().replace("\n", "\\n").replace("\t", "\\t")
-                        )
+                        json.loads(db[key].decode())
                     )  # TODO: Maybe reverse sort
             # memory = sorted(memory.items(), key=lambda x: x["messageId"], reverse=False)
             context_memory = []
@@ -277,8 +285,6 @@ class Agent:
                         and "disagree" in m["text"].lower()
                     ):
                         current_draft = m["text"]
-
-            # context_memory = dict(context_memory)
         else:
             context_memory = None
 
