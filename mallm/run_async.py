@@ -1,3 +1,4 @@
+import logging
 import sys, glob, httpx, requests
 from multiprocessing.pool import ThreadPool
 from colorama import just_fix_windows_console
@@ -11,7 +12,7 @@ just_fix_windows_console()
 
 # Configure logging for the library
 library_logger = logging.getLogger("mallm")
-library_logger.setLevel(logging.INFO)
+library_logger.setLevel(logging.DEBUG)
 
 # Add handlers to the logger
 stream_handler = logging.StreamHandler()
@@ -159,10 +160,7 @@ def manage_discussions(
         # min_new_tokens=2,  # always answer something (no empty responses)
         repetition_penalty=1.1,  # without this output begins repeating
         stop_sequences=[
-            "<|start_header_id|>",
-            "<|end_header_id|>",
             "<|eot_id|>",
-            "<|reserved_special_token|>",
         ],
         # These are the stop tokens for LLama 3. Maybe we have to add more for other models
     )  # type: ignore
