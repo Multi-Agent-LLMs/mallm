@@ -161,6 +161,13 @@ def manage_discussions(
         max_new_tokens=512,  # max number of tokens to generate in the output
         # min_new_tokens=2,  # always answer something (no empty responses)
         repetition_penalty=1.1,  # without this output begins repeating
+        stop_sequences=[
+            "<|start_header_id|>",
+            "<|end_header_id|>",
+            "<|eot_id|>",
+            "<|reserved_special_token|>",
+        ],
+        # These are the stop tokens for LLama 3. Maybe we have to add more for other models
     )  # type: ignore
 
     pool = ThreadPool(processes=max_concurrent_requests)
