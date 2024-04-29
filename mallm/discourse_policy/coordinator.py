@@ -2,6 +2,7 @@ import glob
 import re
 import time
 from datetime import timedelta
+import uuid
 
 import transformers
 from langchain.chains import LLMChain
@@ -20,31 +21,37 @@ logger = logging.getLogger("mallm")
 
 
 class Coordinator:
-    def __init__(self, use_moderator=True, verbose=False):
+    def __init__(
+        self,
+        model,
+        client,
+        use_moderator=False,
+        memory_bucket_dir="./experiments/memory_bucket/",
+    ):
         self.personas = None
+        self.id = str(uuid.uuid4())
+        self.short_id = self.id[:4]
         self.panelists = []
         self.agents = []
         self.use_moderator = use_moderator
         self.moderator = None
-        self.memory_bucket = memory_bucket_dir + "global"
+        self.memory_bucket_dir = memory_bucket_dir
+        self.memory_bucket = self.memory_bucket_dir + "global_" + self.id
         self.decision_making = None
-        self.llm_tokenizer = None
-        self.llm = self.create_llm()
+        self.llm = model
+        self.client = client
         self.init_chains()
-        self.verbose = verbose
 
     def init_chains(self):
-        if (
-            "llama" in self.llm_tokenizer.__class__.__name__.lower()
-        ):  # use <<SYS>> and [INST] tokens for llama models
-            partial_variables = {
-                "sys_s": "<<SYS>>",
-                "sys_e": "<</SYS>>",
-                "inst_s": "[INST]",
-                "inst_e": "[/INST]",
-            }
-        else:
-            partial_variables = {"sys_s": "", "sys_e": "", "inst_s": "", "inst_e": ""}
+        # if "llama" in self.llm_tokenizer.__class__.__name__.lower():  # use <<SYS>> and [INST] tokens for llama models
+        partial_variables = {
+            "sys_s": "<<SYS>>",
+            "sys_e": "<</SYS>>",
+            "inst_s": "[INST]",
+            "inst_e": "[/INST]",
+        }  # TODO: implement a handler that adds (or leaves out) model-specific tokens for models like llama2, llama3 or chatGpt
+        # else:
+        #    partial_variables = {"sys_s": "", "sys_e": "", "inst_s": "", "inst_e": ""}
 
         self.chain_identify_personas = LLMChain(
             llm=self.llm,
@@ -68,7 +75,7 @@ class Coordinator:
             ),
         )
 
-    def initAgents(self, task_instruction, input, use_moderator, persona_type="expert"):
+    def initAgents(self, task_instruction, input, use_moderator):
         """
         Instantiates the agents by
         1) identify helpful personas
@@ -81,15 +88,16 @@ class Coordinator:
         self.agents = []
         template_filling = {"taskInstruction": task_instruction, "input": input}
 
-        res = self.chain_identify_personas.invoke(template_filling)["text"]
-        if self.verbose:
-            logger.info(res)
+        res = self.chain_identify_personas.invoke(template_filling, client=self.client)[
+            "text"
+        ]
+        logger.debug("Identifying personas... LLM output: " + res)
 
         # TODO: Use grammar to force LLM output in the correct JSON format. Example with llama.ccp: https://til.simonwillison.net/llms/llama-cpp-python-grammars
 
         # repair dictionary in string if the LLM did mess up the formatting
         if "{" in res and "}" not in res:
-            logger.error(
+            logger.debug(
                 "Looks like the LLM did not provide a valid dictionary (maybe the last brace is missing?). Trying to repair the dictionary..."
             )
             res = res + "}"
@@ -115,16 +123,16 @@ class Coordinator:
                     self.personas = ast.literal_eval(personas_string)
                 except Exception as e:
                     if i == 0:
-                        logger.error(
+                        logger.debug(
                             "Looks like the LLM did not get the formatting quite right. Trying to repair the dictionary string..."
                         )
                         personas_string = personas_string.replace("'\n", "',\n")
                         personas_string = personas_string.replace('"\n', '",\n')
                         personas_string = personas_string.replace('";', '",')
-                        logger.info("Repaired string: \n" + str(personas_string))
+                        logger.debug("Repaired string: \n" + str(personas_string))
                         continue
                     elif i == 1:
-                        logger.error(
+                        logger.warning(
                             f"Failed to parse the string to identify personas: {e} - Skipping this sample..."
                         )
                         # personas_string = '''{
@@ -137,10 +145,10 @@ class Coordinator:
 
         self.panelists = []
         if use_moderator:
-            self.moderator = Moderator(self.llm, self.llm_tokenizer, self)
+            self.moderator = Moderator(self.llm, self.client, self)
         for i, p in enumerate(self.personas):
             self.panelists.append(
-                Panelist(self.llm, self.llm_tokenizer, p, self.personas[p], self)
+                Panelist(self.llm, self.client, p, self.personas[p], self)
             )
 
         if use_moderator:
@@ -156,7 +164,7 @@ class Coordinator:
             agent_dicts.append(
                 {
                     "agentId": a.id,
-                    "model": ckpt_dir.split("/")[-1],
+                    "model": "placeholder",  # TODO: automatically detect model name
                     "persona": a.persona,
                     "personaDescription": a.persona_description,
                 }
@@ -240,12 +248,23 @@ class Coordinator:
         Updates the dbm memory with another discussion entry.
         Returns string
         """
+
+        data_dict = {
+            "messageId": unique_id,
+            "turn": turn,
+            "agentId": agent_id,
+            "persona": str(persona).replace('"', "'"),
+            "additionalArgs": prompt_args,
+            "contribution": contribution,
+            "memoryIds": memory_ids,
+            "text": str(text).replace('"', "'"),
+            "agreement": agreement,
+            "extractedDraft": str(extracted_draft).replace('"', "'"),
+        }
+
         with dbm.open(self.memory_bucket, "c") as db:
-            db[str(unique_id)] = (
-                f"""{{"messageId": {unique_id}, "turn": {turn}, "agentId": "{agent_id}", "persona": "{str(persona).replace('"', "'")}", "additionalArgs":{prompt_args}, "contribution": "{contribution}", "memoryIds": {memory_ids}, "text": "{str(text).replace('"', "'")}", "agreement": {agreement}, "extractedDraft": "{str(extracted_draft).replace('"', "'")}"}}"""
-            )
-            if self.verbose:
-                logger.info(str(db[str(unique_id)]))  # logging
+            db[str(unique_id)] = json.dumps(data_dict)
+            logger.debug(str(db[str(unique_id)]))
         self.saveGlobalMemoryToJson()
 
     def getGlobalMemory(self):
@@ -256,11 +275,7 @@ class Coordinator:
         memory = []
         with dbm.open(self.memory_bucket, "r") as db:
             for key in db.keys():
-                memory.append(
-                    ast.literal_eval(
-                        db[key].decode().replace("\n", "\\n").replace("\t", "\\t")
-                    )
-                )
+                memory.append(json.loads(db[key].decode()))
         return memory
 
     def saveGlobalMemoryToJson(self):
@@ -273,24 +288,6 @@ class Coordinator:
         except Exception as e:
             logger.error(f"Failed to save agent memory to {self.memory_bucket}: {e}")
             logger.error(self.getGlobalMemory())
-
-    def cleanMemoryBucket(self):
-        """
-        Deletes all stored global memory
-        """
-        filelist = glob.glob(os.path.join(memory_bucket_dir, "*.bak"))
-        for f in filelist:
-            os.remove(f)
-        filelist = glob.glob(os.path.join(memory_bucket_dir, "*.dat"))
-        for f in filelist:
-            os.remove(f)
-        filelist = glob.glob(os.path.join(memory_bucket_dir, "*.dir"))
-        for f in filelist:
-            os.remove(f)
-        filelist = glob.glob(os.path.join(memory_bucket_dir, "*.json"))
-        for f in filelist:
-            os.remove(f)
-        logger.info("Cleaned the memory bucket.")
 
     def updateMemories(self, memories, agents_to_update):
         """
@@ -329,7 +326,7 @@ class Coordinator:
         memories = []
         agreements = []
 
-        logger.info(
+        logger.debug(
             """Paradigm: Memory
                     ┌───┐
                     │A 1│
@@ -344,10 +341,9 @@ class Coordinator:
         )
         while not decision and (turn < max_turns or max_turns is None):
             turn = turn + 1
-            log = "Ongoing. Current turn: " + str(turn)
-            if not self.verbose:
-                log = "\r" + log + "        "
-            logger.info(log)
+            logger.info(
+                "Discussion " + self.id + " ongoing. Current turn: " + str(turn)
+            )
 
             if use_moderator:
                 memory_string, memory_ids, current_draft = (
@@ -430,7 +426,7 @@ class Coordinator:
         memories = []
         agreements = []
 
-        logger.info(
+        logger.debug(
             """Paradigm: Report
                     ┌───┐
                     │A 1│
@@ -446,10 +442,7 @@ class Coordinator:
 
         while not decision and (turn < max_turns or max_turns is None):
             turn = turn + 1
-            log = "Ongoing. Current turn: " + str(turn)
-            if not self.verbose:
-                log = "\r" + log + "        "
-            logger.info(log)
+            logger.info("Ongoing. Current turn: " + str(turn))
 
             # ---- Agent A1
             if use_moderator:
@@ -560,7 +553,7 @@ class Coordinator:
         memories = []
         agreements = []
 
-        logger.info(
+        logger.debug(
             """Paradigm: Relay
                     ┌───┐
           ┌────────►│A 1│─────────┐
@@ -576,10 +569,7 @@ class Coordinator:
 
         while not decision and (turn < max_turns or max_turns is None):
             turn = turn + 1
-            log = "Ongoing. Current turn: " + str(turn)
-            if not self.verbose:
-                log = "\r" + log + "        "
-            logger.info(log)
+            logger.info("Ongoing. Current turn: " + str(turn))
 
             for i, a in enumerate(self.agents):
                 memory_string, memory_ids, current_draft = a.getMemoryString(
@@ -656,7 +646,7 @@ class Coordinator:
         memories = []
         agreements = []
 
-        logger.info(
+        logger.debug(
             f"""Paradigm: Debate (rounds: {debate_rounds})
                     ┌───┐
           ┌────────►│A 1│◄────────┐
@@ -675,9 +665,7 @@ class Coordinator:
         while not decision and (turn < max_turns or max_turns is None):
             turn = turn + 1
             log = "Ongoing. Current turn: " + str(turn)
-            if not self.verbose:
-                log = "\r" + log + "        "
-            logger.info(log)
+            logger.info("Ongoing. Current turn: " + str(turn))
 
             # ---- Agent A1
             if use_moderator:
@@ -739,7 +727,7 @@ class Coordinator:
                 unique_id = unique_id + 1
 
             for r in range(debate_rounds):  # ---- Agents A2, A3, ...
-                logger.info("Debate round: " + str(r))
+                logger.debug("Debate round: " + str(r))
                 debate_agreements = []
                 for i, a in enumerate(self.agents[1:]):  # similar to relay paradigm
                     memory_string, memory_ids, current_draft = a.getMemoryString(
@@ -815,7 +803,7 @@ class Coordinator:
             task_instruction += "\n" + "Context: " + context
 
         if not self.initAgents(task_instruction, input, use_moderator=use_moderator):
-            logger.error("Failed to intialize agents.")
+            logger.error(f"""Failed to intialize agents (coordinator: {self.id}).""")
             return (
                 None,
                 None,
@@ -843,7 +831,7 @@ class Coordinator:
 
         logger.info(
             f"""
-Starting discussion...
+Starting discussion with coordinator {self.id}...
 -------------
 Instruction: {task_instruction}
 Input: {input}
@@ -912,9 +900,9 @@ Decision-making: {self.decision_making.__class__.__name__}
         if turn >= max_turns:  # if no agreement was reached
             current_draft = None
         else:
-            current_draft = self.chain_extract_result.invoke({"result": current_draft})[
-                "text"
-            ]
+            current_draft = self.chain_extract_result.invoke(
+                {"result": current_draft}, client=self.client
+            )["text"]
 
         return current_draft, globalMem, agentMems, turn, agreements, discussionTime
 

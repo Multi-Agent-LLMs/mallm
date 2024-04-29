@@ -13,13 +13,13 @@ class DatasetDownloader(ABC):
         hf_dataset: bool = True,
         dataset_name: str = None,
         version: str = "main",
-        sample_size: int = 30,
+        sample_size: int = 1000,
         trust_remote_code: bool = False,
     ):
         self.name = name
         self.version = version
         self.dataset_path = f"datasets/{name}"
-        self.output_path = f"{name}.json"
+        self.output_path = f"datasets/{name}.json"
         self.dataset = None
         self.sample_size = sample_size
         if dataset_name is None:
