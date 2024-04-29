@@ -1,6 +1,10 @@
-def identify_personas():
-    template = """\
-{sys_s}When faced with a task, begin by identifying the participants who will contribute to solving the task. Provide profiles of the participants, describing their expertise or needs, formatted as a dictionary.
+from langchain_core.prompts import ChatPromptTemplate
+
+identify_personas = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            """When faced with a task, begin by identifying the participants who will contribute to solving the task. Provide profiles of the participants, describing their expertise or needs, formatted as a dictionary.
 
 Here are some examples:
 ---
@@ -21,33 +25,34 @@ Profiles: {{
     "Computer scientist": "A scholar who specializes in the academic study of computer science. The computer scientist is familiar with the concept of a quantum computer and can provide guidance on how to explain it.",
     "Ten year old child": "A child with a limited English vocabulary and little knowledge about complicated concepts, such as a quantum computer."
 }}
----
+---""",
+        ),
+        (
+            "system",
+            "Now, identify at least 3 participants relevant to the task and provide their profiles as a dictionary in curly braces {{ }} using correct quotation marks for strings. Remember to present your final output after the prefix 'Profiles:'.",
+        ),
+        ("system", "Task: {taskInstruction}"),
+        ("system", "Input: {input}"),
+        ("user", "Profiles:"),
+    ]
+)
 
-Now, identify at least 3 participants relevant to the task and provide their profiles as a dictionary in curly braces {{ }} using correct quotation marks for strings. Remember to present your final output after the prefix "Profiles:".
+extract_result = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            "Extract the final result from the provided text. Do not output any additional text and remove the explanation. Only copy the result from the provided text without modifications.",
+        ),
+        ("user", "{result}"),
+        ("system", "Now extract the final result:"),
+    ]
+)
 
-Task: {taskInstruction}
-Input: {input}
-
-Profiles: {sys_e}\
-"""
-    return template
-
-
-def extract_result():
-    template = """\
-{sys_s}Extract the final result from the provided text. Do not output any additional text and remove the explanation. Only copy the result from the provided text without modifications.
-{result}
-
-Now extract the final result: {sys_e}\
-"""
-    return template
-
-
-def baseline():
-    template = """\
-{sys_s}Please consider the example provided and think it step by step.
-Task: {taskInstruction}
-Input: {input}
-Utilize your talent and critical thinking to provide a solution. {sys_e}\
-"""
-    return template
+baseline = ChatPromptTemplate.from_messages(
+    [
+        ("system", "Please consider the example provided and think it step by step."),
+        ("system", "Task: {taskInstruction}"),
+        ("system", "Input: {input}"),
+        ("user", "Utilize your talent and critical thinking to provide a solution."),
+    ]
+)

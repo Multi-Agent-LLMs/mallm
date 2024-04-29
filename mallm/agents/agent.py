@@ -1,14 +1,14 @@
-import os
-from mallm.config import *
 import dbm
 import json
-import ast
-import fire
-from mallm.prompts import agent_prompts
-from langchain_core.prompts import PromptTemplate
-from langchain.chains import LLMChain
-import uuid
 import logging
+import os
+import uuid
+
+import fire
+from langchain.chains import LLMChain
+from langchain_core.prompts import PromptTemplate
+
+from mallm.prompts import agent_prompts
 
 logger = logging.getLogger("mallm")
 
@@ -32,33 +32,17 @@ class Agent:
         )
 
     def init_chains(self):
-        # if "llama" in self.llm_tokenizer.__class__.__name__.lower():  # use <<SYS>> and [INST] tokens for llama models
-        partial_variables = {
-            "sys_s": "<<SYS>>",
-            "sys_e": "<</SYS>>",
-            "inst_s": "[INST]",
-            "inst_e": "[/INST]",
-        }  # TODO: implement a handler that adds (or leaves out) model-specific tokens for models like llama2, llama3 or chatGpt
-        # else:
-        #    partial_variables = {"sys_s": "", "sys_e": "", "inst_s": "", "inst_e": ""}
-
         self.chain_improve = LLMChain(
             llm=self.llm,
-            prompt=PromptTemplate.from_template(
-                template=agent_prompts.improve(), partial_variables=partial_variables
-            ),
+            prompt=agent_prompts.improve,
         )
         self.chain_draft = LLMChain(
             llm=self.llm,
-            prompt=PromptTemplate.from_template(
-                template=agent_prompts.draft(), partial_variables=partial_variables
-            ),
+            prompt=agent_prompts.draft,
         )
         self.chain_feedback = LLMChain(
             llm=self.llm,
-            prompt=PromptTemplate.from_template(
-                template=agent_prompts.feedback(), partial_variables=partial_variables
-            ),
+            prompt=agent_prompts.feedback,
         )
 
     def agree(self, res, agreements, self_drafted=False):
@@ -235,7 +219,7 @@ class Agent:
             "additionalArgs": prompt_args,
             "contribution": contribution,
             "memoryIds": memory_ids,
-            "text": "\n udszua \t shssh super cool \n\\n okay",  # str(text).replace('"', "'"),
+            "text": str(text).replace('"', "'"),
             "agreement": agreement,
             "extractedDraft": str(extracted_draft).replace('"', "'"),
         }
@@ -316,13 +300,7 @@ class Agent:
         if memory:
             memory_string = ""
             for m in memory:
-                if m["persona"] != self.persona:
-                    memory_string = (
-                        memory_string
-                        + f"""\n[INST]{m["persona"]}: {m["text"]}[/INST]"""
-                    )
-                else:
-                    memory_string = memory_string + f"""\n{m["persona"]}: {m["text"]}"""
+                memory_string = memory_string + f"""\n{m["persona"]}: {m["text"]}"""
             if personalized:
                 memory_string = memory_string.replace(
                     f"""{self.persona}:""", f"""{self.persona} (you):"""

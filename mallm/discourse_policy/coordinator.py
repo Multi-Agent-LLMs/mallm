@@ -1,3 +1,4 @@
+import ast
 import glob
 import re
 import time
@@ -11,6 +12,7 @@ from torch import cuda, bfloat16
 
 from mallm.agents.moderator import *
 from mallm.agents.panelist import *
+from mallm.config import ckpt_dir
 from mallm.decision_making.consensus import *
 from mallm.prompts import coordinator_prompts
 
@@ -54,25 +56,13 @@ class Coordinator:
         #    partial_variables = {"sys_s": "", "sys_e": "", "inst_s": "", "inst_e": ""}
 
         self.chain_identify_personas = LLMChain(
-            llm=self.llm,
-            prompt=PromptTemplate.from_template(
-                template=coordinator_prompts.identify_personas(),
-                partial_variables=partial_variables,
-            ),
+            llm=self.llm, prompt=coordinator_prompts.identify_personas
         )
         self.chain_extract_result = LLMChain(
-            llm=self.llm,
-            prompt=PromptTemplate.from_template(
-                template=coordinator_prompts.extract_result(),
-                partial_variables=partial_variables,
-            ),
+            llm=self.llm, prompt=coordinator_prompts.extract_result
         )
         self.chain_baseline = LLMChain(
-            llm=self.llm,
-            prompt=PromptTemplate.from_template(
-                template=coordinator_prompts.baseline(),
-                partial_variables=partial_variables,
-            ),
+            llm=self.llm, prompt=coordinator_prompts.baseline
         )
 
     def initAgents(self, task_instruction, input, use_moderator):
