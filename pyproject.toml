@@ -21,6 +21,7 @@ tqdm = "^4.66.2"
 datasets = "^2.18.0"
 colorama = "^0.4.6"
 cffi = "^1.16.0"
+openai = "^1.25.0"
 
 [tool.poetry.group.dev.dependencies]
 fire = "^0.6.0"

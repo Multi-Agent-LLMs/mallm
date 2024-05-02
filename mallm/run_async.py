@@ -7,8 +7,10 @@ import requests
 from colorama import just_fix_windows_console
 from langchain_community.llms import HuggingFaceEndpoint
 from langchain_community.llms.huggingface_endpoint import HuggingFaceEndpoint
+from openai import OpenAI
 
 from mallm.discourse_policy.coordinator import *
+from mallm.models.HFTGIChat import HFTGIChat
 from mallm.utils.CustomFormatter import CustomFormatter
 
 just_fix_windows_console()
@@ -167,6 +169,10 @@ def manage_discussions(
         ],
         # These are the stop tokens for LLama 3. Maybe we have to add more for other models
     )  # type: ignore
+    client = OpenAI(base_url=f"{endpoint_url}/v1", api_key="-")
+    llm = HFTGIChat(
+        client=client,
+    )
 
     pool = ThreadPool(processes=max_concurrent_requests)
     results = []
