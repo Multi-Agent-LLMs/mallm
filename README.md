@@ -58,9 +58,9 @@ max_concurrent_requests=100,
 MALLM is composed of three parts:
 The framework follows this structure and can be found in the `framework` directory.
 
-1) Agents (subdirectory: `framework/agents/`)
-2) Discourse Policy (subdirectory: `framework/discourse_policy/`)
-3) Decision Making (subdirectory: `framework/decision_making/`)
+1) Agents (subdirectory: `mallm/agents/`)
+2) Discourse Policy (subdirectory: `mallm/discourse_policy/`)
+3) Decision Making (subdirectory: `mallm/decision_making/`)
 
 Experiments can be implemented in the `experiments` directory. Test stuff in the `notebooks` directory.
 
