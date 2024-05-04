@@ -28,7 +28,7 @@ Install as a package
 
 ### Test Data
 Create the test data
-`python experiments/data/data_downloader.py`
+`python data/data_downloader.py`
 
 You also need the checkpoints for the LLM you want to use. Currently, LLaMA-2-70b-chat has been tested and is working.
 
@@ -56,13 +56,14 @@ max_concurrent_requests=100,
 ## Project Structure
 
 MALLM is composed of three parts:
-The framework follows this structure and can be found in the `framework` directory.
+The framework follows this structure and can be found in the `mallm` directory.
 
 1) Agents (subdirectory: `mallm/agents/`)
 2) Discourse Policy (subdirectory: `mallm/discourse_policy/`)
 3) Decision Making (subdirectory: `mallm/decision_making/`)
 
-Experiments can be implemented in the `experiments` directory. Test stuff in the `notebooks` directory.
+Experiments can be implemented as a seperate repository, loading MALLM as a package.
+You can test stuff in the `notebooks` directory.
 
 Please do not develop on master and create a branch. Thank you!
 
