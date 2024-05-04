@@ -38,7 +38,7 @@ Check the information [here (tg-hpc)](https://github.com/Multi-Agent-LLMs/tgi-hp
 
 Once the endpoint is available, you can initiate all discussions by a single script. Example:
 
-`python mallm/run_async.py --data=experiments/data/datasets/etpc.json --out=experiments/result.json --instruction="Paraphrase the input text." --endpoint_url="http://127.0.0.1:8080" --hf_api_token="YOUR_TOKEN" --max_concurrent_requests=100`
+`python mallm/run_async.py --data=data/datasets/etpc_debugging.json --out=test_out.json --instruction="Paraphrase the input text." --endpoint_url="http://127.0.0.1:8080" --hf_api_token="YOUR_TOKEN" --max_concurrent_requests=100`
 
 While each discussion is sequential, multiple discussions can be processed in parallel for significant speedup. Please set `max_concurrent_requests` to a reasonable number so that you do not block the GPU for all other users of the TGI instance.
 
