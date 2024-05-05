@@ -15,6 +15,7 @@ def generate_chat_prompt_extract_result(result):
     return prompts
 
 
+# TODO rework for new chat style
 baseline = ChatPromptTemplate.from_messages(
     [
         ("system", "Please consider the example provided and think it step by step."),

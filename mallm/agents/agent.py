@@ -198,7 +198,7 @@ class Agent:
         )
         return res, memory, agreements
 
-    def updateMemory(
+    def update_memory(
         self,
         unique_id,
         turn,
@@ -231,9 +231,9 @@ class Agent:
 
         with dbm.open(self.memory_bucket, "c") as db:
             db[str(unique_id)] = json.dumps(data_dict)
-        self.saveMemoryToJson()
+        self.save_memory_to_json()
 
-    def getMemory(
+    def get_memory(
         self,
         context_length=None,
         turn=None,
@@ -263,16 +263,12 @@ class Agent:
                             memory_ids.append(int(m["messageId"]))
                             if m["contribution"] == "draft" or (
                                 m["contribution"] == "improve"
-                                and "disagree" in m["text"].lower()
                             ):
                                 current_draft = m["text"]
                 else:
                     context_memory.append(m)
                     memory_ids.append(int(m["messageId"]))
-                    if m["contribution"] == "draft" or (
-                        m["contribution"] == "improve"
-                        and "disagree" in m["text"].lower()
-                    ):
+                    if m["contribution"] == "draft" or (m["contribution"] == "improve"):
                         current_draft = m["text"]
         else:
             context_memory = None
@@ -283,7 +279,7 @@ class Agent:
             )
         return context_memory, memory_ids, current_draft
 
-    def getMemoryString(
+    def get_memory_string(
         self,
         context_length=None,
         turn=None,
@@ -296,7 +292,7 @@ class Agent:
         context_length refers to the amount of turns the agent can use as rationale
         Returns: string
         """
-        memory, memory_ids, current_draft = self.getMemory(
+        memory, memory_ids, current_draft = self.get_memory(
             context_length=context_length,
             turn=turn,
             include_this_turn=include_this_turn,
@@ -314,20 +310,20 @@ class Agent:
             memory_string = None
         return memory_string, memory_ids, current_draft
 
-    def saveMemoryToJson(self, out=None):
+    def save_memory_to_json(self, out=None):
         """
         Converts the memory bucket dbm data to json format
         """
         if out:
             try:
                 with open(out, "w") as f:
-                    json.dump(self.getMemory(), f)
+                    json.dump(self.get_memory(), f)
             except Exception as e:
                 print(f"Failed to save agent memory to {out}: {e}")
         else:
             try:
                 with open(self.memory_bucket + ".json", "w") as f:
-                    json.dump(self.getMemory(), f)
+                    json.dump(self.get_memory(), f)
             except Exception as e:
                 print(f"Failed to save agent memory to {self.memory_bucket}: {e}")
 

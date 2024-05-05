@@ -1,5 +1,6 @@
 from langchain_core.prompts import ChatPromptTemplate
 
+# TODO rework for new chat style
 feedback = ChatPromptTemplate.from_messages(
     [
         ("system", "Please consider the example provided and think it step by step."),
@@ -66,6 +67,7 @@ def generate_chat_prompt_improve(data):
     return prompts
 
 
+# TODO rework for new chat style
 draft = ChatPromptTemplate.from_messages(
     [
         ("system", "Please consider the example provided and think it step by step."),

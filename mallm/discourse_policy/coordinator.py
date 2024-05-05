@@ -121,9 +121,9 @@ class Coordinator:
         with dbm.open(self.memory_bucket, "c") as db:
             db[str(unique_id)] = json.dumps(data_dict)
             logger.debug(str(db[str(unique_id)]))
-        self.saveGlobalMemoryToJson()
+        self.save_global_memory_to_json()
 
-    def getGlobalMemory(self):
+    def get_global_memory(self):
         """
         Retrieves memory from the agents memory bucket as a dictionary
         Returns: dict
@@ -134,24 +134,24 @@ class Coordinator:
                 memory.append(json.loads(db[key].decode()))
         return memory
 
-    def saveGlobalMemoryToJson(self):
+    def save_global_memory_to_json(self):
         """
         Converts the memory bucket dbm data to json format
         """
         try:
             with open(self.memory_bucket + ".json", "w") as f:
-                json.dump(self.getGlobalMemory(), f)
+                json.dump(self.get_global_memory(), f)
         except Exception as e:
             logger.error(f"Failed to save agent memory to {self.memory_bucket}: {e}")
-            logger.error(self.getGlobalMemory())
+            logger.error(self.get_global_memory())
 
-    def updateMemories(self, memories, agents_to_update):
+    def update_memories(self, memories, agents_to_update):
         """
         Updates the memories of all declared agents.
         """
         for c in memories:
             for a in agents_to_update:
-                a.updateMemory(
+                a.update_memory(
                     c["messageId"],
                     c["turn"],
                     c["agentId"],
@@ -203,7 +203,7 @@ class Coordinator:
 
             if use_moderator:
                 memory_string, memory_ids, current_draft = (
-                    self.moderator.getMemoryString(
+                    self.moderator.get_memory_string(
                         context_length=context_length,
                         turn=turn,
                         include_this_turn=include_current_turn_in_memory,
@@ -228,11 +228,11 @@ class Coordinator:
                     is_moderator=True,
                 )
                 memories.append(memory)
-                memories = self.updateMemories(memories, self.agents)
+                memories = self.update_memories(memories, self.agents)
                 unique_id = unique_id + 1
 
             for p in self.panelists:
-                memory_string, memory_ids, current_draft = p.getMemoryString(
+                memory_string, memory_ids, current_draft = p.get_memory_string(
                     context_length=context_length,
                     turn=turn,
                     include_this_turn=include_current_turn_in_memory,
@@ -303,7 +303,7 @@ class Coordinator:
             # ---- Agent A1
             if use_moderator:
                 memory_string, memory_ids, current_draft = (
-                    self.moderator.getMemoryString(
+                    self.moderator.get_memory_string(
                         context_length=context_length,
                         turn=turn,
                         include_this_turn=include_current_turn_in_memory,
@@ -328,12 +328,12 @@ class Coordinator:
                     is_moderator=True,
                 )
                 memories.append(memory)
-                memories = self.updateMemories(memories, self.agents)
+                memories = self.update_memories(memories, self.agents)
                 unique_id = unique_id + 1
             else:
                 memory_string, memory_ids, current_draft = self.panelists[
                     0
-                ].getMemoryString(
+                ].get_memory_string(
                     context_length=context_length,
                     turn=turn,
                     include_this_turn=include_current_turn_in_memory,
@@ -355,12 +355,12 @@ class Coordinator:
                     agreements,
                 )
                 memories.append(memory)
-                memories = self.updateMemories(memories, self.agents)
+                memories = self.update_memories(memories, self.agents)
                 unique_id = unique_id + 1
 
             # ---- Agents A2, A3, A4, ...
             for p in self.agents[1:]:
-                memory_string, memory_ids, current_draft = p.getMemoryString(
+                memory_string, memory_ids, current_draft = p.get_memory_string(
                     context_length=context_length,
                     turn=turn,
                     include_this_turn=include_current_turn_in_memory,
@@ -428,7 +428,7 @@ class Coordinator:
             logger.info("Ongoing. Current turn: " + str(turn))
 
             for i, a in enumerate(self.agents):
-                memory_string, memory_ids, current_draft = a.getMemoryString(
+                memory_string, memory_ids, current_draft = a.get_memory_string(
                     context_length=context_length,
                     turn=turn,
                     include_this_turn=include_current_turn_in_memory,
@@ -455,7 +455,7 @@ class Coordinator:
                         is_moderator=True,
                     )
                     memories.append(memory)
-                    memories = self.updateMemories(memories, [a, self.agents[next_a]])
+                    memories = self.update_memories(memories, [a, self.agents[next_a]])
                 else:
                     template_filling = {
                         "taskInstruction": task_instruction,
@@ -526,7 +526,7 @@ class Coordinator:
             # ---- Agent A1
             if use_moderator:
                 memory_string, memory_ids, current_draft = (
-                    self.moderator.getMemoryString(
+                    self.moderator.get_memory_string(
                         context_length=context_length,
                         turn=turn,
                         include_this_turn=include_current_turn_in_memory,
@@ -551,12 +551,12 @@ class Coordinator:
                     is_moderator=True,
                 )
                 memories.append(memory)
-                memories = self.updateMemories(memories, self.agents)
+                memories = self.update_memories(memories, self.agents)
                 unique_id = unique_id + 1
             else:
                 memory_string, memory_ids, current_draft = self.panelists[
                     0
-                ].getMemoryString(
+                ].get_memory_string(
                     context_length=context_length,
                     turn=turn,
                     include_this_turn=include_current_turn_in_memory,
@@ -579,14 +579,14 @@ class Coordinator:
                     is_moderator=True,
                 )
                 memories.append(memory)
-                memories = self.updateMemories(memories, self.agents)
+                memories = self.update_memories(memories, self.agents)
                 unique_id = unique_id + 1
 
             for r in range(debate_rounds):  # ---- Agents A2, A3, ...
                 logger.debug("Debate round: " + str(r))
                 debate_agreements = []
                 for i, a in enumerate(self.agents[1:]):  # similar to relay paradigm
-                    memory_string, memory_ids, current_draft = a.getMemoryString(
+                    memory_string, memory_ids, current_draft = a.get_memory_string(
                         context_length=context_length,
                         turn=turn,
                         include_this_turn=include_current_turn_in_memory,
@@ -748,10 +748,10 @@ Decision-making: {self.decision_making.__class__.__name__}
             seconds=time.perf_counter() - startTime
         ).total_seconds()
 
-        globalMem = self.getGlobalMemory()
+        globalMem = self.get_global_memory()
         agentMems = []
         for a in self.agents:
-            agentMems.append(a.getMemory()[0])
+            agentMems.append(a.get_memory()[0])
         if turn >= max_turns:  # if no agreement was reached
             current_draft = None
         else:
