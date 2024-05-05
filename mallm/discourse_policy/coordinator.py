@@ -1,8 +1,8 @@
-import glob
 import re
 import time
 from datetime import timedelta
 import uuid
+import ast
 
 import transformers
 from langchain.chains import LLMChain
@@ -26,7 +26,7 @@ class Coordinator:
         model,
         client,
         use_moderator=False,
-        memory_bucket_dir="./experiments/memory_bucket/",
+        memory_bucket_dir="./mallm/utils/memory_bucket/",
     ):
         self.personas = None
         self.id = str(uuid.uuid4())

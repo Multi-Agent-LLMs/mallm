@@ -1,7 +1,7 @@
 import json
 import uuid
 
-from experiments.data.data_download import DatasetDownloader
+from data.data_download import DatasetDownloader
 
 
 class GSM8KDownloader(DatasetDownloader):

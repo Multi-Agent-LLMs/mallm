@@ -3,7 +3,7 @@ import urllib
 import uuid
 import random
 
-from experiments.data.data_download import DatasetDownloader
+from data.data_download import DatasetDownloader
 
 
 class StrategyGADownloader(DatasetDownloader):

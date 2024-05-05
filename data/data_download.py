@@ -18,8 +18,8 @@ class DatasetDownloader(ABC):
     ):
         self.name = name
         self.version = version
-        self.dataset_path = f"datasets/{name}"
-        self.output_path = f"datasets/{name}.json"
+        self.dataset_path = f"data/datasets/{name}"
+        self.output_path = f"data/datasets/{name}.json"
         self.dataset = None
         self.sample_size = sample_size
         if dataset_name is None:

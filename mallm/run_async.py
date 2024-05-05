@@ -1,8 +1,5 @@
-import sys
+import sys, glob, httpx, requests
 from multiprocessing.pool import ThreadPool
-
-import httpx
-import requests
 from colorama import just_fix_windows_console
 from langchain_community.llms import HuggingFaceEndpoint
 from langchain_community.llms.huggingface_endpoint import HuggingFaceEndpoint
@@ -45,7 +42,7 @@ def run_discussion(
     paradigm="memory",
     context_length=1,
     include_current_turn_in_memory=False,
-    memory_bucket_dir="./experiments/memory_bucket/",
+    memory_bucket_dir="./mallm/utils/memory_bucket/",
 ):
     """
     Runs a single discussion between agents on a sample.
@@ -142,7 +139,7 @@ def manage_discussions(
     context_length,
     include_current_turn_in_memory,
     max_concurrent_requests=100,
-    memory_bucket_dir="./experiments/memory_bucket/",
+    memory_bucket_dir="./mallm/utils/memory_bucket/",
 ):
     """
     Manages all discussions on the data.
@@ -239,7 +236,7 @@ def main(
     include_current_turn_in_memory=False,
     max_concurrent_requests=100,
     clear_memory_bucket=True,
-    memory_bucket_dir="./experiments/memory_bucket/",
+    memory_bucket_dir="./mallm/utils/memory_bucket/",
 ):
     """
     The routine that starts the discussions between LLM agents iteratively on the provided data.

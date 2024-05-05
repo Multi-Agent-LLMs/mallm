@@ -159,16 +159,14 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
 
-/experiments/memory_bucket/*.bak
-/experiments/memory_bucket/*.dir
-/experiments/memory_bucket/*.dat
-/experiments/memory_bucket/*.json
-/experiments/data/datasets
-/datasets
-experiments/out/exp1/exp1_etpc_memory.json
+/mallm/utils/memory_bucket/*.bak
+/mallm/utils/memory_bucket/*.dir
+/mallm/utils/memory_bucket/*.dat
+/mallm/utils/memory_bucket/*.json
+/data/datasets/*
+!/data/datasets/etpc_debugging.json
 
 /notebooks/data
 !/notebooks/data/.gitkeep
 
-experiments/
 log.txt

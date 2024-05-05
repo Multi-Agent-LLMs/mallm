@@ -28,7 +28,7 @@ Install as a package
 
 ### Test Data
 Create the test data
-`python experiments/data/data_downloader.py`
+`python data/data_downloader.py`
 
 You also need the checkpoints for the LLM you want to use. Currently, LLaMA-2-70b-chat has been tested and is working.
 
@@ -38,7 +38,7 @@ Check the information [here (tg-hpc)](https://github.com/Multi-Agent-LLMs/tgi-hp
 
 Once the endpoint is available, you can initiate all discussions by a single script. Example:
 
-`python mallm/run_async.py --data=experiments/data/datasets/etpc.json --out=experiments/result.json --instruction="Paraphrase the input text." --endpoint_url="http://127.0.0.1:8080" --hf_api_token="YOUR_TOKEN" --max_concurrent_requests=100`
+`python mallm/run_async.py --data=data/datasets/etpc_debugging.json --out=test_out.json --instruction="Paraphrase the input text." --endpoint_url="http://127.0.0.1:8080" --hf_api_token="YOUR_TOKEN" --max_concurrent_requests=100`
 
 While each discussion is sequential, multiple discussions can be processed in parallel for significant speedup. Please set `max_concurrent_requests` to a reasonable number so that you do not block the GPU for all other users of the TGI instance.
 
@@ -56,13 +56,14 @@ max_concurrent_requests=100,
 ## Project Structure
 
 MALLM is composed of three parts:
-The framework follows this structure and can be found in the `framework` directory.
+The framework follows this structure and can be found in the `mallm` directory.
 
 1) Agents (subdirectory: `mallm/agents/`)
 2) Discourse Policy (subdirectory: `mallm/discourse_policy/`)
 3) Decision Making (subdirectory: `mallm/decision_making/`)
 
-Experiments can be implemented in the `experiments` directory. Test stuff in the `notebooks` directory.
+Experiments can be implemented as a seperate repository, loading MALLM as a package.
+You can test stuff in the `notebooks` directory.
 
 Please do not develop on master and create a branch. Thank you!
 
