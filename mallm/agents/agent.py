@@ -1,5 +1,3 @@
-import os
-from mallm.config import *
 import dbm
 import json
 import logging
