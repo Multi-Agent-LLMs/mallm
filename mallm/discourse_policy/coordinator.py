@@ -13,8 +13,8 @@ from torch import cuda, bfloat16
 
 from mallm.agents.moderator import *
 from mallm.agents.panelist import *
-from mallm.config import ckpt_dir
 from mallm.decision_making.consensus import *
+from mallm.models.personas.PersonaGenerator import PersonaGenerator
 from mallm.prompts import coordinator_prompts
 
 transformers.logging.set_verbosity_error()
@@ -24,10 +24,12 @@ logger = logging.getLogger("mallm")
 
 
 class Coordinator:
+
     def __init__(
         self,
         model,
         client,
+        agent_generator: PersonaGenerator,
         use_moderator=False,
         memory_bucket_dir="./mallm/utils/memory_bucket/",
     ):
@@ -43,22 +45,8 @@ class Coordinator:
         self.decision_making = None
         self.llm = model
         self.client = client
-        self.init_chains()
+        self.agent_generator = agent_generator
 
-    def init_chains(self):
-        # if "llama" in self.llm_tokenizer.__class__.__name__.lower():  # use <<SYS>> and [INST] tokens for llama models
-        partial_variables = {
-            "sys_s": "<<SYS>>",
-            "sys_e": "<</SYS>>",
-            "inst_s": "[INST]",
-            "inst_e": "[/INST]",
-        }  # TODO: implement a handler that adds (or leaves out) model-specific tokens for models like llama2, llama3 or chatGpt
-        # else:
-        #    partial_variables = {"sys_s": "", "sys_e": "", "inst_s": "", "inst_e": ""}
-
-        self.chain_identify_personas = LLMChain(
-            llm=self.llm, prompt=coordinator_prompts.identify_personas
-        )
         self.chain_extract_result = LLMChain(
             llm=self.llm, prompt=coordinator_prompts.extract_result
         )
@@ -74,76 +62,23 @@ class Coordinator:
         Gives true if the automatic assignment was successfull.
         Returns bool
         """
-        self.personas = None
         self.panelists = []
         self.agents = []
-        template_filling = {"taskInstruction": task_instruction, "input": input}
 
-        res = self.chain_identify_personas.invoke(template_filling, client=self.client)[
-            "text"
-        ]
-        logger.debug("Identifying personas... LLM output: " + res)
+        personas = self.agent_generator.generate_personas(
+            f"{task_instruction} {input}", 3
+        )
 
-        # TODO: Use grammar to force LLM output in the correct JSON format. Example with llama.ccp: https://til.simonwillison.net/llms/llama-cpp-python-grammars
-
-        # repair dictionary in string if the LLM did mess up the formatting
-        if "{" in res and "}" not in res:
-            logger.debug(
-                "Looks like the LLM did not provide a valid dictionary (maybe the last brace is missing?). Trying to repair the dictionary..."
-            )
-            res = res + "}"
-
-        # self.updateGlobalMemory(0, 0, None, None, "persona_identification", res, None, [], template_filling)
-
-        personas_string = re.search(r"\{.*?\}", res, re.DOTALL)
-        if not personas_string:
-            logger.error(
-                f"LLM failed to provide personas in the correct format - Skipping this sample..."
-            )
-            # personas_string = '''{
-            #    "Poet": "A person who studies and creates poetry. The poet is familiar with the rules and formats of poetry and can provide guidance on how to write a poem.",
-            #    "Computer Scientist": "A scholar who specializes in the academic study of computer science. The computer scientist is familiar with the concept of a quantum computer and can provide guidance on how to explain it.",
-            #    "Ten year old child": "A child with a limited English vocabulary and little knowledge about complicated concepts, such as a quantum computer."
-            #    }'''
-            # self.personas = ast.literal_eval(personas_string)
-            return False
-        else:
-            personas_string = personas_string.group()
-            for i in [0, 1]:
-                try:
-                    self.personas = ast.literal_eval(personas_string)
-                except Exception as e:
-                    if i == 0:
-                        logger.debug(
-                            "Looks like the LLM did not get the formatting quite right. Trying to repair the dictionary string..."
-                        )
-                        personas_string = personas_string.replace("'\n", "',\n")
-                        personas_string = personas_string.replace('"\n', '",\n')
-                        personas_string = personas_string.replace('";', '",')
-                        logger.debug("Repaired string: \n" + str(personas_string))
-                        continue
-                    elif i == 1:
-                        logger.warning(
-                            f"Failed to parse the string to identify personas: {e} - Skipping this sample..."
-                        )
-                        # personas_string = '''{
-                        # "Poet": "A person who studies and creates poetry. The poet is familiar with the rules and formats of poetry and can provide guidance on how to write a poem.",
-                        # "Computer Scientist": "A scholar who specializes in the academic study of computer science. The computer scientist is familiar with the concept of a quantum computer and can provide guidance on how to explain it.",
-                        # "Ten year old child": "A child with a limited English vocabulary and little knowledge about complicated concepts, such as a quantum computer."
-                        # }'''
-                        # self.personas = ast.literal_eval(personas_string)
-                        return False
-
-        self.panelists = []
         if use_moderator:
             self.moderator = Moderator(self.llm, self.client, self)
-        for i, p in enumerate(self.personas):
+        for persona in personas:
             self.panelists.append(
-                Panelist(self.llm, self.client, p, self.personas[p], self)
+                Panelist(
+                    self.llm, self.client, persona["role"], persona["persona"], self
+                )
             )
 
         if use_moderator:
-            self.personas[self.moderator.persona] = self.moderator.persona_description
             self.agents = [self.moderator] + self.panelists
         else:
             self.agents = self.panelists
@@ -161,66 +96,6 @@ class Coordinator:
                 }
             )
         return agent_dicts
-
-    def create_llm(self):
-        """
-        Initializes the LLM that the agents are using to generate their outputs.
-        The LLM is set in evaluation mode. Thus, it immediately forgets everything that happened.
-        It allows for an all-fresh reprompting at each iteration of the discussion.
-        Any model within the huggingface format can be loaded.
-        Returns HuggingFacePipeline
-        """
-        device = f"cuda:{cuda.current_device()}" if cuda.is_available() else "cpu"
-        logger.info(f"Running on device: {device}")
-        bnb_config = transformers.BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_quant_type="nf4",
-            bnb_4bit_use_double_quant=True,
-            bnb_4bit_compute_dtype=bfloat16,
-        )
-        model_config = transformers.AutoConfig.from_pretrained(ckpt_dir)
-        if (
-            device == "cpu"
-        ):  # not recommended but useful for developing with no GPU available
-            model = transformers.AutoModelForCausalLM.from_pretrained(
-                ckpt_dir,
-                trust_remote_code=True,
-                config=model_config,
-                offload_folder="offload",
-                device_map="auto",
-            )
-        else:
-            model = transformers.AutoModelForCausalLM.from_pretrained(
-                ckpt_dir,
-                trust_remote_code=True,
-                config=model_config,
-                quantization_config=bnb_config,
-                device_map="auto",
-            )
-        model.eval()
-        logger.info(f"Model {ckpt_dir} loaded on {device}")
-
-        self.llm_tokenizer = transformers.AutoTokenizer.from_pretrained(ckpt_dir)
-        # self.llm_tokenizer.pad_token_id = model.config.eos_token_id
-        logger.info(
-            "Using this tokenizer: " + str(self.llm_tokenizer.__class__.__name__)
-        )
-
-        pipeline = transformers.pipeline(
-            model=model,
-            tokenizer=self.llm_tokenizer,
-            return_full_text=True,  # langchain expects the full text
-            task="text-generation",
-            pad_token_id=self.llm_tokenizer.eos_token_id,
-            # model parameters
-            do_sample=True,
-            temperature=0.9,
-            max_new_tokens=512,  # max number of tokens to generate in the output
-            min_new_tokens=2,  # always answer something (no empty responses)
-            repetition_penalty=1.1,  # without this output begins repeating
-        )
-
-        return HuggingFacePipeline(pipeline=pipeline)
 
     def updateGlobalMemory(
         self,
