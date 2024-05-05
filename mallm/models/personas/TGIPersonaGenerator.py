@@ -5,8 +5,8 @@ from mallm.models.personas.PersonaGenerator import PersonaGenerator
 
 
 class TGIPersonaGenerator(PersonaGenerator):
-    def __init__(self, endpoint_url):
-        self.client = InferenceClient(endpoint_url)
+    def __init__(self, client: InferenceClient):
+        self.client = client
         self.persona_grammar = {
             "type": "object",
             "properties": {
@@ -54,6 +54,7 @@ class TGIPersonaGenerator(PersonaGenerator):
                 max_new_tokens=400,
                 grammar={"type": "json", "value": self.persona_grammar},
                 stop_sequences=["<|eot_id|>"],
+                repetition_penalty=1.1,
             )
 
             try:

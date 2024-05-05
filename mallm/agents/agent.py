@@ -1,4 +1,3 @@
-import os
 import dbm
 import json
 import logging
@@ -7,16 +6,24 @@ import uuid
 
 import fire
 from langchain.chains import LLMChain
-from langchain_core.prompts import PromptTemplate
+from langchain_core.language_models import LLM
 
 from mallm.prompts import agent_prompts
+from mallm.prompts.agent_prompts import generate_chat_prompt_improve
+from mallm.prompts.coordinator_prompts import generate_chat_prompt_extract_result
 
 logger = logging.getLogger("mallm")
 
 
 class Agent:
     def __init__(
-        self, llm, client, persona, persona_description, coordinator, moderator=None
+        self,
+        llm: LLM,
+        client,
+        persona,
+        persona_description,
+        coordinator,
+        moderator=None,
     ):
         self.id = str(uuid.uuid4())
         self.short_id = self.id[:4]
@@ -27,16 +34,7 @@ class Agent:
         self.moderator = moderator
         self.llm = llm
         self.client = client
-        self.init_chains()
-        logger.info(
-            f'Creating agent {self.short_id} with personality "{self.persona}": "{self.persona_description}"'
-        )
 
-    def init_chains(self):
-        self.chain_improve = LLMChain(
-            llm=self.llm,
-            prompt=agent_prompts.improve,
-        )
         self.chain_draft = LLMChain(
             llm=self.llm,
             prompt=agent_prompts.draft,
@@ -44,6 +42,10 @@ class Agent:
         self.chain_feedback = LLMChain(
             llm=self.llm,
             prompt=agent_prompts.feedback,
+        )
+
+        logger.info(
+            f'Creating agent {self.short_id} with personality "{self.persona}": "{self.persona_description}"'
         )
 
     def agree(self, res, agreements, self_drafted=False):
@@ -82,13 +84,15 @@ class Agent:
         extract_all_drafts,
         agreements,
     ):
-        res = self.chain_improve.invoke(template_filling, client=self.client)["text"]
+        res = self.llm.invoke(
+            generate_chat_prompt_improve(template_filling), client=self.client
+        )
         agreements = self.agree(res, agreements)
         current_draft = None
         if extract_all_drafts:
-            current_draft = self.coordinator.chain_extract_result.invoke(
-                {"result": res}, client=self.client
-            )["text"]
+            current_draft = self.llm.invoke(
+                generate_chat_prompt_extract_result(res), client=self.client
+            )
         memory = {
             "messageId": unique_id,
             "turn": turn,
@@ -130,9 +134,9 @@ class Agent:
         agreements = self.agree(res, agreements, self_drafted=True)
         current_draft = None
         if extract_all_drafts:
-            current_draft = self.coordinator.chain_extract_result.invoke(
-                {"result": res}, client=self.client
-            )["text"]
+            current_draft = self.llm.invoke(
+                generate_chat_prompt_extract_result(res), client=self.client
+            )
         if is_moderator:
             agreement = None
         else:
@@ -274,9 +278,9 @@ class Agent:
             context_memory = None
 
         if current_draft and extract_draft:
-            current_draft = self.coordinator.chain_extract_result.invoke(
-                {"result": current_draft}, client=self.client
-            )["text"]
+            current_draft = self.llm.invoke(
+                generate_chat_prompt_extract_result(current_draft), client=self.client
+            )
         return context_memory, memory_ids, current_draft
 
     def getMemoryString(
@@ -307,7 +311,7 @@ class Agent:
                     f"""{self.persona}:""", f"""{self.persona} (you):"""
                 )
         else:
-            memory_string = "None"
+            memory_string = None
         return memory_string, memory_ids, current_draft
 
     def saveMemoryToJson(self, out=None):

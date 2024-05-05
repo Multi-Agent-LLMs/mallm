@@ -1,7 +1,9 @@
+import glob
 import sys, httpx, requests
 from multiprocessing.pool import ThreadPool
 
 from colorama import just_fix_windows_console
+from huggingface_hub import InferenceClient
 from openai import OpenAI
 
 from mallm.discourse_policy.coordinator import *
@@ -155,12 +157,12 @@ def manage_discussions(
     """
     # TODO: Add support for ChatGPT (OpenAI)
     # Creating HuggingFace endpoint
-    llm_client = OpenAI(base_url=f"{endpoint_url}/v1", api_key="-")
-    llm = HFTGIChat(
-        client=llm_client,
-    )
+    llm_client_oai = OpenAI(base_url=f"{endpoint_url}/v1", api_key="-")
+    llm_client = InferenceClient(endpoint_url)
 
-    agent_generator = TGIPersonaGenerator(endpoint_url)
+    llm = HFTGIChat(client=llm_client_oai)
+
+    agent_generator = TGIPersonaGenerator(client=llm_client)
 
     pool = ThreadPool(processes=max_concurrent_requests)
     results = []

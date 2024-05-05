@@ -1,15 +1,8 @@
-import ast
-import glob
-import re
 import time
 from datetime import timedelta
-import uuid
-import ast
 
 import transformers
 from langchain.chains import LLMChain
-from langchain_community.llms import HuggingFacePipeline
-from torch import cuda, bfloat16
 
 from mallm.agents.moderator import *
 from mallm.agents.panelist import *
@@ -47,9 +40,6 @@ class Coordinator:
         self.client = client
         self.agent_generator = agent_generator
 
-        self.chain_extract_result = LLMChain(
-            llm=self.llm, prompt=coordinator_prompts.extract_result
-        )
         self.chain_baseline = LLMChain(
             llm=self.llm, prompt=coordinator_prompts.baseline
         )
@@ -762,13 +752,12 @@ Decision-making: {self.decision_making.__class__.__name__}
         agentMems = []
         for a in self.agents:
             agentMems.append(a.getMemory()[0])
-
         if turn >= max_turns:  # if no agreement was reached
             current_draft = None
         else:
-            current_draft = self.chain_extract_result.invoke(
-                {"result": current_draft}, client=self.client
-            )["text"]
+            current_draft = self.llm.invoke(
+                generate_chat_prompt_extract_result(current_draft), client=self.client
+            )
 
         return current_draft, globalMem, agentMems, turn, agreements, discussionTime
 

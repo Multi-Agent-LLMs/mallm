@@ -1,10 +1,13 @@
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any, Dict, Iterator, List, Optional, Union
 
+from langchain_core.callbacks import Callbacks
+from langchain_core.language_models import LanguageModelInput
+from langchain_core.prompt_values import PromptValue
 from openai import OpenAI
 
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.outputs import GenerationChunk
+from langchain_core.outputs import GenerationChunk, LLMResult
 
 
 class HFTGIChat(LLM):
@@ -28,10 +31,24 @@ class HFTGIChat(LLM):
     client: OpenAI
     timeout: int = 120
 
+    # Overwrite to send direct chat structure to tgi endpoint
+    def _convert_input(self, input: LanguageModelInput) -> PromptValue:
+        return input
+
+    # Overwrite to send direct chat structure to tgi endpoint
+    def generate_prompt(
+        self,
+        prompts: List[str],
+        stop: Optional[List[str]] = None,
+        callbacks: Optional[Union[Callbacks, List[Callbacks]]] = None,
+        **kwargs: Any,
+    ) -> LLMResult:
+        return self.generate(prompts, stop=stop, callbacks=callbacks, **kwargs)
+
     def _call(
         self,
-        prompt: str,
-        stop: Optional[List[str]] = ("<|eot_id|>",),
+        prompt: list,
+        stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
@@ -52,21 +69,15 @@ class HFTGIChat(LLM):
             The model output as a string. Actual completions SHOULD NOT include the prompt.
         """
         chat_completion = self.client.chat.completions.create(
-            model="tgi",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": prompt},
-            ],
-            stop=stop,
-            stream=False,
+            model="tgi", messages=prompt, stream=False, stop=["<|eot_id|>"]
         )
 
         return chat_completion.choices[0].message.content.strip()
 
     def _stream(
         self,
-        prompt: str,
-        stop: Optional[List[str]] = ("<|eot_id|>",),
+        prompt: list,
+        stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
@@ -91,11 +102,8 @@ class HFTGIChat(LLM):
         """
         chat_completion = self.client.chat.completions.create(
             model="tgi",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": prompt},
-            ],
-            stop=stop,
+            messages=prompt,
+            stop=["<|eot_id|>"],
             stream=True,
         )
         # iterate and print stream
