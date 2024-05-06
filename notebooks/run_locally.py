@@ -1,7 +1,7 @@
 # This is a legacy file we can delete later if not needed
 
 from tqdm import tqdm
-from mallm.discourse_policy.coordinator import *
+from mallm.coordinator import *
 import logging
 
 # Configure logging for the library
