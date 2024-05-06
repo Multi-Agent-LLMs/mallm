@@ -15,12 +15,23 @@ def generate_chat_prompt_extract_result(result):
     return prompts
 
 
-# TODO rework for new chat style
-baseline = ChatPromptTemplate.from_messages(
-    [
-        ("system", "Please consider the example provided and think it step by step."),
-        ("system", "Task: {taskInstruction}"),
-        ("system", "Input: {input}"),
-        ("user", "Utilize your talent and critical thinking to provide a solution."),
+def generate_chat_prompt_baseline(task_instruction, input):
+    prompts = [
+        {
+            "role": "system",
+            "content": "Please consider the example provided and think it step by step.",
+        },
+        {
+            "role": "system",
+            "content": f"Task: {task_instruction}",
+        },
+        {
+            "role": "system",
+            "content": f"Input: {input}",
+        },
+        {
+            "role": "user",
+            "content": "Utilize your talent and critical thinking to provide a solution.",
+        },
     ]
-)
+    return prompts

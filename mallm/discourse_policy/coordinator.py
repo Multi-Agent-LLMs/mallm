@@ -40,10 +40,6 @@ class Coordinator:
         self.client = client
         self.agent_generator = agent_generator
 
-        self.chain_baseline = LLMChain(
-            llm=self.llm, prompt=coordinator_prompts.baseline
-        )
-
     def initAgents(self, task_instruction, input, use_moderator):
         """
         Instantiates the agents by

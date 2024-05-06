@@ -9,7 +9,11 @@ from langchain.chains import LLMChain
 from langchain_core.language_models import LLM
 
 from mallm.prompts import agent_prompts
-from mallm.prompts.agent_prompts import generate_chat_prompt_improve
+from mallm.prompts.agent_prompts import (
+    generate_chat_prompt_improve,
+    generate_chat_prompt_feedback,
+    generate_chat_prompt_draft,
+)
 from mallm.prompts.coordinator_prompts import generate_chat_prompt_extract_result
 
 logger = logging.getLogger("mallm")
@@ -34,15 +38,6 @@ class Agent:
         self.moderator = moderator
         self.llm = llm
         self.client = client
-
-        self.chain_draft = LLMChain(
-            llm=self.llm,
-            prompt=agent_prompts.draft,
-        )
-        self.chain_feedback = LLMChain(
-            llm=self.llm,
-            prompt=agent_prompts.feedback,
-        )
 
         logger.info(
             f'Creating agent {self.short_id} with personality "{self.persona}": "{self.persona_description}"'
@@ -130,7 +125,9 @@ class Agent:
         agreements,
         is_moderator=False,
     ):
-        res = self.chain_draft.invoke(template_filling, client=self.client)["text"]
+        res = self.llm.invoke(
+            generate_chat_prompt_draft(template_filling), client=self.client
+        )
         agreements = self.agree(res, agreements, self_drafted=True)
         current_draft = None
         if extract_all_drafts:
@@ -169,7 +166,9 @@ class Agent:
         return res, memory, agreements
 
     def feedback(self, unique_id, turn, memory_ids, template_filling, agreements):
-        res = self.chain_feedback.invoke(template_filling, client=self.client)["text"]
+        res = self.llm.invoke(
+            generate_chat_prompt_feedback(template_filling), client=self.client
+        )
         agreements = self.agree(res, agreements)
         memory = {
             "messageId": unique_id,
