@@ -1,7 +1,12 @@
+from __future__ import annotations
+
 import logging
 
 from mallm.discourse_policy.DiscoursePolicy import DiscoursePolicy
+from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from mallm.coordinator import Coordinator
 logger = logging.getLogger("mallm")
 
 
@@ -9,7 +14,7 @@ class DiscourseMemory(DiscoursePolicy):
 
     def discuss(
         self,
-        coordinator,
+        coordinator: Coordinator,
         task_instruction: str,
         input: str,
         use_moderator: bool = False,

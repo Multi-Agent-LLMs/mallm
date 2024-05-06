@@ -1,4 +1,12 @@
+from __future__ import annotations
+
+import logging
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from mallm.coordinator import Coordinator
+logger = logging.getLogger("mallm")
 
 
 class DiscoursePolicy(ABC):
@@ -6,7 +14,7 @@ class DiscoursePolicy(ABC):
     @abstractmethod
     def discuss(
         self,
-        coordinator,
+        coordinator: Coordinator,
         task_instruction: str,
         input: str,
         use_moderator: bool = False,
