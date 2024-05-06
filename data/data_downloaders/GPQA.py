@@ -1,4 +1,5 @@
 import json
+import uuid
 import random
 
 from data.data_download import DatasetDownloader
@@ -29,7 +30,7 @@ class GPQADownloader(DatasetDownloader):
             question_and_answers = f"{question_text}\n\n" + "\n".join(formatted_answers)
 
             example = {
-                "exampleId": sample["Record ID"][0],
+                "exampleId": str(uuid.uuid4()),
                 "datasetId": sample["Canary String"][0],
                 "input": question_and_answers,
                 "context": None,

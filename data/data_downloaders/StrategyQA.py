@@ -27,5 +27,5 @@ class StrategyGADownloader(DatasetDownloader):
             multiple_choice_str = " Answer Choices:"
             for i, (k, v) in enumerate(s["target_scores"].items()):
                 multiple_choice_str += " " + f"{chr(ord('A') + i)}) " + k
-            json_str += f"""{{ "exampleId":"{str(uuid.uuid4())}", "datasetId": null, "input":{json.dumps(s['input'] + multiple_choice_str)}, "context": null, "references": [{json.dumps(s['target'])}], "personas": null }}\n"""
+            json_str += f"""{{ "exampleId":"{str(uuid.uuid4())}", "datasetId": null, "input":[{json.dumps(s['input'] + multiple_choice_str)}], "context": null, "references": [{json.dumps(s['target'])}], "personas": null }}\n"""
         self.save_to_json(json_str)
