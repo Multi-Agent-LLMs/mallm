@@ -740,11 +740,19 @@ class Coordinator:
         Returns the final response agreed on, the global memory, agent specific memory, turns needed, last agreements of agents
         """
         if context:
-            for i, sc in enumerate(context):
-                task_instruction += "\n" + "Context " + str(i + 1) + ": " + sc + "\n"
+            if len(context) > 1:
+                for i, sc in enumerate(context):
+                    task_instruction += (
+                        "\n" + "Context " + str(i + 1) + ": " + sc + "\n"
+                    )
+            else:
+                task_instruction += "\n" + "Context: " + context[0] + "\n"
         input_str = ""
-        for i, si in enumerate(input):
-            input_str += "Input " + str(i + 1) + ": " + si + "\n"
+        if len(input) > 1:
+            for i, si in enumerate(input):
+                input_str += "Input " + str(i + 1) + ": " + si + "\n"
+        else:
+            input_str += "\n" + "Input: " + input[0] + "\n"
 
         if not self.initAgents(task_instruction, input, use_moderator=use_moderator):
             logger.error(f"""Failed to intialize agents (coordinator: {self.id}).""")
