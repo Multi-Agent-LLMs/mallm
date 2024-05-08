@@ -170,3 +170,4 @@ cython_debug/
 !/notebooks/data/.gitkeep
 
 log.txt
+test_out.json

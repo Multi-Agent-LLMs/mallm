@@ -60,9 +60,9 @@ def run_discussion(
         coordinator = Coordinator(
             use_moderator=use_moderator,
             model=llm,
+            agent_generator=agent_generator,
             client=client,
             memory_bucket_dir=memory_bucket_dir,
-            agent_generator=agent_generator,
         )
     except Exception as e:
         logger.error("Failed intializing coordinator.")
@@ -132,6 +132,8 @@ def run_discussion(
         logger.error("Failed to write output to file.")
         logger.error(e)
 
+    return answer
+
 
 def manage_discussions(
     client,
@@ -195,7 +197,7 @@ def manage_discussions(
 
     for i, result in enumerate(results):
         if result.successful():
-            logger.info("Process %s was successful. Result is %s" % (i, result.get()))
+            logger.info("Process %s was successful.")
         else:
             logger.error("Process %s failed!" % i)
 
