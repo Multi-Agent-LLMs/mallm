@@ -52,7 +52,7 @@ class Coordinator:
         self.agents = []
 
         personas = self.agent_generator.generate_personas(
-            f"{task_instruction} {input}", 3
+            f"{task_instruction} Input: {input}", 3
         )
 
         if use_moderator:
@@ -60,7 +60,7 @@ class Coordinator:
         for persona in personas:
             self.panelists.append(
                 Panelist(
-                    self.llm, self.client, persona["role"], persona["persona"], self
+                    self.llm, self.client, persona["role"], persona["description"], self
                 )
             )
 
