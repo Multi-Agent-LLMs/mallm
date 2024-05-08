@@ -197,7 +197,7 @@ def manage_discussions(
 
     for i, result in enumerate(results):
         if result.successful():
-            logger.info("Process %s was successful.")
+            logger.info("Process %s was successful." % i)
         else:
             logger.error("Process %s failed!" % i)
 
