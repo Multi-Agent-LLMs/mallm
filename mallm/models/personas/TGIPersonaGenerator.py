@@ -2,7 +2,7 @@ import json
 import logging
 from huggingface_hub import InferenceClient
 
-from mallm.models.personas.PersonaGenerator import PersonaGenerator
+from mallm.models.personas.PersonaGenerator import PersonaGenerator, Persona
 
 logger = logging.getLogger("mallm")
 
@@ -61,11 +61,6 @@ New Participant:
                 repetition_penalty=1.1,
             )
 
-            # Update the prompt with the newly generated persona for the next iteration
-            if len(agents) == 0:
-                current_prompt += "Already Generated Participants:\n"
-            current_prompt += f"{response}\n"
-
             try:
                 agents.append(json.loads(response))
                 logger.debug("Added one agent: " + str(agents[-1]))
@@ -77,5 +72,11 @@ New Participant:
                     + str(response)
                 )
                 continue
+
+            # Update the prompt with the newly generated persona for the next iteration
+            # We have to call this after the try catch to only add this when we successfully generate the first persona
+            if len(agents) == 0:
+                current_prompt += "Already Generated Participants:\n"
+            current_prompt += f"{response}\n"
 
         return agents

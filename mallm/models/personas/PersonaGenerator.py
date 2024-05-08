@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 
+from pydantic import BaseModel, Field
+
 
 class PersonaGenerator(ABC):
     @abstractmethod
@@ -19,3 +21,10 @@ class PersonaGenerator(ABC):
                                each mapped to their respective string description.
         """
         pass
+
+
+class Persona(BaseModel):
+    role: str = Field(description="The role of the persona.", min_length=2)
+    description: str = Field(
+        description="The description of the personality.", min_length=2
+    )
