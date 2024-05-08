@@ -10,7 +10,7 @@ class EuroparlDownloader(DatasetDownloader):
 
     def __init__(self):
         super().__init__(
-            name="multi_news", version="multi_news", dataset_name="multi_news"
+            name="multi_news", version="default", dataset_name="multi_news"
         )
 
     def process_data(self):
@@ -18,13 +18,13 @@ class EuroparlDownloader(DatasetDownloader):
         examples = []
 
         for sample in data.iter(batch_size=1):
-            docs = sample["document"].split(" ||||| ")
+            docs = sample["document"][0].split(" ||||| ")
             example = {
                 "exampleId": str(uuid.uuid4()),
                 "datasetId": None,
-                "input": docs,
+                "input": docs,  # note: there exist few samples with just one input doc
                 "context": None,
-                "references": [sample["summary"]],
+                "references": sample["summary"],
                 "personas": None,
             }
             examples.append(json.dumps(example) + "\n")
