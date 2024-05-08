@@ -10,14 +10,6 @@ logger = logging.getLogger("mallm")
 class TGIPersonaGenerator(PersonaGenerator):
     def __init__(self, client: InferenceClient):
         self.client = client
-        self.persona_grammar = {
-            "type": "object",
-            "properties": {
-                "role": {"type": "string"},
-                "description": {"type": "string"},
-            },
-            "required": ["role", "description"],
-        }
         self.base_prompt = """
 When faced with a task, begin by identifying the participants who will contribute to solving the task. Provide role and description of the participants, describing their expertise or needs, formatted using the provided JSON schema.
 Generate one participant at a time, complementing the existing participants to foster a rich discussion.
@@ -46,7 +38,7 @@ New Participant:
     def generate_personas(self, task_description, num_agents):
         current_prompt = (
             self.base_prompt
-            + f"\nNow, based on the schema above, generate a participant to discuss the following task:\nTask: {task_description}\n"
+            + f"\nNow generate a participant to discuss the following task:\nTask: {task_description}\n"
         )
 
         logger.debug("Creating " + str(num_agents) + " agents...")
@@ -54,9 +46,10 @@ New Participant:
         while len(agents) < num_agents:
             # Send the prompt to the InferenceClient
             response = self.client.text_generation(
-                current_prompt + "New Participant:\n",
+                current_prompt
+                + "Please use the following JSON schema to generate a useful persona for the task!:",
                 max_new_tokens=400,
-                grammar={"type": "json", "value": self.persona_grammar},
+                grammar={"type": "json", "value": Persona.schema_json()},
                 stop_sequences=["<|eot_id|>"],
                 repetition_penalty=1.1,
             )
@@ -75,7 +68,7 @@ New Participant:
 
             # Update the prompt with the newly generated persona for the next iteration
             # We have to call this after the try catch to only add this when we successfully generate the first persona
-            if len(agents) == 0:
+            if len(agents) == 1:
                 current_prompt += "Already Generated Participants:\n"
             current_prompt += f"{response}\n"
 

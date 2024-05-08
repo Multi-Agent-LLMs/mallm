@@ -24,7 +24,5 @@ class PersonaGenerator(ABC):
 
 
 class Persona(BaseModel):
-    role: str = Field(description="The role of the persona.", min_length=2)
-    description: str = Field(
-        description="The description of the personality.", min_length=2
-    )
+    role: str = Field(description="role of the personality")
+    description: str = Field(description="description of the personality")
