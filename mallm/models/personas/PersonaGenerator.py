@@ -21,8 +21,3 @@ class PersonaGenerator(ABC):
                                each mapped to their respective string description.
         """
         pass
-
-
-class Persona(BaseModel):
-    role: str = Field(description="role of the personality")
-    description: str = Field(description="description of the personality")

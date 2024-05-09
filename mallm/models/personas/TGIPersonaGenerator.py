@@ -1,16 +1,19 @@
 import json
 import logging
-from huggingface_hub import InferenceClient
 
-from mallm.models.personas.PersonaGenerator import PersonaGenerator, Persona
+from openai import OpenAI
+
+from mallm.models.personas.PersonaGenerator import PersonaGenerator
 
 logger = logging.getLogger("mallm")
 
 
 class TGIPersonaGenerator(PersonaGenerator):
-    def __init__(self, client: InferenceClient):
+    def __init__(self, client: OpenAI):
         self.client = client
-        self.base_prompt = """
+        self.base_prompt = {
+            "role": "system",
+            "content": """
 When faced with a task, begin by identifying the participants who will contribute to solving the task. Provide role and description of the participants, describing their expertise or needs, formatted using the provided JSON schema.
 Generate one participant at a time, complementing the existing participants to foster a rich discussion.
 
@@ -33,29 +36,42 @@ Already Generated Participants:
 {"role": "Food Scientist", "description": "An educated scientist that knows which flavor combinations result in the best taste."}
 New Participant:
 {"role": "Chef", "description": "A professional chef specializing in Italian cuisine who enjoys teaching cooking techniques."}
-        """
+        """,
+        }
 
     def generate_personas(self, task_description, num_agents):
-        current_prompt = (
-            self.base_prompt
-            + f"\nNow generate a participant to discuss the following task:\nTask: {task_description}\n"
-        )
+        current_prompt = [
+            self.base_prompt,
+            {
+                "role": "user",
+                "content": f"\nNow generate a participant to discuss the following task:\nTask: {task_description}\n",
+            },
+        ]
 
         logger.debug("Creating " + str(num_agents) + " agents...")
         agents = []
         while len(agents) < num_agents:
             # Send the prompt to the InferenceClient
-            response = self.client.text_generation(
-                current_prompt
-                + "Please use the following JSON schema to generate a useful persona for the task!:",
-                max_new_tokens=400,
-                grammar={"type": "json", "value": Persona.schema_json()},
-                stop_sequences=["<|eot_id|>"],
-                repetition_penalty=1.1,
+            chat_completion = self.client.chat.completions.create(
+                model="tgi",
+                messages=current_prompt
+                + [
+                    {
+                        "role": "user",
+                        "content": "Please use the following JSON schema to generate a useful persona for the task! "
+                        "Only answer with the JSON for the next persona!:",
+                    }
+                ],
+                stream=False,
+                stop=["<|eot_id|>"],
             )
 
+            response = chat_completion.choices[0].message.content.strip()
             try:
-                agents.append(json.loads(response))
+                new_agent = json.loads(response)
+                if new_agent["role"] == "" or new_agent["description"] == "":
+                    continue
+                agents.append(new_agent)
                 logger.debug("Added one agent: " + str(agents[-1]))
             except json.decoder.JSONDecodeError as e:
                 logger.error(
@@ -67,9 +83,11 @@ New Participant:
                 continue
 
             # Update the prompt with the newly generated persona for the next iteration
-            # We have to call this after the try catch to only add this when we successfully generate the first persona
-            if len(agents) == 1:
-                current_prompt += "Already Generated Participants:\n"
-            current_prompt += f"{response}\n"
+            current_prompt.append(
+                {
+                    "role": "system",
+                    "content": f"Already Generated Participants:\n{response}",
+                }
+            )
 
         return agents

@@ -158,11 +158,10 @@ def manage_discussions(
     # TODO: Add support for ChatGPT (OpenAI)
     # Creating HuggingFace endpoint
     llm_client_oai = OpenAI(base_url=f"{endpoint_url}/v1", api_key="-")
-    llm_client = InferenceClient(endpoint_url)
 
     llm = HFTGIChat(client=llm_client_oai)
 
-    agent_generator = TGIPersonaGenerator(client=llm_client)
+    agent_generator = TGIPersonaGenerator(client=llm_client_oai)
 
     pool = ThreadPool(processes=max_concurrent_requests)
     results = []
