@@ -1,7 +1,7 @@
 # This is a legacy file we can delete later if not needed
 
 from tqdm import tqdm
-from mallm.discourse_policy.coordinator import *
+from mallm.coordinator import *
 import logging
 
 # Configure logging for the library
@@ -128,7 +128,7 @@ def run_locally(
                 "exampleId": sample["exampleId"],
                 "datasetId": sample["datasetId"],
                 "instruction": instruction,
-                "personas": coordinator.getAgents(),
+                "personas": coordinator.get_agents(),
                 "paradigm": paradigm,
                 "input": sample["input"],
                 "context": sample["context"],
