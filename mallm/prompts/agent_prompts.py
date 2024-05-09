@@ -6,7 +6,7 @@ def generate_chat_prompt_feedback(data):
     prompts = [
         {
             "role": "system",
-            "content": f"You are {data['persona']} and your traits are {data['personaDescription']} You are participating in a discussion. Answer in {data['sentsMin']} to {data['sentsMax']} sentences!",
+            "content": f"Your role: {data['persona']} ({data['personaDescription']}) \nYou are participating in a discussion. Answer in {data['sentsMin']} to {data['sentsMax']} sentences!",
         }
     ]
     if data["agentMemory"] is not None:
