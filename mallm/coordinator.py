@@ -45,7 +45,7 @@ class Coordinator:
         self.client = client
         self.agent_generator = agent_generator
 
-    def initAgents(self, task_instruction, input, use_moderator):
+    def init_agents(self, task_instruction, input_str, use_moderator):
         """
         Instantiates the agents by
         1) identify helpful personas
@@ -57,7 +57,7 @@ class Coordinator:
         self.agents = []
 
         personas = self.agent_generator.generate_personas(
-            f"{task_instruction} {input}", 3
+            f"{task_instruction} {input_str}", 3
         )
 
         if use_moderator:
@@ -65,7 +65,7 @@ class Coordinator:
         for persona in personas:
             self.panelists.append(
                 Panelist(
-                    self.llm, self.client, persona["role"], persona["persona"], self
+                    self.llm, self.client, self, persona["role"], persona["description"]
                 )
             )
 
@@ -75,7 +75,7 @@ class Coordinator:
             self.agents = self.panelists
         return True
 
-    def getAgents(self):
+    def get_agents(self):
         agent_dicts = []
         for a in self.agents:
             agent_dicts.append(
@@ -88,7 +88,7 @@ class Coordinator:
             )
         return agent_dicts
 
-    def updateGlobalMemory(
+    def update_global_memory(
         self,
         unique_id,
         turn,
@@ -169,7 +169,7 @@ class Coordinator:
     def discuss(
         self,
         task_instruction,
-        input,
+        input_str,
         context,
         use_moderator,
         feedback_sentences=[3, 4],
@@ -193,7 +193,9 @@ class Coordinator:
         if context:
             task_instruction += "\n" + "Context: " + context
 
-        if not self.initAgents(task_instruction, input, use_moderator=use_moderator):
+        if not self.init_agents(
+            task_instruction, input_str, use_moderator=use_moderator
+        ):
             logger.error(f"""Failed to intialize agents (coordinator: {self.id}).""")
             return (
                 None,
@@ -225,7 +227,7 @@ class Coordinator:
 Starting discussion with coordinator {self.id}...
 -------------
 Instruction: {task_instruction}
-Input: {input}
+Input: {input_str}
 Feedback sentences: {str(feedback_sentences)}
 Maximum turns: {max_turns}
 Agents: {str(personas)}
@@ -248,7 +250,7 @@ Decision-making: {self.decision_making.__class__.__name__}
         current_draft, turn, agreements = policy.discuss(
             self,
             task_instruction,
-            input,
+            input_str,
             use_moderator,
             feedback_sentences,
             max_turns,

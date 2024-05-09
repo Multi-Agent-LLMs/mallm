@@ -16,7 +16,7 @@ class DiscourseMemory(DiscoursePolicy):
         self,
         coordinator: Coordinator,
         task_instruction: str,
-        input: str,
+        input_str: str,
         use_moderator: bool = False,
         feedback_sentences: list[int] = (3, 4),
         max_turns: int = None,
@@ -61,7 +61,7 @@ class DiscourseMemory(DiscoursePolicy):
 
                 template_filling = {
                     "taskInstruction": task_instruction,
-                    "input": input,
+                    "input": input_str,
                     "currentDraft": current_draft,
                     "persona": coordinator.moderator.persona,
                     "personaDescription": coordinator.moderator.persona_description,
@@ -88,7 +88,7 @@ class DiscourseMemory(DiscoursePolicy):
                 )
                 template_filling = {
                     "taskInstruction": task_instruction,
-                    "input": input,
+                    "input": input_str,
                     "currentDraft": current_draft,
                     "persona": p.persona,
                     "personaDescription": p.persona_description,

@@ -128,7 +128,7 @@ def run_locally(
                 "exampleId": sample["exampleId"],
                 "datasetId": sample["datasetId"],
                 "instruction": instruction,
-                "personas": coordinator.getAgents(),
+                "personas": coordinator.get_agents(),
                 "paradigm": paradigm,
                 "input": sample["input"],
                 "context": sample["context"],

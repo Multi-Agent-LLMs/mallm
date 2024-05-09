@@ -100,7 +100,7 @@ class Agent:
             "additionalArgs": template_filling,
         }
         logger.debug(f"Agent {self.short_id} is improving answer")
-        self.coordinator.updateGlobalMemory(
+        self.coordinator.update_global_memory(
             unique_id,
             turn,
             self.id,
@@ -150,7 +150,7 @@ class Agent:
             "additionalArgs": template_filling,
         }
         logger.debug(f"Agent {self.short_id} is drafting")
-        self.coordinator.updateGlobalMemory(
+        self.coordinator.update_global_memory(
             unique_id,
             turn,
             self.id,
@@ -182,7 +182,7 @@ class Agent:
             "additionalArgs": template_filling,
         }
         logger.debug(f"Agent {self.short_id} provides feedback to another agent")
-        self.coordinator.updateGlobalMemory(
+        self.coordinator.update_global_memory(
             unique_id,
             turn,
             self.id,

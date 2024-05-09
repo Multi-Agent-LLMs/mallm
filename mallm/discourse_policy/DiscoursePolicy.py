@@ -16,7 +16,7 @@ class DiscoursePolicy(ABC):
         self,
         coordinator: Coordinator,
         task_instruction: str,
-        input: str,
+        input_str: str,
         use_moderator: bool = False,
         feedback_sentences: list[int] = (3, 4),
         max_turns: int = None,

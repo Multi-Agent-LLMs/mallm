@@ -187,7 +187,7 @@ class Scheduler:
                 "datasetId": sample["datasetId"],
                 "instruction": self.instruction,
                 "coordinatorId": coordinator.id,
-                "personas": coordinator.getAgents(),
+                "personas": coordinator.get_agents(),
                 "paradigm": self.paradigm,
                 "input": sample["input"],
                 "context": sample["context"],
@@ -221,11 +221,10 @@ class Scheduler:
         """
         # Creating HuggingFace endpoint
         llm_client_oai = OpenAI(base_url=f"{self.endpoint_url}/v1", api_key="-")
-        llm_client = InferenceClient(self.endpoint_url)
 
         llm = HFTGIChat(client=llm_client_oai)
 
-        agent_generator = TGIPersonaGenerator(client=llm_client)
+        agent_generator = TGIPersonaGenerator(client=llm_client_oai)
 
         pool = ThreadPool(processes=self.max_concurrent_requests)
         results = []
@@ -299,15 +298,15 @@ def main(
         out,
         instruction,
         endpoint_url,
-        use_moderator=False,
-        max_turns=10,
-        feedback_sentences=[3, 4],
-        paradigm="memory",
-        context_length=1,
-        include_current_turn_in_memory=False,
-        max_concurrent_requests=100,
-        clear_memory_bucket=True,
-        memory_bucket_dir="./mallm/utils/memory_bucket/",
+        use_moderator=use_moderator,
+        max_turns=max_turns,
+        feedback_sentences=feedback_sentences,
+        paradigm=paradigm,
+        context_length=context_length,
+        include_current_turn_in_memory=include_current_turn_in_memory,
+        max_concurrent_requests=max_concurrent_requests,
+        clear_memory_bucket=clear_memory_bucket,
+        memory_bucket_dir=memory_bucket_dir,
     )
     scheduler.run()
 

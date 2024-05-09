@@ -16,7 +16,7 @@ class DiscourseDebate(DiscoursePolicy):
         self,
         coordinator: Coordinator,
         task_instruction: str,
-        input: str,
+        input_str: str,
         use_moderator: bool = False,
         feedback_sentences: list[int] = (3, 4),
         max_turns: int = None,
@@ -64,7 +64,7 @@ class DiscourseDebate(DiscoursePolicy):
 
                 template_filling = {
                     "taskInstruction": task_instruction,
-                    "input": input,
+                    "input": input_str,
                     "currentDraft": current_draft,
                     "persona": coordinator.moderator.persona,
                     "personaDescription": coordinator.moderator.persona_description,
@@ -92,7 +92,7 @@ class DiscourseDebate(DiscoursePolicy):
                 )
                 template_filling = {
                     "taskInstruction": task_instruction,
-                    "input": input,
+                    "input": input_str,
                     "currentDraft": current_draft,
                     "persona": coordinator.panelists[0].persona,
                     "personaDescription": coordinator.panelists[0].persona_description,
@@ -128,7 +128,7 @@ class DiscourseDebate(DiscoursePolicy):
 
                     template_filling = {
                         "taskInstruction": task_instruction,
-                        "input": input,
+                        "input": input_str,
                         "currentDraft": current_draft,
                         "persona": a.persona,
                         "personaDescription": a.persona_description,
