@@ -24,7 +24,8 @@ class Agent:
         self.moderator = moderator
         self.llm = llm
         self.client = client
-        self.init_chains()
+        if self.llm:
+            self.init_chains()
         logger.info(
             f'Creating agent {self.short_id} with personality "{self.persona}": "{self.persona_description}"'
         )
