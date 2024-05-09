@@ -171,66 +171,6 @@ class Coordinator:
             )
         return agent_dicts
 
-    def create_llm(self):
-        """
-        Initializes the LLM that the agents are using to generate their outputs.
-        The LLM is set in evaluation mode. Thus, it immediately forgets everything that happened.
-        It allows for an all-fresh reprompting at each iteration of the discussion.
-        Any model within the huggingface format can be loaded.
-        Returns HuggingFacePipeline
-        """
-        device = f"cuda:{cuda.current_device()}" if cuda.is_available() else "cpu"
-        logger.info(f"Running on device: {device}")
-        bnb_config = transformers.BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_quant_type="nf4",
-            bnb_4bit_use_double_quant=True,
-            bnb_4bit_compute_dtype=bfloat16,
-        )
-        model_config = transformers.AutoConfig.from_pretrained(ckpt_dir)
-        if (
-            device == "cpu"
-        ):  # not recommended but useful for developing with no GPU available
-            model = transformers.AutoModelForCausalLM.from_pretrained(
-                ckpt_dir,
-                trust_remote_code=True,
-                config=model_config,
-                offload_folder="offload",
-                device_map="auto",
-            )
-        else:
-            model = transformers.AutoModelForCausalLM.from_pretrained(
-                ckpt_dir,
-                trust_remote_code=True,
-                config=model_config,
-                quantization_config=bnb_config,
-                device_map="auto",
-            )
-        model.eval()
-        logger.info(f"Model {ckpt_dir} loaded on {device}")
-
-        self.llm_tokenizer = transformers.AutoTokenizer.from_pretrained(ckpt_dir)
-        # self.llm_tokenizer.pad_token_id = model.config.eos_token_id
-        logger.info(
-            "Using this tokenizer: " + str(self.llm_tokenizer.__class__.__name__)
-        )
-
-        pipeline = transformers.pipeline(
-            model=model,
-            tokenizer=self.llm_tokenizer,
-            return_full_text=True,  # langchain expects the full text
-            task="text-generation",
-            pad_token_id=self.llm_tokenizer.eos_token_id,
-            # model parameters
-            do_sample=True,
-            temperature=0.9,
-            max_new_tokens=512,  # max number of tokens to generate in the output
-            min_new_tokens=2,  # always answer something (no empty responses)
-            repetition_penalty=1.1,  # without this output begins repeating
-        )
-
-        return HuggingFacePipeline(pipeline=pipeline)
-
     def updateGlobalMemory(
         self,
         unique_id,
@@ -800,7 +740,19 @@ class Coordinator:
         Returns the final response agreed on, the global memory, agent specific memory, turns needed, last agreements of agents
         """
         if context:
-            task_instruction += "\n" + "Context: " + context
+            if len(context) > 1:
+                for i, sc in enumerate(context):
+                    task_instruction += (
+                        "\n" + "Context " + str(i + 1) + ": " + sc + "\n"
+                    )
+            else:
+                task_instruction += "\n" + "Context: " + context[0] + "\n"
+        input_str = ""
+        if len(input) > 1:
+            for i, si in enumerate(input):
+                input_str += "Input " + str(i + 1) + ": " + si + "\n"
+        else:
+            input_str += "\n" + "Input: " + input[0] + "\n"
 
         if not self.initAgents(task_instruction, input, use_moderator=use_moderator):
             logger.error(f"""Failed to intialize agents (coordinator: {self.id}).""")
@@ -846,7 +798,7 @@ Decision-making: {self.decision_making.__class__.__name__}
         if paradigm == "memory":
             current_draft, turn, agreements = self.discuss_memory(
                 task_instruction,
-                input,
+                input_str,
                 use_moderator,
                 feedback_sentences,
                 max_turns,
@@ -857,7 +809,7 @@ Decision-making: {self.decision_making.__class__.__name__}
         elif paradigm == "report":
             current_draft, turn, agreements = self.discuss_report(
                 task_instruction,
-                input,
+                input_str,
                 use_moderator,
                 feedback_sentences,
                 max_turns,
@@ -868,7 +820,7 @@ Decision-making: {self.decision_making.__class__.__name__}
         elif paradigm == "relay":
             current_draft, turn, agreements = self.discuss_relay(
                 task_instruction,
-                input,
+                input_str,
                 use_moderator,
                 feedback_sentences,
                 max_turns,
@@ -879,7 +831,7 @@ Decision-making: {self.decision_making.__class__.__name__}
         elif paradigm == "debate":
             current_draft, turn, agreements = self.discuss_debate(
                 task_instruction,
-                input,
+                input_str,
                 use_moderator,
                 feedback_sentences,
                 max_turns,
