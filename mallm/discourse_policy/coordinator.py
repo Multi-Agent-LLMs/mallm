@@ -40,7 +40,8 @@ class Coordinator:
         self.decision_making = None
         self.llm = model
         self.client = client
-        self.init_chains()
+        if self.llm:
+            self.init_chains()
 
     def init_chains(self):
         # if "llama" in self.llm_tokenizer.__class__.__name__.lower():  # use <<SYS>> and [INST] tokens for llama models
