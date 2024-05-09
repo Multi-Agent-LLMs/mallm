@@ -36,7 +36,7 @@ def generate_chat_prompt_feedback(data):
         prompts.append(
             {
                 "role": "user",
-                "content": "Based on the current solution, give constructive feedback. Be open to compromise too and if you agree answer with [AGREE] else answer with [DISAGREE] and explain why.",
+                "content": "Based on the current solution, give constructive feedback. Be open to compromise too. If you agree, answer with [AGREE], else answer with [DISAGREE] and explain why.",
             }
         )
 
