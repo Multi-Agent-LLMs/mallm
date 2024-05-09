@@ -1,70 +1,92 @@
 import json
-from huggingface_hub import InferenceClient
+import logging
+
+from openai import OpenAI
 
 from mallm.models.personas.PersonaGenerator import PersonaGenerator
 
+logger = logging.getLogger("mallm")
+
 
 class TGIPersonaGenerator(PersonaGenerator):
-    def __init__(self, client: InferenceClient):
+    def __init__(self, client: OpenAI):
         self.client = client
-        self.persona_grammar = {
-            "type": "object",
-            "properties": {
-                "role": {"type": "string"},
-                "persona": {"type": "string"},
-            },
-            "required": ["role", "persona"],
-        }
-        self.base_prompt = """
-        Generate a personas using the JSON schema provided. Here are some example tasks and their corresponding personas:
+        self.base_prompt = {
+            "role": "system",
+            "content": """
+When faced with a task, begin by identifying the participants who will contribute to solving the task. Provide role and description of the participants, describing their expertise or needs, formatted using the provided JSON schema.
+Generate one participant at a time, complementing the existing participants to foster a rich discussion.
 
-        Task: Explain the basics of machine learning to high school students.
-        Persona Description:
-        {
-            "role": "Educator",
-            "persona": "An experienced teacher who simplifies complex topics for teenagers.",
-        }
+Example 1:
+Task: Explain the basics of machine learning to high school students.
+New Participant:
+{"role": "Educator", "description": "An experienced teacher who simplifies complex topics for teenagers."}
 
-        Task: Develop a new mobile app for tracking daily exercise.
-        Persona Description:
-        {
-            "role": "Software Developer",
-            "persona": "A creative developer with experience in mobile applications and user interface design.",
-        }
+Example 2:
+Task: Develop a new mobile app for tracking daily exercise.
+Already Generated Participants:
+{"role": "Fitness Coach", "description": "A person that has high knowledge about sports and fitness."}
+New Participant:
+{"role": "Software Developer", "description": "A creative developer with experience in mobile applications and user interface design."}
 
-        Task: Write a guide on how to cook Italian food for beginners.
-        Persona Description:
-        {
-            "role": "Chef",
-            "persona": "A professional chef specializing in Italian cuisine who enjoys teaching cooking techniques.",
+Example 3:
+Task: Write a guide on how to cook Italian food for beginners.
+Already Generated Participants:
+{"role": "Italian Native", "description": "An average home cook that lived in italy for 30 years."}
+{"role": "Food Scientist", "description": "An educated scientist that knows which flavor combinations result in the best taste."}
+New Participant:
+{"role": "Chef", "description": "A professional chef specializing in Italian cuisine who enjoys teaching cooking techniques."}
+        """,
         }
-        """
 
     def generate_personas(self, task_description, num_agents):
-        current_prompt = (
-            self.base_prompt
-            + f"\nNow, based on the schema above, generate a persona for the following task:\nTask: {task_description}\n"
-        )
+        current_prompt = [
+            self.base_prompt,
+            {
+                "role": "user",
+                "content": f"\nNow generate a participant to discuss the following task:\nTask: {task_description}\n",
+            },
+        ]
 
+        logger.debug("Creating " + str(num_agents) + " agents...")
         agents = []
         while len(agents) < num_agents:
             # Send the prompt to the InferenceClient
-            response = self.client.text_generation(
-                current_prompt,
-                max_new_tokens=400,
-                grammar={"type": "json", "value": self.persona_grammar},
-                stop_sequences=["<|eot_id|>"],
-                repetition_penalty=1.1,
+            chat_completion = self.client.chat.completions.create(
+                model="tgi",
+                messages=current_prompt
+                + [
+                    {
+                        "role": "user",
+                        "content": "Please use the follow the examples to generate a useful persona for the task! Only answer with the JSON for the next persona!",
+                    }
+                ],
+                stream=False,
+                stop=["<|eot_id|>"],
             )
 
+            response = chat_completion.choices[0].message.content.strip()
             try:
-                agents.append(json.loads(response))
-            except json.decoder.JSONDecodeError:
+                new_agent = json.loads(response)
+                if new_agent["role"] == "" or new_agent["description"] == "":
+                    continue
+                agents.append(new_agent)
+                logger.debug("Added one agent: " + str(agents[-1]))
+            except json.decoder.JSONDecodeError as e:
+                logger.error(
+                    "Could not decode json: "
+                    + str(e)
+                    + "\nResponse string: "
+                    + str(response)
+                )
                 continue
 
             # Update the prompt with the newly generated persona for the next iteration
-            if len(agents) == 0:
-                current_prompt += "Already generated personas for this task:\n"
-            current_prompt += f"\nPersona Description:\n{response}\n"
+            current_prompt.append(
+                {
+                    "role": "system",
+                    "content": f"Already Generated Participants:\n{response}",
+                }
+            )
 
         return agents

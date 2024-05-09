@@ -17,5 +17,5 @@ class EuroparlDownloader(DatasetDownloader):
         data = self.shuffle_and_select("train")
         json_str = ""
         for s in data.iter(batch_size=1):
-            json_str += f"""{{ "exampleId":"{str(uuid.uuid4())}", "datasetId": null, "input":{json.dumps(s['translation'][0]['de'])}, "context": null, "references": [{json.dumps(s['translation'][0]['en'])}], "personas": null }}\n"""
+            json_str += f"""{{ "exampleId":"{str(uuid.uuid4())}", "datasetId": null, "input":[{json.dumps(s['translation'][0]['de'])}], "context": null, "references": [{json.dumps(s['translation'][0]['en'])}], "personas": null }}\n"""
         self.save_to_json(json_str)

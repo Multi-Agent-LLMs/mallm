@@ -15,5 +15,5 @@ class GSM8KDownloader(DatasetDownloader):
         data = self.shuffle_and_select("test")
         json_str = ""
         for s in data.iter(batch_size=1):
-            json_str += f"""{{ "exampleId":"{str(uuid.uuid4())}", "datasetId": null, "input":{json.dumps(s['question'][0])}, "context": null, "references": [{json.dumps(s['answer'][0])}], "personas": null }}\n"""
+            json_str += f"""{{ "exampleId":"{str(uuid.uuid4())}", "datasetId": null, "input":[{json.dumps(s['question'][0])}], "context": null, "references": [{json.dumps(s['answer'][0])}], "personas": null }}\n"""
         self.save_to_json(json_str)

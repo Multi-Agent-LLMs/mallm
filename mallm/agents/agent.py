@@ -24,9 +24,9 @@ class Agent:
         self,
         llm: LLM,
         client,
+        coordinator,
         persona,
         persona_description,
-        coordinator,
         moderator=None,
     ):
         self.id = str(uuid.uuid4())
@@ -38,7 +38,6 @@ class Agent:
         self.moderator = moderator
         self.llm = llm
         self.client = client
-
         logger.info(
             f'Creating agent {self.short_id} with personality "{self.persona}": "{self.persona_description}"'
         )
