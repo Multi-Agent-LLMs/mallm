@@ -12,7 +12,7 @@ class Moderator(Agent):
         self.moderator = self
         self.llm = llm
         self.client = client
-        self.init_chains()
+
         logger.info(
             f'Creating agent {self.short_id} with personality "{self.persona}": "{self.persona_description}"'
         )
