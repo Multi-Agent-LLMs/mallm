@@ -6,11 +6,11 @@ from mallm.discourse_policy.coordinator import *
 coordinator = Coordinator(None, None)
 
 
-def test_agent_initialization():
+def test_panelist_initialization():
     agent = Panelist(None, None, coordinator, None, None)
     assert isinstance(agent, Panelist), "Panelist instance is not created properly."
 
 
-def test_agent_initialization():
+def test_moderator_initialization():
     agent = Moderator(None, None, coordinator, None, None)
-    assert isinstance(agent, Moderator), "Panelist instance is not created properly."
+    assert isinstance(agent, Moderator), "Moderator instance is not created properly."
