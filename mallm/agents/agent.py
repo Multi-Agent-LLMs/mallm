@@ -1,19 +1,33 @@
-import os
 import dbm
 import json
-import fire
-from mallm.prompts import agent_prompts
-from langchain_core.prompts import PromptTemplate
-from langchain.chains import LLMChain
-import uuid
 import logging
+import os
+import uuid
+
+import fire
+from langchain.chains import LLMChain
+from langchain_core.language_models import LLM
+
+from mallm.prompts import agent_prompts
+from mallm.prompts.agent_prompts import (
+    generate_chat_prompt_improve,
+    generate_chat_prompt_feedback,
+    generate_chat_prompt_draft,
+)
+from mallm.prompts.coordinator_prompts import generate_chat_prompt_extract_result
 
 logger = logging.getLogger("mallm")
 
 
 class Agent:
     def __init__(
-        self, llm, client, coordinator, persona, persona_description, moderator=None
+        self,
+        llm: LLM,
+        client,
+        coordinator,
+        persona,
+        persona_description,
+        moderator=None,
     ):
         self.id = str(uuid.uuid4())
         self.short_id = self.id[:4]
@@ -24,40 +38,8 @@ class Agent:
         self.moderator = moderator
         self.llm = llm
         self.client = client
-        if self.llm:
-            self.init_chains()
         logger.info(
             f'Creating agent {self.short_id} with personality "{self.persona}": "{self.persona_description}"'
-        )
-
-    def init_chains(self):
-        # if "llama" in self.llm_tokenizer.__class__.__name__.lower():  # use <<SYS>> and [INST] tokens for llama models
-        partial_variables = {
-            "sys_s": "<<SYS>>",
-            "sys_e": "<</SYS>>",
-            "inst_s": "[INST]",
-            "inst_e": "[/INST]",
-        }  # TODO: implement a handler that adds (or leaves out) model-specific tokens for models like llama2, llama3 or chatGpt
-        # else:
-        #    partial_variables = {"sys_s": "", "sys_e": "", "inst_s": "", "inst_e": ""}
-
-        self.chain_improve = LLMChain(
-            llm=self.llm,
-            prompt=PromptTemplate.from_template(
-                template=agent_prompts.improve(), partial_variables=partial_variables
-            ),
-        )
-        self.chain_draft = LLMChain(
-            llm=self.llm,
-            prompt=PromptTemplate.from_template(
-                template=agent_prompts.draft(), partial_variables=partial_variables
-            ),
-        )
-        self.chain_feedback = LLMChain(
-            llm=self.llm,
-            prompt=PromptTemplate.from_template(
-                template=agent_prompts.feedback(), partial_variables=partial_variables
-            ),
         )
 
     def agree(self, res, agreements, self_drafted=False):
@@ -96,13 +78,15 @@ class Agent:
         extract_all_drafts,
         agreements,
     ):
-        res = self.chain_improve.invoke(template_filling, client=self.client)["text"]
+        res = self.llm.invoke(
+            generate_chat_prompt_improve(template_filling), client=self.client
+        )
         agreements = self.agree(res, agreements)
         current_draft = None
         if extract_all_drafts:
-            current_draft = self.coordinator.chain_extract_result.invoke(
-                {"result": res}, client=self.client
-            )["text"]
+            current_draft = self.llm.invoke(
+                generate_chat_prompt_extract_result(res), client=self.client
+            )
         memory = {
             "messageId": unique_id,
             "turn": turn,
@@ -140,13 +124,15 @@ class Agent:
         agreements,
         is_moderator=False,
     ):
-        res = self.chain_draft.invoke(template_filling, client=self.client)["text"]
+        res = self.llm.invoke(
+            generate_chat_prompt_draft(template_filling), client=self.client
+        )
         agreements = self.agree(res, agreements, self_drafted=True)
         current_draft = None
         if extract_all_drafts:
-            current_draft = self.coordinator.chain_extract_result.invoke(
-                {"result": res}, client=self.client
-            )["text"]
+            current_draft = self.llm.invoke(
+                generate_chat_prompt_extract_result(res), client=self.client
+            )
         if is_moderator:
             agreement = None
         else:
@@ -179,7 +165,9 @@ class Agent:
         return res, memory, agreements
 
     def feedback(self, unique_id, turn, memory_ids, template_filling, agreements):
-        res = self.chain_feedback.invoke(template_filling, client=self.client)["text"]
+        res = self.llm.invoke(
+            generate_chat_prompt_feedback(template_filling), client=self.client
+        )
         agreements = self.agree(res, agreements)
         memory = {
             "messageId": unique_id,
@@ -208,7 +196,7 @@ class Agent:
         )
         return res, memory, agreements
 
-    def updateMemory(
+    def update_memory(
         self,
         unique_id,
         turn,
@@ -234,16 +222,16 @@ class Agent:
             "additionalArgs": prompt_args,
             "contribution": contribution,
             "memoryIds": memory_ids,
-            "text": "\n udszua \t shssh super cool \n\\n okay",  # str(text).replace('"', "'"),
+            "text": str(text).replace('"', "'"),
             "agreement": agreement,
             "extractedDraft": str(extracted_draft).replace('"', "'"),
         }
 
         with dbm.open(self.memory_bucket, "c") as db:
             db[str(unique_id)] = json.dumps(data_dict)
-        self.saveMemoryToJson()
+        self.save_memory_to_json()
 
-    def getMemory(
+    def get_memory(
         self,
         context_length=None,
         turn=None,
@@ -273,27 +261,23 @@ class Agent:
                             memory_ids.append(int(m["messageId"]))
                             if m["contribution"] == "draft" or (
                                 m["contribution"] == "improve"
-                                and "disagree" in m["text"].lower()
                             ):
                                 current_draft = m["text"]
                 else:
                     context_memory.append(m)
                     memory_ids.append(int(m["messageId"]))
-                    if m["contribution"] == "draft" or (
-                        m["contribution"] == "improve"
-                        and "disagree" in m["text"].lower()
-                    ):
+                    if m["contribution"] == "draft" or (m["contribution"] == "improve"):
                         current_draft = m["text"]
         else:
             context_memory = None
 
         if current_draft and extract_draft:
-            current_draft = self.coordinator.chain_extract_result.invoke(
-                {"result": current_draft}, client=self.client
-            )["text"]
+            current_draft = self.llm.invoke(
+                generate_chat_prompt_extract_result(current_draft), client=self.client
+            )
         return context_memory, memory_ids, current_draft
 
-    def getMemoryString(
+    def get_memory_string(
         self,
         context_length=None,
         turn=None,
@@ -306,7 +290,7 @@ class Agent:
         context_length refers to the amount of turns the agent can use as rationale
         Returns: string
         """
-        memory, memory_ids, current_draft = self.getMemory(
+        memory, memory_ids, current_draft = self.get_memory(
             context_length=context_length,
             turn=turn,
             include_this_turn=include_this_turn,
@@ -315,35 +299,29 @@ class Agent:
         if memory:
             memory_string = ""
             for m in memory:
-                if m["persona"] != self.persona:
-                    memory_string = (
-                        memory_string
-                        + f"""\n[INST]{m["persona"]}: {m["text"]}[/INST]"""
-                    )
-                else:
-                    memory_string = memory_string + f"""\n{m["persona"]}: {m["text"]}"""
+                memory_string = memory_string + f"""\n{m["persona"]}: {m["text"]}"""
             if personalized:
                 memory_string = memory_string.replace(
                     f"""{self.persona}:""", f"""{self.persona} (you):"""
                 )
         else:
-            memory_string = "None"
+            memory_string = None
         return memory_string, memory_ids, current_draft
 
-    def saveMemoryToJson(self, out=None):
+    def save_memory_to_json(self, out=None):
         """
         Converts the memory bucket dbm data to json format
         """
         if out:
             try:
                 with open(out, "w") as f:
-                    json.dump(self.getMemory(), f)
+                    json.dump(self.get_memory(), f)
             except Exception as e:
                 print(f"Failed to save agent memory to {out}: {e}")
         else:
             try:
                 with open(self.memory_bucket + ".json", "w") as f:
-                    json.dump(self.getMemory(), f)
+                    json.dump(self.get_memory(), f)
             except Exception as e:
                 print(f"Failed to save agent memory to {self.memory_bucket}: {e}")
 

@@ -1,17 +1,13 @@
-import re
 import time
 from datetime import timedelta
-import uuid
-import ast
 
 import transformers
 from langchain.chains import LLMChain
-from langchain_community.llms import HuggingFacePipeline
-from torch import cuda, bfloat16
 
 from mallm.agents.moderator import *
 from mallm.agents.panelist import *
 from mallm.decision_making.consensus import *
+from mallm.models.personas.PersonaGenerator import PersonaGenerator
 from mallm.prompts import coordinator_prompts
 
 transformers.logging.set_verbosity_error()
@@ -21,10 +17,12 @@ logger = logging.getLogger("mallm")
 
 
 class Coordinator:
+
     def __init__(
         self,
         model,
         client,
+        agent_generator: PersonaGenerator = None,
         use_moderator=False,
         memory_bucket_dir="./mallm/utils/memory_bucket/",
     ):
@@ -41,42 +39,9 @@ class Coordinator:
         self.llm = model
         self.client = client
         if self.llm:
-            self.init_chains()
+            self.agent_generator = agent_generator
 
-    def init_chains(self):
-        # if "llama" in self.llm_tokenizer.__class__.__name__.lower():  # use <<SYS>> and [INST] tokens for llama models
-        partial_variables = {
-            "sys_s": "<<SYS>>",
-            "sys_e": "<</SYS>>",
-            "inst_s": "[INST]",
-            "inst_e": "[/INST]",
-        }  # TODO: implement a handler that adds (or leaves out) model-specific tokens for models like llama2, llama3 or chatGpt
-        # else:
-        #    partial_variables = {"sys_s": "", "sys_e": "", "inst_s": "", "inst_e": ""}
-
-        self.chain_identify_personas = LLMChain(
-            llm=self.llm,
-            prompt=PromptTemplate.from_template(
-                template=coordinator_prompts.identify_personas(),
-                partial_variables=partial_variables,
-            ),
-        )
-        self.chain_extract_result = LLMChain(
-            llm=self.llm,
-            prompt=PromptTemplate.from_template(
-                template=coordinator_prompts.extract_result(),
-                partial_variables=partial_variables,
-            ),
-        )
-        self.chain_baseline = LLMChain(
-            llm=self.llm,
-            prompt=PromptTemplate.from_template(
-                template=coordinator_prompts.baseline(),
-                partial_variables=partial_variables,
-            ),
-        )
-
-    def initAgents(self, task_instruction, input, use_moderator):
+    def initAgents(self, task_instruction, input_str, use_moderator):
         """
         Instantiates the agents by
         1) identify helpful personas
@@ -84,76 +49,23 @@ class Coordinator:
         Gives true if the automatic assignment was successfull.
         Returns bool
         """
-        self.personas = None
         self.panelists = []
         self.agents = []
-        template_filling = {"taskInstruction": task_instruction, "input": input}
 
-        res = self.chain_identify_personas.invoke(template_filling, client=self.client)[
-            "text"
-        ]
-        logger.debug("Identifying personas... LLM output: " + res)
+        personas = self.agent_generator.generate_personas(
+            f"{task_instruction} Input: {input_str}", 3
+        )
 
-        # TODO: Use grammar to force LLM output in the correct JSON format. Example with llama.ccp: https://til.simonwillison.net/llms/llama-cpp-python-grammars
-
-        # repair dictionary in string if the LLM did mess up the formatting
-        if "{" in res and "}" not in res:
-            logger.debug(
-                "Looks like the LLM did not provide a valid dictionary (maybe the last brace is missing?). Trying to repair the dictionary..."
-            )
-            res = res + "}"
-
-        # self.updateGlobalMemory(0, 0, None, None, "persona_identification", res, None, [], template_filling)
-
-        personas_string = re.search(r"\{.*?\}", res, re.DOTALL)
-        if not personas_string:
-            logger.error(
-                f"LLM failed to provide personas in the correct format - Skipping this sample..."
-            )
-            # personas_string = '''{
-            #    "Poet": "A person who studies and creates poetry. The poet is familiar with the rules and formats of poetry and can provide guidance on how to write a poem.",
-            #    "Computer Scientist": "A scholar who specializes in the academic study of computer science. The computer scientist is familiar with the concept of a quantum computer and can provide guidance on how to explain it.",
-            #    "Ten year old child": "A child with a limited English vocabulary and little knowledge about complicated concepts, such as a quantum computer."
-            #    }'''
-            # self.personas = ast.literal_eval(personas_string)
-            return False
-        else:
-            personas_string = personas_string.group()
-            for i in [0, 1]:
-                try:
-                    self.personas = ast.literal_eval(personas_string)
-                except Exception as e:
-                    if i == 0:
-                        logger.debug(
-                            "Looks like the LLM did not get the formatting quite right. Trying to repair the dictionary string..."
-                        )
-                        personas_string = personas_string.replace("'\n", "',\n")
-                        personas_string = personas_string.replace('"\n', '",\n')
-                        personas_string = personas_string.replace('";', '",')
-                        logger.debug("Repaired string: \n" + str(personas_string))
-                        continue
-                    elif i == 1:
-                        logger.warning(
-                            f"Failed to parse the string to identify personas: {e} - Skipping this sample..."
-                        )
-                        # personas_string = '''{
-                        # "Poet": "A person who studies and creates poetry. The poet is familiar with the rules and formats of poetry and can provide guidance on how to write a poem.",
-                        # "Computer Scientist": "A scholar who specializes in the academic study of computer science. The computer scientist is familiar with the concept of a quantum computer and can provide guidance on how to explain it.",
-                        # "Ten year old child": "A child with a limited English vocabulary and little knowledge about complicated concepts, such as a quantum computer."
-                        # }'''
-                        # self.personas = ast.literal_eval(personas_string)
-                        return False
-
-        self.panelists = []
         if use_moderator:
             self.moderator = Moderator(self.llm, self.client, self)
-        for i, p in enumerate(self.personas):
+        for persona in personas:
             self.panelists.append(
-                Panelist(self.llm, self.client, p, self.personas[p], self)
+                Panelist(
+                    self.llm, self.client, self, persona["role"], persona["description"]
+                )
             )
 
         if use_moderator:
-            self.personas[self.moderator.persona] = self.moderator.persona_description
             self.agents = [self.moderator] + self.panelists
         else:
             self.agents = self.panelists
@@ -206,9 +118,9 @@ class Coordinator:
         with dbm.open(self.memory_bucket, "c") as db:
             db[str(unique_id)] = json.dumps(data_dict)
             logger.debug(str(db[str(unique_id)]))
-        self.saveGlobalMemoryToJson()
+        self.save_global_memory_to_json()
 
-    def getGlobalMemory(self):
+    def get_global_memory(self):
         """
         Retrieves memory from the agents memory bucket as a dictionary
         Returns: dict
@@ -219,24 +131,24 @@ class Coordinator:
                 memory.append(json.loads(db[key].decode()))
         return memory
 
-    def saveGlobalMemoryToJson(self):
+    def save_global_memory_to_json(self):
         """
         Converts the memory bucket dbm data to json format
         """
         try:
             with open(self.memory_bucket + ".json", "w") as f:
-                json.dump(self.getGlobalMemory(), f)
+                json.dump(self.get_global_memory(), f)
         except Exception as e:
             logger.error(f"Failed to save agent memory to {self.memory_bucket}: {e}")
-            logger.error(self.getGlobalMemory())
+            logger.error(self.get_global_memory())
 
-    def updateMemories(self, memories, agents_to_update):
+    def update_memories(self, memories, agents_to_update):
         """
         Updates the memories of all declared agents.
         """
         for c in memories:
             for a in agents_to_update:
-                a.updateMemory(
+                a.update_memory(
                     c["messageId"],
                     c["turn"],
                     c["agentId"],
@@ -253,7 +165,7 @@ class Coordinator:
     def discuss_memory(
         self,
         task_instruction,
-        input,
+        input_str,
         use_moderator,
         feedback_sentences=[3, 4],
         max_turns=None,
@@ -288,7 +200,7 @@ class Coordinator:
 
             if use_moderator:
                 memory_string, memory_ids, current_draft = (
-                    self.moderator.getMemoryString(
+                    self.moderator.get_memory_string(
                         context_length=context_length,
                         turn=turn,
                         include_this_turn=include_current_turn_in_memory,
@@ -297,7 +209,7 @@ class Coordinator:
 
                 template_filling = {
                     "taskInstruction": task_instruction,
-                    "input": input,
+                    "input": input_str,
                     "currentDraft": current_draft,
                     "persona": self.moderator.persona,
                     "personaDescription": self.moderator.persona_description,
@@ -313,18 +225,18 @@ class Coordinator:
                     is_moderator=True,
                 )
                 memories.append(memory)
-                memories = self.updateMemories(memories, self.agents)
+                memories = self.update_memories(memories, self.agents)
                 unique_id = unique_id + 1
 
             for p in self.panelists:
-                memory_string, memory_ids, current_draft = p.getMemoryString(
+                memory_string, memory_ids, current_draft = p.get_memory_string(
                     context_length=context_length,
                     turn=turn,
                     include_this_turn=include_current_turn_in_memory,
                 )
                 template_filling = {
                     "taskInstruction": task_instruction,
-                    "input": input,
+                    "input": input_str,
                     "currentDraft": current_draft,
                     "persona": p.persona,
                     "personaDescription": p.persona_description,
@@ -353,7 +265,7 @@ class Coordinator:
     def discuss_report(
         self,
         task_instruction,
-        input,
+        input_str,
         use_moderator,
         feedback_sentences=[3, 4],
         max_turns=None,
@@ -388,7 +300,7 @@ class Coordinator:
             # ---- Agent A1
             if use_moderator:
                 memory_string, memory_ids, current_draft = (
-                    self.moderator.getMemoryString(
+                    self.moderator.get_memory_string(
                         context_length=context_length,
                         turn=turn,
                         include_this_turn=include_current_turn_in_memory,
@@ -397,7 +309,7 @@ class Coordinator:
 
                 template_filling = {
                     "taskInstruction": task_instruction,
-                    "input": input,
+                    "input": input_str,
                     "currentDraft": current_draft,
                     "persona": self.moderator.persona,
                     "personaDescription": self.moderator.persona_description,
@@ -413,19 +325,19 @@ class Coordinator:
                     is_moderator=True,
                 )
                 memories.append(memory)
-                memories = self.updateMemories(memories, self.agents)
+                memories = self.update_memories(memories, self.agents)
                 unique_id = unique_id + 1
             else:
                 memory_string, memory_ids, current_draft = self.panelists[
                     0
-                ].getMemoryString(
+                ].get_memory_string(
                     context_length=context_length,
                     turn=turn,
                     include_this_turn=include_current_turn_in_memory,
                 )
                 template_filling = {
                     "taskInstruction": task_instruction,
-                    "input": input,
+                    "input": input_str,
                     "currentDraft": current_draft,
                     "persona": self.panelists[0].persona,
                     "personaDescription": self.panelists[0].persona_description,
@@ -440,19 +352,19 @@ class Coordinator:
                     agreements,
                 )
                 memories.append(memory)
-                memories = self.updateMemories(memories, self.agents)
+                memories = self.update_memories(memories, self.agents)
                 unique_id = unique_id + 1
 
             # ---- Agents A2, A3, A4, ...
             for p in self.agents[1:]:
-                memory_string, memory_ids, current_draft = p.getMemoryString(
+                memory_string, memory_ids, current_draft = p.get_memory_string(
                     context_length=context_length,
                     turn=turn,
                     include_this_turn=include_current_turn_in_memory,
                 )
                 template_filling = {
                     "taskInstruction": task_instruction,
-                    "input": input,
+                    "input": input_str,
                     "currentDraft": current_draft,
                     "persona": p.persona,
                     "personaDescription": p.persona_description,
@@ -480,7 +392,7 @@ class Coordinator:
     def discuss_relay(
         self,
         task_instruction,
-        input,
+        input_str,
         use_moderator,
         feedback_sentences=[3, 4],
         max_turns=None,
@@ -513,7 +425,7 @@ class Coordinator:
             logger.info("Ongoing. Current turn: " + str(turn))
 
             for i, a in enumerate(self.agents):
-                memory_string, memory_ids, current_draft = a.getMemoryString(
+                memory_string, memory_ids, current_draft = a.get_memory_string(
                     context_length=context_length,
                     turn=turn,
                     include_this_turn=include_current_turn_in_memory,
@@ -524,7 +436,7 @@ class Coordinator:
                 if a == self.moderator:
                     template_filling = {
                         "task_instruction": task_instruction,
-                        "input": input,
+                        "input": input_str,
                         "current_draft": current_draft,
                         "persona": self.moderator.persona,
                         "persona_description": self.moderator.persona_description,
@@ -540,11 +452,11 @@ class Coordinator:
                         is_moderator=True,
                     )
                     memories.append(memory)
-                    memories = self.updateMemories(memories, [a, self.agents[next_a]])
+                    memories = self.update_memories(memories, [a, self.agents[next_a]])
                 else:
                     template_filling = {
                         "taskInstruction": task_instruction,
-                        "input": input,
+                        "input": input_str,
                         "currentDraft": current_draft,
                         "persona": a.persona,
                         "personaDescription": a.persona_description,
@@ -572,7 +484,7 @@ class Coordinator:
     def discuss_debate(
         self,
         task_instruction,
-        input,
+        input_str,
         use_moderator,
         feedback_sentences=[3, 4],
         max_turns=None,
@@ -611,7 +523,7 @@ class Coordinator:
             # ---- Agent A1
             if use_moderator:
                 memory_string, memory_ids, current_draft = (
-                    self.moderator.getMemoryString(
+                    self.moderator.get_memory_string(
                         context_length=context_length,
                         turn=turn,
                         include_this_turn=include_current_turn_in_memory,
@@ -620,7 +532,7 @@ class Coordinator:
 
                 template_filling = {
                     "taskInstruction": task_instruction,
-                    "input": input,
+                    "input": input_str,
                     "currentDraft": current_draft,
                     "persona": self.moderator.persona,
                     "personaDescription": self.moderator.persona_description,
@@ -636,19 +548,19 @@ class Coordinator:
                     is_moderator=True,
                 )
                 memories.append(memory)
-                memories = self.updateMemories(memories, self.agents)
+                memories = self.update_memories(memories, self.agents)
                 unique_id = unique_id + 1
             else:
                 memory_string, memory_ids, current_draft = self.panelists[
                     0
-                ].getMemoryString(
+                ].get_memory_string(
                     context_length=context_length,
                     turn=turn,
                     include_this_turn=include_current_turn_in_memory,
                 )
                 template_filling = {
                     "taskInstruction": task_instruction,
-                    "input": input,
+                    "input": input_str,
                     "currentDraft": current_draft,
                     "persona": self.panelists[0].persona,
                     "personaDescription": self.panelists[0].persona_description,
@@ -664,14 +576,14 @@ class Coordinator:
                     is_moderator=True,
                 )
                 memories.append(memory)
-                memories = self.updateMemories(memories, self.agents)
+                memories = self.update_memories(memories, self.agents)
                 unique_id = unique_id + 1
 
             for r in range(debate_rounds):  # ---- Agents A2, A3, ...
                 logger.debug("Debate round: " + str(r))
                 debate_agreements = []
                 for i, a in enumerate(self.agents[1:]):  # similar to relay paradigm
-                    memory_string, memory_ids, current_draft = a.getMemoryString(
+                    memory_string, memory_ids, current_draft = a.get_memory_string(
                         context_length=context_length,
                         turn=turn,
                         include_this_turn=include_current_turn_in_memory,
@@ -682,7 +594,7 @@ class Coordinator:
 
                     template_filling = {
                         "taskInstruction": task_instruction,
-                        "input": input,
+                        "input": input_str,
                         "currentDraft": current_draft,
                         "persona": a.persona,
                         "personaDescription": a.persona_description,
@@ -719,7 +631,7 @@ class Coordinator:
     def discuss(
         self,
         task_instruction,
-        input,
+        input_str,
         context,
         use_moderator,
         feedback_sentences=[3, 4],
@@ -741,21 +653,11 @@ class Coordinator:
         Returns the final response agreed on, the global memory, agent specific memory, turns needed, last agreements of agents
         """
         if context:
-            if len(context) > 1:
-                for i, sc in enumerate(context):
-                    task_instruction += (
-                        "\n" + "Context " + str(i + 1) + ": " + sc + "\n"
-                    )
-            else:
-                task_instruction += "\n" + "Context: " + context[0] + "\n"
-        input_str = ""
-        if len(input) > 1:
-            for i, si in enumerate(input):
-                input_str += "Input " + str(i + 1) + ": " + si + "\n"
-        else:
-            input_str += "\n" + "Input: " + input[0] + "\n"
+            task_instruction += "\n" + "Context: " + context
 
-        if not self.initAgents(task_instruction, input, use_moderator=use_moderator):
+        if not self.initAgents(
+            task_instruction, input_str, use_moderator=use_moderator
+        ):
             logger.error(f"""Failed to intialize agents (coordinator: {self.id}).""")
             return (
                 None,
@@ -787,7 +689,7 @@ class Coordinator:
 Starting discussion with coordinator {self.id}...
 -------------
 Instruction: {task_instruction}
-Input: {input}
+Input: {input_str}
 Feedback sentences: {str(feedback_sentences)}
 Maximum turns: {max_turns}
 Agents: {str(personas)}
@@ -845,17 +747,16 @@ Decision-making: {self.decision_making.__class__.__name__}
             seconds=time.perf_counter() - startTime
         ).total_seconds()
 
-        globalMem = self.getGlobalMemory()
+        globalMem = self.get_global_memory()
         agentMems = []
         for a in self.agents:
-            agentMems.append(a.getMemory()[0])
-
+            agentMems.append(a.get_memory()[0])
         if turn >= max_turns:  # if no agreement was reached
             current_draft = None
         else:
-            current_draft = self.chain_extract_result.invoke(
-                {"result": current_draft}, client=self.client
-            )["text"]
+            current_draft = self.llm.invoke(
+                generate_chat_prompt_extract_result(current_draft), client=self.client
+            )
 
         return current_draft, globalMem, agentMems, turn, agreements, discussionTime
 

@@ -1,46 +1,126 @@
-def feedback():
-    template = """\
-{sys_s}Please consider the example provided and think it step by step.
-Task: {taskInstruction}
-Input: {input}
-This is the recent feedback by others:
-{agentMemory}
-Here is the current solution you need to consider:
-Solution: {inst_s}{currentDraft}{inst_e}
-Based on the current solution, give constructive feedback while considering your assigned role. Be open to compromise too.
-Your role: {persona} ({personaDescription})
-Utilize your talent and critical thinking to provide feedback in {sentsMin}-{sentsMax} sentences. If you agree, answer with [AGREE] and repeat the solution. If you [DISAGREE], explain why.{sys_e}\
-"""
-    return template
+from langchain_core.prompts import ChatPromptTemplate
 
 
-def improve():
-    template = """\
-{sys_s}Please consider the example provided and think it step by step.
-Task: {taskInstruction}
-Input: {input}
-This is the recent feedback by others:
-{agentMemory}
-Here is the current solution you need to consider:
-Solution: {inst_s}{currentDraft}{inst_e}
-Based on the current solution, carefully re-examine your previous answer while considering your assigned role. Be open to compromise too.
-Your role: {persona} ({personaDescription})
-Utilize your talent and critical thinking to provide feedback in {sentsMin}-{sentsMax} sentences and a new solution in as many sentences as you need. If you agree, answer with [AGREE] and repeat the solution. If you [DISAGREE], explain why.{sys_e}\
-"""
-    return template
+def generate_chat_prompt_feedback(data):
+    # TODO improve this prompt when it is used
+    prompts = [
+        {
+            "role": "system",
+            "content": f"Your role: {data['persona']} ({data['personaDescription']}) \nYou are participating in a discussion. Answer in {data['sentsMin']} to {data['sentsMax']} sentences!",
+        }
+    ]
+    if data["agentMemory"] is not None:
+        prompts.append(
+            {
+                "role": "system",
+                "content": f"This is the discussion to the current point. Keep it in mind:\n{data['agentMemory']}",
+            }
+        )
+
+    prompts.append(
+        {
+            "role": "user",
+            "content": f"Your Task: {data['taskInstruction']} Please consider the example provided and think it step by step. Input: {data['input']}",
+        }
+    )
+
+    if data["currentDraft"] is not None:
+        prompts.append(
+            {
+                "role": "user",
+                "content": f"Here is the current solution you need to consider:\nSolution: {data['currentDraft']}",
+            }
+        )
+
+    if data["agentMemory"] is not None:
+        prompts.append(
+            {
+                "role": "user",
+                "content": "Based on the current solution, give constructive feedback. Be open to compromise too. If you agree, answer with [AGREE], else answer with [DISAGREE] and explain why.",
+            }
+        )
+
+    return prompts
 
 
-def draft():
-    template = """\
-{sys_s}Please consider the example provided and think it step by step.
-Task: {taskInstruction}
-Input: {input}
-This is the recent feedback by others:
-{agentMemory}
-Here is your last solution to the task which you need to reconsider:
-Solution: {currentDraft}
-Based on the provided feedback, carefully re-examine your previous solution while considering your assigned role. Be open to compromise too.
-Your role: {persona} ({personaDescription})
-Utilize your talent and critical thinking to provide a new solution. If you feel like no changes are needed, output the existing solution.{sys_e}\
-"""
-    return template
+def generate_chat_prompt_improve(data):
+    prompts = [
+        {
+            "role": "system",
+            "content": f"You are {data['persona']} and your traits are {data['personaDescription']} You are participating in a discussion. Answer in {data['sentsMin']} to {data['sentsMax']} sentences!",
+        }
+    ]
+    if data["agentMemory"] is not None:
+        prompts.append(
+            {
+                "role": "system",
+                "content": f"This is the discussion to the current point. Keep it in mind:\n{data['agentMemory']}",
+            }
+        )
+
+    prompts.append(
+        {
+            "role": "user",
+            "content": f"Your Task: {data['taskInstruction']} Please consider the example provided and think it step by step. Input: {data['input']}",
+        }
+    )
+
+    if data["currentDraft"] is not None:
+        prompts.append(
+            {
+                "role": "user",
+                "content": f"Here is the current solution you need to consider:\nSolution: {data['currentDraft']}",
+            }
+        )
+
+    if data["agentMemory"] is not None:
+        prompts.append(
+            {
+                "role": "user",
+                "content": "Improve the current answer and if you agree, answer with [AGREE] else answer with [DISAGREE] and explain why.",
+            }
+        )
+
+    return prompts
+
+
+def generate_chat_prompt_draft(data):
+    # TODO improve this prompt when it is used
+    prompts = [
+        {
+            "role": "system",
+            "content": f"Your role: {data['persona']} ({data['personaDescription']}) \nYou are participating in a discussion. Answer in {data['sentsMin']} to {data['sentsMax']} sentences!",
+        }
+    ]
+    if data["agentMemory"] is not None:
+        prompts.append(
+            {
+                "role": "system",
+                "content": f"This is the discussion to the current point. Keep it in mind:\n{data['agentMemory']}",
+            }
+        )
+
+    prompts.append(
+        {
+            "role": "user",
+            "content": f"Your Task: {data['taskInstruction']} Please consider the example provided and think it step by step. Input: {data['input']}",
+        }
+    )
+
+    if data["currentDraft"] is not None:
+        prompts.append(
+            {
+                "role": "user",
+                "content": f"Here is the current solution you need to consider:\nSolution: {data['currentDraft']}",
+            }
+        )
+
+    if data["agentMemory"] is not None:
+        prompts.append(
+            {
+                "role": "user",
+                "content": "Based on the provided feedback, carefully re-examine your previous solution. Be open to compromise too and if you agree, answer with [AGREE] else answer with [DISAGREE] and explain why.",
+            }
+        )
+
+    return prompts

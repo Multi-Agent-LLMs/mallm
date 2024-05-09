@@ -1,17 +1,24 @@
-import sys, glob, httpx, requests
+import glob
+import sys, httpx, requests
 from multiprocessing.pool import ThreadPool
+
 from colorama import just_fix_windows_console
-from langchain_community.llms import HuggingFaceEndpoint
-from langchain_community.llms.huggingface_endpoint import HuggingFaceEndpoint
+from huggingface_hub import InferenceClient
+from openai import OpenAI
 
 from mallm.discourse_policy.coordinator import *
+from mallm.models.HFTGIChat import HFTGIChat
+from mallm.models.personas.TGIPersonaGenerator import (
+    PersonaGenerator,
+    TGIPersonaGenerator,
+)
 from mallm.utils.CustomFormatter import CustomFormatter
 
 just_fix_windows_console()
 
 # Configure logging for the library
 library_logger = logging.getLogger("mallm")
-library_logger.setLevel(logging.INFO)
+library_logger.setLevel(logging.DEBUG)
 
 # Add handlers to the logger
 stream_handler = logging.StreamHandler()
@@ -33,6 +40,7 @@ os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
 def run_discussion(
     client,
     llm,
+    agent_generator,
     sample,
     out,
     instruction,
@@ -55,6 +63,7 @@ def run_discussion(
             model=llm,
             client=client,
             memory_bucket_dir=memory_bucket_dir,
+            agent_generator=agent_generator,
         )
     except Exception as e:
         logger.error("Failed intializing coordinator.")
@@ -148,24 +157,11 @@ def manage_discussions(
     """
     # TODO: Add support for ChatGPT (OpenAI)
     # Creating HuggingFace endpoint
-    llm = HuggingFaceEndpoint(
-        endpoint_url=endpoint_url,
-        huggingfacehub_api_token=hf_api_token,
-        timeout=240.0,
-        # model parameters
-        do_sample=True,
-        temperature=0.9,
-        max_new_tokens=512,  # max number of tokens to generate in the output
-        # min_new_tokens=2,  # always answer something (no empty responses)
-        repetition_penalty=1.1,  # without this output begins repeating
-        stop_sequences=[
-            "<|start_header_id|>",
-            "<|end_header_id|>",
-            "<|eot_id|>",
-            "<|reserved_special_token|>",
-        ],
-        # These are the stop tokens for LLama 3. Maybe we have to add more for other models
-    )  # type: ignore
+    llm_client_oai = OpenAI(base_url=f"{endpoint_url}/v1", api_key="-")
+
+    llm = HFTGIChat(client=llm_client_oai)
+
+    agent_generator = TGIPersonaGenerator(client=llm_client_oai)
 
     pool = ThreadPool(processes=max_concurrent_requests)
     results = []
@@ -177,6 +173,7 @@ def manage_discussions(
                     (
                         client,
                         llm,
+                        agent_generator,
                         sample,
                         out,
                         instruction,

@@ -37,7 +37,7 @@ class Panelist(Agent):
             )
 
         memories.append(memory)
-        memories = self.coordinator.updateMemories(memories, agents_to_update)
+        memories = self.coordinator.update_memories(memories, agents_to_update)
         return memories, agreements
 
 
