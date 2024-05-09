@@ -1,7 +1,7 @@
 import pytest
 from mallm.agents.panelist import *
 from mallm.agents.moderator import *
-from mallm.discourse_policy.coordinator import *
+from mallm.coordinator import Coordinator
 
 coordinator = Coordinator(None, None)
 
