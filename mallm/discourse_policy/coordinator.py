@@ -38,9 +38,10 @@ class Coordinator:
         self.decision_making = None
         self.llm = model
         self.client = client
-        self.agent_generator = agent_generator
+        if self.llm:
+            self.agent_generator = agent_generator
 
-    def initAgents(self, task_instruction, input, use_moderator):
+    def initAgents(self, task_instruction, input_str, use_moderator):
         """
         Instantiates the agents by
         1) identify helpful personas
@@ -52,7 +53,7 @@ class Coordinator:
         self.agents = []
 
         personas = self.agent_generator.generate_personas(
-            f"{task_instruction} Input: {input}", 3
+            f"{task_instruction} Input: {input_str}", 3
         )
 
         if use_moderator:
@@ -60,7 +61,7 @@ class Coordinator:
         for persona in personas:
             self.panelists.append(
                 Panelist(
-                    self.llm, self.client, persona["role"], persona["description"], self
+                    self.llm, self.client, self, persona["role"], persona["description"]
                 )
             )
 
@@ -164,7 +165,7 @@ class Coordinator:
     def discuss_memory(
         self,
         task_instruction,
-        input,
+        input_str,
         use_moderator,
         feedback_sentences=[3, 4],
         max_turns=None,
@@ -208,7 +209,7 @@ class Coordinator:
 
                 template_filling = {
                     "taskInstruction": task_instruction,
-                    "input": input,
+                    "input": input_str,
                     "currentDraft": current_draft,
                     "persona": self.moderator.persona,
                     "personaDescription": self.moderator.persona_description,
@@ -235,7 +236,7 @@ class Coordinator:
                 )
                 template_filling = {
                     "taskInstruction": task_instruction,
-                    "input": input,
+                    "input": input_str,
                     "currentDraft": current_draft,
                     "persona": p.persona,
                     "personaDescription": p.persona_description,
@@ -264,7 +265,7 @@ class Coordinator:
     def discuss_report(
         self,
         task_instruction,
-        input,
+        input_str,
         use_moderator,
         feedback_sentences=[3, 4],
         max_turns=None,
@@ -308,7 +309,7 @@ class Coordinator:
 
                 template_filling = {
                     "taskInstruction": task_instruction,
-                    "input": input,
+                    "input": input_str,
                     "currentDraft": current_draft,
                     "persona": self.moderator.persona,
                     "personaDescription": self.moderator.persona_description,
@@ -336,7 +337,7 @@ class Coordinator:
                 )
                 template_filling = {
                     "taskInstruction": task_instruction,
-                    "input": input,
+                    "input": input_str,
                     "currentDraft": current_draft,
                     "persona": self.panelists[0].persona,
                     "personaDescription": self.panelists[0].persona_description,
@@ -363,7 +364,7 @@ class Coordinator:
                 )
                 template_filling = {
                     "taskInstruction": task_instruction,
-                    "input": input,
+                    "input": input_str,
                     "currentDraft": current_draft,
                     "persona": p.persona,
                     "personaDescription": p.persona_description,
@@ -391,7 +392,7 @@ class Coordinator:
     def discuss_relay(
         self,
         task_instruction,
-        input,
+        input_str,
         use_moderator,
         feedback_sentences=[3, 4],
         max_turns=None,
@@ -435,7 +436,7 @@ class Coordinator:
                 if a == self.moderator:
                     template_filling = {
                         "task_instruction": task_instruction,
-                        "input": input,
+                        "input": input_str,
                         "current_draft": current_draft,
                         "persona": self.moderator.persona,
                         "persona_description": self.moderator.persona_description,
@@ -455,7 +456,7 @@ class Coordinator:
                 else:
                     template_filling = {
                         "taskInstruction": task_instruction,
-                        "input": input,
+                        "input": input_str,
                         "currentDraft": current_draft,
                         "persona": a.persona,
                         "personaDescription": a.persona_description,
@@ -483,7 +484,7 @@ class Coordinator:
     def discuss_debate(
         self,
         task_instruction,
-        input,
+        input_str,
         use_moderator,
         feedback_sentences=[3, 4],
         max_turns=None,
@@ -531,7 +532,7 @@ class Coordinator:
 
                 template_filling = {
                     "taskInstruction": task_instruction,
-                    "input": input,
+                    "input": input_str,
                     "currentDraft": current_draft,
                     "persona": self.moderator.persona,
                     "personaDescription": self.moderator.persona_description,
@@ -559,7 +560,7 @@ class Coordinator:
                 )
                 template_filling = {
                     "taskInstruction": task_instruction,
-                    "input": input,
+                    "input": input_str,
                     "currentDraft": current_draft,
                     "persona": self.panelists[0].persona,
                     "personaDescription": self.panelists[0].persona_description,
@@ -593,7 +594,7 @@ class Coordinator:
 
                     template_filling = {
                         "taskInstruction": task_instruction,
-                        "input": input,
+                        "input": input_str,
                         "currentDraft": current_draft,
                         "persona": a.persona,
                         "personaDescription": a.persona_description,
@@ -630,7 +631,7 @@ class Coordinator:
     def discuss(
         self,
         task_instruction,
-        input,
+        input_str,
         context,
         use_moderator,
         feedback_sentences=[3, 4],
@@ -654,7 +655,9 @@ class Coordinator:
         if context:
             task_instruction += "\n" + "Context: " + context
 
-        if not self.initAgents(task_instruction, input, use_moderator=use_moderator):
+        if not self.initAgents(
+            task_instruction, input_str, use_moderator=use_moderator
+        ):
             logger.error(f"""Failed to intialize agents (coordinator: {self.id}).""")
             return (
                 None,
@@ -686,7 +689,7 @@ class Coordinator:
 Starting discussion with coordinator {self.id}...
 -------------
 Instruction: {task_instruction}
-Input: {input}
+Input: {input_str}
 Feedback sentences: {str(feedback_sentences)}
 Maximum turns: {max_turns}
 Agents: {str(personas)}
@@ -698,7 +701,7 @@ Decision-making: {self.decision_making.__class__.__name__}
         if paradigm == "memory":
             current_draft, turn, agreements = self.discuss_memory(
                 task_instruction,
-                input,
+                input_str,
                 use_moderator,
                 feedback_sentences,
                 max_turns,
@@ -709,7 +712,7 @@ Decision-making: {self.decision_making.__class__.__name__}
         elif paradigm == "report":
             current_draft, turn, agreements = self.discuss_report(
                 task_instruction,
-                input,
+                input_str,
                 use_moderator,
                 feedback_sentences,
                 max_turns,
@@ -720,7 +723,7 @@ Decision-making: {self.decision_making.__class__.__name__}
         elif paradigm == "relay":
             current_draft, turn, agreements = self.discuss_relay(
                 task_instruction,
-                input,
+                input_str,
                 use_moderator,
                 feedback_sentences,
                 max_turns,
@@ -731,7 +734,7 @@ Decision-making: {self.decision_making.__class__.__name__}
         elif paradigm == "debate":
             current_draft, turn, agreements = self.discuss_debate(
                 task_instruction,
-                input,
+                input_str,
                 use_moderator,
                 feedback_sentences,
                 max_turns,

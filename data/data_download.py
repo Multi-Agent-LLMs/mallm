@@ -1,6 +1,7 @@
 import os
 import importlib
 import sys
+import fire
 from abc import abstractmethod, ABC
 from pathlib import Path
 from datasets import load_dataset
@@ -13,7 +14,7 @@ class DatasetDownloader(ABC):
         hf_dataset: bool = True,
         dataset_name: str = None,
         version: str = "main",
-        sample_size: int = 1000,
+        sample_size: int = None,
         trust_remote_code: bool = False,
     ):
         self.name = name
@@ -61,7 +62,12 @@ class DatasetDownloader(ABC):
 
     def shuffle_and_select(self, split="train"):
         if self.dataset:
-            return self.dataset[split].shuffle(seed=42).select(range(self.sample_size))
+            if self.sample_size:
+                return (
+                    self.dataset[split].shuffle(seed=42).select(range(self.sample_size))
+                )
+            else:
+                return self.dataset[split].shuffle(seed=42)
         else:
             raise ValueError("Dataset not loaded.")
 
@@ -76,12 +82,16 @@ def find_downloader_classes(module):
     return None
 
 
-def load_and_execute_downloaders(directory="data_downloaders"):
+def load_and_execute_downloaders(directory="data_downloaders", datasets=None):
     # Path to the directory containing downloader modules
     base_path = Path(__file__).parent / directory
     # Iterate over each file in the directory
     for file in base_path.glob("*.py"):
-        if file.name == "__init__.py":
+        if (
+            file.name == "__init__.py"
+            or datasets
+            and file.name.split(".")[0] not in datasets
+        ):
             continue
         print(f"Processing {file.name}")
         module_name = f"{directory}.{file.stem}"
@@ -101,4 +111,4 @@ def load_and_execute_downloaders(directory="data_downloaders"):
 
 
 if __name__ == "__main__":
-    load_and_execute_downloaders()
+    fire.Fire(load_and_execute_downloaders)

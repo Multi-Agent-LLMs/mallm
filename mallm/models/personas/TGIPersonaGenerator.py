@@ -58,8 +58,7 @@ New Participant:
                 + [
                     {
                         "role": "user",
-                        "content": "Please use the following JSON schema to generate a useful persona for the task! "
-                        "Only answer with the JSON for the next persona!:",
+                        "content": "Please use the follow the examples to generate a useful persona for the task! Only answer with the JSON for the next persona!",
                     }
                 ],
                 stream=False,
