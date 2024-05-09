@@ -22,7 +22,7 @@ class Coordinator:
         self,
         model,
         client,
-        agent_generator: PersonaGenerator,
+        agent_generator: PersonaGenerator = None,
         use_moderator=False,
         memory_bucket_dir="./mallm/utils/memory_bucket/",
     ):
