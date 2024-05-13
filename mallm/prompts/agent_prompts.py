@@ -89,7 +89,7 @@ def generate_chat_prompt_draft(data):
     prompts = [
         {
             "role": "system",
-            "content": f"Your role: {data['persona']} ({data['personaDescription']}) \nYou are participating in a discussion. Answer in {data['sentsMin']} to {data['sentsMax']} sentences!",
+            "content": f"Your role: {data['persona']} ({data['personaDescription']}) \nYou are participating in a discussion. Propose a new solution based on the provided feedback.",
         }
     ]
     if data["agentMemory"] is not None:
