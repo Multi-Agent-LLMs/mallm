@@ -1,0 +1,38 @@
+name: discussion_X
+agents:
+  moderator:
+    model: LLaMA-3-70B-Instruct
+    persona: Moderator
+    persona_description: An objective observer that does not inflict personal opinion.
+  panelist:
+    model: ChatGPT
+    persona: food expert
+    persona_description: a very knowledgeable person about food.
+  panelist:
+    model: ChatGPT
+    persona: tea scientist
+    persona_description: he knows all things about camellia sinensis.
+paradigm:
+  name: memory
+  sequence:
+    - turn: agent 1
+    - turn: agent 2
+    - turn: agent 3
+    - decision: majority
+decision:
+  name: majority
+  type: consensus
+  rules:
+    formula: $AGREEMENTS == $PANELISTS / 2
+models:
+  model: 
+    name: ChatGPT
+    endpoint: <endpoint_url>
+  model: 
+    name: LLaMA-3-70B-Instruct
+    endpoint: <endpoint_url>
+parameters:
+  context_length: 1
+  feedback_sentences: [3,4]
+  max_turns: 7
+
