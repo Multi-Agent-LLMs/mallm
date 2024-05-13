@@ -19,11 +19,11 @@
 
 ## Install
 
-Create an environment with
+Create an environment with:
 `conda env create -f environment.yml`
 
 ### Package
-Install as a package
+Install as a package:
 `pip install -e .`
 
 ### Test Data
@@ -38,7 +38,7 @@ Check the information [here (tg-hpc)](https://github.com/Multi-Agent-LLMs/tgi-hp
 
 Once the endpoint is available, you can initiate all discussions by a single script. Example:
 
-`python mallm/run_async.py --data=data/datasets/etpc_debugging.json --out=test_out.json --instruction="Paraphrase the input text." --endpoint_url="http://127.0.0.1:8080" --hf_api_token="YOUR_TOKEN" --max_concurrent_requests=100`
+`python mallm/scheduler.py --data=data/datasets/etpc_debugging.json --out=test_out.json --instruction="Paraphrase the input text." --endpoint_url="http://127.0.0.1:8080" --hf_api_token="YOUR_TOKEN" --max_concurrent_requests=100`
 
 While each discussion is sequential, multiple discussions can be processed in parallel for significant speedup. Please set `max_concurrent_requests` to a reasonable number so that you do not block the GPU for all other users of the TGI instance.
 
@@ -51,6 +51,20 @@ paradigm="memory",
 context_length=1,
 include_current_turn_in_memory=False,
 max_concurrent_requests=100,
+```
+
+## Run as Module
+If installed, you can use MALLM from anywhere on your system:
+```py
+from mallm import scheduler
+
+mallm_scheduler = scheduler.Scheduler(
+    data="data/datasets/etpc_debugging.json",
+    out="test_out.json",
+    instruction="Paraphrase the input text.",
+    endpoint_url="http://127.0.0.1:8080"
+)
+mallm_scheduler.run()
 ```
 
 ## Project Structure
@@ -90,7 +104,7 @@ library_logger.addHandler(stream_handler)
 ```
 
 ## Contributing
-If you want to contribute please use this pre-commit hook to ensure the same formatting for everyone
+If you want to contribute, please use this pre-commit hook to ensure the same formatting for everyone.
 ```bash
 pip install pre-commit
 pre-commit install
