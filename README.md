@@ -98,7 +98,7 @@ py -m build
 ```
 Then install the wheel from the `dist` directory.
 ```bash
-pip install ./dist/mallm-version.tar.gz
+pip install ./dist/mallm-version-py3-none-any.whl
 ```
 
 ## Contributing
