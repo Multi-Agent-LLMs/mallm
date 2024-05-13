@@ -134,7 +134,7 @@ class Agent:
                 generate_chat_prompt_extract_result(res), client=self.client
             )
         if is_moderator:
-            agreement = None
+            agreement = {"agentId": self.id, "persona": self.persona, "agreement": None}
         else:
             agreement = agreements[-1]
         memory = {

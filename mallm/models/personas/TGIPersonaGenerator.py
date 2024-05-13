@@ -71,10 +71,9 @@ New Participant:
                 if new_agent["role"] == "" or new_agent["description"] == "":
                     continue
                 agents.append(new_agent)
-                logger.debug("Added one agent: " + str(agents[-1]))
             except json.decoder.JSONDecodeError as e:
-                logger.error(
-                    "Could not decode json: "
+                logger.debug(
+                    "Could not decode json (will attempt retry): "
                     + str(e)
                     + "\nResponse string: "
                     + str(response)
