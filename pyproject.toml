@@ -1,3 +1,22 @@
+[project]
+name = "mallm"
+version = "0.1.0"
+authors = [
+  { name="GippLab", email="projects@gipplab.org" },
+]
+description = "Multi-Agent Large Language Models for Collaborative Task-Solving."
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/Multi-Agent-LLMs/mallm"
+Issues = "https://github.com/Multi-Agent-LLMs/mallm/issues"
+
 [tool.poetry]
 name = "mallm"
 version = "0.1.0"

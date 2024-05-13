@@ -89,8 +89,20 @@ stream_handler.setFormatter(formatter)
 library_logger.addHandler(stream_handler)
 ```
 
+## Building
+If you want to build the package locally (not from PyPI), you can use these commands in the root directory on an up-to-date `pyproject.toml` file.
+You can also use [this link](https://packaging.python.org/en/latest/guides/writing-pyproject-toml/) for help.
+```bash
+py -m pip install --upgrade build
+py -m build
+```
+Then install the wheel from the `dist` directory.
+```bash
+pip install ./dist/mallm-version.tar.gz
+```
+
 ## Contributing
-If you want to contribute please use this pre-commit hook to ensure the same formatting for everyone
+If you want to contribute, please use this pre-commit hook to ensure the same formatting for everyone.
 ```bash
 pip install pre-commit
 pre-commit install
