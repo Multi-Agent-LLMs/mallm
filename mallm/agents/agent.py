@@ -51,20 +51,36 @@ class Agent:
             not self == self.moderator
         ):
             agreements.append(
-                {"agentId": self.id, "persona": self.persona, "agreement": True}
+                {
+                    "agentId": self.id,
+                    "persona": self.persona,
+                    "agreement": True,
+                    "res": res,
+                }
             )
             logger.debug(f"Agent {self.short_id} agreed")
         elif self_drafted and not self == self.moderator:
             agreements.append(
-                {"agentId": self.id, "persona": self.persona, "agreement": True}
+                {
+                    "agentId": self.id,
+                    "persona": self.persona,
+                    "agreement": True,
+                    "res": res,
+                }
             )
             logger.debug(f"Agent {self.short_id} agreed")
         elif not self == self.moderator:
             agreements.append(
-                {"agentId": self.id, "persona": self.persona, "agreement": False}
+                {
+                    "agentId": self.id,
+                    "persona": self.persona,
+                    "agreement": False,
+                    "res": res,
+                }
             )
             logger.debug(f"Agent {self.short_id} disagreed")
 
+        # Only keep the most recent agreements
         if len(agreements) > len(self.coordinator.panelists):
             agreements = agreements[-len(self.coordinator.panelists) :]
         return agreements
@@ -85,7 +101,8 @@ class Agent:
         current_draft = None
         if extract_all_drafts:
             current_draft = self.llm.invoke(
-                generate_chat_prompt_extract_result(res), client=self.client
+                generate_chat_prompt_extract_result(template_filling["input"], res),
+                client=self.client,
             )
         memory = {
             "messageId": unique_id,
@@ -131,10 +148,16 @@ class Agent:
         current_draft = None
         if extract_all_drafts:
             current_draft = self.llm.invoke(
-                generate_chat_prompt_extract_result(res), client=self.client
+                generate_chat_prompt_extract_result(template_filling["input"], res),
+                client=self.client,
             )
         if is_moderator:
-            agreement = {"agentId": self.id, "persona": self.persona, "agreement": None}
+            agreement = {
+                "agentId": self.id,
+                "persona": self.persona,
+                "agreement": None,
+                "res": res,
+            }
         else:
             agreement = agreements[-1]
         memory = {
@@ -273,7 +296,8 @@ class Agent:
 
         if current_draft and extract_draft:
             current_draft = self.llm.invoke(
-                generate_chat_prompt_extract_result(current_draft), client=self.client
+                generate_chat_prompt_extract_result(None, current_draft),
+                client=self.client,
             )
         return context_memory, memory_ids, current_draft
 

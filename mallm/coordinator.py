@@ -2,18 +2,17 @@ import time
 from datetime import timedelta
 
 import transformers
-from langchain.chains import LLMChain
 
 from mallm.agents.moderator import *
 from mallm.agents.panelist import *
-from mallm.decision_making.consensus import *
+from mallm.decision_making.DecisionProtocol import DecisionProtocol
+from mallm.decision_making.MajorityConsensus import MajorityConsensus
 from mallm.discourse_policy.DiscourceDebate import DiscourseDebate
 from mallm.discourse_policy.DiscourceMemory import DiscourseMemory
 from mallm.discourse_policy.DiscourceRelay import DiscourseRelay
 from mallm.discourse_policy.DiscourceReport import DiscourseReport
 from mallm.discourse_policy.DiscoursePolicy import DiscoursePolicy
 from mallm.models.personas.PersonaGenerator import PersonaGenerator
-from mallm.prompts import coordinator_prompts
 
 transformers.logging.set_verbosity_error()
 os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
@@ -40,7 +39,7 @@ class Coordinator:
         self.moderator = None
         self.memory_bucket_dir = memory_bucket_dir
         self.memory_bucket = self.memory_bucket_dir + "global_" + self.id
-        self.decision_making = None
+        self.decision_making: DecisionProtocol = None
         self.llm = model
         self.client = client
         self.agent_generator = agent_generator
@@ -220,7 +219,7 @@ class Coordinator:
                 None,
             )  # if the LLM failed to initialize the agents, do not discuss
 
-        self.decision_making = MajorityConsensus(self.panelists)
+        self.decision_making: DecisionProtocol = MajorityConsensus(self.panelists)
 
         logger.info(
             f"""
@@ -271,7 +270,8 @@ Decision-making: {self.decision_making.__class__.__name__}
             current_draft = None
         else:
             current_draft = self.llm.invoke(
-                generate_chat_prompt_extract_result(current_draft), client=self.client
+                generate_chat_prompt_extract_result(input_str, current_draft),
+                client=self.client,
             )
 
         return current_draft, global_mem, agent_mems, turn, agreements, discussion_time
