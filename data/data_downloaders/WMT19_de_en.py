@@ -15,6 +15,5 @@ class WMT19Downloader(DatasetDownloader):
         data = self.shuffle_and_select("validation")
         json_str = ""
         for s in data.iter(batch_size=1):
-            print(s)
             json_str += f"""{{ "exampleId":"{str(uuid.uuid4())}", "datasetId": null, "input":[{json.dumps(s['translation'][0]['de'])}], "context": null, "references": [{json.dumps(s['translation'][0]['en'])}], "personas": null }}\n"""
         self.save_to_json(json_str)
