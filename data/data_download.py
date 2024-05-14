@@ -1,6 +1,7 @@
 import os
 import importlib
 import sys
+import traceback
 from abc import abstractmethod, ABC
 from pathlib import Path
 from datasets import load_dataset
@@ -56,7 +57,7 @@ class DatasetDownloader(ABC):
         pass
 
     def save_to_json(self, data):
-        with open(self.output_path, "w") as file:
+        with open(self.output_path, "w", encoding="utf-8") as file:
             file.write(data)
 
     def shuffle_and_select(self, split="train"):
@@ -71,8 +72,7 @@ def find_downloader_classes(module):
         if attribute_name == "DatasetDownloader":
             continue
         attribute = getattr(module, attribute_name)
-        if isinstance(attribute, type) and "Downloader" in attribute_name:
-            return attribute
+        return attribute
     return None
 
 
@@ -98,6 +98,7 @@ def load_and_execute_downloaders(directory="data_downloaders"):
                 print(f"Processed {downloader.name}")
             except Exception as e:
                 sys.stderr.write(f"Error processing {downloader.name}:\n{e}\n")
+                traceback.print_exc()
 
 
 if __name__ == "__main__":
