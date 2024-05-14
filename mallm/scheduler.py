@@ -59,17 +59,17 @@ class Scheduler:
             logger.error(
                 "The input file you provided does not exist. Please specify a json lines file using --data."
             )
-            return
+            sys.exit(1)
         if not data.endswith(".json"):
             logger.error(
                 "The input file you provided is not a json file. Please specify a json lines file using --data."
             )
-            return
+            sys.exit(1)
         if not out.endswith(".json"):
             logger.error(
                 "The output file does not seem to be a json file. Please specify a file path using --out."
             )
-            return
+            sys.exit(1)
         try:
             logger.info("Testing availability of the endpoint...")
             page = requests.get(endpoint_url)
@@ -77,13 +77,13 @@ class Scheduler:
         except Exception as e:
             logger.error("HTTP Error: Could not connect to the provided endpoint url.")
             logger.error(e)
-            return
+            sys.exit(1)
 
         if max_concurrent_requests > 500:
             logger.error(
                 "max_concurrent_requests is too large. TGI can only handle about 500 requests. Please make sure to leave computing for other poeple too. Recommended: ~250."
             )
-            return
+            sys.exit(1)
 
         # Cleaning other files
         if os.path.exists(out):
