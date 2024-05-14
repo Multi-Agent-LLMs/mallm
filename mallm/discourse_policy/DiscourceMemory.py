@@ -110,6 +110,8 @@ class DiscourseMemory(DiscoursePolicy):
                 )
                 unique_id = unique_id + 1
 
-            decision = coordinator.decision_making.decide(agreements, turn)
+            draft, decision = coordinator.decision_making.make_decision(
+                agreements, turn
+            )
 
-        return current_draft, turn, agreements
+        return draft, turn, agreements
