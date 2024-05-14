@@ -77,7 +77,7 @@ def generate_chat_prompt_improve(data):
         prompts.append(
             {
                 "role": "user",
-                "content": "Improve the current answer and if you agree, answer with [AGREE] else answer with [DISAGREE] and explain why.",
+                "content": "Improve the current answer and if you agree, answer with [AGREE] else answer with [DISAGREE] and repeat the answer.",
             }
         )
 
