@@ -127,7 +127,7 @@ def generate_chat_prompt_draft(data):
 
 
 def generate_final_answer_prompt(
-    persona, persona_description, question, task, previous_answer
+    persona: str, persona_description: str, question: str, task: str, previous_answer: str
 ):
     prompts = [
         {
@@ -143,5 +143,35 @@ def generate_final_answer_prompt(
             "content": "Based on the above information, provide your final answer. Ensure your answer is comprehensive and well-considered.",
         },
     ]
+
+    return prompts
+
+
+def generate_voting_prompt(persona: str, persona_description: str, task: str, question: str, solutions: list[str]):
+    prompts = [
+        {
+            "role": "system",
+            "content": f"Your role: {persona} ({persona_description}) \nYou are tasked with voting for the best solution from the list provided below based on the given task.",
+        },
+        {
+            "role": "user",
+            "content": f"Task: {task}\nQuestion: {question}\n\nHere are the possible solutions:",
+        },
+    ]
+
+    for i, solution in enumerate(solutions):
+        prompts.append(
+            {
+                "role": "user",
+                "content": f"Solution {i}: {solution}",
+            }
+        )
+
+    prompts.append(
+        {
+            "role": "user",
+            "content": "Based on the above solutions, please provide the number of the solution you are voting for. Answer only with the number.",
+        }
+    )
 
     return prompts

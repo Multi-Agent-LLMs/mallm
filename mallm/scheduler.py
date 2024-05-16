@@ -54,6 +54,7 @@ class Scheduler:
         max_turns=10,
         feedback_sentences=[3, 4],
         paradigm="memory",
+        decision_protocol="majority_consensus",
         context_length=1,
         include_current_turn_in_memory=False,
         max_concurrent_requests=100,
@@ -63,9 +64,7 @@ class Scheduler:
         # Check for the correct aruments provided
         # TODO: make this more robust and conclusive. All arguments should be checked for validity, making the use of MALLM as fool-proof as possible.
         if not os.path.exists(data):
-            logger.error(
-                "The input file you provided does not exist. Please specify a json lines file using --data."
-            )
+            logger.error("The input file you provided does not exist. Please specify a json lines file using --data.")
             sys.exit(1)
         if not data.endswith(".json"):
             logger.error(
@@ -73,9 +72,7 @@ class Scheduler:
             )
             sys.exit(1)
         if not out.endswith(".json"):
-            logger.error(
-                "The output file does not seem to be a json file. Please specify a file path using --out."
-            )
+            logger.error("The output file does not seem to be a json file. Please specify a file path using --out.")
             sys.exit(1)
         try:
             logger.info("Testing availability of the endpoint...")
@@ -109,9 +106,7 @@ class Scheduler:
                 try:
                     d.append(json.loads(line))
                 except ValueError as e:
-                    logger.error(
-                        f"""Invalid JSON in {data}! Please provide the input data in json lines format: {e}"""
-                    )
+                    logger.error(f"""Invalid JSON in {data}! Please provide the input data in json lines format: {e}""")
         logger.info(f"""Found {len(d)} samples to discuss.""")
 
         self.data = d
@@ -122,6 +117,7 @@ class Scheduler:
         self.max_turns = max_turns
         self.feedback_sentences = feedback_sentences
         self.paradigm = paradigm
+        self.decision_protocol = decision_protocol
         self.context_length = context_length
         self.include_current_turn_in_memory = include_current_turn_in_memory
         self.max_concurrent_requests = max_concurrent_requests
@@ -155,18 +151,17 @@ class Scheduler:
             print(e)
 
         try:
-            answer, globalMem, agentMems, turn, agreements, discussionTime = (
-                coordinator.discuss(
-                    self.instruction,
-                    sample["input"],
-                    sample["context"],
-                    self.use_moderator,
-                    feedback_sentences=self.feedback_sentences,
-                    paradigm=self.paradigm,
-                    max_turns=self.max_turns,
-                    context_length=self.context_length,
-                    include_current_turn_in_memory=self.include_current_turn_in_memory,
-                )
+            answer, globalMem, agentMems, turn, agreements, discussionTime = coordinator.discuss(
+                self.instruction,
+                sample["input"],
+                sample["context"],
+                self.use_moderator,
+                feedback_sentences=self.feedback_sentences,
+                paradigm=self.paradigm,
+                decision_protocol=self.decision_protocol,
+                max_turns=self.max_turns,
+                context_length=self.context_length,
+                include_current_turn_in_memory=self.include_current_turn_in_memory,
             )
         except Exception as e:
             # More extensive error logging to ease debugging during async execution
@@ -178,9 +173,7 @@ class Scheduler:
             while deep_tb.tb_next:
                 deep_tb = deep_tb.tb_next
                 fname = os.path.split(deep_tb.tb_frame.f_code.co_filename)[1]
-                logger.error(
-                    f"""-> at {fname}:{deep_tb.tb_lineno}, deeper function level error"""
-                )
+                logger.error(f"""-> at {fname}:{deep_tb.tb_lineno}, deeper function level error""")
 
         logger.info(
             f"""--> Agents discussed for {turn} turns, {'%.2f' % discussionTime} seconds ({'%.2f' % (float(discussionTime) / 60.0)} minutes) to get the final answer: \n"""
@@ -200,9 +193,7 @@ class Scheduler:
                 "context": sample["context"],
                 "answer": answer,
                 "references": sample["references"],
-                "agreements": [
-                    dataclasses.asdict(agreement) for agreement in agreements
-                ],
+                "agreements": [dataclasses.asdict(agreement) for agreement in agreements],
                 "turns": turn,
                 "clockSeconds": float("%.2f" % discussionTime),
                 "globalMemory": globalMem,
@@ -295,6 +286,7 @@ def main(
     max_turns=10,
     feedback_sentences=[3, 4],
     paradigm="memory",
+    decision_protocol="majority_consensus",
     context_length=1,
     include_current_turn_in_memory=False,
     max_concurrent_requests=100,
@@ -310,6 +302,7 @@ def main(
         max_turns=max_turns,
         feedback_sentences=feedback_sentences,
         paradigm=paradigm,
+        decision_protocol=decision_protocol,
         context_length=context_length,
         include_current_turn_in_memory=include_current_turn_in_memory,
         max_concurrent_requests=max_concurrent_requests,
