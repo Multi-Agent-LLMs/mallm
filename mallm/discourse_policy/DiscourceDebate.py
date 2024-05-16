@@ -165,7 +165,7 @@ class DiscourseDebate(DiscoursePolicy):
             if len(agreements) > len(coordinator.panelists):
                 agreements = agreements[-len(coordinator.panelists) :]
             draft, decision = coordinator.decision_making.make_decision(
-                agreements, turn
+                agreements, turn, task_instruction, input_str
             )
 
         return draft, turn, agreements

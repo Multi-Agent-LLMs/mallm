@@ -15,7 +15,9 @@ class DecisionProtocol(ABC):
         self.panelists = panelists
 
     @abstractmethod
-    def make_decision(self, agreements: List[Agreement], turn: int) -> tuple[str, bool]:
+    def make_decision(
+        self, agreements: List[Agreement], turn: int, task: str, question: str
+    ) -> tuple[str, bool]:
         """
         Abstract method to make a decision based on agreements, the current turn number, and the list of panelists.
 
