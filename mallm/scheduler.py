@@ -1,12 +1,18 @@
 import glob
-import sys, httpx, requests
+import json
+import logging
+import os
+
+import fire
+import httpx
+import requests
+import sys
 from multiprocessing.pool import ThreadPool
 
 from colorama import just_fix_windows_console
-from huggingface_hub import InferenceClient
 from openai import OpenAI
 
-from mallm.coordinator import *
+from mallm.coordinator import Coordinator
 from mallm.models.HFTGIChat import HFTGIChat
 from mallm.models.personas.TGIPersonaGenerator import (
     TGIPersonaGenerator,
