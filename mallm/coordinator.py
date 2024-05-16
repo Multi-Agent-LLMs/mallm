@@ -20,6 +20,7 @@ from mallm.discourse_policy.DiscourceReport import DiscourseReport
 from mallm.discourse_policy.DiscoursePolicy import DiscoursePolicy
 from mallm.models.personas.PersonaGenerator import PersonaGenerator
 from mallm.prompts.coordinator_prompts import generate_chat_prompt_extract_result
+from mallm.utils.types.Agreement import Agreement
 
 transformers.logging.set_verbosity_error()
 os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
@@ -185,7 +186,7 @@ class Coordinator:
         include_current_turn_in_memory=False,
         extract_all_drafts=False,
         debate_rounds=1,
-    ):
+    ) -> tuple[str, list, list, int, list[Agreement], float]:
         """
         The routine responsible for the discussion between agents to solve a task.
 
