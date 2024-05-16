@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List, Dict
 
 from mallm.agents.panelist import Panelist
+from mallm.utils.types.Agreement import Agreement
 
 
 class DecisionProtocol(ABC):
@@ -14,9 +15,7 @@ class DecisionProtocol(ABC):
         self.panelists = panelists
 
     @abstractmethod
-    def make_decision(
-        self, agreements: List[Dict[str, any]], turn: int
-    ) -> tuple[str, bool]:
+    def make_decision(self, agreements: List[Agreement], turn: int) -> tuple[str, bool]:
         """
         Abstract method to make a decision based on agreements, the current turn number, and the list of panelists.
 

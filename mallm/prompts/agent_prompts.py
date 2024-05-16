@@ -124,3 +124,24 @@ def generate_chat_prompt_draft(data):
         )
 
     return prompts
+
+
+def generate_final_answer_prompt(
+    persona, persona_description, question, task, previous_answer
+):
+    prompts = [
+        {
+            "role": "system",
+            "content": f"Your role: {persona} ({persona_description}) \nYou are tasked with creating a final answer based on the given question and your previous response.",
+        },
+        {
+            "role": "user",
+            "content": f"Task: {task}\nQuestion: {question}\nYour previous answer: {previous_answer}",
+        },
+        {
+            "role": "user",
+            "content": "Based on the above information, provide your final answer. Ensure your answer is comprehensive and well-considered.",
+        },
+    ]
+
+    return prompts
