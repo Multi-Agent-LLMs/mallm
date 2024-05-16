@@ -58,30 +58,21 @@ class Coordinator:
         Instantiates the agents by
         1) identify helpful personas
         2) create agents with the personas
-        Gives true if the automatic assignment was successfull.
-        Returns bool
         """
         self.panelists = []
         self.agents = []
 
-        personas = self.agent_generator.generate_personas(
-            f"{task_instruction} {input_str}", 3
-        )
+        personas = self.agent_generator.generate_personas(f"{task_instruction} {input_str}", 3)
 
         if use_moderator:
             self.moderator = Moderator(self.llm, self.client, self)
         for persona in personas:
-            self.panelists.append(
-                Panelist(
-                    self.llm, self.client, self, persona["role"], persona["description"]
-                )
-            )
+            self.panelists.append(Panelist(self.llm, self.client, self, persona["role"], persona["description"]))
 
         if use_moderator:
             self.agents = [self.moderator] + self.panelists
         else:
             self.agents = self.panelists
-        return True
 
     def get_agents(self):
         agent_dicts = []
@@ -180,8 +171,9 @@ class Coordinator:
         input_str,
         context,
         use_moderator,
-        feedback_sentences=[3, 4],
+        feedback_sentences=(3, 4),
         paradigm="memory",
+        decision_protocol="majority_consensus",
         max_turns=None,
         context_length=1,
         include_current_turn_in_memory=False,
@@ -205,49 +197,19 @@ class Coordinator:
             elif isinstance(context, str):
                 task_instruction += "\n" + context
 
-        if not self.init_agents(
-            task_instruction, input_str, use_moderator=use_moderator
-        ):
-            logger.error(f"""Failed to intialize agents (coordinator: {self.id}).""")
-            return (
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-            )  # if the LLM failed to initialize the agents, do not discuss
+        self.init_agents(task_instruction, input_str, use_moderator=use_moderator)
 
-        personas = [a.persona for a in self.agents]
-        if len(personas) <= 2:
-            logger.error(
-                "Only two or less personas were generated. No discussion is executed."
-            )
-            return (
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-            )  # if the LLM failed to initialize the agents, do not discuss
+        decision_protocols = {
+            "majority_consensus": MajorityConsensus,
+            "voting": Voting,
+        }
+        if decision_protocol not in decision_protocols:
+            logger.error(f"No valid decision protocol for {decision_protocol}")
+            raise Exception(f"No valid decision protocol for {decision_protocol}")
 
-        self.decision_making: DecisionProtocol = Voting(self.panelists)
+        self.decision_making: DecisionProtocol = decision_protocols[decision_protocol](self.panelists)
 
-        logger.info(
-            f"""
-Starting discussion with coordinator {self.id}...
--------------
-Instruction: {task_instruction}
-Input: {input_str}
-Feedback sentences: {str(feedback_sentences)}
-Maximum turns: {max_turns}
-Agents: {str(personas)}
-Decision-making: {self.decision_making.__class__.__name__}
--------------"""
-        )
-
-        startTime = time.perf_counter()
+        start_time = time.perf_counter()
         protocols = {
             "memory": DiscourseMemory,
             "report": DiscourseReport,
@@ -256,8 +218,21 @@ Decision-making: {self.decision_making.__class__.__name__}
         }
         if paradigm not in protocols:
             logger.error(f"No valid discourse policy for paradigm {paradigm}")
-            exit(-1)
+            raise Exception(f"No valid discourse policy for paradigm {paradigm}")
         policy: DiscoursePolicy = protocols[paradigm]()
+
+        logger.info(
+            f"""Starting discussion with coordinator {self.id}...
+-------------
+Instruction: {task_instruction}
+Input: {input_str}
+Feedback sentences: {str(feedback_sentences)}
+Maximum turns: {max_turns}
+Agents: {str([a.persona for a in self.agents])}
+Paradigm: {policy.__class__.__name__}
+Decision-making: {self.decision_making.__class__.__name__}
+-------------"""
+        )
 
         current_draft, turn, agreements = policy.discuss(
             self,
@@ -271,9 +246,7 @@ Decision-making: {self.decision_making.__class__.__name__}
             extract_all_drafts,
         )
 
-        discussion_time = timedelta(
-            seconds=time.perf_counter() - startTime
-        ).total_seconds()
+        discussion_time = timedelta(seconds=time.perf_counter() - start_time).total_seconds()
 
         global_mem = self.get_global_memory()
         agent_mems = []
