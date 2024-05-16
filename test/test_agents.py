@@ -1,6 +1,5 @@
-import pytest
-from mallm.agents.panelist import *
-from mallm.agents.moderator import *
+from mallm.agents.moderator import Moderator
+from mallm.agents.panelist import Panelist
 from mallm.coordinator import Coordinator
 
 coordinator = Coordinator(None, None)
