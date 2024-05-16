@@ -45,9 +45,7 @@ def create_llm_locally(ckpt_dir):
         bnb_4bit_compute_dtype=bfloat16,
     )
     model_config = transformers.AutoConfig.from_pretrained(ckpt_dir)
-    if (
-        device == "cpu"
-    ):  # not recommended but useful for developing with no GPU available
+    if device == "cpu":  # not recommended but useful for developing with no GPU available
         model = transformers.AutoModelForCausalLM.from_pretrained(
             ckpt_dir,
             trust_remote_code=True,
@@ -102,26 +100,22 @@ def run_locally(
 ):
     print("Running the model locally.")
 
-    coordinator = Coordinator(
-        use_moderator=use_moderator, llm=create_llm_locally(ckpt_dir), verbose=verbose
-    )
+    coordinator = Coordinator(use_moderator=use_moderator, llm=create_llm_locally(ckpt_dir), verbose=verbose)
     output_dicts = []
 
     for sample in tqdm(d):
         coordinator.cleanMemoryBucket()
 
-        answer, globalMem, agentMems, turn, agreements, discussionTime = (
-            coordinator.discuss(
-                instruction,
-                sample["input"],
-                sample["context"],
-                use_moderator,
-                feedback_sentences=feedback_sentences,
-                paradigm=paradigm,
-                max_turns=max_turns,
-                context_length=context_length,
-                include_current_turn_in_memory=include_current_turn_in_memory,
-            )
+        answer, globalMem, agentMems, turn, agreements, discussionTime = coordinator.discuss(
+            instruction,
+            sample["input"],
+            sample["context"],
+            use_moderator,
+            feedback_sentences=feedback_sentences,
+            paradigm=paradigm,
+            max_turns=max_turns,
+            context_length=context_length,
+            include_current_turn_in_memory=include_current_turn_in_memory,
         )
 
         print(
@@ -131,7 +125,7 @@ def run_locally(
 
         output_dicts.append(
             {
-                "dataset": os.path.basename(data),
+                "dataset": "placeholder",
                 "exampleId": sample["exampleId"],
                 "datasetId": sample["datasetId"],
                 "instruction": instruction,
@@ -170,19 +164,13 @@ def main(
     The routine that starts the discussion between LLM agents iteratively on the provided data.
     """
     if not os.path.exists(data):
-        print(
-            "The input file you provided does not exist. Please specify a json lines file using --data."
-        )
+        print("The input file you provided does not exist. Please specify a json lines file using --data.")
         return
     if not data.endswith(".json"):
-        print(
-            "The input file you provided is not a json file. Please specify a json lines file using --data."
-        )
+        print("The input file you provided is not a json file. Please specify a json lines file using --data.")
         return
     if not out.endswith(".json"):
-        print(
-            "The output file does not seem to be a json file. Please specify a file path using --out."
-        )
+        print("The output file does not seem to be a json file. Please specify a file path using --out.")
         return
 
     # Cleaning other files
@@ -198,9 +186,7 @@ def main(
             try:
                 d.append(json.loads(line))
             except ValueError as e:
-                print(
-                    f"Invalid JSON in {data}! Please provide the input data in json lines format: {e}"
-                )
+                print(f"Invalid JSON in {data}! Please provide the input data in json lines format: {e}")
     print(f"Found {len(d)} samples to discuss.")
     if ckpt_dir:
         run_locally(
