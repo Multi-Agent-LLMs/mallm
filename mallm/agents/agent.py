@@ -15,6 +15,7 @@ from mallm.prompts.agent_prompts import (
     generate_chat_prompt_draft,
 )
 from mallm.prompts.coordinator_prompts import generate_chat_prompt_extract_result
+from mallm.utils.types.Agreement import Agreement
 
 logger = logging.getLogger("mallm")
 
@@ -42,7 +43,9 @@ class Agent:
             f'Creating agent {self.short_id} with personality "{self.persona}": "{self.persona_description}"'
         )
 
-    def agree(self, res, agreements, self_drafted=False):
+    def agree(
+        self, res: str, agreements: list[Agreement], self_drafted: bool = False
+    ) -> list[Agreement]:
         """
         Determines whether a string given by an agent means an agreement or disagreement.
         Returns bool
@@ -51,32 +54,26 @@ class Agent:
             not self == self.moderator
         ):
             agreements.append(
-                {
-                    "agentId": self.id,
-                    "persona": self.persona,
-                    "agreement": True,
-                    "res": res,
-                }
+                Agreement(
+                    agreement=True, agent_id=self.id, persona=self.persona, response=res
+                )
             )
             logger.debug(f"Agent {self.short_id} agreed")
         elif self_drafted and not self == self.moderator:
             agreements.append(
-                {
-                    "agentId": self.id,
-                    "persona": self.persona,
-                    "agreement": True,
-                    "res": res,
-                }
+                Agreement(
+                    agreement=True, agent_id=self.id, persona=self.persona, response=res
+                )
             )
             logger.debug(f"Agent {self.short_id} agreed")
         elif not self == self.moderator:
             agreements.append(
-                {
-                    "agentId": self.id,
-                    "persona": self.persona,
-                    "agreement": False,
-                    "res": res,
-                }
+                Agreement(
+                    agreement=False,
+                    agent_id=self.id,
+                    persona=self.persona,
+                    response=res,
+                )
             )
             logger.debug(f"Agent {self.short_id} disagreed")
 
@@ -92,7 +89,7 @@ class Agent:
         memory_ids,
         template_filling,
         extract_all_drafts,
-        agreements,
+        agreements: list[Agreement],
     ):
         res = self.llm.invoke(
             generate_chat_prompt_improve(template_filling), client=self.client
@@ -111,7 +108,7 @@ class Agent:
             "persona": self.persona,
             "contribution": "improve",
             "text": res,
-            "agreement": agreements[-1]["agreement"],
+            "agreement": agreements[-1].agreement,
             "extractedDraft": current_draft,
             "memoryIds": memory_ids,
             "additionalArgs": template_filling,
@@ -124,7 +121,7 @@ class Agent:
             self.persona,
             "improve",
             res,
-            agreements[-1]["agreement"],
+            agreements[-1].agreement,
             None,
             memory_ids,
             template_filling,
@@ -138,7 +135,7 @@ class Agent:
         memory_ids,
         template_filling,
         extract_all_drafts,
-        agreements,
+        agreements: list[Agreement],
         is_moderator=False,
     ):
         res = self.llm.invoke(
@@ -152,12 +149,9 @@ class Agent:
                 client=self.client,
             )
         if is_moderator:
-            agreement = {
-                "agentId": self.id,
-                "persona": self.persona,
-                "agreement": None,
-                "res": res,
-            }
+            agreement = Agreement(
+                agreement=None, agent_id=self.id, persona=self.persona, response=res
+            )
         else:
             agreement = agreements[-1]
         memory = {
@@ -167,7 +161,7 @@ class Agent:
             "persona": self.persona,
             "contribution": "draft",
             "text": res,
-            "agreement": agreement["agreement"],
+            "agreement": agreement.agreement,
             "extractedDraft": current_draft,
             "memoryIds": memory_ids,
             "additionalArgs": template_filling,
@@ -180,7 +174,7 @@ class Agent:
             self.persona,
             "draft",
             res,
-            agreement["agreement"],
+            agreement.agreement,
             None,
             memory_ids,
             template_filling,
@@ -199,7 +193,7 @@ class Agent:
             "persona": self.persona,
             "contribution": "feedback",
             "text": res,
-            "agreement": agreements[-1]["agreement"],
+            "agreement": agreements[-1].agreement,
             "extractedDraft": None,
             "memoryIds": memory_ids,
             "additionalArgs": template_filling,
@@ -212,7 +206,7 @@ class Agent:
             self.persona,
             "feedback",
             res,
-            agreements[-1]["agreement"],
+            agreements[-1].agreement,
             None,
             memory_ids,
             template_filling,

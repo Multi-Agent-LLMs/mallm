@@ -1,3 +1,4 @@
+import dataclasses
 import glob
 import json
 import logging
@@ -199,14 +200,15 @@ class Scheduler:
                 "context": sample["context"],
                 "answer": answer,
                 "references": sample["references"],
-                "agreements": agreements,
+                "agreements": [
+                    dataclasses.asdict(agreement) for agreement in agreements
+                ],
                 "turns": turn,
                 "clockSeconds": float("%.2f" % discussionTime),
                 "globalMemory": globalMem,
                 "agentMemory": agentMems,
             }
         )
-
         try:
             with open(self.out, "w") as file:
                 file.write(
