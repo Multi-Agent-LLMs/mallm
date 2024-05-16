@@ -13,6 +13,7 @@ from mallm.agents.moderator import Moderator
 from mallm.agents.panelist import Panelist
 from mallm.decision_making.DecisionProtocol import DecisionProtocol
 from mallm.decision_making.MajorityConsensus import MajorityConsensus
+from mallm.decision_making.Voting import Voting
 from mallm.discourse_policy.DiscourceDebate import DiscourseDebate
 from mallm.discourse_policy.DiscourceMemory import DiscourseMemory
 from mallm.discourse_policy.DiscourceRelay import DiscourseRelay
@@ -227,7 +228,7 @@ class Coordinator:
                 None,
             )  # if the LLM failed to initialize the agents, do not discuss
 
-        self.decision_making: DecisionProtocol = MajorityConsensus(self.panelists)
+        self.decision_making: DecisionProtocol = Voting(self.panelists)
 
         logger.info(
             f"""

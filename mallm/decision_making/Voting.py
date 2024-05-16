@@ -8,14 +8,23 @@ class Voting(DecisionProtocol):
     Paper: https://arxiv.org/abs/2312.01823
     """
 
-    def make_decision(self, agreements, turn):
+    def make_decision(self, agreements, turn, task, question):
+        final_answers = []
         for panelist in self.panelists:
-            panelist.llm.invoke(
+            prev_answer = [a.response for a in agreements if a.agent_id == panelist.id][
+                0
+            ]
+            response = panelist.llm.invoke(
                 generate_final_answer_prompt(
-                    panelist.persona, panelist.persona_description
+                    panelist.persona,
+                    panelist.persona_description,
+                    question,
+                    task,
+                    prev_answer,
                 )
             )
-        final_answers = [a.response for a in agreements]
+            final_answers.append(response)
+        print(final_answers)
 
         if len(self.panelists) <= 3 and turn < 5:
             # all agents need to agree in the first 5 turns (except moderator)
