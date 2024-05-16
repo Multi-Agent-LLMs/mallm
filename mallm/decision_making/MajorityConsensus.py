@@ -7,7 +7,7 @@ class MajorityConsensus(DecisionProtocol):
     Paper: https://arxiv.org/abs/2312.01823
     """
 
-    def make_decision(self, agreements, turn):
+    def make_decision(self, agreements, turn, task, question):
         if len(self.panelists) <= 3 and turn < 5:
             # all agents need to agree in the first 5 turns (except moderator)
             return agreements[-1].response, sum(
