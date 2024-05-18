@@ -3,13 +3,12 @@ import glob
 import json
 import logging
 import os
+import sys
+from multiprocessing.pool import ThreadPool
 
 import fire
 import httpx
 import requests
-import sys
-from multiprocessing.pool import ThreadPool
-
 from colorama import just_fix_windows_console
 from openai import OpenAI
 

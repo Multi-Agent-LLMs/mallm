@@ -8,9 +8,9 @@ import fire
 from langchain_core.language_models import LLM
 
 from mallm.prompts.agent_prompts import (
-    generate_chat_prompt_improve,
-    generate_chat_prompt_feedback,
     generate_chat_prompt_draft,
+    generate_chat_prompt_feedback,
+    generate_chat_prompt_improve,
 )
 from mallm.prompts.coordinator_prompts import generate_chat_prompt_extract_result
 from mallm.utils.types.Agreement import Agreement

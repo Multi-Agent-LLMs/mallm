@@ -1,5 +1,6 @@
 # https://stackoverflow.com/questions/384076/how-can-i-color-python-logging-output
 import logging
+
 from colorama import Fore
 
 
