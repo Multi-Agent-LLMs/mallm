@@ -62,12 +62,18 @@ class Coordinator:
         self.panelists = []
         self.agents = []
 
-        personas = self.agent_generator.generate_personas(f"{task_instruction} {input_str}", 3)
+        personas = self.agent_generator.generate_personas(
+            f"{task_instruction} {input_str}", 3
+        )
 
         if use_moderator:
             self.moderator = Moderator(self.llm, self.client, self)
         for persona in personas:
-            self.panelists.append(Panelist(self.llm, self.client, self, persona["role"], persona["description"]))
+            self.panelists.append(
+                Panelist(
+                    self.llm, self.client, self, persona["role"], persona["description"]
+                )
+            )
 
         if use_moderator:
             self.agents = [self.moderator] + self.panelists
@@ -207,7 +213,9 @@ class Coordinator:
             logger.error(f"No valid decision protocol for {decision_protocol}")
             raise Exception(f"No valid decision protocol for {decision_protocol}")
 
-        self.decision_making: DecisionProtocol = decision_protocols[decision_protocol](self.panelists)
+        self.decision_making: DecisionProtocol = decision_protocols[decision_protocol](
+            self.panelists
+        )
 
         start_time = time.perf_counter()
         protocols = {
@@ -246,7 +254,9 @@ Decision-making: {self.decision_making.__class__.__name__}
             extract_all_drafts,
         )
 
-        discussion_time = timedelta(seconds=time.perf_counter() - start_time).total_seconds()
+        discussion_time = timedelta(
+            seconds=time.perf_counter() - start_time
+        ).total_seconds()
 
         global_mem = self.get_global_memory()
         agent_mems = []
