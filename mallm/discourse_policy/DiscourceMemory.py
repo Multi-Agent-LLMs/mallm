@@ -11,7 +11,6 @@ logger = logging.getLogger("mallm")
 
 
 class DiscourseMemory(DiscoursePolicy):
-
     def discuss(
         self,
         coordinator: Coordinator,
