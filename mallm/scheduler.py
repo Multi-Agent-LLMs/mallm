@@ -171,7 +171,7 @@ class Scheduler:
                     include_current_turn_in_memory=self.include_current_turn_in_memory,
                 )
             )
-        except Exception as e:
+        except Exception:
             # More extensive error logging to ease debugging during async execution
             logger.error("Failed discussion.")
             exc_type, exc_obj, exc_tb = sys.exc_info()
