@@ -15,8 +15,9 @@ from openai import OpenAI
 
 from mallm.coordinator import Coordinator
 from mallm.models.HFTGIChat import HFTGIChat
-from mallm.models.personas.TGIPersonaGenerator import (
-    TGIPersonaGenerator,
+from mallm.models.personas.IPIPPersonaGenerator import IPIPPersonaGenerator
+from mallm.models.personas.SimplePersonaGenerator import (
+    SimplePersonaGenerator,
 )
 from mallm.utils.CustomFormatter import CustomFormatter
 
@@ -137,7 +138,7 @@ class Scheduler:
         Runs a single discussion between agents on a sample.
         """
 
-        logger.info(f"""Starting discussion of sample {sample["exampleId"]}""")
+        logger.info(f"""\n\nStarting discussion of sample {sample["exampleId"]}""")
         try:
             coordinator = Coordinator(
                 use_moderator=self.use_moderator,
@@ -179,6 +180,7 @@ class Scheduler:
             f"""--> Agents discussed for {turn} turns, {'%.2f' % discussionTime} seconds ({'%.2f' % (float(discussionTime) / 60.0)} minutes) to get the final answer: \n"""
             + str(answer)
         )
+        logger.info(f"""Reference answer: {sample["references"][0]}""")
 
         output_dicts.append(
             {
@@ -223,7 +225,8 @@ class Scheduler:
 
         llm = HFTGIChat(client=llm_client_oai)
 
-        agent_generator = TGIPersonaGenerator(client=llm_client_oai)
+        # agent_generator = SimplePersonaGenerator(client=llm_client_oai)
+        agent_generator = IPIPPersonaGenerator(client=llm_client_oai)
 
         pool = ThreadPool(processes=self.max_concurrent_requests)
         results = []

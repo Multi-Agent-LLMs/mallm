@@ -5,7 +5,7 @@ def generate_chat_prompt_extract_result(question, result):
     prompts = [
         {
             "role": "system",
-            "content": "Extract the final answer from the provided text. Ignore any statements of agreement or disagreement. Only provide the final answer without any additional text or modifications.",
+            "content": "Extract the final answer from the provided text. Ignore any statements of agreement or disagreement. Only provide the final answer without any additional text or modifications. If the answer contains letter options, respond according to this regular expression: '(?i)Answer\s*:\s*([A-D])'.",
         }
     ]
 

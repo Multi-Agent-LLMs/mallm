@@ -2,6 +2,7 @@ import dbm
 import json
 import logging
 import os
+import re
 import time
 import uuid
 from datetime import timedelta
@@ -27,6 +28,8 @@ transformers.logging.set_verbosity_error()
 os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
 
 logger = logging.getLogger("mallm")
+
+ANSWER_PATTERN_MULTICHOICE = re.compile(r"(?i)Answer\s*:\s*([A-D])")
 
 
 class Coordinator:
@@ -118,9 +121,11 @@ class Coordinator:
             "extractedDraft": str(extracted_draft).replace('"', "'"),
         }
 
+        logger.debug(f"{agent_id[:4]} ({persona}) ({contribution}): {text}")
+
         with dbm.open(self.memory_bucket, "c") as db:
             db[str(unique_id)] = json.dumps(data_dict)
-            logger.debug(str(db[str(unique_id)]))
+            # logger.debug(str(db[str(unique_id)]))
         self.save_global_memory_to_json()
 
     def get_global_memory(self):

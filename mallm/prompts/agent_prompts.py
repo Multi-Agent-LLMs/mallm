@@ -20,7 +20,7 @@ def generate_chat_prompt_feedback(data):
     prompts.append(
         {
             "role": "user",
-            "content": f"Your Task: {data['taskInstruction']} Please consider the example provided and think it step by step. Input: {data['input']}",
+            "content": f"Your Task: {data['taskInstruction']} Think it step by step. Input: {data['input']}",
         }
     )
 

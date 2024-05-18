@@ -69,7 +69,11 @@ class HFTGIChat(LLM):
             The model output as a string. Actual completions SHOULD NOT include the prompt.
         """
         chat_completion = self.client.chat.completions.create(
-            model="tgi", messages=prompt, stream=False, stop=["<|eot_id|>"]
+            model="tgi",
+            messages=prompt,
+            stream=False,
+            stop=["<|eot_id|>"],
+            max_tokens=4096,
         )
 
         return chat_completion.choices[0].message.content.strip()

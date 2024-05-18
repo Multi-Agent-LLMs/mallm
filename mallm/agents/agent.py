@@ -91,9 +91,8 @@ class Agent:
         extract_all_drafts,
         agreements: list[Agreement],
     ):
-        res = self.llm.invoke(
-            generate_chat_prompt_improve(template_filling), client=self.client
-        )
+        logger.debug(f"Agent {self.short_id} is improving answer")
+        res = self.llm.invoke(generate_chat_prompt_improve(template_filling), client=self.client)
         agreements = self.agree(res, agreements)
         current_draft = None
         if extract_all_drafts:
@@ -113,7 +112,6 @@ class Agent:
             "memoryIds": memory_ids,
             "additionalArgs": template_filling,
         }
-        logger.debug(f"Agent {self.short_id} is improving answer")
         self.coordinator.update_global_memory(
             unique_id,
             turn,

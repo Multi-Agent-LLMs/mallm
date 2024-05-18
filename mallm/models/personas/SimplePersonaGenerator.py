@@ -8,7 +8,7 @@ from mallm.models.personas.PersonaGenerator import PersonaGenerator
 logger = logging.getLogger("mallm")
 
 
-class TGIPersonaGenerator(PersonaGenerator):
+class SimplePersonaGenerator(PersonaGenerator):
     def __init__(self, client: OpenAI):
         self.client = client
         self.base_prompt = {
