@@ -195,7 +195,7 @@ class Coordinator:
                 for c in context:
                     task_instruction += "\n" + c
             elif isinstance(context, str):
-                task_instruction += "\n" + c
+                task_instruction += "\n" + context
 
         if not self.init_agents(
             task_instruction, input_str, use_moderator=use_moderator
