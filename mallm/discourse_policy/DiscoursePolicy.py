@@ -12,7 +12,6 @@ logger = logging.getLogger("mallm")
 
 
 class DiscoursePolicy(ABC):
-
     @abstractmethod
     def discuss(
         self,
