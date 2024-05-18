@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 
 from mallm.discourse_policy.DiscoursePolicy import DiscoursePolicy
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from mallm.coordinator import Coordinator

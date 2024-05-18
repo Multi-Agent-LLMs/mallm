@@ -1,13 +1,12 @@
 from typing import Any, Dict, Iterator, List, Optional, Union
 
 from langchain_core.callbacks import Callbacks
-from langchain_core.language_models import LanguageModelInput
-from langchain_core.prompt_values import PromptValue
-from openai import OpenAI
-
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk, LLMResult
+from langchain_core.prompt_values import PromptValue
+from openai import OpenAI
 
 
 class HFTGIChat(LLM):

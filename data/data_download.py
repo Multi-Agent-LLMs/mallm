@@ -1,9 +1,10 @@
-import os
 import importlib
+import os
 import sys
-import fire
-from abc import abstractmethod, ABC
+from abc import ABC, abstractmethod
 from pathlib import Path
+
+import fire
 from datasets import load_dataset
 
 
