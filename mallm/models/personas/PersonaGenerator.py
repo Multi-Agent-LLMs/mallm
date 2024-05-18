@@ -1,7 +1,5 @@
 from abc import ABC, abstractmethod
 
-from pydantic import BaseModel, Field
-
 
 class PersonaGenerator(ABC):
     @abstractmethod

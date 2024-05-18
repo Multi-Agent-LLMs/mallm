@@ -1,6 +1,3 @@
-from langchain_core.prompts import ChatPromptTemplate
-
-
 def generate_chat_prompt_feedback(data):
     # TODO improve this prompt when it is used
     prompts = [
