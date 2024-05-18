@@ -47,10 +47,6 @@ fire = "^0.6.0"
 tqdm = "^4.66.2"
 pytest = "^8.2.0"
 
-[tool.black]
-line-length = 120
-skip-string-normalization = true
-
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
