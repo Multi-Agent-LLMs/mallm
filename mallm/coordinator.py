@@ -30,7 +30,6 @@ logger = logging.getLogger("mallm")
 
 
 class Coordinator:
-
     def __init__(
         self,
         model,
