@@ -190,8 +190,11 @@ class Coordinator:
 
         Returns the final response agreed on, the global memory, agent specific memory, turns needed, last agreements of agents
         """
-        if context and context != []:
-            for c in context:
+        if context:
+            if isinstance(context, list):
+                for c in context:
+                    task_instruction += "\n" + c
+            elif isinstance(context, str):
                 task_instruction += "\n" + c
 
         if not self.init_agents(
