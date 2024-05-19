@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import uuid
+from typing import Union
 
 import fire
 from langchain_core.language_models import LLM
@@ -38,7 +39,7 @@ class Agent:
         self.llm = llm
         self.client = client
         logger.info(
-            f'Creating agent {self.short_id} with personality "{self.persona}": "{self.persona_description}"'
+            f"Creating agent {self.short_id} with personality {self.persona}: {self.persona_description}"
         )
 
     def agree(
@@ -293,14 +294,13 @@ class Agent:
             )
         return context_memory, memory_ids, current_draft
 
-    def get_memory_string(
+    def get_debate_history(
         self,
-        context_length=None,
-        turn=None,
-        personalized=True,
-        include_this_turn=True,
-        extract_draft=False,
-    ):
+        context_length: Union[None, int] = None,
+        turn: Union[None, int] = None,
+        include_this_turn: bool = True,
+        extract_draft: bool = False,
+    ) -> tuple[Union[None, list[dict[str, str]]], list[int], Union[None, str]]:
         """
         Retrieves memory from the agents memory bucket as a string
         context_length refers to the amount of turns the agent can use as rationale
@@ -313,16 +313,20 @@ class Agent:
             extract_draft=extract_draft,
         )
         if memory:
-            memory_string = ""
+            debate_history = []
             for m in memory:
-                memory_string = memory_string + f"""\n{m["persona"]}: {m["text"]}"""
-            if personalized:
-                memory_string = memory_string.replace(
-                    f"""{self.persona}:""", f"""{self.persona} (you):"""
-                )
+                if m["agentId"] == self.id:
+                    debate_history.append({"role": "assistant", "content": m["text"]})
+                else:
+                    debate_history.append(
+                        {
+                            "role": "user",
+                            "content": f"Contribution from agent {m["persona"]}:\n\n {m['text']}",
+                        }
+                    )
         else:
-            memory_string = None
-        return memory_string, memory_ids, current_draft
+            debate_history = None
+        return debate_history, memory_ids, current_draft
 
     def save_memory_to_json(self, out=None):
         """

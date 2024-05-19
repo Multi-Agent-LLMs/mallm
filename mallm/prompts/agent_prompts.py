@@ -93,9 +93,10 @@ def generate_chat_prompt_draft(data):
         prompts.append(
             {
                 "role": "system",
-                "content": f"This is the discussion to the current point. Keep it in mind:\n{data['agentMemory']}",
+                "content": f"This is the discussion to the current point.",
             }
         )
+        prompts += data["agentMemory"]
 
     prompts.append(
         {

@@ -17,7 +17,7 @@ class Panelist(Agent):
         agreements,
     ):
         """
-        Either calls feedback() or improve() depending on wether a moderator is present
+        Either calls feedback() or improve() depending on whether a moderator is present
         """
         if use_moderator:
             res, memory, agreements = self.feedback(

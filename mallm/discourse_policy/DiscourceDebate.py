@@ -54,8 +54,8 @@ class DiscourseDebate(DiscoursePolicy):
 
             # ---- Agent A1
             if use_moderator:
-                memory_string, memory_ids, current_draft = (
-                    coordinator.moderator.get_memory_string(
+                debate_history, memory_ids, current_draft = (
+                    coordinator.moderator.get_debate_history(
                         context_length=context_length,
                         turn=turn,
                         include_this_turn=include_current_turn_in_memory,
@@ -68,7 +68,7 @@ class DiscourseDebate(DiscoursePolicy):
                     "currentDraft": current_draft,
                     "persona": coordinator.moderator.persona,
                     "personaDescription": coordinator.moderator.persona_description,
-                    "agentMemory": memory_string,
+                    "agentMemory": debate_history,
                 }
                 res, memory, agreements = coordinator.moderator.draft(
                     unique_id,
@@ -83,9 +83,9 @@ class DiscourseDebate(DiscoursePolicy):
                 memories = coordinator.update_memories(memories, coordinator.agents)
                 unique_id = unique_id + 1
             else:
-                memory_string, memory_ids, current_draft = coordinator.panelists[
+                debate_history, memory_ids, current_draft = coordinator.panelists[
                     0
-                ].get_memory_string(
+                ].get_debate_history(
                     context_length=context_length,
                     turn=turn,
                     include_this_turn=include_current_turn_in_memory,
@@ -96,7 +96,7 @@ class DiscourseDebate(DiscoursePolicy):
                     "currentDraft": current_draft,
                     "persona": coordinator.panelists[0].persona,
                     "personaDescription": coordinator.panelists[0].persona_description,
-                    "agentMemory": memory_string,
+                    "agentMemory": debate_history,
                 }
                 res, memory, agreements = coordinator.panelists[0].draft(
                     unique_id,
@@ -117,7 +117,7 @@ class DiscourseDebate(DiscoursePolicy):
                 for i, a in enumerate(
                     coordinator.agents[1:]
                 ):  # similar to relay paradigm
-                    memory_string, memory_ids, current_draft = a.get_memory_string(
+                    debate_history, memory_ids, current_draft = a.get_debate_history(
                         context_length=context_length,
                         turn=turn,
                         include_this_turn=include_current_turn_in_memory,
@@ -134,7 +134,7 @@ class DiscourseDebate(DiscoursePolicy):
                         "personaDescription": a.persona_description,
                         "sentsMin": feedback_sentences[0],
                         "sentsMax": feedback_sentences[1],
-                        "agentMemory": memory_string,
+                        "agentMemory": debate_history,
                     }
                     if r == debate_rounds - 1:  # last debate round
                         agents_to_update = [
