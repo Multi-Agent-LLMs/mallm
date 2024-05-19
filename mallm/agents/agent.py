@@ -3,7 +3,7 @@ import json
 import logging
 import os
 import uuid
-from typing import Union
+from typing import Optional
 
 import fire
 from langchain_core.language_models import LLM
@@ -296,11 +296,11 @@ class Agent:
 
     def get_debate_history(
         self,
-        context_length: Union[None, int] = None,
-        turn: Union[None, int] = None,
+        context_length: Optional[int] = None,
+        turn: Optional[int] = None,
         include_this_turn: bool = True,
         extract_draft: bool = False,
-    ) -> tuple[Union[None, list[dict[str, str]]], list[int], Union[None, str]]:
+    ) -> tuple[Optional[list[dict[str, str]]], list[int], Optional[str]]:
         """
         Retrieves memory from the agents memory bucket as a string
         context_length refers to the amount of turns the agent can use as rationale
