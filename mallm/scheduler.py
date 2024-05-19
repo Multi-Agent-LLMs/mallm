@@ -6,7 +6,7 @@ from colorama import just_fix_windows_console
 from huggingface_hub import InferenceClient
 from openai import OpenAI
 
-from mallm.coordinator import *
+from mallm.coordinator import Coordinator
 from mallm.models.HFTGIChat import HFTGIChat
 from mallm.models.personas.TGIPersonaGenerator import (
     TGIPersonaGenerator,

@@ -6,11 +6,11 @@ import transformers
 from langchain.chains import LLMChain
 from openai import OpenAI
 
-from mallm.agents.moderator import *
-from mallm.agents.panelist import *
-from mallm.agents.agent import *
+from mallm.agents.moderator import Moderator
+from mallm.agents.panelist import Panelist
+from mallm.agents.agent import Agent
 from mallm.models.HFTGIChat import HFTGIChat
-from mallm.decision_making.consensus import *
+from mallm.decision_making.consensus import MajorityConsensus
 from mallm.discourse_policy.DiscourceDebate import DiscourseDebate
 from mallm.discourse_policy.DiscourceMemory import DiscourseMemory
 from mallm.discourse_policy.DiscourceRelay import DiscourseRelay
@@ -181,7 +181,7 @@ class Coordinator:
         max_turns: int,
         context_length: int,
         include_current_turn_in_memory: bool,
-        extract_all_drafts: Optional[bool],
+        extract_all_drafts: bool,
         debate_rounds: Optional[int],
     ):
         """
