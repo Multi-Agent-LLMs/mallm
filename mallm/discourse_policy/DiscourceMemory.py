@@ -50,8 +50,8 @@ class DiscourseMemory(DiscoursePolicy):
             )
 
             if use_moderator:
-                memory_string, memory_ids, current_draft = (
-                    coordinator.moderator.get_memory_string(
+                debate_history, memory_ids, current_draft = (
+                    coordinator.moderator.get_debate_history(
                         context_length=context_length,
                         turn=turn,
                         include_this_turn=include_current_turn_in_memory,
@@ -64,7 +64,7 @@ class DiscourseMemory(DiscoursePolicy):
                     "currentDraft": current_draft,
                     "persona": coordinator.moderator.persona,
                     "personaDescription": coordinator.moderator.persona_description,
-                    "agentMemory": memory_string,
+                    "agentMemory": debate_history,
                 }
                 res, memory, agreements = coordinator.moderator.draft(
                     unique_id,
@@ -80,7 +80,7 @@ class DiscourseMemory(DiscoursePolicy):
                 unique_id = unique_id + 1
 
             for p in coordinator.panelists:
-                memory_string, memory_ids, current_draft = p.get_memory_string(
+                debate_history, memory_ids, current_draft = p.get_debate_history(
                     context_length=context_length,
                     turn=turn,
                     include_this_turn=include_current_turn_in_memory,
@@ -93,7 +93,7 @@ class DiscourseMemory(DiscoursePolicy):
                     "personaDescription": p.persona_description,
                     "sentsMin": feedback_sentences[0],
                     "sentsMax": feedback_sentences[1],
-                    "agentMemory": memory_string,
+                    "agentMemory": debate_history,
                 }
 
                 memories, agreements = p.participate(
