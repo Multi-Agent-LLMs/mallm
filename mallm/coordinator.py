@@ -66,6 +66,7 @@ class Coordinator:
         self.agents = []
 
         personas = self.agent_generator.generate_personas(f"{task_instruction} {input_str}", 3)
+        # personas = [{"role": "Panelist", "description": "panelist"} for _ in range(3)]
 
         if use_moderator:
             self.moderator = Moderator(self.llm, self.client, self)

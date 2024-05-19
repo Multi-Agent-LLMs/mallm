@@ -8,6 +8,7 @@ Via
 https://github.com/openai/simple-evals/blob/main/gpqa_eval.py
 """
 
+import sys
 
 
 
@@ -16,7 +17,7 @@ ANSWER_PATTERN_MULTICHOICE = r"(?i)Answer\s*:\s*([A-D])"
 import re
 import json
 
-out_file = "test_out.json"
+out_file = sys.argv[1]
 
 with open(out_file, "r") as f:
     data = json.load(f)
@@ -33,11 +34,15 @@ for question in data:
     print("Reference:", reference)
 
     match = re.search(ANSWER_PATTERN_MULTICHOICE, answer)
+    # Backup
+    if not match:
+        match = re.search(r"(?i)([A-D])(\W|$)", answer)
+
     print("Extracted answer:", match.group(1) if match else None)
     extracted_answer = match.group(1) if match else None
     score = 1 if extracted_answer == reference else 0
     total_score += score
 
-print("Total score:", total_score)
+print("\n\nTotal score:", total_score)
 print("Total questions:", len(data))
 print("Accuracy:", total_score / len(data))
