@@ -2,6 +2,7 @@ import dataclasses
 import glob
 import json
 import logging
+from typing import Optional
 import os
 import sys
 from multiprocessing.pool import ThreadPool
@@ -53,6 +54,7 @@ class Scheduler:
         max_turns: int = 10,
         feedback_sentences: list[int] = (3, 4),
         paradigm: str = "memory",
+        decision_protocol: str = "majority_consensus",
         context_length: int = 1,
         include_current_turn_in_memory: bool = False,
         extract_all_drafts: bool = False,

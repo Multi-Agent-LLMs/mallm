@@ -14,6 +14,7 @@ from openai import OpenAI
 
 from mallm.agents.moderator import Moderator
 from mallm.agents.panelist import Panelist
+from mallm.agents.agent import Agent
 from mallm.decision_making.DecisionProtocol import DecisionProtocol
 from mallm.decision_making.MajorityConsensus import MajorityConsensus
 from mallm.decision_making.Voting import Voting
@@ -194,6 +195,7 @@ class Coordinator:
         use_moderator: bool,
         feedback_sentences: list[int],
         paradigm: str,
+        decision_protocol: str,
         max_turns: int,
         context_length: int,
         include_current_turn_in_memory: bool,
