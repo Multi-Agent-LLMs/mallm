@@ -1,11 +1,15 @@
 import time
 from datetime import timedelta
+from typing import Optional
 
 import transformers
 from langchain.chains import LLMChain
+from openai import OpenAI
 
 from mallm.agents.moderator import *
 from mallm.agents.panelist import *
+from mallm.agents.agent import *
+from mallm.models.HFTGIChat import HFTGIChat
 from mallm.decision_making.consensus import *
 from mallm.discourse_policy.DiscourceDebate import DiscourseDebate
 from mallm.discourse_policy.DiscourceMemory import DiscourseMemory
@@ -25,11 +29,11 @@ class Coordinator:
 
     def __init__(
         self,
-        model,
-        client,
+        model: HFTGIChat,
+        client: OpenAI,
         agent_generator: PersonaGenerator = None,
-        use_moderator=False,
-        memory_bucket_dir="./mallm/utils/memory_bucket/",
+        use_moderator: bool = False,
+        memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
     ):
         self.personas = None
         self.id = str(uuid.uuid4())
@@ -45,7 +49,7 @@ class Coordinator:
         self.client = client
         self.agent_generator = agent_generator
 
-    def init_agents(self, task_instruction, input_str, use_moderator):
+    def init_agents(self, task_instruction: str, input_str: str, use_moderator: bool):
         """
         Instantiates the agents by
         1) identify helpful personas
@@ -90,16 +94,16 @@ class Coordinator:
 
     def update_global_memory(
         self,
-        unique_id,
-        turn,
-        agent_id,
-        persona,
-        contribution,
-        text,
-        agreement,
-        extracted_draft,
-        memory_ids,
-        prompt_args,
+        unique_id: int,
+        turn: int,
+        agent_id: str,
+        persona: str,
+        contribution: str,
+        text: str,
+        agreement: bool,
+        extracted_draft: str,
+        memory_ids: list[int],
+        prompt_args: dict,
     ):
         """
         Updates the dbm memory with another discussion entry.
@@ -146,7 +150,7 @@ class Coordinator:
             logger.error(f"Failed to save agent memory to {self.memory_bucket}: {e}")
             logger.error(self.get_global_memory())
 
-    def update_memories(self, memories, agents_to_update):
+    def update_memories(self, memories: list[dict], agents_to_update: list[Agent]):
         """
         Updates the memories of all declared agents.
         """
@@ -168,17 +172,17 @@ class Coordinator:
 
     def discuss(
         self,
-        task_instruction,
-        input_str,
-        context,
-        use_moderator,
-        feedback_sentences=[3, 4],
-        paradigm="memory",
-        max_turns=None,
-        context_length=1,
-        include_current_turn_in_memory=False,
-        extract_all_drafts=False,
-        debate_rounds=1,
+        task_instruction: str,
+        input_str: str,
+        context: list[str],
+        use_moderator: bool,
+        feedback_sentences: list[int],
+        paradigm: str,
+        max_turns: int,
+        context_length: int,
+        include_current_turn_in_memory: bool,
+        extract_all_drafts: Optional[bool],
+        debate_rounds: Optional[int],
     ):
         """
         The routine responsible for the discussion between agents to solve a task.
@@ -190,12 +194,9 @@ class Coordinator:
 
         Returns the final response agreed on, the global memory, agent specific memory, turns needed, last agreements of agents
         """
-        if context:
-            if isinstance(context, list):
-                for c in context:
-                    task_instruction += "\n" + c
-            elif isinstance(context, str):
-                task_instruction += "\n" + context
+        if context and isinstance(context, list):
+            for c in context:
+                task_instruction += "\n" + c
 
         if not self.init_agents(
             task_instruction, input_str, use_moderator=use_moderator

@@ -43,15 +43,17 @@ class Scheduler:
         out: str,
         instruction: str,
         endpoint_url: str,
-        use_moderator=False,
-        max_turns=10,
-        feedback_sentences=[3, 4],
-        paradigm="memory",
-        context_length=1,
-        include_current_turn_in_memory=False,
-        max_concurrent_requests=100,
-        clear_memory_bucket=True,
-        memory_bucket_dir="./mallm/utils/memory_bucket/",
+        use_moderator: bool = False,
+        max_turns: int = 10,
+        feedback_sentences: list[int] = (3, 4),
+        paradigm: str = "memory",
+        context_length: int = 1,
+        include_current_turn_in_memory: bool = False,
+        extract_all_drafts: bool = False,
+        debate_rounds=Optional[int],
+        max_concurrent_requests: int = 100,
+        clear_memory_bucket: bool = True,
+        memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
     ):
         # Check for the correct aruments provided
         # TODO: make this more robust and conclusive. All arguments should be checked for validity, making the use of MALLM as fool-proof as possible.
@@ -105,7 +107,6 @@ class Scheduler:
                     logger.error(
                         f"""Invalid JSON in {data}! Please provide the input data in json lines format: {e}"""
                     )
-        logger.info(f"""Found {len(d)} samples to discuss.""")
 
         self.data = d
         self.out = out
@@ -118,17 +119,22 @@ class Scheduler:
         self.context_length = context_length
         self.include_current_turn_in_memory = include_current_turn_in_memory
         self.max_concurrent_requests = max_concurrent_requests
+        self.extract_all_drafts = (extract_all_drafts,)
+        self.debate_rounds = (debate_rounds,)
         self.clear_memory_bucket = clear_memory_bucket
         self.memory_bucket_dir = memory_bucket_dir
+        self.total_samples = len(self.data)
+        self.completed_samples = 0
+        logger.info(f"""Found {self.total_samples} samples to discuss.""")
 
         logger.info("Finished initializing the scheduler.")
 
     def run_discussion(
         self,
-        client,
-        llm,
-        agent_generator,
-        sample,
+        client: OpenAI,
+        llm: HFTGIChat,
+        agent_generator: TGIPersonaGenerator,
+        sample: dict,
     ):
         """
         Runs a single discussion between agents on a sample.
@@ -159,6 +165,8 @@ class Scheduler:
                     max_turns=self.max_turns,
                     context_length=self.context_length,
                     include_current_turn_in_memory=self.include_current_turn_in_memory,
+                    extract_all_drafts=self.extract_all_drafts,
+                    debate_rounds=self.debate_rounds,
                 )
             )
         except Exception as e:
@@ -211,9 +219,13 @@ class Scheduler:
             logger.error("Failed to write output to file.")
             logger.error(e)
 
+        self.completed_samples += 1
+        logger.info(
+            f"""Completed samples: {self.completed_samples}. Samples left: {self.total_samples-self.completed_samples}."""
+        )
         return answer
 
-    def manage_discussions(self, client):
+    def manage_discussions(self, client: httpx.Client):
         """
         Manages all discussions on the data.
         Discussions are handled in a queue of length max_concurrent_requests.
@@ -279,19 +291,21 @@ class Scheduler:
 
 
 def main(
-    data,
-    out,
-    instruction,
-    endpoint_url,
-    use_moderator=False,
-    max_turns=10,
-    feedback_sentences=[3, 4],
-    paradigm="memory",
-    context_length=1,
-    include_current_turn_in_memory=False,
-    max_concurrent_requests=100,
-    clear_memory_bucket=True,
-    memory_bucket_dir="./mallm/utils/memory_bucket/",
+    data: list[dict],
+    out: str,
+    instruction: str,
+    endpoint_url: str,
+    use_moderator: bool = False,
+    max_turns: int = 10,
+    feedback_sentences: list[int] = (3, 4),
+    paradigm: str = "memory",
+    context_length: int = 1,
+    include_current_turn_in_memory: bool = False,
+    extract_all_drafts: bool = False,
+    debate_rounds: Optional[int] = None,
+    max_concurrent_requests: int = 100,
+    clear_memory_bucket: bool = True,
+    memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
 ):
     scheduler = Scheduler(
         data,
@@ -304,6 +318,8 @@ def main(
         paradigm=paradigm,
         context_length=context_length,
         include_current_turn_in_memory=include_current_turn_in_memory,
+        extract_all_drafts=extract_all_drafts,
+        debate_rounds=debate_rounds,
         max_concurrent_requests=max_concurrent_requests,
         clear_memory_bucket=clear_memory_bucket,
         memory_bucket_dir=memory_bucket_dir,
