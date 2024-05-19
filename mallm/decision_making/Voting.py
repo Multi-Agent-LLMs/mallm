@@ -15,8 +15,7 @@ logger = logging.getLogger("mallm")
 
 class Voting(DecisionProtocol):
     """
-    The Majority Consensus imitates the implementation by Yin et. al.
-    Paper: https://arxiv.org/abs/2312.01823
+    The Voting decision protocol allows panelists to vote for the best answer after a certain number of turns.
     """
 
     def __init__(self, panelists: List[Panelist], vote_turn: int = 3):
@@ -46,6 +45,7 @@ class Voting(DecisionProtocol):
         votes = []
         for panelist in self.panelists:
             while True:
+                # Creates a prompt with all the answers and asks the agent to vote for the best one, 0 indexed inorder
                 vote = panelist.llm.invoke(
                     generate_voting_prompt(
                         panelist.persona,
@@ -72,6 +72,7 @@ class Voting(DecisionProtocol):
                         f"{panelist.short_id} cast an invalid vote: {vote}. Asking to vote again."
                     )
 
+        # Search for the answer with the most votes from the agents
         vote_counts = Counter(votes)
         most_voted = vote_counts.most_common(1)[0][0]
         logger.info(

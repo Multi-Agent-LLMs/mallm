@@ -10,12 +10,14 @@ class MajorityConsensus(DecisionProtocol):
     def make_decision(self, agreements, turn, task, question):
         if len(self.panelists) <= 3 and turn < 5:
             # all agents need to agree in the first 5 turns (except moderator)
-            return agreements[-1].response, sum(
-                [a.agreement for a in agreements]
-            ) == len(self.panelists)
+            return [agreement for agreement in agreements if agreement.agreement][
+                -1
+            ].response, sum([a.agreement for a in agreements]) == len(self.panelists)
         else:
             # more than half of the agents need to agree (except moderator)
             return (
-                agreements[-1].response,
+                [agreement for agreement in agreements if agreement.agreement][
+                    -1
+                ].response,
                 sum([a.agreement for a in agreements]) > len(self.panelists) / 2,
             )

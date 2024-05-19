@@ -28,6 +28,18 @@ os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
 
 logger = logging.getLogger("mallm")
 
+decision_protocols = {
+    "majority_consensus": MajorityConsensus,
+    "voting": Voting,
+}
+
+protocols = {
+    "memory": DiscourseMemory,
+    "report": DiscourseReport,
+    "relay": DiscourseRelay,
+    "debate": DiscourseDebate,
+}
+
 
 class Coordinator:
     def __init__(
@@ -200,10 +212,6 @@ class Coordinator:
 
         self.init_agents(task_instruction, input_str, use_moderator=use_moderator)
 
-        decision_protocols = {
-            "majority_consensus": MajorityConsensus,
-            "voting": Voting,
-        }
         if decision_protocol not in decision_protocols:
             logger.error(f"No valid decision protocol for {decision_protocol}")
             raise Exception(f"No valid decision protocol for {decision_protocol}")
@@ -213,12 +221,7 @@ class Coordinator:
         )
 
         start_time = time.perf_counter()
-        protocols = {
-            "memory": DiscourseMemory,
-            "report": DiscourseReport,
-            "relay": DiscourseRelay,
-            "debate": DiscourseDebate,
-        }
+
         if paradigm not in protocols:
             logger.error(f"No valid discourse policy for paradigm {paradigm}")
             raise Exception(f"No valid discourse policy for paradigm {paradigm}")
