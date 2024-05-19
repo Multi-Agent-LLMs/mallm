@@ -1,9 +1,15 @@
+import dataclasses
 import glob
-import sys, httpx, requests
+import json
+import logging
+import os
+import sys
 from multiprocessing.pool import ThreadPool
 
+import fire
+import httpx
+import requests
 from colorama import just_fix_windows_console
-from huggingface_hub import InferenceClient
 from openai import OpenAI
 
 from mallm.coordinator import Coordinator
@@ -61,17 +67,17 @@ class Scheduler:
             logger.error(
                 "The input file you provided does not exist. Please specify a json lines file using --data."
             )
-            return
+            sys.exit(1)
         if not data.endswith(".json"):
             logger.error(
                 "The input file you provided is not a json file. Please specify a json lines file using --data."
             )
-            return
+            sys.exit(1)
         if not out.endswith(".json"):
             logger.error(
                 "The output file does not seem to be a json file. Please specify a file path using --out."
             )
-            return
+            sys.exit(1)
         try:
             logger.info("Testing availability of the endpoint...")
             page = requests.get(endpoint_url)
@@ -79,13 +85,13 @@ class Scheduler:
         except Exception as e:
             logger.error("HTTP Error: Could not connect to the provided endpoint url.")
             logger.error(e)
-            return
+            sys.exit(1)
 
         if max_concurrent_requests > 500:
             logger.error(
                 "max_concurrent_requests is too large. TGI can only handle about 500 requests. Please make sure to leave computing for other poeple too. Recommended: ~250."
             )
-            return
+            sys.exit(1)
 
         # Cleaning other files
         if os.path.exists(out):
@@ -116,6 +122,7 @@ class Scheduler:
         self.max_turns = max_turns
         self.feedback_sentences = feedback_sentences
         self.paradigm = paradigm
+        self.decision_protocol = decision_protocol
         self.context_length = context_length
         self.include_current_turn_in_memory = include_current_turn_in_memory
         self.max_concurrent_requests = max_concurrent_requests
@@ -162,6 +169,7 @@ class Scheduler:
                     self.use_moderator,
                     feedback_sentences=self.feedback_sentences,
                     paradigm=self.paradigm,
+                    decision_protocol=self.decision_protocol,
                     max_turns=self.max_turns,
                     context_length=self.context_length,
                     include_current_turn_in_memory=self.include_current_turn_in_memory,
@@ -169,7 +177,7 @@ class Scheduler:
                     debate_rounds=self.debate_rounds,
                 )
             )
-        except Exception as e:
+        except Exception:
             # More extensive error logging to ease debugging during async execution
             logger.error("Failed discussion.")
             exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -201,14 +209,15 @@ class Scheduler:
                 "context": sample["context"],
                 "answer": answer,
                 "references": sample["references"],
-                "agreements": agreements,
+                "agreements": [
+                    dataclasses.asdict(agreement) for agreement in agreements
+                ],
                 "turns": turn,
                 "clockSeconds": float("%.2f" % discussionTime),
                 "globalMemory": globalMem,
                 "agentMemory": agentMems,
             }
         )
-
         try:
             with open(self.out, "w") as file:
                 file.write(
@@ -316,6 +325,7 @@ def main(
         max_turns=max_turns,
         feedback_sentences=feedback_sentences,
         paradigm=paradigm,
+        decision_protocol=decision_protocol,
         context_length=context_length,
         include_current_turn_in_memory=include_current_turn_in_memory,
         extract_all_drafts=extract_all_drafts,

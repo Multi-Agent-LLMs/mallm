@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 
 from mallm.discourse_policy.DiscoursePolicy import DiscoursePolicy
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from mallm.coordinator import Coordinator
@@ -103,6 +103,8 @@ class DiscourseRelay(DiscoursePolicy):
                     )
                 unique_id = unique_id + 1
 
-            decision = coordinator.decision_making.decide(agreements, turn)
+            draft, decision = coordinator.decision_making.make_decision(
+                agreements, turn, task_instruction, input_str
+            )
 
-        return current_draft, turn, agreements
+        return draft, turn, agreements

@@ -1,8 +1,9 @@
-from mallm.agents.agent import *
+import fire
+
+from mallm.agents.agent import Agent
 
 
 class Panelist(Agent):
-
     def participate(
         self,
         use_moderator,

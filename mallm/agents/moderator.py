@@ -1,4 +1,8 @@
-from mallm.agents.agent import *
+import uuid
+
+import fire
+
+from mallm.agents.agent import Agent, logger
 
 
 class Moderator(Agent):

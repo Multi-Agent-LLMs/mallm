@@ -1,17 +1,23 @@
-from langchain_core.prompts import ChatPromptTemplate
-
-
-def generate_chat_prompt_extract_result(result):
+def generate_chat_prompt_extract_result(question, result):
     prompts = [
         {
             "role": "system",
-            "content": "Extract the final result from the provided text. Do not output any additional text and remove the explanation. Only copy the result from the provided text without modifications.",
-        },
+            "content": "Extract the final answer from the provided text. Ignore any statements of agreement or disagreement. Only provide the final answer without any additional text or modifications.",
+        }
+    ]
+
+    if question:
+        user_content = f"Question: {question}\n\nResult: {result}"
+    else:
+        user_content = result
+
+    prompts.append(
         {
             "role": "user",
-            "content": f"{result}",
-        },
-    ]
+            "content": user_content,
+        }
+    )
+
     return prompts
 
 

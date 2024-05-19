@@ -1,8 +1,8 @@
 import json
 import os
+import random
 import urllib
 import uuid
-import random
 
 import pandas as pd
 import requests

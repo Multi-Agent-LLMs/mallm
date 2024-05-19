@@ -5,16 +5,15 @@ import os
 import uuid
 
 import fire
-from langchain.chains import LLMChain
 from langchain_core.language_models import LLM
 
-from mallm.prompts import agent_prompts
 from mallm.prompts.agent_prompts import (
-    generate_chat_prompt_improve,
-    generate_chat_prompt_feedback,
     generate_chat_prompt_draft,
+    generate_chat_prompt_feedback,
+    generate_chat_prompt_improve,
 )
 from mallm.prompts.coordinator_prompts import generate_chat_prompt_extract_result
+from mallm.utils.types.Agreement import Agreement
 
 logger = logging.getLogger("mallm")
 
@@ -42,7 +41,9 @@ class Agent:
             f'Creating agent {self.short_id} with personality "{self.persona}": "{self.persona_description}"'
         )
 
-    def agree(self, res, agreements, self_drafted=False):
+    def agree(
+        self, res: str, agreements: list[Agreement], self_drafted: bool = False
+    ) -> list[Agreement]:
         """
         Determines whether a string given by an agent means an agreement or disagreement.
         Returns bool
@@ -51,20 +52,30 @@ class Agent:
             not self == self.moderator
         ):
             agreements.append(
-                {"agentId": self.id, "persona": self.persona, "agreement": True}
+                Agreement(
+                    agreement=True, agent_id=self.id, persona=self.persona, response=res
+                )
             )
             logger.debug(f"Agent {self.short_id} agreed")
         elif self_drafted and not self == self.moderator:
             agreements.append(
-                {"agentId": self.id, "persona": self.persona, "agreement": True}
+                Agreement(
+                    agreement=True, agent_id=self.id, persona=self.persona, response=res
+                )
             )
             logger.debug(f"Agent {self.short_id} agreed")
         elif not self == self.moderator:
             agreements.append(
-                {"agentId": self.id, "persona": self.persona, "agreement": False}
+                Agreement(
+                    agreement=False,
+                    agent_id=self.id,
+                    persona=self.persona,
+                    response=res,
+                )
             )
             logger.debug(f"Agent {self.short_id} disagreed")
 
+        # Only keep the most recent agreements
         if len(agreements) > len(self.coordinator.panelists):
             agreements = agreements[-len(self.coordinator.panelists) :]
         return agreements
@@ -76,7 +87,7 @@ class Agent:
         memory_ids,
         template_filling,
         extract_all_drafts,
-        agreements,
+        agreements: list[Agreement],
     ):
         res = self.llm.invoke(
             generate_chat_prompt_improve(template_filling), client=self.client
@@ -85,7 +96,8 @@ class Agent:
         current_draft = None
         if extract_all_drafts:
             current_draft = self.llm.invoke(
-                generate_chat_prompt_extract_result(res), client=self.client
+                generate_chat_prompt_extract_result(template_filling["input"], res),
+                client=self.client,
             )
         memory = {
             "messageId": unique_id,
@@ -94,7 +106,7 @@ class Agent:
             "persona": self.persona,
             "contribution": "improve",
             "text": res,
-            "agreement": agreements[-1]["agreement"],
+            "agreement": agreements[-1].agreement,
             "extractedDraft": current_draft,
             "memoryIds": memory_ids,
             "additionalArgs": template_filling,
@@ -107,7 +119,7 @@ class Agent:
             self.persona,
             "improve",
             res,
-            agreements[-1]["agreement"],
+            agreements[-1].agreement,
             None,
             memory_ids,
             template_filling,
@@ -121,7 +133,7 @@ class Agent:
         memory_ids,
         template_filling,
         extract_all_drafts,
-        agreements,
+        agreements: list[Agreement],
         is_moderator=False,
     ):
         res = self.llm.invoke(
@@ -131,10 +143,13 @@ class Agent:
         current_draft = None
         if extract_all_drafts:
             current_draft = self.llm.invoke(
-                generate_chat_prompt_extract_result(res), client=self.client
+                generate_chat_prompt_extract_result(template_filling["input"], res),
+                client=self.client,
             )
         if is_moderator:
-            agreement = {"agentId": self.id, "persona": self.persona, "agreement": None}
+            agreement = Agreement(
+                agreement=None, agent_id=self.id, persona=self.persona, response=res
+            )
         else:
             agreement = agreements[-1]
         memory = {
@@ -144,7 +159,7 @@ class Agent:
             "persona": self.persona,
             "contribution": "draft",
             "text": res,
-            "agreement": agreement["agreement"],
+            "agreement": agreement.agreement,
             "extractedDraft": current_draft,
             "memoryIds": memory_ids,
             "additionalArgs": template_filling,
@@ -157,7 +172,7 @@ class Agent:
             self.persona,
             "draft",
             res,
-            agreement["agreement"],
+            agreement.agreement,
             None,
             memory_ids,
             template_filling,
@@ -176,7 +191,7 @@ class Agent:
             "persona": self.persona,
             "contribution": "feedback",
             "text": res,
-            "agreement": agreements[-1]["agreement"],
+            "agreement": agreements[-1].agreement,
             "extractedDraft": None,
             "memoryIds": memory_ids,
             "additionalArgs": template_filling,
@@ -189,7 +204,7 @@ class Agent:
             self.persona,
             "feedback",
             res,
-            agreements[-1]["agreement"],
+            agreements[-1].agreement,
             None,
             memory_ids,
             template_filling,
@@ -273,7 +288,8 @@ class Agent:
 
         if current_draft and extract_draft:
             current_draft = self.llm.invoke(
-                generate_chat_prompt_extract_result(current_draft), client=self.client
+                generate_chat_prompt_extract_result(None, current_draft),
+                client=self.client,
             )
         return context_memory, memory_ids, current_draft
 

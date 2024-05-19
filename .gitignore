@@ -171,3 +171,5 @@ cython_debug/
 
 log.txt
 test_out.json
+
+data/result.json

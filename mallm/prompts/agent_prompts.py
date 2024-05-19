@@ -1,6 +1,3 @@
-from langchain_core.prompts import ChatPromptTemplate
-
-
 def generate_chat_prompt_feedback(data):
     # TODO improve this prompt when it is used
     prompts = [
@@ -77,7 +74,7 @@ def generate_chat_prompt_improve(data):
         prompts.append(
             {
                 "role": "user",
-                "content": "Improve the current answer and if you agree, answer with [AGREE] else answer with [DISAGREE] and explain why.",
+                "content": "Improve the current answer and if you agree, answer with [AGREE] else answer with [DISAGREE] and repeat the answer.",
             }
         )
 
@@ -122,5 +119,66 @@ def generate_chat_prompt_draft(data):
                 "content": "Based on the provided feedback, carefully re-examine your previous solution. Be open to compromise too and if you agree, answer with [AGREE] else answer with [DISAGREE] and explain why.",
             }
         )
+
+    return prompts
+
+
+def generate_final_answer_prompt(
+    persona: str,
+    persona_description: str,
+    question: str,
+    task: str,
+    previous_answer: str,
+):
+    prompts = [
+        {
+            "role": "system",
+            "content": f"Your role: {persona} ({persona_description}) \nYou are tasked with creating a final answer based on the given question and your previous response.",
+        },
+        {
+            "role": "user",
+            "content": f"Task: {task}\nQuestion: {question}\nYour previous answer: {previous_answer}",
+        },
+        {
+            "role": "user",
+            "content": "Based on the above information, provide your final answer. Ensure your answer is comprehensive and well-considered.",
+        },
+    ]
+
+    return prompts
+
+
+def generate_voting_prompt(
+    persona: str,
+    persona_description: str,
+    task: str,
+    question: str,
+    solutions: list[str],
+):
+    prompts = [
+        {
+            "role": "system",
+            "content": f"Your role: {persona} ({persona_description}) \nYou are tasked with voting for the best solution from the list provided below based on the given task.",
+        },
+        {
+            "role": "user",
+            "content": f"Task: {task}\nQuestion: {question}\n\nHere are the possible solutions:",
+        },
+    ]
+
+    for i, solution in enumerate(solutions):
+        prompts.append(
+            {
+                "role": "user",
+                "content": f"Solution {i}: {solution}",
+            }
+        )
+
+    prompts.append(
+        {
+            "role": "user",
+            "content": "Based on the above solutions, please provide the number of the solution you are voting for. Answer only with the number.",
+        }
+    )
 
     return prompts

@@ -1,9 +1,10 @@
 # This is a test file used for speed comparison with TGI
 
+import asyncio
 import os
 import random
-import asyncio
 import time
+
 import httpx
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
