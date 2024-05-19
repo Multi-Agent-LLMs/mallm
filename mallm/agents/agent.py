@@ -5,14 +5,12 @@ import os
 import uuid
 
 import fire
-from langchain.chains import LLMChain
 from langchain_core.language_models import LLM
 
-from mallm.prompts import agent_prompts
 from mallm.prompts.agent_prompts import (
-    generate_chat_prompt_improve,
-    generate_chat_prompt_feedback,
     generate_chat_prompt_draft,
+    generate_chat_prompt_feedback,
+    generate_chat_prompt_improve,
 )
 from mallm.prompts.coordinator_prompts import generate_chat_prompt_extract_result
 from mallm.utils.types.Agreement import Agreement
@@ -92,7 +90,9 @@ class Agent:
         agreements: list[Agreement],
     ):
         logger.debug(f"Agent {self.short_id} is improving answer")
-        res = self.llm.invoke(generate_chat_prompt_improve(template_filling), client=self.client)
+        res = self.llm.invoke(
+            generate_chat_prompt_improve(template_filling), client=self.client
+        )
         agreements = self.agree(res, agreements)
         current_draft = None
         if extract_all_drafts:

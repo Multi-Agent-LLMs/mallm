@@ -1,6 +1,3 @@
-from langchain_core.prompts import ChatPromptTemplate
-
-
 def generate_chat_prompt_extract_result(question, result):
     prompts = [
         {

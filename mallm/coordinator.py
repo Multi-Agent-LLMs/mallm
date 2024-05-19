@@ -30,10 +30,20 @@ os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
 logger = logging.getLogger("mallm")
 
 ANSWER_PATTERN_MULTICHOICE = re.compile(r"(?i)Answer\s*:\s*([A-D])")
+decision_protocols = {
+    "majority_consensus": MajorityConsensus,
+    "voting": Voting,
+}
+
+protocols = {
+    "memory": DiscourseMemory,
+    "report": DiscourseReport,
+    "relay": DiscourseRelay,
+    "debate": DiscourseDebate,
+}
 
 
 class Coordinator:
-
     def __init__(
         self,
         model,
@@ -65,13 +75,19 @@ class Coordinator:
         self.panelists = []
         self.agents = []
 
-        personas = self.agent_generator.generate_personas(f"{task_instruction} {input_str}", 3)
+        personas = self.agent_generator.generate_personas(
+            f"{task_instruction} {input_str}", 3
+        )
         # personas = [{"role": "Panelist", "description": "panelist"} for _ in range(3)]
 
         if use_moderator:
             self.moderator = Moderator(self.llm, self.client, self)
         for persona in personas:
-            self.panelists.append(Panelist(self.llm, self.client, self, persona["role"], persona["description"]))
+            self.panelists.append(
+                Panelist(
+                    self.llm, self.client, self, persona["role"], persona["description"]
+                )
+            )
 
         if use_moderator:
             self.agents = [self.moderator] + self.panelists
@@ -197,27 +213,24 @@ class Coordinator:
         Returns the final response agreed on, the global memory, agent specific memory, turns needed, last agreements of agents
         """
         if context:
-            task_instruction += "\n" + "Context: " + context
+            if isinstance(context, list):
+                for c in context:
+                    task_instruction += "\n" + c
+            elif isinstance(context, str):
+                task_instruction += "\n" + context
 
         self.init_agents(task_instruction, input_str, use_moderator=use_moderator)
 
-        decision_protocols = {
-            "majority_consensus": MajorityConsensus,
-            "voting": Voting,
-        }
         if decision_protocol not in decision_protocols:
             logger.error(f"No valid decision protocol for {decision_protocol}")
             raise Exception(f"No valid decision protocol for {decision_protocol}")
 
-        self.decision_making: DecisionProtocol = decision_protocols[decision_protocol](self.panelists)
+        self.decision_making: DecisionProtocol = decision_protocols[decision_protocol](
+            self.panelists
+        )
 
         start_time = time.perf_counter()
-        protocols = {
-            "memory": DiscourseMemory,
-            "report": DiscourseReport,
-            "relay": DiscourseRelay,
-            "debate": DiscourseDebate,
-        }
+
         if paradigm not in protocols:
             logger.error(f"No valid discourse policy for paradigm {paradigm}")
             raise Exception(f"No valid discourse policy for paradigm {paradigm}")
@@ -248,7 +261,9 @@ Decision-making: {self.decision_making.__class__.__name__}
             extract_all_drafts,
         )
 
-        discussion_time = timedelta(seconds=time.perf_counter() - start_time).total_seconds()
+        discussion_time = timedelta(
+            seconds=time.perf_counter() - start_time
+        ).total_seconds()
 
         global_mem = self.get_global_memory()
         agent_mems = []

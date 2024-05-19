@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Dict
+from typing import List
 
 from mallm.agents.panelist import Panelist
 from mallm.utils.types.Agreement import Agreement
@@ -26,6 +26,6 @@ class DecisionProtocol(ABC):
         turn (int): The current turn number.
 
         Returns:
-        str, bool: The decision result.
+        str, bool: str is the result of the conversation and bool describes whether they agreed or not.
         """
         pass

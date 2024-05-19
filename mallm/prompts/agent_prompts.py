@@ -1,6 +1,3 @@
-from langchain_core.prompts import ChatPromptTemplate
-
-
 def generate_chat_prompt_feedback(data):
     # TODO improve this prompt when it is used
     prompts = [
@@ -127,7 +124,11 @@ def generate_chat_prompt_draft(data):
 
 
 def generate_final_answer_prompt(
-    persona: str, persona_description: str, question: str, task: str, previous_answer: str
+    persona: str,
+    persona_description: str,
+    question: str,
+    task: str,
+    previous_answer: str,
 ):
     prompts = [
         {
@@ -147,7 +148,13 @@ def generate_final_answer_prompt(
     return prompts
 
 
-def generate_voting_prompt(persona: str, persona_description: str, task: str, question: str, solutions: list[str]):
+def generate_voting_prompt(
+    persona: str,
+    persona_description: str,
+    task: str,
+    question: str,
+    solutions: list[str],
+):
     prompts = [
         {
             "role": "system",

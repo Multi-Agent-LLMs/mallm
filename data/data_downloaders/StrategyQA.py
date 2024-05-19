@@ -1,7 +1,7 @@
 import json
+import random
 import urllib
 import uuid
-import random
 
 from data.data_download import DatasetDownloader
 

@@ -11,7 +11,6 @@ https://github.com/openai/simple-evals/blob/main/gpqa_eval.py
 import sys
 
 
-
 ANSWER_PATTERN_MULTICHOICE = r"(?i)Answer\s*:\s*([A-D])"
 
 import re
@@ -29,7 +28,7 @@ for question in data:
 
     reference = question["references"][0]
 
-    #print("Question:", question["input"])
+    # print("Question:", question["input"])
     print("\nAnswer:", answer)
     print("Reference:", reference)
 

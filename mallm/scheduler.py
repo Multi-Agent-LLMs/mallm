@@ -3,13 +3,12 @@ import glob
 import json
 import logging
 import os
+import sys
+from multiprocessing.pool import ThreadPool
 
 import fire
 import httpx
 import requests
-import sys
-from multiprocessing.pool import ThreadPool
-
 from colorama import just_fix_windows_console
 from openai import OpenAI
 
@@ -65,7 +64,9 @@ class Scheduler:
         # Check for the correct aruments provided
         # TODO: make this more robust and conclusive. All arguments should be checked for validity, making the use of MALLM as fool-proof as possible.
         if not os.path.exists(data):
-            logger.error("The input file you provided does not exist. Please specify a json lines file using --data.")
+            logger.error(
+                "The input file you provided does not exist. Please specify a json lines file using --data."
+            )
             sys.exit(1)
         if not data.endswith(".json"):
             logger.error(
@@ -73,7 +74,9 @@ class Scheduler:
             )
             sys.exit(1)
         if not out.endswith(".json"):
-            logger.error("The output file does not seem to be a json file. Please specify a file path using --out.")
+            logger.error(
+                "The output file does not seem to be a json file. Please specify a file path using --out."
+            )
             sys.exit(1)
         try:
             logger.info("Testing availability of the endpoint...")
@@ -107,7 +110,9 @@ class Scheduler:
                 try:
                     d.append(json.loads(line))
                 except ValueError as e:
-                    logger.error(f"""Invalid JSON in {data}! Please provide the input data in json lines format: {e}""")
+                    logger.error(
+                        f"""Invalid JSON in {data}! Please provide the input data in json lines format: {e}"""
+                    )
         logger.info(f"""Found {len(d)} samples to discuss.""")
 
         self.data = d
@@ -152,19 +157,21 @@ class Scheduler:
             print(e)
 
         try:
-            answer, globalMem, agentMems, turn, agreements, discussionTime = coordinator.discuss(
-                self.instruction,
-                sample["input"],
-                sample["context"],
-                self.use_moderator,
-                feedback_sentences=self.feedback_sentences,
-                paradigm=self.paradigm,
-                decision_protocol=self.decision_protocol,
-                max_turns=self.max_turns,
-                context_length=self.context_length,
-                include_current_turn_in_memory=self.include_current_turn_in_memory,
+            answer, globalMem, agentMems, turn, agreements, discussionTime = (
+                coordinator.discuss(
+                    self.instruction,
+                    sample["input"],
+                    sample["context"],
+                    self.use_moderator,
+                    feedback_sentences=self.feedback_sentences,
+                    paradigm=self.paradigm,
+                    decision_protocol=self.decision_protocol,
+                    max_turns=self.max_turns,
+                    context_length=self.context_length,
+                    include_current_turn_in_memory=self.include_current_turn_in_memory,
+                )
             )
-        except Exception as e:
+        except Exception:
             # More extensive error logging to ease debugging during async execution
             logger.error("Failed discussion.")
             exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -174,7 +181,9 @@ class Scheduler:
             while deep_tb.tb_next:
                 deep_tb = deep_tb.tb_next
                 fname = os.path.split(deep_tb.tb_frame.f_code.co_filename)[1]
-                logger.error(f"""-> at {fname}:{deep_tb.tb_lineno}, deeper function level error""")
+                logger.error(
+                    f"""-> at {fname}:{deep_tb.tb_lineno}, deeper function level error"""
+                )
 
         logger.info(
             f"""--> Agents discussed for {turn} turns, {'%.2f' % discussionTime} seconds ({'%.2f' % (float(discussionTime) / 60.0)} minutes) to get the final answer: \n"""
@@ -195,7 +204,9 @@ class Scheduler:
                 "context": sample["context"],
                 "answer": answer,
                 "references": sample["references"],
-                "agreements": [dataclasses.asdict(agreement) for agreement in agreements],
+                "agreements": [
+                    dataclasses.asdict(agreement) for agreement in agreements
+                ],
                 "turns": turn,
                 "clockSeconds": float("%.2f" % discussionTime),
                 "globalMemory": globalMem,

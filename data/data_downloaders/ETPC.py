@@ -15,5 +15,10 @@ class ETPCDownloader(DatasetDownloader):
         data = self.shuffle_and_select("train")
         json_str = ""
         for s in data.iter(batch_size=1):
-            json_str += f"""{{ "exampleId":"{str(uuid.uuid4())}", "datasetId": "{s["idx"][0]}", "input":[{json.dumps(s['sentence1'][0])}], "context": null, "references": [{json.dumps(s['sentence2'][0])}], "personas": null }}\n"""
+            if s["etpc_label"][0] == 1:
+                paraphrase_types_str = "Paraphrase Types: "
+                for p in list(set(s["paraphrase_types"][0])):
+                    paraphrase_types_str += p + ", "
+                paraphrase_types_str = paraphrase_types_str[:-2]
+                json_str += f"""{{ "exampleId":"{str(uuid.uuid4())}", "datasetId": "{s["idx"][0]}", "input":[{json.dumps(s['sentence1'][0])}], "context": [{json.dumps(paraphrase_types_str)}], "references": [{json.dumps(s['sentence2'][0])}], "personas": null }}\n"""
         self.save_to_json(json_str)

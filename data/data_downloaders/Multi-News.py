@@ -4,7 +4,7 @@ import uuid
 from data.data_download import DatasetDownloader
 
 
-class EuroparlDownloader(DatasetDownloader):
+class MultiNewsDownloader(DatasetDownloader):
     def custom_download(self):
         pass
 
