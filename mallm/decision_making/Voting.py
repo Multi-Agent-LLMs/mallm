@@ -27,9 +27,9 @@ class Voting(DecisionProtocol):
             return "", False
         final_answers = []
         for panelist in self.panelists:
-            prev_answer: Agreement = [
+            prev_answer: Agreement = next(
                 a for a in agreements if a.agent_id == panelist.id
-            ][0]
+            )
             response = panelist.llm.invoke(
                 generate_final_answer_prompt(
                     panelist.persona,
