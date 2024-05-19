@@ -321,7 +321,7 @@ class Agent:
                     debate_history.append(
                         {
                             "role": "user",
-                            "content": f"Contribution from agent {m["persona"]}:\n\n {m['text']}",
+                            "content": f"Contribution from agent {m['persona']}:\n\n {m['text']}",
                         }
                     )
         else:
