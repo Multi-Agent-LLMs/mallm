@@ -1,3 +1,10 @@
+import json
+import logging
+
+
+logger = logging.getLogger("mallm")
+
+
 def generate_chat_prompt_feedback(data):
     # TODO improve this prompt when it is used
     prompts = [
@@ -51,9 +58,11 @@ def generate_chat_prompt_improve(data):
         prompts.append(
             {
                 "role": "system",
-                "content": f"This is the discussion to the current point. Keep it in mind:\n{data['agentMemory']}",
+                "content": f"This is the discussion to the current point.",
             }
         )
+
+        prompts += data["agentMemory"]
 
     prompts.append(
         {
@@ -78,6 +87,8 @@ def generate_chat_prompt_improve(data):
             }
         )
 
+    logger.debug(f"Sending prompt: {json.dumps(prompts, indent=2)}")
+
     return prompts
 
 
@@ -93,9 +104,10 @@ def generate_chat_prompt_draft(data):
         prompts.append(
             {
                 "role": "system",
-                "content": f"This is the discussion to the current point. Keep it in mind:\n{data['agentMemory']}",
+                "content": f"This is the discussion to the current point.",
             }
         )
+        prompts += data["agentMemory"]
 
     prompts.append(
         {
@@ -119,6 +131,8 @@ def generate_chat_prompt_draft(data):
                 "content": "Based on the provided feedback, carefully re-examine your previous solution. Be open to compromise too and if you agree, answer with [AGREE] else answer with [DISAGREE] and explain why.",
             }
         )
+
+    logger.debug(f"Sending prompt: {json.dumps(prompts, indent=2)}")
 
     return prompts
 

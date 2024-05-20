@@ -49,7 +49,7 @@ class DiscourseRelay(DiscoursePolicy):
             logger.info("Ongoing. Current turn: " + str(turn))
 
             for i, a in enumerate(coordinator.agents):
-                memory_string, memory_ids, current_draft = a.get_memory_string(
+                debate_history, memory_ids, current_draft = a.get_debate_history(
                     context_length=context_length,
                     turn=turn,
                     include_this_turn=include_current_turn_in_memory,
@@ -64,7 +64,7 @@ class DiscourseRelay(DiscoursePolicy):
                         "current_draft": current_draft,
                         "persona": coordinator.moderator.persona,
                         "persona_description": coordinator.moderator.persona_description,
-                        "agent_memory": memory_string,
+                        "agent_memory": debate_history,
                     }
                     res, memory, agreements = coordinator.moderator.draft(
                         unique_id,
@@ -88,7 +88,7 @@ class DiscourseRelay(DiscoursePolicy):
                         "personaDescription": a.persona_description,
                         "sentsMin": feedback_sentences[0],
                         "sentsMax": feedback_sentences[1],
-                        "agentMemory": memory_string,
+                        "agentMemory": debate_history,
                     }
                     memories, agreements = a.participate(
                         use_moderator,
