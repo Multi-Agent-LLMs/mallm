@@ -193,7 +193,7 @@ class Coordinator:
         input_str: str,
         context: list[str],
         use_moderator: bool,
-        feedback_sentences: list[int],
+        feedback_sentences: tuple[int, int],
         paradigm: str,
         decision_protocol: str,
         max_turns: int,
