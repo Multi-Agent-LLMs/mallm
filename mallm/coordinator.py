@@ -9,21 +9,20 @@ from typing import Optional, Sequence, Type
 
 import fire
 import transformers
-from langchain.chains import LLMChain
 from openai import OpenAI
 
+from mallm.agents.agent import Agent
 from mallm.agents.moderator import Moderator
 from mallm.agents.panelist import Panelist
-from mallm.agents.agent import Agent
 from mallm.decision_making.DecisionProtocol import DecisionProtocol
 from mallm.decision_making.MajorityConsensus import MajorityConsensus
 from mallm.decision_making.Voting import Voting
-from mallm.models.HFTGIChat import HFTGIChat
 from mallm.discourse_policy.DiscourceDebate import DiscourseDebate
 from mallm.discourse_policy.DiscourceMemory import DiscourseMemory
 from mallm.discourse_policy.DiscourceRelay import DiscourseRelay
 from mallm.discourse_policy.DiscourceReport import DiscourseReport
 from mallm.discourse_policy.DiscoursePolicy import DiscoursePolicy
+from mallm.models.HFTGIChat import HFTGIChat
 from mallm.models.personas.PersonaGenerator import PersonaGenerator
 from mallm.prompts.coordinator_prompts import generate_chat_prompt_extract_result
 from mallm.utils.types.Agreement import Agreement

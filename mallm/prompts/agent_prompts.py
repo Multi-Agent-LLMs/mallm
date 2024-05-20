@@ -1,7 +1,6 @@
 import json
 import logging
 
-
 logger = logging.getLogger("mallm")
 
 
@@ -58,7 +57,7 @@ def generate_chat_prompt_improve(data):
         prompts.append(
             {
                 "role": "system",
-                "content": f"This is the discussion to the current point.",
+                "content": "This is the discussion to the current point.",
             }
         )
 
@@ -104,7 +103,7 @@ def generate_chat_prompt_draft(data):
         prompts.append(
             {
                 "role": "system",
-                "content": f"This is the discussion to the current point.",
+                "content": "This is the discussion to the current point.",
             }
         )
         prompts += data["agentMemory"]

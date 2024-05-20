@@ -2,10 +2,10 @@ import dataclasses
 import glob
 import json
 import logging
-from typing import Optional
 import os
 import sys
 from multiprocessing.pool import ThreadPool
+from typing import Optional
 
 import fire
 import httpx

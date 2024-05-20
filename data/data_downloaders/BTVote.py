@@ -1,7 +1,5 @@
 import json
 import os
-import random
-import urllib
 import uuid
 
 import pandas as pd
