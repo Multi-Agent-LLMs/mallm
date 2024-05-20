@@ -50,3 +50,16 @@ pytest = "^8.2.0"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.mypy]
+files = ["mallm/"]
+python_version = "3.9"
+warn_unused_configs = true
+
+#strict = true
+ignore_missing_imports = true
+warn_unreachable = true
+
+show_error_context = true
+show_error_codes = true
+pretty = true
