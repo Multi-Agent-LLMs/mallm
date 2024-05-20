@@ -46,7 +46,7 @@ os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
 class Scheduler:
     def __init__(
         self,
-        data: list[dict],
+        data_file: str,
         out: str,
         instruction: str,
         endpoint_url: str,
@@ -65,12 +65,12 @@ class Scheduler:
     ):
         # Check for the correct aruments provided
         # TODO: make this more robust and conclusive. All arguments should be checked for validity, making the use of MALLM as fool-proof as possible.
-        if not os.path.exists(data):
+        if not os.path.exists(data_file):
             logger.error(
                 "The input file you provided does not exist. Please specify a json lines file using --data."
             )
             sys.exit(1)
-        if not data.endswith(".json"):
+        if not data_file.endswith(".json"):
             logger.error(
                 "The input file you provided is not a json file. Please specify a json lines file using --data."
             )
@@ -105,15 +105,15 @@ class Scheduler:
             self.cleanMemoryBucket(memory_bucket_dir)
 
         # Read input data (format: json lines)
-        logger.info(f"""Reading {data}...""")
+        logger.info(f"""Reading {data_file}...""")
         d = []
-        with open(data) as f:
+        with open(data_file) as f:
             for line in f:
                 try:
                     d.append(json.loads(line))
                 except ValueError as e:
                     logger.error(
-                        f"""Invalid JSON in {data}! Please provide the input data in json lines format: {e}"""
+                        f"""Invalid JSON in {data_file}! Please provide the input data in json lines format: {e}"""
                     )
 
         self.data = d
@@ -186,7 +186,7 @@ class Scheduler:
             logger.error(exc_type)
             logger.error(exc_obj)
             deep_tb = exc_tb
-            while deep_tb.tb_next:
+            while deep_tb and deep_tb.tb_next:
                 deep_tb = deep_tb.tb_next
                 fname = os.path.split(deep_tb.tb_frame.f_code.co_filename)[1]
                 logger.error(
@@ -302,7 +302,7 @@ class Scheduler:
 
 
 def main(
-    data: list[dict],
+    data: str,
     out: str,
     instruction: str,
     endpoint_url: str,
