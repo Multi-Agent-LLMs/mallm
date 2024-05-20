@@ -51,7 +51,7 @@ class Coordinator:
         self,
         model: HFTGIChat,
         client: OpenAI,
-        agent_generator: PersonaGenerator = None,
+        agent_generator: Optional[PersonaGenerator] = None,
         use_moderator: bool = False,
         memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
     ):

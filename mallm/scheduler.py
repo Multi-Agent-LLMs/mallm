@@ -46,13 +46,13 @@ os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
 class Scheduler:
     def __init__(
         self,
-        data: str,
+        data: list[dict],
         out: str,
         instruction: str,
         endpoint_url: str,
         use_moderator: bool = False,
         max_turns: int = 10,
-        feedback_sentences: list[int] = (3, 4),
+        feedback_sentences: tuple[int, int] = (3, 4),
         paradigm: str = "memory",
         decision_protocol: str = "majority_consensus",
         context_length: int = 1,
@@ -128,8 +128,8 @@ class Scheduler:
         self.context_length = context_length
         self.include_current_turn_in_memory = include_current_turn_in_memory
         self.max_concurrent_requests = max_concurrent_requests
-        self.extract_all_drafts = (extract_all_drafts,)
-        self.debate_rounds = (debate_rounds,)
+        self.extract_all_drafts = extract_all_drafts
+        self.debate_rounds = debate_rounds
         self.clear_memory_bucket = clear_memory_bucket
         self.memory_bucket_dir = memory_bucket_dir
         self.total_samples = len(self.data)
@@ -308,7 +308,7 @@ def main(
     endpoint_url: str,
     use_moderator: bool = False,
     max_turns: int = 10,
-    feedback_sentences: list[int] = (3, 4),
+    feedback_sentences: tuple[int, int] = (3, 4),
     paradigm: str = "memory",
     decision_protocol: str = "majority_consensus",
     context_length: int = 1,
