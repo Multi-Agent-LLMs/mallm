@@ -19,7 +19,7 @@ class DiscoursePolicy(ABC):
         task_instruction: str,
         input_str: str,
         use_moderator: bool = False,
-        feedback_sentences: list[int] = (3, 4),
+        feedback_sentences: tuple[int, int] = (3, 4),
         max_turns: int = None,
         context_length: int = 1,
         include_current_turn_in_memory: bool = False,
