@@ -5,7 +5,7 @@ import os
 import time
 import uuid
 from datetime import timedelta
-from typing import Optional
+from typing import Optional, Sequence, Type
 
 import fire
 import transformers
@@ -33,12 +33,12 @@ os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
 
 logger = logging.getLogger("mallm")
 
-decision_protocols = {
+decision_protocols: dict[str, Type[DecisionProtocol]] = {
     "majority_consensus": MajorityConsensus,
     "voting": Voting,
 }
 
-protocols = {
+protocols: dict[str, Type[DiscoursePolicy]] = {
     "memory": DiscourseMemory,
     "report": DiscourseReport,
     "relay": DiscourseRelay,
@@ -58,13 +58,13 @@ class Coordinator:
         self.personas = None
         self.id = str(uuid.uuid4())
         self.short_id = self.id[:4]
-        self.panelists = []
-        self.agents = []
+        self.panelists: list[Panelist] = []
+        self.agents: Sequence[Agent] = []
         self.use_moderator = use_moderator
-        self.moderator = None
+        self.moderator: Optional[Moderator] = None
         self.memory_bucket_dir = memory_bucket_dir
         self.memory_bucket = self.memory_bucket_dir + "global_" + self.id
-        self.decision_making: DecisionProtocol = None
+        self.decision_making: Optional[DecisionProtocol] = None
         self.llm = model
         self.client = client
         self.agent_generator = agent_generator
@@ -77,6 +77,10 @@ class Coordinator:
         """
         self.panelists = []
         self.agents = []
+
+        if self.agent_generator is None:
+            logger.error("No persona generator provided.")
+            raise Exception("No persona generator provided.")
 
         personas = self.agent_generator.generate_personas(
             f"{task_instruction} {input_str}", 3
@@ -91,8 +95,8 @@ class Coordinator:
                 )
             )
 
-        if use_moderator:
-            self.agents = [self.moderator] + self.panelists
+        if use_moderator and self.moderator is not None:
+            self.agents = [agent for agent in [self.moderator] + self.panelists]
         else:
             self.agents = self.panelists
 
@@ -222,9 +226,7 @@ class Coordinator:
             logger.error(f"No valid decision protocol for {decision_protocol}")
             raise Exception(f"No valid decision protocol for {decision_protocol}")
 
-        self.decision_making: DecisionProtocol = decision_protocols[decision_protocol](
-            self.panelists
-        )
+        self.decision_making = decision_protocols[decision_protocol](self.panelists)
 
         start_time = time.perf_counter()
 
@@ -267,7 +269,7 @@ Decision-making: {self.decision_making.__class__.__name__}
         for a in self.agents:
             agent_mems.append(a.get_memory()[0])
         if turn >= max_turns:  # if no agreement was reached
-            current_draft = None
+            current_draft = "No agreement was reached."
         else:
             current_draft = self.llm.invoke(
                 generate_chat_prompt_extract_result(input_str, current_draft),
