@@ -160,7 +160,7 @@ class Scheduler:
             )
         except Exception as e:
             logger.error("Failed intializing coordinator.")
-            print(e)
+            logger.error(e)
 
         try:
             answer, globalMem, agentMems, turn, agreements, discussionTime = (
