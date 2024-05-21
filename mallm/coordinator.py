@@ -5,10 +5,13 @@ import os
 import time
 import uuid
 from datetime import timedelta
+from typing import Optional, Sequence, Type
 
 import fire
 import transformers
+from openai import OpenAI
 
+from mallm.agents.agent import Agent
 from mallm.agents.moderator import Moderator
 from mallm.agents.panelist import Panelist
 from mallm.decision_making.DecisionProtocol import DecisionProtocol
@@ -19,6 +22,7 @@ from mallm.discourse_policy.DiscourceMemory import DiscourseMemory
 from mallm.discourse_policy.DiscourceRelay import DiscourseRelay
 from mallm.discourse_policy.DiscourceReport import DiscourseReport
 from mallm.discourse_policy.DiscoursePolicy import DiscoursePolicy
+from mallm.models.HFTGIChat import HFTGIChat
 from mallm.models.personas.PersonaGenerator import PersonaGenerator
 from mallm.prompts.coordinator_prompts import generate_chat_prompt_extract_result
 from mallm.utils.types.Agreement import Agreement
@@ -28,12 +32,12 @@ os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
 
 logger = logging.getLogger("mallm")
 
-decision_protocols = {
+decision_protocols: dict[str, Type[DecisionProtocol]] = {
     "majority_consensus": MajorityConsensus,
     "voting": Voting,
 }
 
-protocols = {
+protocols: dict[str, Type[DiscoursePolicy]] = {
     "memory": DiscourseMemory,
     "report": DiscourseReport,
     "relay": DiscourseRelay,
@@ -44,27 +48,27 @@ protocols = {
 class Coordinator:
     def __init__(
         self,
-        model,
-        client,
-        agent_generator: PersonaGenerator = None,
-        use_moderator=False,
-        memory_bucket_dir="./mallm/utils/memory_bucket/",
+        model: HFTGIChat,
+        client: OpenAI,
+        agent_generator: Optional[PersonaGenerator] = None,
+        use_moderator: bool = False,
+        memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
     ):
         self.personas = None
         self.id = str(uuid.uuid4())
         self.short_id = self.id[:4]
-        self.panelists = []
-        self.agents = []
+        self.panelists: list[Panelist] = []
+        self.agents: Sequence[Agent] = []
         self.use_moderator = use_moderator
-        self.moderator = None
+        self.moderator: Optional[Moderator] = None
         self.memory_bucket_dir = memory_bucket_dir
         self.memory_bucket = self.memory_bucket_dir + "global_" + self.id
-        self.decision_making: DecisionProtocol = None
+        self.decision_making: Optional[DecisionProtocol] = None
         self.llm = model
         self.client = client
         self.agent_generator = agent_generator
 
-    def init_agents(self, task_instruction, input_str, use_moderator):
+    def init_agents(self, task_instruction: str, input_str: str, use_moderator: bool):
         """
         Instantiates the agents by
         1) identify helpful personas
@@ -72,6 +76,10 @@ class Coordinator:
         """
         self.panelists = []
         self.agents = []
+
+        if self.agent_generator is None:
+            logger.error("No persona generator provided.")
+            raise Exception("No persona generator provided.")
 
         personas = self.agent_generator.generate_personas(
             f"{task_instruction} {input_str}", 3
@@ -86,8 +94,8 @@ class Coordinator:
                 )
             )
 
-        if use_moderator:
-            self.agents = [self.moderator] + self.panelists
+        if use_moderator and self.moderator is not None:
+            self.agents = [agent for agent in [self.moderator] + self.panelists]
         else:
             self.agents = self.panelists
 
@@ -106,16 +114,16 @@ class Coordinator:
 
     def update_global_memory(
         self,
-        unique_id,
-        turn,
-        agent_id,
-        persona,
-        contribution,
-        text,
-        agreement,
-        extracted_draft,
-        memory_ids,
-        prompt_args,
+        unique_id: int,
+        turn: int,
+        agent_id: str,
+        persona: str,
+        contribution: str,
+        text: str,
+        agreement: bool,
+        extracted_draft: str,
+        memory_ids: list[int],
+        prompt_args: dict,
     ):
         """
         Updates the dbm memory with another discussion entry.
@@ -162,7 +170,7 @@ class Coordinator:
             logger.error(f"Failed to save agent memory to {self.memory_bucket}: {e}")
             logger.error(self.get_global_memory())
 
-    def update_memories(self, memories, agents_to_update):
+    def update_memories(self, memories: list[dict], agents_to_update: list[Agent]):
         """
         Updates the memories of all declared agents.
         """
@@ -184,18 +192,18 @@ class Coordinator:
 
     def discuss(
         self,
-        task_instruction,
-        input_str,
-        context,
-        use_moderator,
-        feedback_sentences=(3, 4),
-        paradigm="memory",
-        decision_protocol="majority_consensus",
-        max_turns=None,
-        context_length=1,
-        include_current_turn_in_memory=False,
-        extract_all_drafts=False,
-        debate_rounds=1,
+        task_instruction: str,
+        input_str: str,
+        context: list[str],
+        use_moderator: bool,
+        feedback_sentences: tuple[int, int],
+        paradigm: str,
+        decision_protocol: str,
+        max_turns: int,
+        context_length: int,
+        include_current_turn_in_memory: bool,
+        extract_all_drafts: bool,
+        debate_rounds: Optional[int],
     ) -> tuple[str, list, list, int, list[Agreement], float]:
         """
         The routine responsible for the discussion between agents to solve a task.
@@ -207,12 +215,9 @@ class Coordinator:
 
         Returns the final response agreed on, the global memory, agent specific memory, turns needed, last agreements of agents
         """
-        if context:
-            if isinstance(context, list):
-                for c in context:
-                    task_instruction += "\n" + c
-            elif isinstance(context, str):
-                task_instruction += "\n" + context
+        if context and isinstance(context, list):
+            for c in context:
+                task_instruction += "\n" + c
 
         self.init_agents(task_instruction, input_str, use_moderator=use_moderator)
 
@@ -220,9 +225,7 @@ class Coordinator:
             logger.error(f"No valid decision protocol for {decision_protocol}")
             raise Exception(f"No valid decision protocol for {decision_protocol}")
 
-        self.decision_making: DecisionProtocol = decision_protocols[decision_protocol](
-            self.panelists
-        )
+        self.decision_making = decision_protocols[decision_protocol](self.panelists)
 
         start_time = time.perf_counter()
 
@@ -265,7 +268,7 @@ Decision-making: {self.decision_making.__class__.__name__}
         for a in self.agents:
             agent_mems.append(a.get_memory()[0])
         if turn >= max_turns:  # if no agreement was reached
-            current_draft = None
+            current_draft = "No agreement was reached."
         else:
             current_draft = self.llm.invoke(
                 generate_chat_prompt_extract_result(input_str, current_draft),
