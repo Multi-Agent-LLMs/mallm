@@ -65,8 +65,14 @@ jobs:
         coverage report
         coverage xml
         coverage-badge -o coverage.svg
-    - name: Upload coverage badge
-      uses: actions/upload-artifact@v2
-      with:
-        name: coverage-badge
-        path: coverage.svg
+    - name: Commit and push coverage badge
+      run: |
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        git checkout -b gh-pages
+        mv coverage.svg docs/coverage.svg
+        git add docs/coverage.svg
+        git commit -m 'Update coverage badge'
+        git push origin gh-pages
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
