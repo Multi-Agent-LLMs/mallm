@@ -14,7 +14,7 @@ from mallm.prompts.agent_prompts import (
     generate_chat_prompt_improve,
 )
 from mallm.prompts.coordinator_prompts import generate_chat_prompt_extract_result
-from mallm.utils.types.Agreement import Agreement
+from mallm.utils.types import Agreement
 
 logger = logging.getLogger("mallm")
 

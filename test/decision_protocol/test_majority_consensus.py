@@ -1,7 +1,7 @@
 from mallm.agents.panelist import Panelist
 from mallm.coordinator import Coordinator
 from mallm.decision_making.MajorityConsensus import MajorityConsensus
-from mallm.utils.types.Agreement import Agreement
+from mallm.utils.types import Agreement
 
 coordinator = Coordinator(None, None)
 panelists = [Panelist(None, None, coordinator, f"Person{i}", "") for i in range(5)]

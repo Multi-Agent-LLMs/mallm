@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
+from mallm.agents.panelist import Panelist
 from mallm.discourse_policy.DiscoursePolicy import DiscoursePolicy
+from mallm.utils.types import Agreement
 
 if TYPE_CHECKING:
     from mallm.coordinator import Coordinator
@@ -18,7 +20,7 @@ class DiscourseRelay(DiscoursePolicy):
         input_str: str,
         use_moderator: bool = False,
         feedback_sentences: tuple[int, int] = (3, 4),
-        max_turns: int = None,
+        max_turns: Optional[int] = None,
         context_length: int = 1,
         include_current_turn_in_memory: bool = False,
         extract_all_drafts: bool = False,
@@ -28,7 +30,7 @@ class DiscourseRelay(DiscoursePolicy):
         turn = 0
         unique_id = 0
         memories = []
-        agreements = []
+        agreements: list[Agreement] = []
 
         logger.debug(
             """Paradigm: Relay
@@ -44,7 +46,7 @@ class DiscourseRelay(DiscoursePolicy):
         """
         )
 
-        while not decision and (turn < max_turns or max_turns is None):
+        while not decision and (max_turns is None or turn < max_turns):
             turn = turn + 1
             logger.info("Ongoing. Current turn: " + str(turn))
 
@@ -79,7 +81,7 @@ class DiscourseRelay(DiscoursePolicy):
                     memories = coordinator.update_memories(
                         memories, [a, coordinator.agents[next_a]]
                     )
-                else:
+                elif isinstance(a, Panelist):
                     template_filling = {
                         "taskInstruction": task_instruction,
                         "input": input_str,
@@ -101,7 +103,15 @@ class DiscourseRelay(DiscoursePolicy):
                         [a, coordinator.agents[next_a]],
                         agreements,
                     )
+                else:
+                    logger.error("Agent type not recognized.")
+                    raise Exception("Agent type not recognized.")
+
                 unique_id = unique_id + 1
+
+            if coordinator.decision_making is None:
+                logger.error("No decision making module found.")
+                raise Exception("No decision making module found.")
 
             draft, decision = coordinator.decision_making.make_decision(
                 agreements, turn, task_instruction, input_str

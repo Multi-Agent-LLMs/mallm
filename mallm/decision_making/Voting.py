@@ -7,7 +7,7 @@ from mallm.prompts.agent_prompts import (
     generate_final_answer_prompt,
     generate_voting_prompt,
 )
-from mallm.utils.types.Agreement import Agreement
+from mallm.utils.types import Agreement
 
 logger = logging.getLogger("mallm")
 

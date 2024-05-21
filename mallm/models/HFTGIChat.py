@@ -1,10 +1,10 @@
-from typing import Any, Iterator, Optional, Union
+from typing import Any, Iterator, Optional, Union, cast
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.llms import LLM
-from langchain_core.outputs import GenerationChunk, LLMResult
+from langchain_core.outputs import LLMResult
 from langchain_core.prompt_values import PromptValue
 from openai import OpenAI
 
@@ -32,21 +32,22 @@ class HFTGIChat(LLM):
 
     # Overwrite to send direct chat structure to tgi endpoint
     def _convert_input(self, input: LanguageModelInput) -> PromptValue:
-        return input
+        return cast(PromptValue, input)
 
     # Overwrite to send direct chat structure to tgi endpoint
     def generate_prompt(
         self,
-        prompts: list[str],
+        prompts: list[PromptValue],
         stop: Optional[list[str]] = None,
         callbacks: Optional[Union[Callbacks, list[Callbacks]]] = None,
         **kwargs: Any,
     ) -> LLMResult:
-        return self.generate(prompts, stop=stop, callbacks=callbacks, **kwargs)
+        prompts_str = [prompt.to_string() for prompt in prompts]
+        return self.generate(prompts_str, stop=stop, callbacks=callbacks, **kwargs)
 
     def _call(
         self,
-        prompt: list,
+        prompt,
         stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
@@ -71,15 +72,21 @@ class HFTGIChat(LLM):
             model="tgi", messages=prompt, stream=False, stop=["<|eot_id|>"]
         )
 
+        if len(chat_completion.choices) == 0:
+            raise ValueError("No completion returned from model")
+
+        if chat_completion.choices[0].message.content is None:
+            raise ValueError("No completion returned from model")
+
         return chat_completion.choices[0].message.content.strip()
 
     def _stream(
         self,
-        prompt: list,
+        prompt,
         stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> Iterator[GenerationChunk]:
+    ) -> Iterator:
         """Stream the LLM on the given prompt.
 
         This method should be overridden by subclasses that support streaming.

@@ -25,7 +25,7 @@ from mallm.discourse_policy.DiscoursePolicy import DiscoursePolicy
 from mallm.models.HFTGIChat import HFTGIChat
 from mallm.models.personas.PersonaGenerator import PersonaGenerator
 from mallm.prompts.coordinator_prompts import generate_chat_prompt_extract_result
-from mallm.utils.types.Agreement import Agreement
+from mallm.utils.types import Agreement
 
 transformers.logging.set_verbosity_error()
 os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
@@ -170,7 +170,7 @@ class Coordinator:
             logger.error(f"Failed to save agent memory to {self.memory_bucket}: {e}")
             logger.error(self.get_global_memory())
 
-    def update_memories(self, memories: list[dict], agents_to_update: list[Agent]):
+    def update_memories(self, memories: list[dict], agents_to_update: Sequence[Agent]):
         """
         Updates the memories of all declared agents.
         """

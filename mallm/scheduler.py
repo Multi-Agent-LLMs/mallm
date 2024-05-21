@@ -5,7 +5,7 @@ import logging
 import os
 import sys
 from multiprocessing.pool import ThreadPool
-from typing import Optional
+from typing import Any, Optional
 
 import fire
 import httpx
@@ -38,7 +38,7 @@ library_logger.addHandler(stream_handler)
 logging.basicConfig(filename="log.txt", filemode="w")
 logger = logging.getLogger("mallm")
 
-output_dicts = []
+output_dicts: list[dict[str, Any]] = []
 
 os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
 

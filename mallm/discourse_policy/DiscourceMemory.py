@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from mallm.discourse_policy.DiscoursePolicy import DiscoursePolicy
+from mallm.utils.types import Agreement
 
 if TYPE_CHECKING:
     from mallm.coordinator import Coordinator
@@ -18,7 +19,7 @@ class DiscourseMemory(DiscoursePolicy):
         input_str: str,
         use_moderator: bool = False,
         feedback_sentences: tuple[int, int] = (3, 4),
-        max_turns: int = None,
+        max_turns: Optional[int] = None,
         context_length: int = 1,
         include_current_turn_in_memory: bool = False,
         extract_all_drafts: bool = False,
@@ -28,7 +29,7 @@ class DiscourseMemory(DiscoursePolicy):
         turn = 0
         unique_id = 0
         memories = []
-        agreements = []
+        agreements: list[Agreement] = []
 
         logger.debug(
             """Paradigm: Memory
@@ -43,13 +44,13 @@ class DiscourseMemory(DiscoursePolicy):
         └───┘◄──────┴───┴──────►└───┘
         """
         )
-        while not decision and (turn < max_turns or max_turns is None):
+        while not decision and (max_turns is None or turn < max_turns):
             turn = turn + 1
             logger.info(
                 "Discussion " + coordinator.id + " ongoing. Current turn: " + str(turn)
             )
 
-            if use_moderator:
+            if use_moderator and coordinator.moderator is not None:
                 debate_history, memory_ids, current_draft = (
                     coordinator.moderator.get_debate_history(
                         context_length=context_length,
@@ -108,6 +109,10 @@ class DiscourseMemory(DiscoursePolicy):
                     agreements,
                 )
                 unique_id = unique_id + 1
+
+            if coordinator.decision_making is None:
+                logger.error("No decision making module found.")
+                raise Exception("No decision making module found.")
 
             draft, decision = coordinator.decision_making.make_decision(
                 agreements, turn, task_instruction, input_str

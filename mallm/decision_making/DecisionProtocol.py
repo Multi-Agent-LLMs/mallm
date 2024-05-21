@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 from mallm.agents.panelist import Panelist
-from mallm.utils.types.Agreement import Agreement
+from mallm.utils.types import Agreement
 
 
 class DecisionProtocol(ABC):

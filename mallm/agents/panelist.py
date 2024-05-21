@@ -1,6 +1,9 @@
+from typing import Any
+
 import fire
 
 from mallm.agents.agent import Agent
+from mallm.utils.types import Agreement
 
 
 class Panelist(Agent):
@@ -14,8 +17,8 @@ class Panelist(Agent):
         template_filling,
         extract_all_drafts,
         agents_to_update,
-        agreements,
-    ):
+        agreements: list[Agreement],
+    ) -> tuple[list[dict[str, Any]], list[Agreement]]:
         """
         Either calls feedback() or improve() depending on whether a moderator is present
         """
