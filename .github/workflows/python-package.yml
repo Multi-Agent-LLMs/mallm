@@ -70,6 +70,7 @@ jobs:
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
         git checkout -b gh-pages
+        mkdir docs
         mv coverage.svg docs/coverage.svg
         git add docs/coverage.svg
         git commit -m 'Update coverage badge'
