@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from typing import List
 
 from mallm.agents.panelist import Panelist
 from mallm.utils.types.Agreement import Agreement
@@ -11,18 +10,18 @@ class DecisionProtocol(ABC):
     Any concrete decision protocol must implement the make_decision method.
     """
 
-    def __init__(self, panelists: List[Panelist]):
+    def __init__(self, panelists: list[Panelist]):
         self.panelists = panelists
 
     @abstractmethod
     def make_decision(
-        self, agreements: List[Agreement], turn: int, task: str, question: str
+        self, agreements: list[Agreement], turn: int, task: str, question: str
     ) -> tuple[str, bool]:
         """
         Abstract method to make a decision based on agreements, the current turn number, and the list of panelists.
 
         Parameters:
-        agreements (List[Dict[str, any]]): A list of agreement objects from agents.
+        agreements (list[dict[str, any]]): A list of agreement objects from agents.
         turn (int): The current turn number.
 
         Returns:

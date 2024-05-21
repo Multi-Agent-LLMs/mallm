@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterator, List, Optional, Union
+from typing import Any, Iterator, Optional, Union
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
@@ -37,9 +37,9 @@ class HFTGIChat(LLM):
     # Overwrite to send direct chat structure to tgi endpoint
     def generate_prompt(
         self,
-        prompts: List[str],
-        stop: Optional[List[str]] = None,
-        callbacks: Optional[Union[Callbacks, List[Callbacks]]] = None,
+        prompts: list[str],
+        stop: Optional[list[str]] = None,
+        callbacks: Optional[Union[Callbacks, list[Callbacks]]] = None,
         **kwargs: Any,
     ) -> LLMResult:
         return self.generate(prompts, stop=stop, callbacks=callbacks, **kwargs)
@@ -47,7 +47,7 @@ class HFTGIChat(LLM):
     def _call(
         self,
         prompt: list,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
@@ -76,7 +76,7 @@ class HFTGIChat(LLM):
     def _stream(
         self,
         prompt: list,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
@@ -110,7 +110,7 @@ class HFTGIChat(LLM):
             yield message
 
     @property
-    def _identifying_params(self) -> Dict[str, Any]:
+    def _identifying_params(self) -> dict[str, Any]:
         """Return a dictionary of identifying parameters."""
         return {
             # The model name allows users to specify custom token counting

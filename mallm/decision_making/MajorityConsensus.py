@@ -1,5 +1,3 @@
-from typing import List
-
 from mallm.agents.panelist import Panelist
 from mallm.decision_making.DecisionProtocol import DecisionProtocol
 
@@ -12,7 +10,7 @@ class MajorityConsensus(DecisionProtocol):
 
     def __init__(
         self,
-        panelists: List[Panelist],
+        panelists: list[Panelist],
         majority_turn: int = 5,
         majority_agents: int = 3,
     ):
