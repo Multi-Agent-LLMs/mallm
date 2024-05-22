@@ -47,7 +47,7 @@ class HFTGIChat(LLM):
             cast(list[str], prompts), stop=stop, callbacks=callbacks, **kwargs
         )
 
-    def _call(
+    def _call(  # type: ignore
         self,
         prompt,
         stop: Optional[list[str]] = None,
@@ -82,13 +82,13 @@ class HFTGIChat(LLM):
 
         return chat_completion.choices[0].message.content.strip()
 
-    def _stream(
+    def _stream(  # type: ignore
         self,
         prompt,
         stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> Iterator:
+    ) -> Iterator:  # type: ignore
         """Stream the LLM on the given prompt.
 
         This method should be overridden by subclasses that support streaming.
