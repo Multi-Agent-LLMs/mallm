@@ -3,8 +3,9 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Optional
 
+from mallm.agents.moderator import Moderator
 from mallm.agents.panelist import Panelist
-from mallm.discourse_policy.DiscoursePolicy import DiscoursePolicy
+from mallm.discourse_policy.policy import DiscoursePolicy
 from mallm.utils.types import Agreement, TemplateFilling
 
 if TYPE_CHECKING:
@@ -14,6 +15,32 @@ logger = logging.getLogger("mallm")
 
 
 class DiscourseDebate(DiscoursePolicy):
+    def moderator_call(
+        self,
+        moderator: Moderator,
+        coordinator: Coordinator,
+        agent_index: int,
+        memory_ids: list[int],
+        template_filling: TemplateFilling,
+        extract_all_drafts: bool,
+    ) -> None:
+        pass
+
+    def panelist_call(
+        self,
+        agent: Panelist,
+        coordinator: Coordinator,
+        agent_index: int,
+        memory_ids: list[int],
+        template_filling: TemplateFilling,
+        extract_all_drafts: bool,
+    ) -> None:
+        pass
+
+    def __init__(self, debate_rounds: int = 1):
+        super().__init__("")
+        self.debate_rounds = debate_rounds
+
     def discuss(
         self,
         coordinator: Coordinator,
