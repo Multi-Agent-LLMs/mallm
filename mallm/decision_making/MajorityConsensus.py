@@ -31,7 +31,7 @@ class MajorityConsensus(DecisionProtocol):
             if not agents_agree:
                 return "", False
 
-            return agents_agree[-1].response, sum(
+            return agents_agree[-1].response, len(
                 [a.agreement for a in agreements if a.agreement]
             ) == len(self.panelists)
         else:
@@ -45,6 +45,6 @@ class MajorityConsensus(DecisionProtocol):
 
             return (
                 agents_agree[-1].response,
-                sum([a.agreement for a in agreements if a.agreement])
+                len([a.agreement for a in agreements if a.agreement])
                 > len(self.panelists) / 2,
             )

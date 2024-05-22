@@ -1,8 +1,6 @@
 import json
 import logging
 
-from openai import OpenAI
-
 from mallm.models.HFTGIChat import HFTGIChat
 from mallm.models.personas.PersonaGenerator import PersonaGenerator
 
@@ -56,12 +54,12 @@ New Participant:
         while len(agents) < num_agents:
             # Send the prompt to the InferenceClient
             response = self.llm.invoke(
-                current_prompt
-                + [
+                [
+                    *current_prompt,
                     {
                         "role": "user",
                         "content": "Please use the follow the examples to generate a useful persona for the task! Only answer with the JSON for the next persona!",
-                    }
+                    },
                 ]
             )
             try:

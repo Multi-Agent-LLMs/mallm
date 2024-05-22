@@ -43,9 +43,7 @@ class HFTGIChat(LLM):
         **kwargs: Any,
     ) -> LLMResult:
         # this is a wrong cast, but we need it because we use a custom call function which can handle this
-        return self.generate(
-            cast(list[str], prompts), stop=stop, callbacks=callbacks, **kwargs
-        )
+        return self.generate(prompts, stop=stop, callbacks=callbacks, **kwargs)  # type: ignore
 
     def _call(  # type: ignore
         self,

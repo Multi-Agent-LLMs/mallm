@@ -8,10 +8,7 @@ import uuid
 from datetime import timedelta
 from typing import Optional, Sequence, Type
 
-import fire
 import httpx
-import transformers
-from openai import OpenAI
 
 from mallm.agents.agent import Agent
 from mallm.agents.moderator import Moderator
@@ -29,7 +26,6 @@ from mallm.models.personas.PersonaGenerator import PersonaGenerator
 from mallm.prompts.coordinator_prompts import generate_chat_prompt_extract_result
 from mallm.utils.types import Agreement, Memory
 
-transformers.logging.set_verbosity_error()
 os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
 
 logger = logging.getLogger("mallm")
@@ -99,7 +95,7 @@ class Coordinator:
             )
 
         if use_moderator and self.moderator is not None:
-            self.agents = [agent for agent in [self.moderator] + self.panelists]
+            self.agents = [self.moderator, *self.panelists]
         else:
             self.agents = self.panelists
 
@@ -213,9 +209,9 @@ class Coordinator:
 -------------
 Instruction: {task_instruction}
 Input: {input_str}
-Feedback sentences: {str(feedback_sentences)}
+Feedback sentences: {feedback_sentences!s}
 Maximum turns: {max_turns}
-Agents: {str([a.persona for a in self.agents])}
+Agents: {[a.persona for a in self.agents]!s}
 Paradigm: {policy.__class__.__name__}
 Decision-making: {self.decision_making.__class__.__name__}
 -------------"""
