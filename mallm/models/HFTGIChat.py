@@ -42,8 +42,10 @@ class HFTGIChat(LLM):
         callbacks: Optional[Union[Callbacks, list[Callbacks]]] = None,
         **kwargs: Any,
     ) -> LLMResult:
-        prompts_str = [prompt.to_string() for prompt in prompts]
-        return self.generate(prompts_str, stop=stop, callbacks=callbacks, **kwargs)
+        # this is a wrong cast, but we need it because we use a custom call function which can handle this
+        return self.generate(
+            cast(list[str], prompts), stop=stop, callbacks=callbacks, **kwargs
+        )
 
     def _call(
         self,

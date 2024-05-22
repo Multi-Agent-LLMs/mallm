@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Optional
 
 from mallm.agents.panelist import Panelist
 from mallm.discourse_policy.DiscoursePolicy import DiscoursePolicy
-from mallm.utils.types import Agreement
+from mallm.utils.types import Agreement, TemplateFilling
 
 if TYPE_CHECKING:
     from mallm.coordinator import Coordinator
@@ -60,14 +60,14 @@ class DiscourseRelay(DiscoursePolicy):
                 if i == len(coordinator.agents) - 1:
                     next_a = 0  # start again with agent 0 (loop)
                 if a == coordinator.moderator:
-                    template_filling = {
-                        "task_instruction": task_instruction,
-                        "input": input_str,
-                        "current_draft": current_draft,
-                        "persona": coordinator.moderator.persona,
-                        "persona_description": coordinator.moderator.persona_description,
-                        "agent_memory": debate_history,
-                    }
+                    template_filling = TemplateFilling(
+                        task_instruction=task_instruction,
+                        input_str=input_str,
+                        current_draft=current_draft,
+                        persona=coordinator.moderator.persona,
+                        persona_description=coordinator.moderator.persona_description,
+                        agent_memory=debate_history,
+                    )
                     res, memory, agreements = coordinator.moderator.draft(
                         unique_id,
                         turn,
@@ -82,16 +82,16 @@ class DiscourseRelay(DiscoursePolicy):
                         memories, [a, coordinator.agents[next_a]]
                     )
                 elif isinstance(a, Panelist):
-                    template_filling = {
-                        "taskInstruction": task_instruction,
-                        "input": input_str,
-                        "currentDraft": current_draft,
-                        "persona": a.persona,
-                        "personaDescription": a.persona_description,
-                        "sentsMin": feedback_sentences[0],
-                        "sentsMax": feedback_sentences[1],
-                        "agentMemory": debate_history,
-                    }
+                    template_filling = TemplateFilling(
+                        task_instruction=task_instruction,
+                        input_str=input_str,
+                        current_draft=current_draft,
+                        persona=a.persona,
+                        persona_description=a.persona_description,
+                        agent_memory=debate_history,
+                        sents_max=feedback_sentences[1],
+                        sents_min=feedback_sentences[0],
+                    )
                     memories, agreements = a.participate(
                         use_moderator,
                         memories,

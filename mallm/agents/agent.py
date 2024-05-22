@@ -1,3 +1,4 @@
+import dataclasses
 import dbm
 import json
 import logging
@@ -14,7 +15,7 @@ from mallm.prompts.agent_prompts import (
     generate_chat_prompt_improve,
 )
 from mallm.prompts.coordinator_prompts import generate_chat_prompt_extract_result
-from mallm.utils.types import Agreement
+from mallm.utils.types import Agreement, TemplateFilling
 
 logger = logging.getLogger("mallm")
 
@@ -84,10 +85,10 @@ class Agent:
     def improve(
         self,
         unique_id,
-        turn,
+        turn: int,
         memory_ids,
-        template_filling,
-        extract_all_drafts,
+        template_filling: TemplateFilling,
+        extract_all_drafts: bool,
         agreements: list[Agreement],
     ):
         res = self.llm.invoke(
@@ -97,7 +98,7 @@ class Agent:
         current_draft = None
         if extract_all_drafts:
             current_draft = self.llm.invoke(
-                generate_chat_prompt_extract_result(template_filling["input"], res),
+                generate_chat_prompt_extract_result(template_filling.input_str, res),
                 client=self.client,
             )
         memory = {
@@ -110,7 +111,7 @@ class Agent:
             "agreement": agreements[-1].agreement,
             "extractedDraft": current_draft,
             "memoryIds": memory_ids,
-            "additionalArgs": template_filling,
+            "additionalArgs": dataclasses.asdict(template_filling),
         }
         logger.debug(f"Agent {self.short_id} is improving answer")
         self.coordinator.update_global_memory(
@@ -123,17 +124,17 @@ class Agent:
             agreements[-1].agreement,
             None,
             memory_ids,
-            template_filling,
+            dataclasses.asdict(template_filling),
         )
         return res, memory, agreements
 
     def draft(
         self,
         unique_id,
-        turn,
+        turn: int,
         memory_ids,
-        template_filling,
-        extract_all_drafts,
+        template_filling: TemplateFilling,
+        extract_all_drafts: bool,
         agreements: list[Agreement],
         is_moderator=False,
     ):
@@ -144,7 +145,7 @@ class Agent:
         current_draft = None
         if extract_all_drafts:
             current_draft = self.llm.invoke(
-                generate_chat_prompt_extract_result(template_filling["input"], res),
+                generate_chat_prompt_extract_result(template_filling.input_str, res),
                 client=self.client,
             )
         if is_moderator:
@@ -163,7 +164,7 @@ class Agent:
             "agreement": agreement.agreement,
             "extractedDraft": current_draft,
             "memoryIds": memory_ids,
-            "additionalArgs": template_filling,
+            "additionalArgs": dataclasses.asdict(template_filling),
         }
         logger.debug(f"Agent {self.short_id} is drafting")
         self.coordinator.update_global_memory(
@@ -176,11 +177,18 @@ class Agent:
             agreement.agreement,
             None,
             memory_ids,
-            template_filling,
+            dataclasses.asdict(template_filling),
         )
         return res, memory, agreements
 
-    def feedback(self, unique_id, turn, memory_ids, template_filling, agreements):
+    def feedback(
+        self,
+        unique_id,
+        turn: int,
+        memory_ids,
+        template_filling: TemplateFilling,
+        agreements: list[Agreement],
+    ):
         res = self.llm.invoke(
             generate_chat_prompt_feedback(template_filling), client=self.client
         )
@@ -195,7 +203,7 @@ class Agent:
             "agreement": agreements[-1].agreement,
             "extractedDraft": None,
             "memoryIds": memory_ids,
-            "additionalArgs": template_filling,
+            "additionalArgs": dataclasses.asdict(template_filling),
         }
         logger.debug(f"Agent {self.short_id} provides feedback to another agent")
         self.coordinator.update_global_memory(
@@ -208,7 +216,7 @@ class Agent:
             agreements[-1].agreement,
             None,
             memory_ids,
-            template_filling,
+            dataclasses.asdict(template_filling),
         )
         return res, memory, agreements
 

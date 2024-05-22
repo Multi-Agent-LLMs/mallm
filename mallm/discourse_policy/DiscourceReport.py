@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Optional
 
 from mallm.agents.panelist import Panelist
 from mallm.discourse_policy.DiscoursePolicy import DiscoursePolicy
-from mallm.utils.types import Agreement
+from mallm.utils.types import Agreement, TemplateFilling
 
 if TYPE_CHECKING:
     from mallm.coordinator import Coordinator
@@ -61,14 +61,14 @@ class DiscourseReport(DiscoursePolicy):
                     )
                 )
 
-                template_filling = {
-                    "taskInstruction": task_instruction,
-                    "input": input_str,
-                    "currentDraft": current_draft,
-                    "persona": coordinator.moderator.persona,
-                    "personaDescription": coordinator.moderator.persona_description,
-                    "agentMemory": debate_history,
-                }
+                template_filling = TemplateFilling(
+                    task_instruction=task_instruction,
+                    input_str=input_str,
+                    current_draft=current_draft,
+                    persona=coordinator.moderator.persona,
+                    persona_description=coordinator.moderator.persona_description,
+                    agent_memory=debate_history,
+                )
                 res, memory, agreements = coordinator.moderator.draft(
                     unique_id,
                     turn,
@@ -89,14 +89,14 @@ class DiscourseReport(DiscoursePolicy):
                     turn=turn,
                     include_this_turn=include_current_turn_in_memory,
                 )
-                template_filling = {
-                    "taskInstruction": task_instruction,
-                    "input": input_str,
-                    "currentDraft": current_draft,
-                    "persona": coordinator.panelists[0].persona,
-                    "personaDescription": coordinator.panelists[0].persona_description,
-                    "agentMemory": debate_history,
-                }
+                template_filling = TemplateFilling(
+                    task_instruction=task_instruction,
+                    input_str=input_str,
+                    current_draft=current_draft,
+                    persona=coordinator.panelists[0].persona,
+                    persona_description=coordinator.panelists[0].persona_description,
+                    agent_memory=debate_history,
+                )
                 res, memory, agreements = coordinator.panelists[0].draft(
                     unique_id,
                     turn,
@@ -120,16 +120,16 @@ class DiscourseReport(DiscoursePolicy):
                     turn=turn,
                     include_this_turn=include_current_turn_in_memory,
                 )
-                template_filling = {
-                    "taskInstruction": task_instruction,
-                    "input": input_str,
-                    "currentDraft": current_draft,
-                    "persona": p.persona,
-                    "personaDescription": p.persona_description,
-                    "sentsMin": feedback_sentences[0],
-                    "sentsMax": feedback_sentences[1],
-                    "agentMemory": debate_history,
-                }
+                template_filling = TemplateFilling(
+                    task_instruction=task_instruction,
+                    input_str=input_str,
+                    current_draft=current_draft,
+                    persona=p.persona,
+                    persona_description=p.persona_description,
+                    agent_memory=debate_history,
+                    sents_max=feedback_sentences[1],
+                    sents_min=feedback_sentences[0],
+                )
 
                 memories, agreements = p.participate(
                     True,

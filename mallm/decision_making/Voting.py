@@ -21,7 +21,9 @@ class Voting(DecisionProtocol):
         super().__init__(panelists)
         self.vote_turn = vote_turn
 
-    def make_decision(self, agreements, turn, task, question):
+    def make_decision(
+        self, agreements: list[Agreement], turn: int, task: str, question: str
+    ) -> tuple[str, bool]:
         if turn < self.vote_turn:
             return "", False
         final_answers = []

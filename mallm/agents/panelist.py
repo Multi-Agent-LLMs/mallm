@@ -3,19 +3,19 @@ from typing import Any
 import fire
 
 from mallm.agents.agent import Agent
-from mallm.utils.types import Agreement
+from mallm.utils.types import Agreement, TemplateFilling
 
 
 class Panelist(Agent):
     def participate(
         self,
-        use_moderator,
+        use_moderator: bool,
         memories,
         unique_id,
-        turn,
-        memory_ids,
-        template_filling,
-        extract_all_drafts,
+        turn: int,
+        memory_ids: list[int],
+        template_filling: TemplateFilling,
+        extract_all_drafts: bool,
         agents_to_update,
         agreements: list[Agreement],
     ) -> tuple[list[dict[str, Any]], list[Agreement]]:
