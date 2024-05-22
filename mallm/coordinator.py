@@ -97,7 +97,7 @@ class Coordinator:
             )
 
         if use_moderator and self.moderator is not None:
-            self.agents = [agent for agent in [self.moderator] + self.panelists]
+            self.agents = [self.moderator, *self.panelists]
         else:
             self.agents = self.panelists
 
@@ -211,9 +211,9 @@ class Coordinator:
 -------------
 Instruction: {task_instruction}
 Input: {input_str}
-Feedback sentences: {str(feedback_sentences)}
+Feedback sentences: {feedback_sentences!s}
 Maximum turns: {max_turns}
-Agents: {str([a.persona for a in self.agents])}
+Agents: {[a.persona for a in self.agents]!s}
 Paradigm: {policy.__class__.__name__}
 Decision-making: {self.decision_making.__class__.__name__}
 -------------"""
