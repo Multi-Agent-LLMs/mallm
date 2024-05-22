@@ -12,7 +12,16 @@ class Agreement:
 
 @dataclass
 class Memory:
-    pass
+    message_id: int
+    turn: int
+    agent_id: str
+    persona: str
+    contribution: str
+    text: str
+    agreement: Optional[bool]
+    extracted_draft: Optional[str]
+    memory_ids: list[int]
+    additional_args: dict
 
 
 @dataclass

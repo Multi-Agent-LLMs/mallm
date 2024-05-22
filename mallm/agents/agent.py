@@ -15,7 +15,7 @@ from mallm.prompts.agent_prompts import (
     generate_chat_prompt_improve,
 )
 from mallm.prompts.coordinator_prompts import generate_chat_prompt_extract_result
-from mallm.utils.types import Agreement, TemplateFilling
+from mallm.utils.types import Agreement, TemplateFilling, Memory
 
 logger = logging.getLogger("mallm")
 
@@ -90,7 +90,7 @@ class Agent:
         template_filling: TemplateFilling,
         extract_all_drafts: bool,
         agreements: list[Agreement],
-    ):
+    ) -> tuple[str, Memory, list[Agreement]]:
         res = self.llm.invoke(
             generate_chat_prompt_improve(template_filling), client=self.client
         )
@@ -101,31 +101,20 @@ class Agent:
                 generate_chat_prompt_extract_result(template_filling.input_str, res),
                 client=self.client,
             )
-        memory = {
-            "messageId": unique_id,
-            "turn": turn,
-            "agentId": self.id,
-            "persona": self.persona,
-            "contribution": "improve",
-            "text": res,
-            "agreement": agreements[-1].agreement,
-            "extractedDraft": current_draft,
-            "memoryIds": memory_ids,
-            "additionalArgs": dataclasses.asdict(template_filling),
-        }
-        logger.debug(f"Agent {self.short_id} is improving answer")
-        self.coordinator.update_global_memory(
-            unique_id,
-            turn,
-            self.id,
-            self.persona,
-            "improve",
-            res,
-            agreements[-1].agreement,
-            None,
-            memory_ids,
-            dataclasses.asdict(template_filling),
+        memory = Memory(
+            message_id=unique_id,
+            turn=turn,
+            agent_id=self.id,
+            persona=self.persona,
+            contribution="improve",
+            text=res,
+            agreement=agreements[-1].agreement,
+            extracted_draft=current_draft,
+            memory_ids=memory_ids,
+            additional_args=dataclasses.asdict(template_filling),
         )
+        logger.debug(f"Agent {self.short_id} is improving answer")
+        self.coordinator.update_global_memory(memory)
         return res, memory, agreements
 
     def draft(
@@ -137,7 +126,7 @@ class Agent:
         extract_all_drafts: bool,
         agreements: list[Agreement],
         is_moderator=False,
-    ):
+    ) -> tuple[str, Memory, list[Agreement]]:
         res = self.llm.invoke(
             generate_chat_prompt_draft(template_filling), client=self.client
         )
@@ -154,31 +143,20 @@ class Agent:
             )
         else:
             agreement = agreements[-1]
-        memory = {
-            "messageId": unique_id,
-            "turn": turn,
-            "agentId": self.id,
-            "persona": self.persona,
-            "contribution": "draft",
-            "text": res,
-            "agreement": agreement.agreement,
-            "extractedDraft": current_draft,
-            "memoryIds": memory_ids,
-            "additionalArgs": dataclasses.asdict(template_filling),
-        }
-        logger.debug(f"Agent {self.short_id} is drafting")
-        self.coordinator.update_global_memory(
-            unique_id,
-            turn,
-            self.id,
-            self.persona,
-            "draft",
-            res,
-            agreement.agreement,
-            None,
-            memory_ids,
-            dataclasses.asdict(template_filling),
+        memory = Memory(
+            message_id=unique_id,
+            turn=turn,
+            agent_id=self.id,
+            persona=self.persona,
+            contribution="draft",
+            text=res,
+            agreement=agreements[-1].agreement,
+            extracted_draft=current_draft,
+            memory_ids=memory_ids,
+            additional_args=dataclasses.asdict(template_filling),
         )
+        logger.debug(f"Agent {self.short_id} is drafting")
+        self.coordinator.update_global_memory(memory)
         return res, memory, agreements
 
     def feedback(
@@ -188,110 +166,73 @@ class Agent:
         memory_ids,
         template_filling: TemplateFilling,
         agreements: list[Agreement],
-    ):
+    ) -> tuple[str, Memory, list[Agreement]]:
         res = self.llm.invoke(
             generate_chat_prompt_feedback(template_filling), client=self.client
         )
         agreements = self.agree(res, agreements)
-        memory = {
-            "messageId": unique_id,
-            "turn": turn,
-            "agentId": self.id,
-            "persona": self.persona,
-            "contribution": "feedback",
-            "text": res,
-            "agreement": agreements[-1].agreement,
-            "extractedDraft": None,
-            "memoryIds": memory_ids,
-            "additionalArgs": dataclasses.asdict(template_filling),
-        }
-        logger.debug(f"Agent {self.short_id} provides feedback to another agent")
-        self.coordinator.update_global_memory(
-            unique_id,
-            turn,
-            self.id,
-            self.persona,
-            "feedback",
-            res,
-            agreements[-1].agreement,
-            None,
-            memory_ids,
-            dataclasses.asdict(template_filling),
+        memory = Memory(
+            message_id=unique_id,
+            turn=turn,
+            agent_id=self.id,
+            persona=self.persona,
+            contribution="feedback",
+            text=res,
+            agreement=agreements[-1].agreement,
+            extracted_draft=None,
+            memory_ids=memory_ids,
+            additional_args=dataclasses.asdict(template_filling),
         )
+        logger.debug(f"Agent {self.short_id} provides feedback to another agent")
+        self.coordinator.update_global_memory(memory)
         return res, memory, agreements
 
-    def update_memory(
-        self,
-        unique_id,
-        turn,
-        agent_id,
-        persona,
-        contribution,
-        text,
-        agreement,
-        extracted_draft,
-        memory_ids,
-        prompt_args,
-    ):
+    def update_memory(self, memory: Memory) -> None:
         """
         Updates the dbm memory with another discussion entry.
-        Returns string
         """
-
-        data_dict = {
-            "messageId": unique_id,
-            "turn": turn,
-            "agentId": agent_id,
-            "persona": str(persona).replace('"', "'"),
-            "additionalArgs": prompt_args,
-            "contribution": contribution,
-            "memoryIds": memory_ids,
-            "text": str(text).replace('"', "'"),
-            "agreement": agreement,
-            "extractedDraft": str(extracted_draft).replace('"', "'"),
-        }
-
         with dbm.open(self.memory_bucket, "c") as db:
-            db[str(unique_id)] = json.dumps(data_dict)
+            db[str(memory.message_id)] = json.dumps(dataclasses.asdict(memory))
         self.save_memory_to_json()
 
-    def get_memory(
+    def get_memories(
         self,
         context_length=None,
         turn=None,
         include_this_turn=True,
         extract_draft=False,
-    ):
+    ) -> tuple[Optional[list[Memory]], list[int], Optional[str]]:
         """
-        Retrieves memory from the agents memory bucket as a dictionary
-        Returns: dict
+        Retrieves memory from the agents memory bucket as a Memory
+        Returns: Memory
         """
-        memory = []
+        memories = []
         memory_ids = []
         current_draft = None
         if os.path.exists(self.memory_bucket + ".dat"):
             with dbm.open(self.memory_bucket, "r") as db:
                 for key in db.keys():
-                    memory.append(
-                        json.loads(db[key].decode())
-                    )  # TODO: Maybe reverse sort
+                    json_object = json.loads(db[key].decode())
+                    memories.append(Memory(**json_object))  # TODO: Maybe reverse sort
             # memory = sorted(memory.items(), key=lambda x: x["messageId"], reverse=False)
             context_memory = []
-            for m in memory:
+            for memory in memories:
                 if context_length:
-                    if m["turn"] >= turn - context_length:
-                        if turn > m["turn"] or include_this_turn:
-                            context_memory.append(m)
-                            memory_ids.append(int(m["messageId"]))
-                            if m["contribution"] == "draft" or (
-                                m["contribution"] == "improve"
+                    if memory.turn >= turn - context_length:
+                        if turn > memory.turn or include_this_turn:
+                            context_memory.append(memory)
+                            memory_ids.append(int(memory.message_id))
+                            if memory.contribution == "draft" or (
+                                memory.contribution == "improve"
                             ):
-                                current_draft = m["text"]
+                                current_draft = memory.text
                 else:
-                    context_memory.append(m)
-                    memory_ids.append(int(m["messageId"]))
-                    if m["contribution"] == "draft" or (m["contribution"] == "improve"):
-                        current_draft = m["text"]
+                    context_memory.append(memory)
+                    memory_ids.append(int(memory.message_id))
+                    if memory.contribution == "draft" or (
+                        memory.contribution == "improve"
+                    ):
+                        current_draft = memory.text
         else:
             context_memory = None
 
@@ -314,22 +255,22 @@ class Agent:
         context_length refers to the amount of turns the agent can use as rationale
         Returns: string
         """
-        memory, memory_ids, current_draft = self.get_memory(
+        memories, memory_ids, current_draft = self.get_memories(
             context_length=context_length,
             turn=turn,
             include_this_turn=include_this_turn,
             extract_draft=extract_draft,
         )
-        if memory:
+        if memories:
             debate_history = []
-            for m in memory:
-                if m["agentId"] == self.id:
-                    debate_history.append({"role": "assistant", "content": m["text"]})
+            for memory in memories:
+                if memory.agent_id == self.id:
+                    debate_history.append({"role": "assistant", "content": memory.text})
                 else:
                     debate_history.append(
                         {
                             "role": "user",
-                            "content": f"Contribution from agent {m['persona']}:\n\n {m['text']}",
+                            "content": f"Contribution from agent {memory.persona}:\n\n {memory.text}",
                         }
                     )
         else:
@@ -340,18 +281,20 @@ class Agent:
         """
         Converts the memory bucket dbm data to json format
         """
-        if out:
-            try:
-                with open(out, "w") as f:
-                    json.dump(self.get_memory(), f)
-            except Exception as e:
-                print(f"Failed to save agent memory to {out}: {e}")
-        else:
-            try:
-                with open(self.memory_bucket + ".json", "w") as f:
-                    json.dump(self.get_memory(), f)
-            except Exception as e:
-                print(f"Failed to save agent memory to {self.memory_bucket}: {e}")
+        save_path = out if out else self.memory_bucket + ".json"
+        try:
+            memories, memory_ids, current_draft = self.get_memories()
+            with open(save_path, "w") as f:
+                json.dump(
+                    (
+                        [dataclasses.asdict(memory) for memory in memories],
+                        memory_ids,
+                        current_draft,
+                    ),
+                    f,
+                )
+        except Exception as e:
+            logger.error(f"Failed to save agent memory to {save_path}: {e}")
 
 
 def main():

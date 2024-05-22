@@ -1,3 +1,4 @@
+import dataclasses
 import dbm
 import json
 import logging
@@ -25,7 +26,7 @@ from mallm.discourse_policy.DiscoursePolicy import DiscoursePolicy
 from mallm.models.HFTGIChat import HFTGIChat
 from mallm.models.personas.PersonaGenerator import PersonaGenerator
 from mallm.prompts.coordinator_prompts import generate_chat_prompt_extract_result
-from mallm.utils.types import Agreement
+from mallm.utils.types import Agreement, Memory
 
 transformers.logging.set_verbosity_error()
 os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
@@ -112,43 +113,17 @@ class Coordinator:
             )
         return agent_dicts
 
-    def update_global_memory(
-        self,
-        unique_id: int,
-        turn: int,
-        agent_id: str,
-        persona: str,
-        contribution: str,
-        text: str,
-        agreement: bool,
-        extracted_draft: str,
-        memory_ids: list[int],
-        prompt_args: dict,
-    ):
+    def update_global_memory(self, memory: Memory):
         """
         Updates the dbm memory with another discussion entry.
         Returns string
         """
-
-        data_dict = {
-            "messageId": unique_id,
-            "turn": turn,
-            "agentId": agent_id,
-            "persona": str(persona).replace('"', "'"),
-            "additionalArgs": prompt_args,
-            "contribution": contribution,
-            "memoryIds": memory_ids,
-            "text": str(text).replace('"', "'"),
-            "agreement": agreement,
-            "extractedDraft": str(extracted_draft).replace('"', "'"),
-        }
-
         with dbm.open(self.memory_bucket, "c") as db:
-            db[str(unique_id)] = json.dumps(data_dict)
-            logger.debug(str(db[str(unique_id)]))
+            db[str(memory.message_id)] = json.dumps(dataclasses.asdict(memory))
+            logger.debug(str(db[str(memory.message_id)]))
         self.save_global_memory_to_json()
 
-    def get_global_memory(self):
+    def get_global_memory(self) -> list[Memory]:
         """
         Retrieves memory from the agents memory bucket as a dictionary
         Returns: dict
@@ -156,39 +131,34 @@ class Coordinator:
         memory = []
         with dbm.open(self.memory_bucket, "r") as db:
             for key in db.keys():
-                memory.append(json.loads(db[key].decode()))
+                json_object = json.loads(db[key].decode())
+                memory.append(Memory(**json_object))
         return memory
 
-    def save_global_memory_to_json(self):
+    def save_global_memory_to_json(self) -> None:
         """
         Converts the memory bucket dbm data to json format
         """
         try:
             with open(self.memory_bucket + ".json", "w") as f:
-                json.dump(self.get_global_memory(), f)
+                json.dump(
+                    [dataclasses.asdict(memory) for memory in self.get_global_memory()],
+                    f,
+                )
         except Exception as e:
             logger.error(f"Failed to save agent memory to {self.memory_bucket}: {e}")
             logger.error(self.get_global_memory())
 
-    def update_memories(self, memories: list[dict], agents_to_update: Sequence[Agent]):
+    def update_memories(
+        self, memories: list[Memory], agents_to_update: Sequence[Agent]
+    ) -> list:
         """
         Updates the memories of all declared agents.
         """
-        for c in memories:
-            for a in agents_to_update:
-                a.update_memory(
-                    c["messageId"],
-                    c["turn"],
-                    c["agentId"],
-                    c["persona"],
-                    c["contribution"],
-                    c["text"],
-                    c["agreement"],
-                    c["extractedDraft"],
-                    c["memoryIds"],
-                    c["additionalArgs"],
-                )
-        return []
+        for memory in memories:
+            for agent in agents_to_update:
+                agent.update_memory(memory)
+        return []  # TODO feels weird why return empty list
 
     def discuss(
         self,
@@ -204,7 +174,9 @@ class Coordinator:
         include_current_turn_in_memory: bool,
         extract_all_drafts: bool,
         debate_rounds: Optional[int],
-    ) -> tuple[str, list, list, int, list[Agreement], float]:
+    ) -> tuple[
+        str, list[Memory], list[Optional[list[Memory]]], int, list[Agreement], float
+    ]:
         """
         The routine responsible for the discussion between agents to solve a task.
 
@@ -266,7 +238,7 @@ Decision-making: {self.decision_making.__class__.__name__}
         global_mem = self.get_global_memory()
         agent_mems = []
         for a in self.agents:
-            agent_mems.append(a.get_memory()[0])
+            agent_mems.append(a.get_memories()[0])
         if turn >= max_turns:  # if no agreement was reached
             current_draft = "No agreement was reached."
         else:

@@ -102,7 +102,7 @@ class Scheduler:
 
         # Cleaning the memory bucked from previous runs
         if clear_memory_bucket:
-            self.cleanMemoryBucket(memory_bucket_dir)
+            self.clean_memory_bucket(memory_bucket_dir)
 
         # Read input data (format: json lines)
         logger.info(f"""Reading {data_file}...""")
@@ -161,9 +161,10 @@ class Scheduler:
         except Exception as e:
             logger.error("Failed intializing coordinator.")
             logger.error(e)
+            return
 
         try:
-            answer, globalMem, agentMems, turn, agreements, discussionTime = (
+            answer, global_mem, agent_mems, turn, agreements, discussion_time = (
                 coordinator.discuss(
                     self.instruction,
                     sample["input"],
@@ -192,9 +193,10 @@ class Scheduler:
                 logger.error(
                     f"""-> at {fname}:{deep_tb.tb_lineno}, deeper function level error"""
                 )
+            return
 
         logger.info(
-            f"""--> Agents discussed for {turn} turns, {'%.2f' % discussionTime} seconds ({'%.2f' % (float(discussionTime) / 60.0)} minutes) to get the final answer: \n"""
+            f"""--> Agents discussed for {turn} turns, {'%.2f' % discussion_time} seconds ({'%.2f' % (float(discussion_time) / 60.0)} minutes) to get the final answer: \n"""
             + str(answer)
         )
 
@@ -215,9 +217,13 @@ class Scheduler:
                     dataclasses.asdict(agreement) for agreement in agreements
                 ],
                 "turns": turn,
-                "clockSeconds": float("%.2f" % discussionTime),
-                "globalMemory": globalMem,
-                "agentMemory": agentMems,
+                "clockSeconds": float("%.2f" % discussion_time),
+                "globalMemory": [dataclasses.asdict(memory) for memory in global_mem],
+                "agentMemory": [
+                    [dataclasses.asdict(memory) for memory in agent]
+                    for agent in agent_mems
+                    if agent
+                ],
             }
         )
         try:
@@ -271,7 +277,7 @@ class Scheduler:
             else:
                 logger.error("Process %s failed!" % i)
 
-    def cleanMemoryBucket(self, memory_bucket_dir=None):
+    def clean_memory_bucket(self, memory_bucket_dir=None):
         """
         Deletes all stored global memory
         """
