@@ -1,9 +1,7 @@
-from typing import Any, Sequence
-
-import fire
+from typing import Sequence
 
 from mallm.agents.agent import Agent
-from mallm.utils.types import Agreement, TemplateFilling, Memory
+from mallm.utils.types import Agreement, Memory, TemplateFilling
 
 
 class Panelist(Agent):

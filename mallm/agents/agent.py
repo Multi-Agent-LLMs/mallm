@@ -1,27 +1,26 @@
 from __future__ import annotations
+
 import dataclasses
 import dbm
 import json
 import logging
 import os
 import uuid
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-import fire
 import httpx
 from langchain_core.language_models import LLM
 
-
 if TYPE_CHECKING:
-    from mallm.coordinator import Coordinator
     from mallm.agents.moderator import Moderator
+    from mallm.coordinator import Coordinator
 from mallm.prompts.agent_prompts import (
     generate_chat_prompt_draft,
     generate_chat_prompt_feedback,
     generate_chat_prompt_improve,
 )
 from mallm.prompts.coordinator_prompts import generate_chat_prompt_extract_result
-from mallm.utils.types import Agreement, TemplateFilling, Memory
+from mallm.utils.types import Agreement, Memory, TemplateFilling
 
 logger = logging.getLogger("mallm")
 
@@ -156,7 +155,7 @@ class Agent:
             persona=self.persona,
             contribution="draft",
             text=res,
-            agreement=agreements[-1].agreement,
+            agreement=agreement.agreement,
             extracted_draft=current_draft,
             memory_ids=memory_ids,
             additional_args=dataclasses.asdict(template_filling),

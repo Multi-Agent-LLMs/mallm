@@ -1,8 +1,6 @@
 import json
 import logging
 
-from openai import OpenAI
-
 from mallm.models.HFTGIChat import HFTGIChat
 from mallm.models.personas.PersonaGenerator import PersonaGenerator
 

@@ -238,7 +238,7 @@ class Scheduler:
 
         self.completed_samples += 1
         logger.info(
-            f"""Completed samples: {self.completed_samples}. Samples left: {self.total_samples-self.completed_samples}."""
+            f"""Completed samples: {self.completed_samples}. Samples left: {self.total_samples - self.completed_samples}."""
         )
         return answer
 

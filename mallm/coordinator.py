@@ -8,10 +8,8 @@ import uuid
 from datetime import timedelta
 from typing import Optional, Sequence, Type
 
-import fire
 import httpx
 import transformers
-from openai import OpenAI
 
 from mallm.agents.agent import Agent
 from mallm.agents.moderator import Moderator
