@@ -9,7 +9,6 @@ from datetime import timedelta
 from typing import Optional, Sequence, Type
 
 import httpx
-import transformers
 
 from mallm.agents.agent import Agent
 from mallm.agents.moderator import Moderator
@@ -27,7 +26,6 @@ from mallm.models.personas.PersonaGenerator import PersonaGenerator
 from mallm.prompts.coordinator_prompts import generate_chat_prompt_extract_result
 from mallm.utils.types import Agreement, Memory
 
-transformers.logging.set_verbosity_error()
 os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
 
 logger = logging.getLogger("mallm")

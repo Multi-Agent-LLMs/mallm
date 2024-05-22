@@ -28,12 +28,6 @@ readme = "README.md"
 python = "^3.9"
 langchain-core = "^0.1.42"
 langchain = "^0.1.16"
-torch = "^2.2.2"
-torchvision = "^0.17.2"
-torchaudio = "^2.2.2"
-transformers = "^4.39.3"
-accelerate = "^0.29.2"
-bitsandbytes = "^0.43.1"
 fire = "^0.6.0"
 tqdm = "^4.66.2"
 datasets = "^2.18.0"
@@ -42,13 +36,13 @@ cffi = "^1.16.0"
 openai = "^1.25.0"
 huggingface-hub = "0.23.0"
 requests = "^2.32.2"
-types-requests = "^2.32.0.20240521"
 
 [tool.poetry.group.dev.dependencies]
 fire = "^0.6.0"
 tqdm = "^4.66.2"
 pytest = "^8.2.0"
 mypy = "^1.10.0"
+types-requests = "^2.32.0.20240521"
 
 [build-system]
 requires = ["poetry-core"]
