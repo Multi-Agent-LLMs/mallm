@@ -43,4 +43,4 @@ jobs:
         pytest
     - name: Type check with mypy
       run: |
-        mypy mallm --strict
+        mypy mallm/

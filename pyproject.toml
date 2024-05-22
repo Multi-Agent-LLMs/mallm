@@ -59,7 +59,7 @@ files = ["mallm/"]
 python_version = "3.9"
 warn_unused_configs = true
 
-#strict = true
+strict = true
 ignore_missing_imports = true
 warn_unreachable = true
 
