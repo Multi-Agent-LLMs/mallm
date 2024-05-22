@@ -27,7 +27,7 @@ jobs:
     - name: Run image
       uses: abatilo/actions-poetry@v2
     - name: Install dependencies
-      run: poetry install
+      run: poetry install --with dev
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
