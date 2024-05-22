@@ -1,4 +1,9 @@
-def generate_chat_prompt_extract_result(question, result):
+from typing import Optional
+
+
+def generate_chat_prompt_extract_result(
+    question: Optional[str], result: str
+) -> list[dict[str, str]]:
     prompts = [
         {
             "role": "system",
@@ -21,7 +26,9 @@ def generate_chat_prompt_extract_result(question, result):
     return prompts
 
 
-def generate_chat_prompt_baseline(task_instruction, input):
+def generate_chat_prompt_baseline(
+    task_instruction: str, input_str: str
+) -> list[dict[str, str]]:
     prompts = [
         {
             "role": "system",
@@ -33,7 +40,7 @@ def generate_chat_prompt_baseline(task_instruction, input):
         },
         {
             "role": "system",
-            "content": f"Input: {input}",
+            "content": f"Input: {input_str}",
         },
         {
             "role": "user",

@@ -9,6 +9,7 @@ from datetime import timedelta
 from typing import Optional, Sequence, Type
 
 import fire
+import httpx
 import transformers
 from openai import OpenAI
 
@@ -50,7 +51,7 @@ class Coordinator:
     def __init__(
         self,
         model: HFTGIChat,
-        client: OpenAI,
+        client: httpx.Client,
         agent_generator: Optional[PersonaGenerator] = None,
         use_moderator: bool = False,
         memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
@@ -69,7 +70,9 @@ class Coordinator:
         self.client = client
         self.agent_generator = agent_generator
 
-    def init_agents(self, task_instruction: str, input_str: str, use_moderator: bool):
+    def init_agents(
+        self, task_instruction: str, input_str: str, use_moderator: bool
+    ) -> None:
         """
         Instantiates the agents by
         1) identify helpful personas
@@ -100,7 +103,7 @@ class Coordinator:
         else:
             self.agents = self.panelists
 
-    def get_agents(self):
+    def get_agents(self) -> list[dict[str, str]]:
         agent_dicts = []
         for a in self.agents:
             agent_dicts.append(
@@ -113,7 +116,7 @@ class Coordinator:
             )
         return agent_dicts
 
-    def update_global_memory(self, memory: Memory):
+    def update_global_memory(self, memory: Memory) -> None:
         """
         Updates the dbm memory with another discussion entry.
         Returns string
@@ -151,14 +154,13 @@ class Coordinator:
 
     def update_memories(
         self, memories: list[Memory], agents_to_update: Sequence[Agent]
-    ) -> list:
+    ) -> None:
         """
         Updates the memories of all declared agents.
         """
         for memory in memories:
             for agent in agents_to_update:
                 agent.update_memory(memory)
-        return []  # TODO feels weird why return empty list
 
     def discuss(
         self,
@@ -248,11 +250,3 @@ Decision-making: {self.decision_making.__class__.__name__}
             )
 
         return current_draft, global_mem, agent_mems, turn, agreements, discussion_time
-
-
-def main():
-    pass
-
-
-if __name__ == "__main__":
-    fire.Fire(main)

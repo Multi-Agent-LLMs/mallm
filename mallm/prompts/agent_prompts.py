@@ -66,7 +66,7 @@ def generate_chat_prompt_improve(data: TemplateFilling) -> list[dict[str, str]]:
     return prompts
 
 
-def generate_chat_prompt_draft(data: TemplateFilling):
+def generate_chat_prompt_draft(data: TemplateFilling) -> list[dict[str, str]]:
     prompts = base_prompt(data)
     if data.agent_memory is not None:
         prompts.append(

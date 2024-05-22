@@ -58,11 +58,11 @@ class Scheduler:
         context_length: int = 1,
         include_current_turn_in_memory: bool = False,
         extract_all_drafts: bool = False,
-        debate_rounds=Optional[int],
+        debate_rounds: Optional[int] = None,
         max_concurrent_requests: int = 100,
         clear_memory_bucket: bool = True,
         memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
-    ):
+    ) -> None:
         # Check for the correct aruments provided
         # TODO: make this more robust and conclusive. All arguments should be checked for validity, making the use of MALLM as fool-proof as possible.
         if not os.path.exists(data_file):
@@ -140,11 +140,11 @@ class Scheduler:
 
     def run_discussion(
         self,
-        client: OpenAI,
+        client: httpx.Client,
         llm: HFTGIChat,
         agent_generator: TGIPersonaGenerator,
-        sample: dict,
-    ):
+        sample: dict[str, Any],
+    ) -> Optional[str]:
         """
         Runs a single discussion between agents on a sample.
         """
@@ -161,7 +161,7 @@ class Scheduler:
         except Exception as e:
             logger.error("Failed intializing coordinator.")
             logger.error(e)
-            return
+            return None
 
         try:
             answer, global_mem, agent_mems, turn, agreements, discussion_time = (
@@ -193,7 +193,7 @@ class Scheduler:
                 logger.error(
                     f"""-> at {fname}:{deep_tb.tb_lineno}, deeper function level error"""
                 )
-            return
+            return None
 
         logger.info(
             f"""--> Agents discussed for {turn} turns, {'%.2f' % discussion_time} seconds ({'%.2f' % (float(discussion_time) / 60.0)} minutes) to get the final answer: \n"""
@@ -242,7 +242,7 @@ class Scheduler:
         )
         return answer
 
-    def manage_discussions(self, client: httpx.Client):
+    def manage_discussions(self, client: httpx.Client) -> None:
         """
         Manages all discussions on the data.
         Discussions are handled in a queue of length max_concurrent_requests.
@@ -277,7 +277,7 @@ class Scheduler:
             else:
                 logger.error("Process %s failed!" % i)
 
-    def clean_memory_bucket(self, memory_bucket_dir=None):
+    def clean_memory_bucket(self, memory_bucket_dir: Optional[str] = None) -> None:
         """
         Deletes all stored global memory
         """
@@ -298,7 +298,7 @@ class Scheduler:
             os.remove(f)
         logger.info("Cleaned the memory bucket.")
 
-    def run(self):
+    def run(self) -> None:
         """
         The routine that starts the discussions between LLM agents iteratively on the provided data.
         """
@@ -324,7 +324,7 @@ def main(
     max_concurrent_requests: int = 100,
     clear_memory_bucket: bool = True,
     memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
-):
+) -> None:
     scheduler = Scheduler(
         data,
         out,

@@ -26,12 +26,13 @@ class DiscourseDebate(DiscoursePolicy):
         include_current_turn_in_memory: bool = False,
         extract_all_drafts: bool = False,
         debate_rounds: int = 1,
-    ):
+    ) -> tuple[str, int, list[Agreement]]:
         decision = None
         turn = 0
         unique_id = 0
         memories = []
         agreements: list[Agreement] = []
+        draft = ""
 
         logger.debug(
             f"""Paradigm: Debate (rounds: {debate_rounds})
@@ -80,7 +81,8 @@ class DiscourseDebate(DiscoursePolicy):
                     is_moderator=True,
                 )
                 memories.append(memory)
-                memories = coordinator.update_memories(memories, coordinator.agents)
+                coordinator.update_memories(memories, coordinator.agents)
+                memories = []
                 unique_id = unique_id + 1
             else:
                 debate_history, memory_ids, current_draft = coordinator.panelists[
@@ -108,7 +110,8 @@ class DiscourseDebate(DiscoursePolicy):
                     is_moderator=True,
                 )
                 memories.append(memory)
-                memories = coordinator.update_memories(memories, coordinator.agents)
+                coordinator.update_memories(memories, coordinator.agents)
+                memories = []
                 unique_id = unique_id + 1
 
             for r in range(debate_rounds):  # ---- Agents A2, A3, ...
@@ -149,7 +152,7 @@ class DiscourseDebate(DiscoursePolicy):
                         ]
                     else:
                         agents_to_update = [a, coordinator.agents[next_a]]
-                    memories, debate_agreements = a.participate(
+                    debate_agreements = a.participate(
                         use_moderator,
                         memories,
                         unique_id,

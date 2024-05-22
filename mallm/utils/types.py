@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Any
 
 
 @dataclass
@@ -21,7 +21,7 @@ class Memory:
     agreement: Optional[bool]
     extracted_draft: Optional[str]
     memory_ids: list[int]
-    additional_args: dict
+    additional_args: dict[str, Any]
 
 
 @dataclass

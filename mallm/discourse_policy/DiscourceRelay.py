@@ -25,11 +25,12 @@ class DiscourseRelay(DiscoursePolicy):
         include_current_turn_in_memory: bool = False,
         extract_all_drafts: bool = False,
         debate_rounds: int = 1,
-    ):
+    ) -> tuple[str, int, list[Agreement]]:
         decision = None
         turn = 0
         unique_id = 0
         memories = []
+        draft = ""
         agreements: list[Agreement] = []
 
         logger.debug(
@@ -78,9 +79,10 @@ class DiscourseRelay(DiscoursePolicy):
                         is_moderator=True,
                     )
                     memories.append(memory)
-                    memories = coordinator.update_memories(
+                    coordinator.update_memories(
                         memories, [a, coordinator.agents[next_a]]
                     )
+                    memories = []
                 elif isinstance(a, Panelist):
                     template_filling = TemplateFilling(
                         task_instruction=task_instruction,
@@ -92,7 +94,7 @@ class DiscourseRelay(DiscoursePolicy):
                         sents_max=feedback_sentences[1],
                         sents_min=feedback_sentences[0],
                     )
-                    memories, agreements = a.participate(
+                    agreements = a.participate(
                         use_moderator,
                         memories,
                         unique_id,

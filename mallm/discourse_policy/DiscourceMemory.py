@@ -24,11 +24,12 @@ class DiscourseMemory(DiscoursePolicy):
         include_current_turn_in_memory: bool = False,
         extract_all_drafts: bool = False,
         debate_rounds: int = 1,
-    ):
+    ) -> tuple[str, int, list[Agreement]]:
         decision = None
         turn = 0
         unique_id = 0
         memories = []
+        draft = ""
         agreements: list[Agreement] = []
 
         logger.debug(
@@ -77,7 +78,8 @@ class DiscourseMemory(DiscoursePolicy):
                     is_moderator=True,
                 )
                 memories.append(memory)
-                memories = coordinator.update_memories(memories, coordinator.agents)
+                coordinator.update_memories(memories, coordinator.agents)
+                memories = []
                 unique_id = unique_id + 1
 
             for p in coordinator.panelists:
@@ -98,7 +100,7 @@ class DiscourseMemory(DiscoursePolicy):
                     sents_min=feedback_sentences[0],
                 )
 
-                memories, agreements = p.participate(
+                agreements = p.participate(
                     use_moderator,
                     memories,
                     unique_id,

@@ -39,7 +39,9 @@ New Participant:
         """,
         }
 
-    def generate_personas(self, task_description, num_agents):
+    def generate_personas(
+        self, task_description: str, num_agents: int
+    ) -> list[dict[str, str]]:
         current_prompt = [
             self.base_prompt,
             {
@@ -49,7 +51,7 @@ New Participant:
         ]
 
         logger.debug("Creating " + str(num_agents) + " agents...")
-        agents = []
+        agents: list[dict[str, str]] = []
         while len(agents) < num_agents:
             # Send the prompt to the InferenceClient
             chat_completion = self.client.chat.completions.create(

@@ -1,14 +1,20 @@
+from __future__ import annotations
 import dataclasses
 import dbm
 import json
 import logging
 import os
 import uuid
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 import fire
+import httpx
 from langchain_core.language_models import LLM
 
+
+if TYPE_CHECKING:
+    from mallm.coordinator import Coordinator
+    from mallm.agents.moderator import Moderator
 from mallm.prompts.agent_prompts import (
     generate_chat_prompt_draft,
     generate_chat_prompt_feedback,
@@ -24,11 +30,11 @@ class Agent:
     def __init__(
         self,
         llm: LLM,
-        client,
-        coordinator,
-        persona,
-        persona_description,
-        moderator=None,
+        client: httpx.Client,
+        coordinator: Coordinator,
+        persona: str,
+        persona_description: str,
+        moderator: Optional[Moderator] = None,
     ):
         self.id = str(uuid.uuid4())
         self.short_id = self.id[:4]
@@ -84,9 +90,9 @@ class Agent:
 
     def improve(
         self,
-        unique_id,
+        unique_id: int,
         turn: int,
-        memory_ids,
+        memory_ids: list[int],
         template_filling: TemplateFilling,
         extract_all_drafts: bool,
         agreements: list[Agreement],
@@ -119,13 +125,13 @@ class Agent:
 
     def draft(
         self,
-        unique_id,
+        unique_id: int,
         turn: int,
-        memory_ids,
+        memory_ids: list[int],
         template_filling: TemplateFilling,
         extract_all_drafts: bool,
         agreements: list[Agreement],
-        is_moderator=False,
+        is_moderator: bool = False,
     ) -> tuple[str, Memory, list[Agreement]]:
         res = self.llm.invoke(
             generate_chat_prompt_draft(template_filling), client=self.client
@@ -161,9 +167,9 @@ class Agent:
 
     def feedback(
         self,
-        unique_id,
+        unique_id: int,
         turn: int,
-        memory_ids,
+        memory_ids: list[int],
         template_filling: TemplateFilling,
         agreements: list[Agreement],
     ) -> tuple[str, Memory, list[Agreement]]:
@@ -197,10 +203,10 @@ class Agent:
 
     def get_memories(
         self,
-        context_length=None,
-        turn=None,
-        include_this_turn=True,
-        extract_draft=False,
+        context_length: Optional[int] = None,
+        turn: Optional[int] = None,
+        include_this_turn: bool = True,
+        extract_draft: bool = False,
     ) -> tuple[Optional[list[Memory]], list[int], Optional[str]]:
         """
         Retrieves memory from the agents memory bucket as a Memory
@@ -218,7 +224,7 @@ class Agent:
             context_memory = []
             for memory in memories:
                 if context_length:
-                    if memory.turn >= turn - context_length:
+                    if turn and memory.turn >= turn - context_length:
                         if turn > memory.turn or include_this_turn:
                             context_memory.append(memory)
                             memory_ids.append(int(memory.message_id))
@@ -277,29 +283,22 @@ class Agent:
             debate_history = None
         return debate_history, memory_ids, current_draft
 
-    def save_memory_to_json(self, out=None):
+    def save_memory_to_json(self, out: Optional[str] = None) -> None:
         """
         Converts the memory bucket dbm data to json format
         """
         save_path = out if out else self.memory_bucket + ".json"
         try:
             memories, memory_ids, current_draft = self.get_memories()
-            with open(save_path, "w") as f:
-                json.dump(
-                    (
-                        [dataclasses.asdict(memory) for memory in memories],
-                        memory_ids,
-                        current_draft,
-                    ),
-                    f,
-                )
+            if memories:
+                with open(save_path, "w") as f:
+                    json.dump(
+                        (
+                            [dataclasses.asdict(memory) for memory in memories],
+                            memory_ids,
+                            current_draft,
+                        ),
+                        f,
+                    )
         except Exception as e:
             logger.error(f"Failed to save agent memory to {save_path}: {e}")
-
-
-def main():
-    pass
-
-
-if __name__ == "__main__":
-    fire.Fire(main)
