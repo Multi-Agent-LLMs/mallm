@@ -249,11 +249,9 @@ class Scheduler:
         Once a spot in the queue is free because a discussion ended, the next discussion is initialized.
         """
         # Creating HuggingFace endpoint
-        llm_client_oai = OpenAI(base_url=f"{self.endpoint_url}/v1", api_key="-")
+        llm = HFTGIChat(client=OpenAI(base_url=f"{self.endpoint_url}/v1", api_key="-"))
 
-        llm = HFTGIChat(client=llm_client_oai)
-
-        agent_generator = TGIPersonaGenerator(client=llm_client_oai)
+        agent_generator = TGIPersonaGenerator(llm=llm)
 
         pool = ThreadPool(processes=self.max_concurrent_requests)
         results = []

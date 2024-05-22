@@ -3,14 +3,15 @@ import logging
 
 from openai import OpenAI
 
+from mallm.models.HFTGIChat import HFTGIChat
 from mallm.models.personas.PersonaGenerator import PersonaGenerator
 
 logger = logging.getLogger("mallm")
 
 
 class TGIPersonaGenerator(PersonaGenerator):
-    def __init__(self, client: OpenAI):
-        self.client = client
+    def __init__(self, llm: HFTGIChat):
+        self.llm = llm
         self.base_prompt = {
             "role": "system",
             "content": """
@@ -54,20 +55,15 @@ New Participant:
         agents: list[dict[str, str]] = []
         while len(agents) < num_agents:
             # Send the prompt to the InferenceClient
-            chat_completion = self.client.chat.completions.create(
-                model="tgi",
-                messages=current_prompt
+            response = self.llm.invoke(
+                current_prompt
                 + [
                     {
                         "role": "user",
                         "content": "Please use the follow the examples to generate a useful persona for the task! Only answer with the JSON for the next persona!",
                     }
-                ],
-                stream=False,
-                stop=["<|eot_id|>"],
+                ]
             )
-
-            response = chat_completion.choices[0].message.content.strip()
             try:
                 new_agent = json.loads(response)
                 if new_agent["role"] == "" or new_agent["description"] == "":
