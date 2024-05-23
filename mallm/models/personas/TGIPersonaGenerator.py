@@ -61,11 +61,21 @@ New Participant:
                         "content": "Please use the follow the examples to generate a useful persona for the task! Only answer with the JSON for the next persona!",
                     }
                 ],
-                stream=False,
-                stop=["<|eot_id|>"],
+                stream=True,
+                stop=[
+                    "<|start_header_id|>",
+                    "<|end_header_id|>",
+                    "<|eot_id|>",
+                    "<|reserved_special_token",
+                ],
             )
+            # iterate and print stream
+            collected_messages = []
+            for message in chat_completion:
+                collected_messages.append(message.choices[0].delta.content)
+            collected_messages = [m for m in collected_messages if m is not None]
+            response = "".join(collected_messages)
 
-            response = chat_completion.choices[0].message.content.strip()
             try:
                 new_agent = json.loads(response)
                 if new_agent["role"] == "" or new_agent["description"] == "":
@@ -87,5 +97,6 @@ New Participant:
                     "content": f"Already Generated Participants:\n{response}",
                 }
             )
+        logger.debug("Found agents: \n" + str(agents))
 
         return agents
