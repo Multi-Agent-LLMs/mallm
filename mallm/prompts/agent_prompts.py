@@ -1,41 +1,46 @@
 import json
 import logging
 
+from mallm.utils.types import TemplateFilling
+
 logger = logging.getLogger("mallm")
 
 
-def generate_chat_prompt_feedback(data):
-    # TODO improve this prompt when it is used
+def base_prompt(data: TemplateFilling) -> list[dict[str, str]]:
     prompts = [
         {
             "role": "system",
-            "content": f"Your role: {data['persona']} ({data['personaDescription']}) \nYou are participating in a discussion. Answer in {data['sentsMin']} to {data['sentsMax']} sentences!",
+            "content": f"Your role: {data.persona} ({data.persona_description}) \nYou are participating in a discussion. Answer in {data.sents_min} to {data.sents_max} sentences!",
         }
     ]
-    if data["agentMemory"] is not None:
+    if data.agent_memory is not None:
         prompts.append(
             {
                 "role": "system",
-                "content": f"This is the discussion to the current point. Keep it in mind:\n{data['agentMemory']}",
+                "content": f"This is the discussion to the current point. Keep it in mind:\n{data.agent_memory}",
             }
         )
 
     prompts.append(
         {
             "role": "user",
-            "content": f"Your Task: {data['taskInstruction']} Please consider the example provided and think it step by step. Input: {data['input']}",
+            "content": f"Your Task: {data.task_instruction} Please consider the example provided and think it step by step. Input: {data.input_str}",
         }
     )
 
-    if data["currentDraft"] is not None:
+    if data.current_draft is not None:
         prompts.append(
             {
                 "role": "user",
-                "content": f"Here is the current solution you need to consider:\nSolution: {data['currentDraft']}",
+                "content": f"Here is the current solution you need to consider:\nSolution: {data.current_draft}",
             }
         )
+    return prompts
 
-    if data["agentMemory"] is not None:
+
+def generate_chat_prompt_feedback(data: TemplateFilling) -> list[dict[str, str]]:
+    prompts = base_prompt(data)
+    if data.agent_memory is not None:
         prompts.append(
             {
                 "role": "user",
@@ -46,39 +51,9 @@ def generate_chat_prompt_feedback(data):
     return prompts
 
 
-def generate_chat_prompt_improve(data):
-    prompts = [
-        {
-            "role": "system",
-            "content": f"You are {data['persona']} and your traits are {data['personaDescription']} You are participating in a discussion. Answer in {data['sentsMin']} to {data['sentsMax']} sentences!",
-        }
-    ]
-    if data["agentMemory"] is not None:
-        prompts.append(
-            {
-                "role": "system",
-                "content": "This is the discussion to the current point.",
-            }
-        )
-
-        prompts += data["agentMemory"]
-
-    prompts.append(
-        {
-            "role": "user",
-            "content": f"Your Task: {data['taskInstruction']} Please consider the example provided and think it step by step. Input: {data['input']}",
-        }
-    )
-
-    if data["currentDraft"] is not None:
-        prompts.append(
-            {
-                "role": "user",
-                "content": f"Here is the current solution you need to consider:\nSolution: {data['currentDraft']}",
-            }
-        )
-
-    if data["agentMemory"] is not None:
+def generate_chat_prompt_improve(data: TemplateFilling) -> list[dict[str, str]]:
+    prompts = base_prompt(data)
+    if data.agent_memory is not None:
         prompts.append(
             {
                 "role": "user",
@@ -91,39 +66,9 @@ def generate_chat_prompt_improve(data):
     return prompts
 
 
-def generate_chat_prompt_draft(data):
-    # TODO improve this prompt when it is used
-    prompts = [
-        {
-            "role": "system",
-            "content": f"Your role: {data['persona']} ({data['personaDescription']}) \nYou are participating in a discussion. Propose a new solution based on the provided feedback.",
-        }
-    ]
-    if data["agentMemory"] is not None:
-        prompts.append(
-            {
-                "role": "system",
-                "content": "This is the discussion to the current point.",
-            }
-        )
-        prompts += data["agentMemory"]
-
-    prompts.append(
-        {
-            "role": "user",
-            "content": f"Your Task: {data['taskInstruction']} Please consider the example provided and think it step by step. Input: {data['input']}",
-        }
-    )
-
-    if data["currentDraft"] is not None:
-        prompts.append(
-            {
-                "role": "user",
-                "content": f"Here is the current solution you need to consider:\nSolution: {data['currentDraft']}",
-            }
-        )
-
-    if data["agentMemory"] is not None:
+def generate_chat_prompt_draft(data: TemplateFilling) -> list[dict[str, str]]:
+    prompts = base_prompt(data)
+    if data.agent_memory is not None:
         prompts.append(
             {
                 "role": "user",
@@ -142,15 +87,15 @@ def generate_final_answer_prompt(
     question: str,
     task: str,
     previous_answer: str,
-):
+) -> list[dict[str, str]]:
     prompts = [
         {
             "role": "system",
-            "content": f"Your role: {persona} ({persona_description}) \nYou are tasked with creating a final answer based on the given question and your previous response.",
+            "content": f"Your role: {persona} ({persona_description})",
         },
         {
             "role": "user",
-            "content": f"Task: {task}\nQuestion: {question}\nYour previous answer: {previous_answer}",
+            "content": f"You are tasked with creating a final answer based on the given question and your previous response.\nTask: {task}\nQuestion: {question}\nYour previous answer: {previous_answer}",
         },
         {
             "role": "user",
@@ -167,15 +112,15 @@ def generate_voting_prompt(
     task: str,
     question: str,
     solutions: list[str],
-):
+) -> list[dict[str, str]]:
     prompts = [
         {
             "role": "system",
-            "content": f"Your role: {persona} ({persona_description}) \nYou are tasked with voting for the best solution from the list provided below based on the given task.",
+            "content": f"Your role: {persona} ({persona_description})",
         },
         {
             "role": "user",
-            "content": f"Task: {task}\nQuestion: {question}\n\nHere are the possible solutions:",
+            "content": f"You are tasked with voting for the best solution from the list provided below based on the given task.\nTask: {task}\nQuestion: {question}\n\nHere are the possible solutions:",
         },
     ]
 

@@ -1,6 +1,5 @@
 import logging
 from collections import Counter
-from typing import List
 
 from mallm.agents.panelist import Panelist
 from mallm.decision_making.DecisionProtocol import DecisionProtocol
@@ -8,7 +7,7 @@ from mallm.prompts.agent_prompts import (
     generate_final_answer_prompt,
     generate_voting_prompt,
 )
-from mallm.utils.types.Agreement import Agreement
+from mallm.utils.types import Agreement
 
 logger = logging.getLogger("mallm")
 
@@ -18,11 +17,13 @@ class Voting(DecisionProtocol):
     The Voting decision protocol allows panelists to vote for the best answer after a certain number of turns.
     """
 
-    def __init__(self, panelists: List[Panelist], vote_turn: int = 3):
+    def __init__(self, panelists: list[Panelist], vote_turn: int = 3):
         super().__init__(panelists)
         self.vote_turn = vote_turn
 
-    def make_decision(self, agreements, turn, task, question):
+    def make_decision(
+        self, agreements: list[Agreement], turn: int, task: str, question: str
+    ) -> tuple[str, bool]:
         if turn < self.vote_turn:
             return "", False
         final_answers = []

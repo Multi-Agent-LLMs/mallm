@@ -1,10 +1,10 @@
-from typing import Any, Dict, Iterator, List, Optional, Union
+from typing import Any, Iterator, Optional, Union, cast
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.llms import LLM
-from langchain_core.outputs import GenerationChunk, LLMResult
+from langchain_core.outputs import LLMResult
 from langchain_core.prompt_values import PromptValue
 from openai import OpenAI
 
@@ -32,22 +32,23 @@ class HFTGIChat(LLM):
 
     # Overwrite to send direct chat structure to tgi endpoint
     def _convert_input(self, input: LanguageModelInput) -> PromptValue:
-        return input
+        return cast(PromptValue, input)
 
     # Overwrite to send direct chat structure to tgi endpoint
     def generate_prompt(
         self,
-        prompts: List[str],
-        stop: Optional[List[str]] = None,
-        callbacks: Optional[Union[Callbacks, List[Callbacks]]] = None,
+        prompts: list[PromptValue],
+        stop: Optional[list[str]] = None,
+        callbacks: Optional[Union[Callbacks, list[Callbacks]]] = None,
         **kwargs: Any,
     ) -> LLMResult:
-        return self.generate(prompts, stop=stop, callbacks=callbacks, **kwargs)
+        # this is a wrong cast, but we need it because we use a custom call function which can handle this
+        return self.generate(prompts, stop=stop, callbacks=callbacks, **kwargs)  # type: ignore
 
-    def _call(
+    def _call(  # type: ignore
         self,
-        prompt: list,
-        stop: Optional[List[str]] = None,
+        prompt,
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
@@ -81,18 +82,19 @@ class HFTGIChat(LLM):
         # iterate and print stream
         collected_messages = []
         for message in chat_completion:
-            collected_messages.append(message.choices[0].delta.content)
-        collected_messages = [m for m in collected_messages if m is not None]
+            message_str = message.choices[0].delta.content
+            if message_str:
+                collected_messages.append(message_str)
 
         return "".join(collected_messages)
 
-    def _stream(
+    def _stream(  # type: ignore
         self,
-        prompt: list,
-        stop: Optional[List[str]] = None,
+        prompt,
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> Iterator[GenerationChunk]:
+    ) -> Iterator:  # type: ignore
         """Stream the LLM on the given prompt.
 
         This method should be overridden by subclasses that support streaming.
@@ -128,7 +130,7 @@ class HFTGIChat(LLM):
             yield message
 
     @property
-    def _identifying_params(self) -> Dict[str, Any]:
+    def _identifying_params(self) -> dict[str, Any]:
         """Return a dictionary of identifying parameters."""
         return {
             # The model name allows users to specify custom token counting

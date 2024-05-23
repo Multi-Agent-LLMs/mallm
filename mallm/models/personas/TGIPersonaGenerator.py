@@ -1,16 +1,15 @@
 import json
 import logging
 
-from openai import OpenAI
-
+from mallm.models.HFTGIChat import HFTGIChat
 from mallm.models.personas.PersonaGenerator import PersonaGenerator
 
 logger = logging.getLogger("mallm")
 
 
 class TGIPersonaGenerator(PersonaGenerator):
-    def __init__(self, client: OpenAI):
-        self.client = client
+    def __init__(self, llm: HFTGIChat):
+        self.llm = llm
         self.base_prompt = {
             "role": "system",
             "content": """
@@ -39,7 +38,9 @@ New Participant:
         """,
         }
 
-    def generate_personas(self, task_description, num_agents):
+    def generate_personas(
+        self, task_description: str, num_agents: int
+    ) -> list[dict[str, str]]:
         current_prompt = [
             self.base_prompt,
             {
@@ -49,33 +50,18 @@ New Participant:
         ]
 
         logger.debug("Creating " + str(num_agents) + " agents...")
-        agents = []
+        agents: list[dict[str, str]] = []
         while len(agents) < num_agents:
             # Send the prompt to the InferenceClient
-            chat_completion = self.client.chat.completions.create(
-                model="tgi",
-                messages=current_prompt
-                + [
+            response = self.llm.invoke(
+                [
+                    *current_prompt,
                     {
                         "role": "user",
                         "content": "Please use the follow the examples to generate a useful persona for the task! Only answer with the JSON for the next persona!",
-                    }
-                ],
-                stream=True,
-                stop=[
-                    "<|start_header_id|>",
-                    "<|end_header_id|>",
-                    "<|eot_id|>",
-                    "<|reserved_special_token",
-                ],
+                    },
+                ]
             )
-            # iterate and print stream
-            collected_messages = []
-            for message in chat_completion:
-                collected_messages.append(message.choices[0].delta.content)
-            collected_messages = [m for m in collected_messages if m is not None]
-            response = "".join(collected_messages)
-
             try:
                 new_agent = json.loads(response)
                 if new_agent["role"] == "" or new_agent["description"] == "":

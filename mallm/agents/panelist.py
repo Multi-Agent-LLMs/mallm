@@ -1,21 +1,22 @@
-import fire
+from typing import Sequence
 
 from mallm.agents.agent import Agent
+from mallm.utils.types import Agreement, Memory, TemplateFilling
 
 
 class Panelist(Agent):
     def participate(
         self,
-        use_moderator,
-        memories,
-        unique_id,
-        turn,
-        memory_ids,
-        template_filling,
-        extract_all_drafts,
-        agents_to_update,
-        agreements,
-    ):
+        use_moderator: bool,
+        memories: list[Memory],
+        unique_id: int,
+        turn: int,
+        memory_ids: list[int],
+        template_filling: TemplateFilling,
+        extract_all_drafts: bool,
+        agents_to_update: Sequence[Agent],
+        agreements: list[Agreement],
+    ) -> list[Agreement]:
         """
         Either calls feedback() or improve() depending on whether a moderator is present
         """
@@ -38,13 +39,5 @@ class Panelist(Agent):
             )
 
         memories.append(memory)
-        memories = self.coordinator.update_memories(memories, agents_to_update)
-        return memories, agreements
-
-
-def main():
-    pass
-
-
-if __name__ == "__main__":
-    fire.Fire(main)
+        self.coordinator.update_memories(memories, agents_to_update)
+        return agreements

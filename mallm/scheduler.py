@@ -5,7 +5,7 @@ import logging
 import os
 import sys
 from multiprocessing.pool import ThreadPool
-from typing import Optional
+from typing import Any, Optional
 
 import fire
 import httpx
@@ -38,7 +38,7 @@ library_logger.addHandler(stream_handler)
 logging.basicConfig(filename="log.txt", filemode="w")
 logger = logging.getLogger("mallm")
 
-output_dicts = []
+output_dicts: list[dict[str, Any]] = []
 
 os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
 
@@ -58,11 +58,11 @@ class Scheduler:
         context_length: int = 1,
         include_current_turn_in_memory: bool = False,
         extract_all_drafts: bool = False,
-        debate_rounds=Optional[int],
+        debate_rounds: Optional[int] = None,
         max_concurrent_requests: int = 100,
         clear_memory_bucket: bool = True,
         memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
-    ):
+    ) -> None:
         # Check for the correct aruments provided
         # TODO: make this more robust and conclusive. All arguments should be checked for validity, making the use of MALLM as fool-proof as possible.
         if not os.path.exists(data_file):
@@ -102,7 +102,7 @@ class Scheduler:
 
         # Cleaning the memory bucked from previous runs
         if clear_memory_bucket:
-            self.cleanMemoryBucket(memory_bucket_dir)
+            self.clean_memory_bucket(memory_bucket_dir)
 
         # Read input data (format: json lines)
         logger.info(f"""Reading {data_file}...""")
@@ -140,11 +140,11 @@ class Scheduler:
 
     def run_discussion(
         self,
-        client: OpenAI,
+        client: httpx.Client,
         llm: HFTGIChat,
         agent_generator: TGIPersonaGenerator,
-        sample: dict,
-    ):
+        sample: dict[str, Any],
+    ) -> Optional[str]:
         """
         Runs a single discussion between agents on a sample.
         """
@@ -161,9 +161,10 @@ class Scheduler:
         except Exception as e:
             logger.error("Failed intializing coordinator.")
             logger.error(e)
+            return None
 
         try:
-            answer, globalMem, agentMems, turn, agreements, discussionTime = (
+            answer, global_mem, agent_mems, turn, agreements, discussion_time = (
                 coordinator.discuss(
                     self.instruction,
                     sample["input"],
@@ -192,9 +193,10 @@ class Scheduler:
                 logger.error(
                     f"""-> at {fname}:{deep_tb.tb_lineno}, deeper function level error"""
                 )
+            return None
 
         logger.info(
-            f"""--> Agents discussed for {turn} turns, {'%.2f' % discussionTime} seconds ({'%.2f' % (float(discussionTime) / 60.0)} minutes) to get the final answer: \n"""
+            f"""--> Agents discussed for {turn} turns, {'%.2f' % discussion_time} seconds ({'%.2f' % (float(discussion_time) / 60.0)} minutes) to get the final answer: \n"""
             + str(answer)
         )
 
@@ -215,9 +217,13 @@ class Scheduler:
                     dataclasses.asdict(agreement) for agreement in agreements
                 ],
                 "turns": turn,
-                "clockSeconds": float("%.2f" % discussionTime),
-                "globalMemory": globalMem,
-                "agentMemory": agentMems,
+                "clockSeconds": float("%.2f" % discussion_time),
+                "globalMemory": [dataclasses.asdict(memory) for memory in global_mem],
+                "agentMemory": [
+                    [dataclasses.asdict(memory) for memory in agent]
+                    for agent in agent_mems
+                    if agent
+                ],
             }
         )
         try:
@@ -232,22 +238,20 @@ class Scheduler:
 
         self.completed_samples += 1
         logger.info(
-            f"""Completed samples: {self.completed_samples}. Samples left: {self.total_samples-self.completed_samples}."""
+            f"""Completed samples: {self.completed_samples}. Samples left: {self.total_samples - self.completed_samples}."""
         )
         return answer
 
-    def manage_discussions(self, client: httpx.Client):
+    def manage_discussions(self, client: httpx.Client) -> None:
         """
         Manages all discussions on the data.
         Discussions are handled in a queue of length max_concurrent_requests.
         Once a spot in the queue is free because a discussion ended, the next discussion is initialized.
         """
         # Creating HuggingFace endpoint
-        llm_client_oai = OpenAI(base_url=f"{self.endpoint_url}/v1", api_key="-")
+        llm = HFTGIChat(client=OpenAI(base_url=f"{self.endpoint_url}/v1", api_key="-"))
 
-        llm = HFTGIChat(client=llm_client_oai)
-
-        agent_generator = TGIPersonaGenerator(client=llm_client_oai)
+        agent_generator = TGIPersonaGenerator(llm=llm)
 
         pool = ThreadPool(processes=self.max_concurrent_requests)
         results = []
@@ -271,7 +275,7 @@ class Scheduler:
             else:
                 logger.error("Process %s failed!" % i)
 
-    def cleanMemoryBucket(self, memory_bucket_dir=None):
+    def clean_memory_bucket(self, memory_bucket_dir: Optional[str] = None) -> None:
         """
         Deletes all stored global memory
         """
@@ -292,7 +296,7 @@ class Scheduler:
             os.remove(f)
         logger.info("Cleaned the memory bucket.")
 
-    def run(self):
+    def run(self) -> None:
         """
         The routine that starts the discussions between LLM agents iteratively on the provided data.
         """
@@ -318,7 +322,7 @@ def main(
     max_concurrent_requests: int = 100,
     clear_memory_bucket: bool = True,
     memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
-):
+) -> None:
     scheduler = Scheduler(
         data,
         out,

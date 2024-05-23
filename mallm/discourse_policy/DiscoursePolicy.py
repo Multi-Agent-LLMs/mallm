@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from mallm.utils.types.Agreement import Agreement
+from mallm.utils.types import Agreement
 
 if TYPE_CHECKING:
     from mallm.coordinator import Coordinator
@@ -20,7 +20,7 @@ class DiscoursePolicy(ABC):
         input_str: str,
         use_moderator: bool = False,
         feedback_sentences: tuple[int, int] = (3, 4),
-        max_turns: int = None,
+        max_turns: Optional[int] = None,
         context_length: int = 1,
         include_current_turn_in_memory: bool = False,
         extract_all_drafts: bool = False,
