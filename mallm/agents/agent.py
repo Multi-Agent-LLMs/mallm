@@ -211,7 +211,7 @@ class Agent:
         Retrieves memory from the agents memory bucket as a Memory
         Returns: Memory
         """
-        memories = []
+        memories: list[Memory] = []
         memory_ids = []
         current_draft = None
         if os.path.exists(self.memory_bucket + ".dat"):
@@ -219,7 +219,7 @@ class Agent:
                 for key in db.keys():
                     json_object = json.loads(db[key].decode())
                     memories.append(Memory(**json_object))  # TODO: Maybe reverse sort
-            # memory = sorted(memory.items(), key=lambda x: x["messageId"], reverse=False)
+            memories = sorted(memories, key=lambda x: x.message_id, reverse=False)
             context_memory = []
             for memory in memories:
                 if context_length:
