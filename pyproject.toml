@@ -46,6 +46,7 @@ types-requests = "^2.32.0.20240521"
 flake8 = "^7.0.0"
 coverage = "^7.5.1"
 coverage-badge = "^1.1.1"
+setuptools = "^70.0.0"
 
 [build-system]
 requires = ["poetry-core"]
