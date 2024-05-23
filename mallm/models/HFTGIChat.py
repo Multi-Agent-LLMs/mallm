@@ -82,8 +82,9 @@ class HFTGIChat(LLM):
         # iterate and print stream
         collected_messages = []
         for message in chat_completion:
-            collected_messages.append(message.choices[0].delta.content)
-        collected_messages = [m for m in collected_messages if m is not None]
+            message_str = message.choices[0].delta.content
+            if message_str:
+                collected_messages.append(message_str)
 
         return "".join(collected_messages)
 
