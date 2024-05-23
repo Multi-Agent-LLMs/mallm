@@ -83,5 +83,6 @@ New Participant:
                     "content": f"Already Generated Participants:\n{response}",
                 }
             )
+        logger.debug("Found agents: \n" + str(agents))
 
         return agents
