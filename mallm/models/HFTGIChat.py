@@ -69,16 +69,24 @@ class HFTGIChat(LLM):
             The model output as a string. Actual completions SHOULD NOT include the prompt.
         """
         chat_completion = self.client.chat.completions.create(
-            model="tgi", messages=prompt, stream=False, stop=["<|eot_id|>"]
+            model="tgi",
+            messages=prompt,
+            stream=True,
+            stop=[
+                "<|start_header_id|>",
+                "<|end_header_id|>",
+                "<|eot_id|>",
+                "<|reserved_special_token",
+            ],
         )
+        # iterate and print stream
+        collected_messages = []
+        for message in chat_completion:
+            message_str = message.choices[0].delta.content
+            if message_str:
+                collected_messages.append(message_str)
 
-        if len(chat_completion.choices) == 0:
-            raise ValueError("No completion returned from model")
-
-        if chat_completion.choices[0].message.content is None:
-            raise ValueError("No completion returned from model")
-
-        return chat_completion.choices[0].message.content.strip()
+        return "".join(collected_messages)
 
     def _stream(  # type: ignore
         self,
@@ -109,8 +117,13 @@ class HFTGIChat(LLM):
         chat_completion = self.client.chat.completions.create(
             model="tgi",
             messages=prompt,
-            stop=["<|eot_id|>"],
             stream=True,
+            stop=[
+                "<|start_header_id|>",
+                "<|end_header_id|>",
+                "<|eot_id|>",
+                "<|reserved_special_token",
+            ],
         )
         # iterate and print stream
         for message in chat_completion:

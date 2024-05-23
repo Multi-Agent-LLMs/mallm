@@ -44,6 +44,9 @@ pytest = "^8.2.0"
 mypy = "^1.10.0"
 types-requests = "^2.32.0.20240521"
 flake8 = "^7.0.0"
+coverage = "^7.5.1"
+coverage-badge = "^1.1.1"
+setuptools = "^70.0.0"
 
 [build-system]
 requires = ["poetry-core"]
@@ -61,3 +64,13 @@ warn_unreachable = true
 show_error_context = true
 show_error_codes = true
 pretty = true
+
+[tool.coverage.run]
+branch = true
+source = ["mallm"]
+
+[tool.coverage.report]
+omit = ["tests/*"]
+
+[tool.flake8]
+target-version = "py39"

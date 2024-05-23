@@ -15,10 +15,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python 3.11
+      - name: Set up Python 3.12
         uses: actions/setup-python@v3
         with:
-          python-version: 3.11
+          python-version: 3.12
       - name: Install Poetry
         uses: abatilo/actions-poetry@v2
       - name: Install dependencies
@@ -35,10 +35,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python 3.11
+      - name: Set up Python 3.12
         uses: actions/setup-python@v3
         with:
-          python-version: 3.11
+          python-version: 3.12
       - name: Install Poetry
         uses: abatilo/actions-poetry@v2
       - name: Install dependencies
@@ -64,3 +64,26 @@ jobs:
         run: poetry install --with dev
       - name: Test with pytest
         run: poetry run pytest
+
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.12
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v2
+      - name: Install dependencies
+        run: poetry install --with dev
+      - name: Test with pytest and generate coverage report
+        run: |
+          poetry run coverage run -m pytest
+          poetry run coverage report
+          poetry run coverage xml
+          poetry run coverage-badge -o coverage.svg
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4.0.1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
