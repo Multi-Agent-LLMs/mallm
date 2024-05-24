@@ -10,7 +10,7 @@ from mallm.utils.types import Memory
 def test_coordinator_initialization():
     model = Mock()
     client = Mock()
-    coordinator = Coordinator(model, client)
+    coordinator = Coordinator(model, client, memory_bucket_dir="./test/data/")
     assert coordinator.llm == model
     assert coordinator.client == client
     assert coordinator.personas is None
@@ -31,7 +31,9 @@ def test_init_agents_with_valid_persona_generator():
         {"role": "role2", "description": "desc2"},
         {"role": "role3", "description": "desc3"},
     ]
-    coordinator = Coordinator(model, client, agent_generator=agent_generator)
+    coordinator = Coordinator(
+        model, client, agent_generator=agent_generator, memory_bucket_dir="./test/data/"
+    )
     coordinator.init_agents("task_instruction", "input_str", use_moderator=False)
     assert len(coordinator.agents) == 3
 
@@ -40,7 +42,7 @@ def test_init_agents_with_valid_persona_generator():
 def test_init_agents_without_persona_generator():
     model = Mock()
     client = Mock()
-    coordinator = Coordinator(model, client)
+    coordinator = Coordinator(model, client, memory_bucket_dir="./test/data/")
     with pytest.raises(Exception, match="No persona generator provided."):
         coordinator.init_agents("task_instruction", "input_str", use_moderator=False)
 
@@ -49,7 +51,7 @@ def test_init_agents_without_persona_generator():
 def test_update_global_memory():
     model = Mock()
     client = Mock()
-    coordinator = Coordinator(model, client)
+    coordinator = Coordinator(model, client, memory_bucket_dir="./test/data/")
     memory = Memory(
         message_id=1,
         text="content",
@@ -80,7 +82,9 @@ def test_update_memories():
         {"role": "role2", "description": "desc2"},
         {"role": "role3", "description": "desc3"},
     ]
-    coordinator = Coordinator(model, client, agent_generator=agent_generator)
+    coordinator = Coordinator(
+        model, client, agent_generator=agent_generator, memory_bucket_dir="./test/data/"
+    )
     coordinator.init_agents("task_instruction", "input_str", use_moderator=False)
     memories = [
         Memory(
@@ -114,7 +118,9 @@ def test_discuss_with_invalid_paradigm():
         {"role": "role2", "description": "desc2"},
         {"role": "role3", "description": "desc3"},
     ]
-    coordinator = Coordinator(model, client, agent_generator)
+    coordinator = Coordinator(
+        model, client, agent_generator, memory_bucket_dir="./test/data/"
+    )
     with pytest.raises(
         Exception, match="No valid discourse policy for paradigm invalid_paradigm"
     ):
@@ -144,7 +150,9 @@ def test_discuss_with_invalid_decision_protocol():
         {"role": "role2", "description": "desc2"},
         {"role": "role3", "description": "desc3"},
     ]
-    coordinator = Coordinator(model, client, agent_generator)
+    coordinator = Coordinator(
+        model, client, agent_generator, memory_bucket_dir="./test/data/"
+    )
     with pytest.raises(
         Exception, match="No valid decision protocol for invalid_protocol"
     ):
