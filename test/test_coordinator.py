@@ -72,6 +72,26 @@ def test_update_global_memory():
     assert retrieved_memory[0].agent_id == "agent1"
 
 
+def test_update_global_memory_fail():
+    model = Mock()
+    client = Mock()
+    coordinator = Coordinator(model, client, memory_bucket_dir="./test/data_invalid/")
+    memory = Memory(
+        message_id=1,
+        text="content",
+        agent_id="agent1",
+        agreement=True,
+        extracted_draft="draft",
+        memory_ids=[1],
+        additional_args={},
+        turn=1,
+        persona="test",
+        contribution="contribution",
+    )
+    with pytest.raises(Exception, match="No such file or directory"):
+        coordinator.update_global_memory(memory)
+
+
 # Test updating memories of agents
 def test_update_memories():
     model = Mock()
