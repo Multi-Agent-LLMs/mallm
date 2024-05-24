@@ -214,32 +214,27 @@ class Agent:
         memories = []
         memory_ids = []
         current_draft = None
-        if os.path.exists(self.memory_bucket + ".dat"):
-            with dbm.open(self.memory_bucket, "r") as db:
-                for key in db.keys():
-                    json_object = json.loads(db[key].decode())
-                    memories.append(Memory(**json_object))  # TODO: Maybe reverse sort
-            # memory = sorted(memory.items(), key=lambda x: x["messageId"], reverse=False)
-            context_memory = []
-            for memory in memories:
-                if context_length:
-                    if turn and memory.turn >= turn - context_length:
-                        if turn > memory.turn or include_this_turn:
-                            context_memory.append(memory)
-                            memory_ids.append(int(memory.message_id))
-                            if memory.contribution == "draft" or (
-                                memory.contribution == "improve"
-                            ):
-                                current_draft = memory.text
-                else:
-                    context_memory.append(memory)
-                    memory_ids.append(int(memory.message_id))
-                    if memory.contribution == "draft" or (
-                        memory.contribution == "improve"
-                    ):
-                        current_draft = memory.text
-        else:
-            context_memory = None
+        with dbm.open(self.memory_bucket, "r") as db:
+            for key in db.keys():
+                json_object = json.loads(db[key].decode())
+                memories.append(Memory(**json_object))  # TODO: Maybe reverse sort
+        # memory = sorted(memory.items(), key=lambda x: x["messageId"], reverse=False)
+        context_memory = []
+        for memory in memories:
+            if context_length:
+                if turn and memory.turn >= turn - context_length:
+                    if turn > memory.turn or include_this_turn:
+                        context_memory.append(memory)
+                        memory_ids.append(int(memory.message_id))
+                        if memory.contribution == "draft" or (
+                            memory.contribution == "improve"
+                        ):
+                            current_draft = memory.text
+            else:
+                context_memory.append(memory)
+                memory_ids.append(int(memory.message_id))
+                if memory.contribution == "draft" or (memory.contribution == "improve"):
+                    current_draft = memory.text
 
         if current_draft and extract_draft:
             current_draft = self.llm.invoke(
