@@ -100,7 +100,10 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           coverage_result=$(poetry run coverage report)
-          echo "### Coverage Report\n\n\`\`\`\n${coverage_result}\n\`\`\`" > coverage_comment.txt
+          echo "### Coverage Report
+          `\`\`
+          ${coverage_result}
+          \`\`\`" > coverage_comment.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Create Pull Request Comment
