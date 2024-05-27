@@ -49,7 +49,7 @@ class Scheduler:
         instruction: str,
         endpoint_url: str = "https://api.openai.com",
         model: str = "gpt-3.5-turbo",
-        api_key: str = None,
+        api_key: str = "-",
         use_moderator: bool = False,
         max_turns: int = 10,
         feedback_sentences: tuple[int, int] = (3, 4),
@@ -80,7 +80,7 @@ class Scheduler:
                 "The output file does not seem to be a json file. Please specify a file path using --out."
             )
             sys.exit(1)
-        if "api.openai.com" in endpoint_url and not api_key:
+        if "api.openai.com" in endpoint_url and api_key is "-":
             logger.error(
                 "When using the OpenAI API, you need to provide a key with the argument: --api_key=<your key>"
             )
@@ -324,7 +324,7 @@ def main(
     instruction: str,
     endpoint_url: str = "https://api.openai.com",
     model: str = "gpt-3.5-turbo",  # use "tgi" for Text Generation Inference by HuggingFace or one of these: https://platform.openai.com/docs/models
-    api_key: str = None,
+    api_key: str = "-",
     use_moderator: bool = False,
     max_turns: int = 10,
     feedback_sentences: tuple[int, int] = (3, 4),
