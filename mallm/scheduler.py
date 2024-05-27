@@ -80,7 +80,7 @@ class Scheduler:
                 "The output file does not seem to be a json file. Please specify a file path using --out."
             )
             sys.exit(1)
-        if "api.openai.com" in endpoint_url and api_key is "-":
+        if "api.openai.com" in endpoint_url and api_key == "-":
             logger.error(
                 "When using the OpenAI API, you need to provide a key with the argument: --api_key=<your key>"
             )
