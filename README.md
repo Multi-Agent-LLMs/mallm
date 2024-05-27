@@ -33,17 +33,19 @@ Install as a package:
 Create the test data
 `python data/data_downloader.py`
 
-You also need the checkpoints for the LLM you want to use. Currently, LLaMA-2-70b-chat has been tested and is working.
+You also need the checkpoints for the LLM you want to use. Use instruction-tuned models for the best performance.
 
 ### Run from Terminal
 MALLM relies on an external API like OpenAI or Text Generation Inference by Huggingface.
 Check the information [here (tg-hpc)](https://github.com/Multi-Agent-LLMs/tgi-hpc) or [here (tgi-scc)](https://github.com/Multi-Agent-LLMs/tgi-scc) about how to host a model yourself.
 
-Once the endpoint is available, you can initiate all discussions by a single script. Example:
+Once the endpoint is available, you can initiate all discussions by a single script. Example with TGI:
 
-`python mallm/scheduler.py --data=data/datasets/etpc_debugging.json --out=test_out.json --instruction="Paraphrase the input text." --endpoint_url="http://127.0.0.1:8080" --model="tgi" --max_concurrent_requests=100`
+`python mallm/scheduler.py --data=data/datasets/etpc_debugging.json --out=test_out.json --instruction="Paraphrase the input text." --endpoint_url="http://127.0.0.1:8080" --model="tgi"`
 
-While each discussion is sequential, multiple discussions can be processed in parallel for significant speedup. Please set `max_concurrent_requests` to a reasonable number so that you do not block the GPU for all other users of the TGI instance.
+Or with OpenAI:
+
+`python mallm/scheduler.py --data=data/datasets/etpc_debugging.json --out=test_out.json --instruction="Paraphrase the input text." --endpoint_url="https://api.openai.com" --model="gpt-3.5-turbo" --api_key="<your-key>"`
 
 ## Run as Module
 If installed, you can use MALLM from anywhere on your system:
@@ -87,7 +89,7 @@ You can test stuff in the `notebooks` directory.
 ## Arguments
 
 All arguments the scheduler can parse:
-```
+```py
 data: str,
 out: str,
 instruction: str,
@@ -103,7 +105,7 @@ context_length: int = 1,
 include_current_turn_in_memory: bool = False,
 extract_all_drafts: bool = False,
 debate_rounds: Optional[int] = None,
-max_concurrent_requests: int = 100,
+max_concurrent_requests: int = 100, # us a reasonable number. TGI can only handle 250.
 clear_memory_bucket: bool = True,
 memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
 ```
