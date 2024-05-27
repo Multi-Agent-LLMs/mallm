@@ -83,7 +83,39 @@ jobs:
           poetry run coverage report
           poetry run coverage xml
           poetry run coverage-badge -o coverage.svg
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v4.0.1
+      - name: Commit and push coverage badge
+        if: github.event_name == 'push'
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git checkout -b gh-pages
+          mkdir -p docs
+          mv coverage.svg docs/coverage.svg
+          git add docs/coverage.svg
+          git commit -m 'Update coverage badge'
+          git push origin gh-pages --force
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Post coverage result as PR comment
+        if: github.event_name == 'pull_request'
+        run: |
+          coverage_result=$(poetry run coverage report)
+          pr_comment="### Coverage Report\n\n\`\`\`\n${coverage_result}\n\`\`\`"
+          echo "$pr_comment" > coverage_comment.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create Pull Request Comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const comment = fs.readFileSync('coverage_comment.txt', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.payload.pull_request.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
