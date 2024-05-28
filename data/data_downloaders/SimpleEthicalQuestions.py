@@ -1,4 +1,5 @@
 import json
+import os
 import random
 import urllib
 import uuid
@@ -8,14 +9,15 @@ from data.data_download import DatasetDownloader
 
 class SimpleEthicalQuestionsDownloader(DatasetDownloader):
     def custom_download(self):
+        if not os.path.exists(self.dataset_path):
+            os.mkdir(self.dataset_path)
+        file_path = os.path.join(self.dataset_path, "task.json")
         urllib.request.urlretrieve(
             "https://raw.githubusercontent.com/google/BIG-bench/main/bigbench/benchmark_tasks"
             "/simple_ethical_questions/task.json",
-            self.dataset_path,
+            file_path,
         )
-        self.dataset = json.loads(open(self.dataset_path, encoding="utf-8").read())[
-            "examples"
-        ]
+        self.dataset = json.loads(open(file_path, encoding="utf-8").read())["examples"]
         random.shuffle(self.dataset)
 
     def __init__(self):

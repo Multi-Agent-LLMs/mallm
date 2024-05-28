@@ -9,7 +9,12 @@ class WMT19Downloader(DatasetDownloader):
         pass
 
     def __init__(self):
-        super().__init__(name="wmt19_de_en", version="de-en", dataset_name="wmt/wmt19")
+        super().__init__(
+            name="wmt19_de_en",
+            version="de-en",
+            dataset_name="wmt/wmt19",
+            sample_size=1000,
+        )
 
     def process_data(self):
         data = self.shuffle_and_select("validation")

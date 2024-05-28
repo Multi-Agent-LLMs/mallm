@@ -44,7 +44,7 @@ class BTVoteDownloader(DatasetDownloader):
         file_ids_vote_characteristics = list_files("doi:10.7910/DVN/AHBBXY")
 
         if not os.path.exists("data/datasets/btvote"):
-            os.mkdir("data/datasets/btvote", exist_ok=True)
+            os.mkdir("data/datasets/btvote")
 
         download_file(file_ids_vote_behaviour[1], "data/datasets/btvote/behaviour.dta")
         download_file(

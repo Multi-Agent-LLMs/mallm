@@ -83,6 +83,7 @@ class DiscoursePolicy(ABC):
                     logger.error("Agent type not recognized.")
                     raise Exception("Agent type not recognized.")
                 self.unique_id += 1
+                self.memories = []
 
             if coordinator.decision_making is None:
                 logger.error("No decision making module found.")

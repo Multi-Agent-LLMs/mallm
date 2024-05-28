@@ -10,7 +10,10 @@ class EuroparlDownloader(DatasetDownloader):
 
     def __init__(self):
         super().__init__(
-            name="europarl", version="de-en", dataset_name="Helsinki-NLP/europarl"
+            name="europarl",
+            version="de-en",
+            dataset_name="Helsinki-NLP/europarl",
+            sample_size=1000,
         )
 
     def process_data(self):

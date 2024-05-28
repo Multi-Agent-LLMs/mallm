@@ -10,7 +10,10 @@ class MultiNewsDownloader(DatasetDownloader):
 
     def __init__(self):
         super().__init__(
-            name="multi_news", version="default", dataset_name="multi_news"
+            name="multi_news",
+            version="default",
+            dataset_name="multi_news",
+            trust_remote_code=True,
         )
 
     def process_data(self):
