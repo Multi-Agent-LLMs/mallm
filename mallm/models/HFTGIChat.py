@@ -29,6 +29,12 @@ class HFTGIChat(LLM):
 
     client: OpenAI
     timeout: int = 120
+    stop_tokens: list[str] = [
+        "<|start_header_id|>",
+        "<|end_header_id|>",
+        "<|eot_id|>",
+        "<|reserved_special_token",
+    ]
 
     # Overwrite to send direct chat structure to tgi endpoint
     def _convert_input(self, input: LanguageModelInput) -> PromptValue:
@@ -72,18 +78,14 @@ class HFTGIChat(LLM):
             model="tgi",
             messages=prompt,
             stream=True,
-            stop=[
-                "<|start_header_id|>",
-                "<|end_header_id|>",
-                "<|eot_id|>",
-                "<|reserved_special_token",
-            ],
+            stop=self.stop_tokens,
+            stream_options={"include_usage": True},
         )
         # iterate and print stream
         collected_messages = []
         for message in chat_completion:
             message_str = message.choices[0].delta.content
-            if message_str:
+            if message_str and message_str not in self.stop_tokens:
                 collected_messages.append(message_str)
 
         return "".join(collected_messages)
@@ -118,12 +120,7 @@ class HFTGIChat(LLM):
             model="tgi",
             messages=prompt,
             stream=True,
-            stop=[
-                "<|start_header_id|>",
-                "<|end_header_id|>",
-                "<|eot_id|>",
-                "<|reserved_special_token",
-            ],
+            stop=self.stop_tokens,
         )
         # iterate and print stream
         for message in chat_completion:

@@ -17,9 +17,10 @@ def base_prompt(data: TemplateFilling) -> list[dict[str, str]]:
         prompts.append(
             {
                 "role": "system",
-                "content": f"This is the discussion to the current point. Keep it in mind:\n{data.agent_memory}",
+                "content": f"This is the discussion to the current point.",
             }
         )
+        prompts += data.agent_memory
 
     prompts.append(
         {
