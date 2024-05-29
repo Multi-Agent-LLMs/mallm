@@ -9,7 +9,7 @@ from langchain_core.prompt_values import PromptValue
 from openai import OpenAI
 
 
-class HFTGIChat(LLM):
+class Chat(LLM):
     """A custom chat model that queries the chat API of HuggingFace Text Generation Inference
 
     When contributing an implementation to LangChain, carefully document
@@ -29,6 +29,7 @@ class HFTGIChat(LLM):
 
     client: OpenAI
     timeout: int = 120
+    model: str = "gpt-3.5-turbo"
 
     # Overwrite to send direct chat structure to tgi endpoint
     def _convert_input(self, input: LanguageModelInput) -> PromptValue:
@@ -68,16 +69,17 @@ class HFTGIChat(LLM):
         Returns:
             The model output as a string. Actual completions SHOULD NOT include the prompt.
         """
+        stop = [
+            "<|start_header_id|>",
+            "<|end_header_id|>",
+            "<|eot_id|>",
+            "<|reserved_special_token",
+        ]
         chat_completion = self.client.chat.completions.create(
-            model="tgi",
+            model=self.model,
             messages=prompt,
             stream=True,
-            stop=[
-                "<|start_header_id|>",
-                "<|end_header_id|>",
-                "<|eot_id|>",
-                "<|reserved_special_token",
-            ],
+            stop=stop,
         )
         # iterate and print stream
         collected_messages = []
@@ -85,8 +87,11 @@ class HFTGIChat(LLM):
             message_str = message.choices[0].delta.content
             if message_str:
                 collected_messages.append(message_str)
+        response = "".join(collected_messages)
+        for stop_word in stop:
+            response = response.replace(stop_word, "")
 
-        return "".join(collected_messages)
+        return response
 
     def _stream(  # type: ignore
         self,

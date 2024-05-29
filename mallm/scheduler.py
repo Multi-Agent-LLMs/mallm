@@ -14,10 +14,8 @@ from colorama import just_fix_windows_console
 from openai import OpenAI
 
 from mallm.coordinator import Coordinator
-from mallm.models.HFTGIChat import HFTGIChat
-from mallm.models.personas.TGIPersonaGenerator import (
-    TGIPersonaGenerator,
-)
+from mallm.models.Chat import Chat
+from mallm.models.personas.ExpertGenerator import ExpertGenerator
 from mallm.utils.CustomFormatter import CustomFormatter
 
 just_fix_windows_console()
@@ -49,7 +47,9 @@ class Scheduler:
         data_file: str,
         out: str,
         instruction: str,
-        endpoint_url: str,
+        endpoint_url: str = "https://api.openai.com",
+        model: str = "gpt-3.5-turbo",
+        api_key: str = "-",
         use_moderator: bool = False,
         max_turns: int = 10,
         feedback_sentences: tuple[int, int] = (3, 4),
@@ -80,6 +80,14 @@ class Scheduler:
                 "The output file does not seem to be a json file. Please specify a file path using --out."
             )
             sys.exit(1)
+        if "api.openai.com" in endpoint_url and api_key == "-":
+            logger.error(
+                "When using the OpenAI API, you need to provide a key with the argument: --api_key=<your key>"
+            )
+            sys.exit(1)
+        if endpoint_url.endswith("/"):
+            logger.warning("Removing trailing / from the endpoint url.")
+            endpoint_url = endpoint_url[:-1]
         try:
             logger.info("Testing availability of the endpoint...")
             page = requests.get(endpoint_url)
@@ -120,6 +128,8 @@ class Scheduler:
         self.out = out
         self.instruction = instruction
         self.endpoint_url = endpoint_url
+        self.model = model
+        self.api_key = api_key
         self.use_moderator = use_moderator
         self.max_turns = max_turns
         self.feedback_sentences = feedback_sentences
@@ -141,8 +151,8 @@ class Scheduler:
     def run_discussion(
         self,
         client: httpx.Client,
-        llm: HFTGIChat,
-        agent_generator: TGIPersonaGenerator,
+        llm: Chat,
+        agent_generator: ExpertGenerator,
         sample: dict[str, Any],
     ) -> Optional[str]:
         """
@@ -249,9 +259,12 @@ class Scheduler:
         Once a spot in the queue is free because a discussion ended, the next discussion is initialized.
         """
         # Creating HuggingFace endpoint
-        llm = HFTGIChat(client=OpenAI(base_url=f"{self.endpoint_url}/v1", api_key="-"))
+        llm = Chat(
+            client=OpenAI(base_url=f"{self.endpoint_url}/v1", api_key=self.api_key),
+            model=self.model,
+        )
 
-        agent_generator = TGIPersonaGenerator(llm=llm)
+        agent_generator = ExpertGenerator(llm=llm)
 
         pool = ThreadPool(processes=self.max_concurrent_requests)
         results = []
@@ -309,7 +322,9 @@ def main(
     data: str,
     out: str,
     instruction: str,
-    endpoint_url: str,
+    endpoint_url: str = "https://api.openai.com",
+    model: str = "gpt-3.5-turbo",  # use "tgi" for Text Generation Inference by HuggingFace or one of these: https://platform.openai.com/docs/models
+    api_key: str = "-",
     use_moderator: bool = False,
     max_turns: int = 10,
     feedback_sentences: tuple[int, int] = (3, 4),
@@ -328,6 +343,8 @@ def main(
         out,
         instruction,
         endpoint_url,
+        model=model,
+        api_key=api_key,
         use_moderator=use_moderator,
         max_turns=max_turns,
         feedback_sentences=feedback_sentences,

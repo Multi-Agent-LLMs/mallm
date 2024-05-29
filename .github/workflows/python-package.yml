@@ -99,9 +99,11 @@ jobs:
       - name: Post coverage result as PR comment
         if: github.event_name == 'pull_request'
         run: |
-          coverage_result=$(poetry run coverage report)
-          pr_comment="### Coverage Report\n\n\`\`\`\n${coverage_result}\n\`\`\`"
-          echo "$pr_comment" > coverage_comment.txt
+          poetry run coverage report > coverage_report.txt
+          echo '### Coverage Report' > coverage_comment.md
+          echo '```' >> coverage_comment.md
+          cat coverage_report.txt >> coverage_comment.md
+          echo '```' >> coverage_comment.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Create Pull Request Comment
@@ -110,7 +112,7 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const comment = fs.readFileSync('coverage_comment.txt', 'utf8');
+            const comment = fs.readFileSync('coverage_comment.md', 'utf8');
             github.rest.issues.createComment({
               issue_number: context.payload.pull_request.number,
               owner: context.repo.owner,
