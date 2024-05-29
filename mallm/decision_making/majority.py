@@ -1,5 +1,5 @@
 from mallm.agents.panelist import Panelist
-from mallm.decision_making.DecisionProtocol import DecisionProtocol
+from mallm.decision_making.decision_protocol import DecisionProtocol
 from mallm.utils.types import Agreement
 
 

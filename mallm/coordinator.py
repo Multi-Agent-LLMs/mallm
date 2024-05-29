@@ -13,9 +13,9 @@ import httpx
 from mallm.agents.agent import Agent
 from mallm.agents.moderator import Moderator
 from mallm.agents.panelist import Panelist
-from mallm.decision_making.DecisionProtocol import DecisionProtocol
-from mallm.decision_making.MajorityConsensus import MajorityConsensus
-from mallm.decision_making.Voting import Voting
+from mallm.decision_making.decision_protocol import DecisionProtocol
+from mallm.decision_making.majority import MajorityConsensus
+from mallm.decision_making.voting import Voting
 from mallm.discourse_policy.DiscourceDebate import DiscourseDebate
 from mallm.discourse_policy.DiscourceMemory import DiscourseMemory
 from mallm.discourse_policy.DiscourceRelay import DiscourseRelay
