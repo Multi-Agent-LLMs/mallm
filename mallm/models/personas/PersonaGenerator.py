@@ -1,87 +1,21 @@
-import json
-import logging
-
-from mallm.models.Chat import Chat
-
-logger = logging.getLogger("mallm")
+from abc import ABC, abstractmethod
 
 
-class PersonaGenerator:
-    def __init__(self, llm: Chat):
-        self.llm = llm
-        self.base_prompt = {
-            "role": "system",
-            "content": """
-When faced with a task, begin by identifying the participants who will contribute to solving the task. Provide role and description of the participants, describing their expertise or needs, formatted using the provided JSON schema.
-Generate one participant at a time, complementing the existing participants to foster a rich discussion.
-
-Example 1:
-Task: Explain the basics of machine learning to high school students.
-New Participant:
-{"role": "Educator", "description": "An experienced teacher who simplifies complex topics for teenagers."}
-
-Example 2:
-Task: Develop a new mobile app for tracking daily exercise.
-Already Generated Participants:
-{"role": "Fitness Coach", "description": "A person that has high knowledge about sports and fitness."}
-New Participant:
-{"role": "Software Developer", "description": "A creative developer with experience in mobile applications and user interface design."}
-
-Example 3:
-Task: Write a guide on how to cook Italian food for beginners.
-Already Generated Participants:
-{"role": "Italian Native", "description": "An average home cook that lived in italy for 30 years."}
-{"role": "Food Scientist", "description": "An educated scientist that knows which flavor combinations result in the best taste."}
-New Participant:
-{"role": "Chef", "description": "A professional chef specializing in Italian cuisine who enjoys teaching cooking techniques."}
-        """,
-        }
-
+class PersonaGenerator(ABC):
+    @abstractmethod
     def generate_personas(
         self, task_description: str, num_agents: int
     ) -> list[dict[str, str]]:
-        current_prompt = [
-            self.base_prompt,
-            {
-                "role": "user",
-                "content": f"\nNow generate a participant to discuss the following task:\nTask: {task_description}\n",
-            },
-        ]
+        """
+        Abstract method to generate a list of persona descriptions based on the given task.
 
-        logger.debug("Creating " + str(num_agents) + " agents...")
-        agents: list[dict[str, str]] = []
-        while len(agents) < num_agents:
-            # Send the prompt to the InferenceClient
-            response = self.llm.invoke(
-                [
-                    *current_prompt,
-                    {
-                        "role": "user",
-                        "content": "Please use the follow the examples to generate a useful persona for the task! Only answer with the JSON for the next persona!",
-                    },
-                ]
-            )
-            try:
-                new_agent = json.loads(response)
-                if new_agent["role"] == "" or new_agent["description"] == "":
-                    continue
-                agents.append(new_agent)
-            except json.decoder.JSONDecodeError as e:
-                logger.debug(
-                    "Could not decode json (will attempt retry): "
-                    + str(e)
-                    + "\nResponse string: "
-                    + str(response)
-                )
-                continue
+        Parameters:
+        task_description (str): Description of the task for which personas are to be generated.
+        num_agents (int): Number of persona descriptions to generate.
 
-            # Update the prompt with the newly generated persona for the next iteration
-            current_prompt.append(
-                {
-                    "role": "system",
-                    "content": f"Already Generated Participants:\n{response}",
-                }
-            )
-        logger.debug("Found agents: \n" + str(agents))
-
-        return agents
+        Returns:
+        list[dict[str, str]]: A list of dictionaries, where each dictionary represents a persona
+                               with keys like 'role' and 'persona' (or other relevant descriptors),
+                               each mapped to their respective string description.
+        """
+        pass

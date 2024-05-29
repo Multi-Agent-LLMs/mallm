@@ -69,16 +69,17 @@ class Chat(LLM):
         Returns:
             The model output as a string. Actual completions SHOULD NOT include the prompt.
         """
+        stop = [
+            "<|start_header_id|>",
+            "<|end_header_id|>",
+            "<|eot_id|>",
+            "<|reserved_special_token",
+        ]
         chat_completion = self.client.chat.completions.create(
             model=self.model,
             messages=prompt,
             stream=True,
-            stop=[
-                "<|start_header_id|>",
-                "<|end_header_id|>",
-                "<|eot_id|>",
-                "<|reserved_special_token",
-            ],
+            stop=stop,
         )
         # iterate and print stream
         collected_messages = []
@@ -86,8 +87,11 @@ class Chat(LLM):
             message_str = message.choices[0].delta.content
             if message_str:
                 collected_messages.append(message_str)
+        response = "".join(collected_messages)
+        for stop_word in stop:
+            response = response.replace(stop_word, "")
 
-        return "".join(collected_messages)
+        return response
 
     def _stream(  # type: ignore
         self,

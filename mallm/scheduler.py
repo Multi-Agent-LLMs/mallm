@@ -15,7 +15,7 @@ from openai import OpenAI
 
 from mallm.coordinator import Coordinator
 from mallm.models.Chat import Chat
-from mallm.models.personas.PersonaGenerator import PersonaGenerator
+from mallm.models.personas.ExpertGenerator import ExpertGenerator
 from mallm.utils.CustomFormatter import CustomFormatter
 
 just_fix_windows_console()
@@ -152,7 +152,7 @@ class Scheduler:
         self,
         client: httpx.Client,
         llm: Chat,
-        agent_generator: PersonaGenerator,
+        agent_generator: ExpertGenerator,
         sample: dict[str, Any],
     ) -> Optional[str]:
         """
@@ -264,7 +264,7 @@ class Scheduler:
             model=self.model,
         )
 
-        agent_generator = PersonaGenerator(llm=llm)
+        agent_generator = ExpertGenerator(llm=llm)
 
         pool = ThreadPool(processes=self.max_concurrent_requests)
         results = []
