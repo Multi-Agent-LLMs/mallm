@@ -79,8 +79,8 @@ class RankedVoting(DecisionProtocol):
 
         # Calculate the score for each answer based on the rankings
         scores = [0] * len(final_answers)
-        for ranking in rankings:
-            for i, rank in enumerate(ranking):
+        for ranking_list in rankings:
+            for i, rank in enumerate(ranking_list):
                 scores[rank] += 5 - i  # Score 5 for the 1st rank, 4 for the 2nd, etc.
 
         # Find the answer with the highest score

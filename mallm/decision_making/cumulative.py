@@ -92,9 +92,9 @@ class CumulativeVoting(DecisionProtocol):
         return final_answers[best_solution_index], True
 
     @staticmethod
-    def validate_points_distribution(points_dict: dict, num_solutions: int) -> bool:
-        if not isinstance(points_dict, dict):
-            return False
+    def validate_points_distribution(
+        points_dict: dict[int, int], num_solutions: int
+    ) -> bool:
         total_points = sum(points_dict.values())
         if total_points != 10:
             return False
