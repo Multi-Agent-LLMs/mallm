@@ -21,8 +21,8 @@ from mallm.discourse_policy.memory import DiscourseMemory
 from mallm.discourse_policy.relay import DiscourseRelay
 from mallm.discourse_policy.report import DiscourseReport
 from mallm.discourse_policy.policy import DiscoursePolicy
-from mallm.models.HFTGIChat import HFTGIChat
-from mallm.models.personas.PersonaGenerator import PersonaGenerator
+from mallm.models.Chat import Chat
+from mallm.models.personas.ExpertGenerator import ExpertGenerator
 from mallm.prompts.coordinator_prompts import generate_chat_prompt_extract_result
 from mallm.utils.types import Agreement, Memory
 
@@ -46,9 +46,9 @@ PROTOCOLS: dict[str, Type[DiscoursePolicy]] = {
 class Coordinator:
     def __init__(
         self,
-        model: HFTGIChat,
+        model: Chat,
         client: httpx.Client,
-        agent_generator: Optional[PersonaGenerator] = None,
+        agent_generator: Optional[ExpertGenerator] = None,
         use_moderator: bool = False,
         memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
     ):

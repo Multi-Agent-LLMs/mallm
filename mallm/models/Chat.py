@@ -9,7 +9,7 @@ from langchain_core.prompt_values import PromptValue
 from openai import OpenAI
 
 
-class HFTGIChat(LLM):
+class Chat(LLM):
     """A custom chat model that queries the chat API of HuggingFace Text Generation Inference
 
     When contributing an implementation to LangChain, carefully document
@@ -29,6 +29,7 @@ class HFTGIChat(LLM):
 
     client: OpenAI
     timeout: int = 120
+    model: str = "gpt-3.5-turbo"
     stop_tokens: list[str] = [
         "<|start_header_id|>",
         "<|end_header_id|>",

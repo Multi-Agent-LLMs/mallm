@@ -1,14 +1,14 @@
 import json
 import logging
 
-from mallm.models.HFTGIChat import HFTGIChat
+from mallm.models.Chat import Chat
 from mallm.models.personas.PersonaGenerator import PersonaGenerator
 
 logger = logging.getLogger("mallm")
 
 
-class TGIPersonaGenerator(PersonaGenerator):
-    def __init__(self, llm: HFTGIChat):
+class ExpertGenerator(PersonaGenerator):
+    def __init__(self, llm: Chat):
         self.llm = llm
         self.base_prompt = {
             "role": "system",
@@ -51,6 +51,7 @@ New Participant:
 
         logger.debug("Creating " + str(num_agents) + " agents...")
         agents: list[dict[str, str]] = []
+        retry = 0
         while len(agents) < num_agents:
             # Send the prompt to the InferenceClient
             response = self.llm.invoke(
@@ -68,8 +69,9 @@ New Participant:
                     continue
                 agents.append(new_agent)
             except json.decoder.JSONDecodeError as e:
+                retry = retry + 1
                 logger.debug(
-                    "Could not decode json (will attempt retry): "
+                    f"Could not decode json (will attempt retry no. {str(retry)}): "
                     + str(e)
                     + "\nResponse string: "
                     + str(response)
