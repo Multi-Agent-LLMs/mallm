@@ -218,7 +218,7 @@ class Agent:
             with dbm.open(self.memory_bucket, "r") as db:
                 for key in db.keys():
                     json_object = json.loads(db[key].decode())
-                    memories.append(Memory(**json_object))  # TODO: Maybe reverse sort
+                    memories.append(Memory(**json_object))
             memories = sorted(memories, key=lambda x: x.message_id, reverse=False)
             context_memory = []
             for memory in memories:
