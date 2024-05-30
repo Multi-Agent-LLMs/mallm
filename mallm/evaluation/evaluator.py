@@ -42,7 +42,7 @@ class Evaluator:
         with open(self.output_file_path, "w") as file:
             json.dump(self.data, file, indent=4)
 
-    def process(self):
+    def process(self) -> None:
         self.add_scores()
         self.save_json()
 
