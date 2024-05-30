@@ -8,7 +8,9 @@ class BERTScore(Metric):
     A class to evaluate the BERTScore for text generation tasks.
     """
 
-    def evaluate(self, generated_text: str, reference_texts: list[str]) -> dict:
+    def evaluate(
+        self, generated_text: str, reference_texts: list[str]
+    ) -> dict[str, Any]:
         """
         Evaluate the generated text against a reference text using BERTScore.
 

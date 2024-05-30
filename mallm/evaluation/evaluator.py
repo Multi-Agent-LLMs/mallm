@@ -5,6 +5,7 @@ from mallm.evaluation.metrics.bertscore import BERTScore
 from mallm.evaluation.metrics.meteor import METEOR
 import fire
 from tqdm import tqdm
+from typing import Any
 
 
 class Evaluator:
@@ -23,7 +24,7 @@ class Evaluator:
             if metric.get_metric_name().lower() in metrics:
                 self.metrics.append(metric)
 
-    def calculate_scores(self, answer: str, references: list[str]) -> dict:
+    def calculate_scores(self, answer: str, references: list[str]) -> dict[str, Any]:
         # Tokenize the answer and references
         scores = {}
         for metric in self.metrics:
