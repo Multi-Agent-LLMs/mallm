@@ -28,7 +28,7 @@ class ROUGE(Metric):
         scores = scorer.score(
             generated_text, reference_texts[0]
         )  # rouge only takes one reference
-        scores_dict: dict(str, Any) = {
+        scores_dict = {
             "rouge1": {
                 "precision": scores["rouge1"].precision,
                 "recall": scores["rouge1"].recall,
@@ -50,7 +50,7 @@ class ROUGE(Metric):
                 "fmeasure": scores["rougeL"].fmeasure,
             },
         }
-        return scores_dict
+        return dict(scores_dict)
 
     def get_metric_name(self) -> str:
         """
