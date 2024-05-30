@@ -15,6 +15,9 @@ dependencies:
   - pytorch-cuda=12.1
   - transformers
   - accelerate
+  - nltk
+  - rouge_score
+  - bert_score
   - pip
   - pip:
       - -e .

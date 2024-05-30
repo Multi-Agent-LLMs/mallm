@@ -1,15 +1,18 @@
 import json
-from metrics.bleu import BLEU
-from metrics.rouge import ROUGE
-from metrics.bertscore import BERTScore
-from metrics.meteor import METEOR
+from mallm.evaluation.metrics.bleu import BLEU
+from mallm.evaluation.metrics.rouge import ROUGE
+from mallm.evaluation.metrics.bertscore import BERTScore
+from mallm.evaluation.metrics.meteor import METEOR
 import fire
 from tqdm import tqdm
 
 
-class ScoreCalculator:
-    def __init__(self, input_file_path: str, metrics: list[str] = ["bleu"]):
+class Evaluator:
+    def __init__(
+        self, input_file_path: str, output_file_path: str, metrics: list[str] = ["bleu"]
+    ):
         self.input_file_path = input_file_path
+        self.output_file_path = output_file_path
         self.data = self.load_json()
 
         all_metrics = [BLEU(), ROUGE(), BERTScore(), METEOR()]
@@ -39,19 +42,19 @@ class ScoreCalculator:
                 score = self.calculate_scores(answer, references)
                 item["scores"] = score
 
-    def save_json(self, output_file_path):
-        with open(output_file_path, "w") as file:
+    def save_json(self):
+        with open(self.output_file_path, "w") as file:
             json.dump(self.data, file, indent=4)
 
-    def process(self, output_file_path):
+    def process(self):
         self.add_scores()
-        self.save_json(output_file_path)
+        self.save_json()
 
 
 def main(input_file_path: str, output_file_path: str, metrics: list[str]) -> None:
     print("Metrics to calculate: " + str(metrics))
-    evaluator = ScoreCalculator(input_file_path, metrics)
-    evaluator.process(output_file_path)
+    evaluator = Evaluator(input_file_path, output_file_path, metrics)
+    evaluator.process()
     print(f"Scores added and saved to {output_file_path}")
 
 

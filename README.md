@@ -114,9 +114,18 @@ memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
 
 We provide some basic evaluation metrics that can be directly applied to the output json of mallm.
 
-Example:
+From terminal:
 
-`python .\evaluation\evaluation.py --input_file_path="test_out.json" --output_file_path="test_out_evaluated.json" --metrics=[rouge,bleu]`
+`python .\evaluation\evaluation.py --input_file_path="test_out.json" --output_file_path="test_out_evaluated.json" --metrics=[bleu,rouge]`
+
+From script:
+
+```py
+from mallm.evaluation.evaluator import Evaluator
+
+evaluator = Evaluator(input_file_path= "test_out.json", output_file_path ="test_out_evaluated.json", metrics = ["bleu","rouge"])
+evaluator.process()
+```
 
 ## Logging
 
