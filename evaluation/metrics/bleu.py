@@ -27,7 +27,7 @@ class BLEU(Metric):
         for r in reference_texts:
             reference_tokens.append(word_tokenize(r))
         # Calculate BLEU score
-        score = load_metric("bleu").compute(
+        score = load_metric("bleu", trust_remote_code=True).compute(
             references=[reference_tokens], predictions=[generated_tokens]
         )
         return {"bleu": score["bleu"]}

@@ -110,6 +110,14 @@ clear_memory_bucket: bool = True,
 memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
 ```
 
+## Evaluation
+
+We provide some basic evaluation metrics that can be directly applied to the output json of mallm.
+
+Example:
+
+`python .\evaluation\evaluation.py --input_file_path="test_out.json" --output_file_path="test_out_evaluated.json" --metrics=[rouge,bleu]`
+
 ## Logging
 
 To enable logging you can add a handler to the library logger. This can be done with the following code

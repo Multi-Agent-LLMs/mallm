@@ -4,27 +4,35 @@ from metrics.rouge import ROUGE
 from metrics.bertscore import BERTScore
 from metrics.meteor import METEOR
 import fire
+from tqdm import tqdm
 
 
 class ScoreCalculator:
-    def __init__(self, json_file_path):
-        self.json_file_path = json_file_path
-        self.metrics = [BLEU, ROUGE, BERTScore, METEOR]
+    def __init__(self, input_file_path: str, metrics: list[str] = ["bleu"]):
+        self.input_file_path = input_file_path
         self.data = self.load_json()
 
+        all_metrics = [BLEU(), ROUGE(), BERTScore(), METEOR()]
+        metrics = [m.lower() for m in metrics]
+
+        self.metrics = []
+        for metric in all_metrics:
+            if metric.get_metric_name().lower() in metrics:
+                self.metrics.append(metric)
+
     def load_json(self):
-        with open(self.json_file_path, "r") as file:
+        with open(self.input_file_path, "r") as file:
             return json.load(file)
 
     def calculate_scores(self, answer, references):
         # Tokenize the answer and references
         scores = {}
         for metric in self.metrics:
-            scores = scores | metric().evaluate(answer, references)
+            scores = scores | metric.evaluate(answer, references)
         return scores
 
     def add_scores(self):
-        for item in self.data:
+        for item in tqdm(self.data):
             answer = item.get("answer", "")
             references = item.get("references", [])
             if answer and references:
@@ -40,14 +48,10 @@ class ScoreCalculator:
         self.save_json(output_file_path)
 
 
-def main() -> None:
-    # Example usage:
-    json_file_path = "test_out.json"
-    output_file_path = "test_out_evaluated.json"
-
-    evaluator = ScoreCalculator(json_file_path)
+def main(input_file_path: str, output_file_path: str, metrics: list[str]) -> None:
+    print("Metrics to calculate: " + str(metrics))
+    evaluator = ScoreCalculator(input_file_path, metrics)
     evaluator.process(output_file_path)
-
     print(f"Scores added and saved to {output_file_path}")
 
 
