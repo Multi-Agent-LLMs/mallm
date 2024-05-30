@@ -161,7 +161,7 @@ class Coordinator:
     def discuss(
         self,
         task_instruction: str,
-        input_str: str,
+        input: list[str],
         context: list[str],
         use_moderator: bool,
         feedback_sentences: tuple[int, int],
@@ -188,6 +188,12 @@ class Coordinator:
         if context and isinstance(context, list):
             for c in context:
                 task_instruction += "\n" + c
+        input_str = ""
+        for num, i in enumerate(input):
+            if len(input) > 1:
+                input_str += str(num + 1) + ") " + i + "\n"
+            else:
+                input_str = i
 
         self.init_agents(task_instruction, input_str, use_moderator=use_moderator)
 
