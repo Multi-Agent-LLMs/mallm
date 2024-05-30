@@ -1,8 +1,8 @@
-from . import metric
+from .metric import Metric
 from bert_score import score as bert_score
 
 
-class BERTScore(metric.Metric):
+class BERTScore(Metric):
     """
     A class to evaluate the BERTScore for text generation tasks.
     """

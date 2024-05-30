@@ -1,8 +1,8 @@
-from . import metric
+from .metric import Metric
 from rouge_score import rouge_scorer
 
 
-class ROUGE(metric.Metric):
+class ROUGE(Metric):
     """
     A class to evaluate the ROUGE score for text generation tasks.
     """

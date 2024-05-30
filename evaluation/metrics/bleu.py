@@ -1,11 +1,11 @@
-from . import metric
+from .metric import Metric
 from datasets import load_metric
 from nltk import word_tokenize
 
 # from nltk.translate.bleu_score import sentence_bleu    # preferred but broken with python 3.12 at commit time
 
 
-class BLEU(metric.Metric):
+class BLEU(Metric):
     """
     A class to evaluate the BLEU score for text generation tasks.
     """

@@ -1,11 +1,11 @@
-from . import metric
+from .metric import Metric
 from nltk.translate.meteor_score import meteor_score
 from nltk import word_tokenize, download
 
 download("wordnet")
 
 
-class METEOR(metric.Metric):
+class METEOR(Metric):
     """
     A class to evaluate the METEOR score for text generation tasks.
     """
