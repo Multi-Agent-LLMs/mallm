@@ -80,7 +80,6 @@ class Chat(LLM):
             messages=prompt,
             stream=True,
             stop=self.stop_tokens,
-            stream_options={"include_usage": True},
         )
         # iterate and print stream
         collected_messages = []
