@@ -1,6 +1,7 @@
 from .metric import Metric
 from nltk.translate.meteor_score import meteor_score
 from nltk import word_tokenize, download
+from typing import Any
 
 download("wordnet")
 
@@ -10,7 +11,9 @@ class METEOR(Metric):
     A class to evaluate the METEOR score for text generation tasks.
     """
 
-    def evaluate(self, generated_text: str, reference_texts: list[str]) -> dict:
+    def evaluate(
+        self, generated_text: str, reference_texts: list[str]
+    ) -> dict[str, Any]:
         """
         Evaluate the generated text against a reference text using METEOR score.
 

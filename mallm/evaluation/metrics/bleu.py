@@ -1,6 +1,7 @@
 from .metric import Metric
 from datasets import load_metric
 from nltk import word_tokenize
+from typing import Any
 
 # from nltk.translate.bleu_score import sentence_bleu    # preferred but broken with python 3.12 at commit time
 
@@ -10,7 +11,9 @@ class BLEU(Metric):
     A class to evaluate the BLEU score for text generation tasks.
     """
 
-    def evaluate(self, generated_text: str, reference_texts: list[str]) -> float:
+    def evaluate(
+        self, generated_text: str, reference_texts: list[str]
+    ) -> dict[str, Any]:
         """
         Evaluate the generated text against a reference text using BLEU score.
 

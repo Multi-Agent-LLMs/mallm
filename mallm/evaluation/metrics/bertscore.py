@@ -1,5 +1,6 @@
 from .metric import Metric
 from bert_score import score as bert_score
+from typing import Any
 
 
 class BERTScore(Metric):

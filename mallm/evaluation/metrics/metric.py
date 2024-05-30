@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Any
 
 
 class Metric(ABC):
@@ -8,7 +9,9 @@ class Metric(ABC):
     """
 
     @abstractmethod
-    def evaluate(self, generated_text: str, reference_texts: list[str]) -> float:
+    def evaluate(
+        self, generated_text: str, reference_texts: list[str]
+    ) -> dict[str, Any]:
         """
         Evaluate the generated text against a reference text.
 

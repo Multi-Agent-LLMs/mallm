@@ -27,7 +27,7 @@ class Evaluator:
         # Tokenize the answer and references
         scores = {}
         for metric in self.metrics:
-            scores = scores | metric.evaluate(answer, references)
+            scores = {**scores, **metric.evaluate(answer, references)}
         return scores
 
     def add_scores(self) -> None:

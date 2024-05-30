@@ -1,5 +1,6 @@
 from .metric import Metric
 from rouge_score import rouge_scorer
+from typing import Any
 
 
 class ROUGE(Metric):
@@ -7,7 +8,9 @@ class ROUGE(Metric):
     A class to evaluate the ROUGE score for text generation tasks.
     """
 
-    def evaluate(self, generated_text: str, reference_texts: list[str]) -> dict:
+    def evaluate(
+        self, generated_text: str, reference_texts: list[str]
+    ) -> dict[str, Any]:
         """
         Evaluate the generated text against a reference text using ROUGE score.
 
