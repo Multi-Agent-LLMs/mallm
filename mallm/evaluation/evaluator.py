@@ -26,7 +26,7 @@ class Evaluator:
 
     def calculate_scores(self, answer: str, references: list[str]) -> dict[str, Any]:
         # Tokenize the answer and references
-        scores = {}
+        scores: dict[str, Any] = {}
         for metric in self.metrics:
             scores = {**scores, **metric.evaluate(answer, references)}
         return scores
