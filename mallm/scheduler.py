@@ -120,7 +120,8 @@ class Scheduler:
 
         self.data = [InputExample(**data) for data in json_data]
         try:
-            [data.confirm_types() for data in self.data]
+            for data in self.data:
+                data.confirm_types()
         except AssertionError as e:
             logger.error(
                 "Input data has wrong format. Please delete and download the data again."

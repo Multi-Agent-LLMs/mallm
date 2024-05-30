@@ -113,7 +113,8 @@ def load_and_execute_downloaders(directory="data_downloaders", datasets=None):
             try:
                 if downloader.download():
                     input_examples = downloader.process_data()
-                    [example.confirm_types() for example in input_examples]
+                    for example in input_examples:
+                        example.confirm_types()
                     downloader.save_to_json(input_examples)
                 print(f"\033[92m[COMPLETED]\033[0m Processed {downloader.name}")
             except Exception as e:
