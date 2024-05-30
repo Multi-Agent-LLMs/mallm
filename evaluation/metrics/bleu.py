@@ -1,6 +1,6 @@
 from . import metric
 from datasets import load_metric
-import nltk
+from nltk import word_tokenize
 
 # from nltk.translate.bleu_score import sentence_bleu    # preferred but broken with python 3.12 at commit time
 
@@ -22,10 +22,10 @@ class BLEU(metric.Metric):
         float: The BLEU score.
         """
         # Tokenize the input texts
-        generated_tokens = nltk.word_tokenize(generated_text)
+        generated_tokens = word_tokenize(generated_text)
         reference_tokens = []
         for r in reference_texts:
-            reference_tokens.append(nltk.word_tokenize(r))
+            reference_tokens.append(word_tokenize(r))
         # Calculate BLEU score
         score = load_metric("bleu").compute(
             references=[reference_tokens], predictions=[generated_tokens]

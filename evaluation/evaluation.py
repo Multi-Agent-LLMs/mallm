@@ -2,13 +2,14 @@ import json
 from metrics.bleu import BLEU
 from metrics.rouge import ROUGE
 from metrics.bertscore import BERTScore
+from metrics.meteor import METEOR
 import fire
 
 
 class ScoreCalculator:
     def __init__(self, json_file_path):
         self.json_file_path = json_file_path
-        self.metrics = [BLEU, ROUGE, BERTScore]
+        self.metrics = [BLEU, ROUGE, BERTScore, METEOR]
         self.data = self.load_json()
 
     def load_json(self):
