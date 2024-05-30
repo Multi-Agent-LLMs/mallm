@@ -10,10 +10,10 @@ from tqdm import tqdm
 class Evaluator:
     def __init__(
         self, input_file_path: str, output_file_path: str, metrics: list[str] = ["bleu"]
-    ):
-        self.input_file_path = input_file_path
+    ) -> None:
         self.output_file_path = output_file_path
-        self.data = self.load_json()
+        with open(input_file_path, "r") as file:
+            self.data = json.load(file)
 
         all_metrics = [BLEU(), ROUGE(), BERTScore(), METEOR()]
         metrics = [m.lower() for m in metrics]
@@ -23,18 +23,14 @@ class Evaluator:
             if metric.get_metric_name().lower() in metrics:
                 self.metrics.append(metric)
 
-    def load_json(self):
-        with open(self.input_file_path, "r") as file:
-            return json.load(file)
-
-    def calculate_scores(self, answer, references):
+    def calculate_scores(self, answer: str, references: list[str]) -> dict:
         # Tokenize the answer and references
         scores = {}
         for metric in self.metrics:
             scores = scores | metric.evaluate(answer, references)
         return scores
 
-    def add_scores(self):
+    def add_scores(self) -> None:
         for item in tqdm(self.data):
             answer = item.get("answer", "")
             references = item.get("references", [])
@@ -42,7 +38,7 @@ class Evaluator:
                 score = self.calculate_scores(answer, references)
                 item["scores"] = score
 
-    def save_json(self):
+    def save_json(self) -> None:
         with open(self.output_file_path, "w") as file:
             json.dump(self.data, file, indent=4)
 
