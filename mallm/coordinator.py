@@ -161,8 +161,8 @@ class Coordinator:
     def discuss(
         self,
         task_instruction: str,
-        input: list[str],
-        context: list[str],
+        input_lines: list[str],
+        context: Optional[list[str]],
         use_moderator: bool,
         feedback_sentences: tuple[int, int],
         paradigm: str,
@@ -185,15 +185,15 @@ class Coordinator:
 
         Returns the final response agreed on, the global memory, agent specific memory, turns needed, last agreements of agents
         """
-        if context and isinstance(context, list):
+        if context:
             for c in context:
                 task_instruction += "\n" + c
         input_str = ""
-        for num, i in enumerate(input):
-            if len(input) > 1:
-                input_str += str(num + 1) + ") " + i + "\n"
+        for num, input_line in enumerate(input_lines):
+            if len(input_lines) > 1:
+                input_str += str(num + 1) + ") " + input_line + "\n"
             else:
-                input_str = i
+                input_str = input_line
 
         self.init_agents(task_instruction, input_str, use_moderator=use_moderator)
 

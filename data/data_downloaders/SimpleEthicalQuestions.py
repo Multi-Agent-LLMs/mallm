@@ -5,6 +5,7 @@ import urllib
 import uuid
 
 from data.data_download import DatasetDownloader
+from mallm.utils.types import InputExample
 
 
 class SimpleEthicalQuestionsDownloader(DatasetDownloader):
@@ -23,12 +24,21 @@ class SimpleEthicalQuestionsDownloader(DatasetDownloader):
     def __init__(self):
         super().__init__("simple_ethical_questions", hf_dataset=False)
 
-    def process_data(self):
-        json_str = ""
+    def process_data(self) -> list[InputExample]:
+        input_examples = []
         for s in self.dataset[: self.sample_size]:
             ref = [k for k, v in s["target_scores"].items() if v == 1]
             multiple_choice_str = " Answer Choices:"
             for i, (k, v) in enumerate(s["target_scores"].items()):
                 multiple_choice_str += " " + f"{chr(ord('A') + i)}) " + k
-            json_str += f"""{{ "exampleId":"{str(uuid.uuid4())}", "datasetId": null, "input":[{json.dumps(s['input'] + multiple_choice_str)}], "context": null, "references": [{json.dumps(ref[0])}], "personas": null }}\n"""
-        self.save_to_json(json_str)
+            input_examples.append(
+                InputExample(
+                    example_id=str(uuid.uuid4()),
+                    dataset_id=None,
+                    input_str=[s["input"]],
+                    context=None,
+                    references=[ref[0]],
+                    personas=None,
+                )
+            )
+        return input_examples

@@ -1,4 +1,6 @@
+import dataclasses
 import importlib
+import json
 import os
 import sys
 import traceback
@@ -7,6 +9,7 @@ from pathlib import Path
 
 import fire
 from datasets import load_dataset
+from mallm.utils.types import InputExample
 
 
 class DatasetDownloader(ABC):
@@ -34,14 +37,14 @@ class DatasetDownloader(ABC):
 
     def download(self) -> bool:
         if not os.path.exists(self.output_path):
-            print(f"Downloading {self.name}...")
+            print(f"\n\033[94m[INFO]\033[0m Downloading {self.name}...")
             if self.hf_dataset:
                 self.hf_download()
             else:
                 self.custom_download()
             return True
         else:
-            print(f"{self.name} already downloaded.")
+            print(f"\033[92m[INFO]\033[0m {self.name} already downloaded.")
             return False
 
     def hf_download(self):
@@ -55,12 +58,13 @@ class DatasetDownloader(ABC):
         pass
 
     @abstractmethod
-    def process_data(self):
+    def process_data(self) -> list[InputExample]:
         pass
 
-    def save_to_json(self, data):
+    def save_to_json(self, data: list[InputExample]):
         with open(self.output_path, "w", encoding="utf-8") as file:
-            file.write(data)
+            file.write(json.dumps([dataclasses.asdict(example) for example in data]))
+        print(f"\033[93m[INFO]\033[0m Data saved to {self.output_path}")
 
     def shuffle_and_select(self, split="train"):
         if self.dataset:
@@ -79,7 +83,10 @@ def find_downloader_classes(module):
         if attribute_name == "DatasetDownloader":
             continue
         attribute = getattr(module, attribute_name)
-        return attribute
+        if isinstance(attribute, type) and issubclass(
+            attribute, module.DatasetDownloader
+        ):
+            return attribute
     return None
 
 
@@ -94,7 +101,7 @@ def load_and_execute_downloaders(directory="data_downloaders", datasets=None):
             and file.name.split(".")[0] not in datasets
         ):
             continue
-        print(f"Processing {file.name}")
+        print(f"\n\033[96m[PROCESSING]\033[0m Processing {file.name}")
         module_name = f"{directory}.{file.stem}"
         # Dynamically import the module
         module = importlib.import_module(module_name)
@@ -105,11 +112,16 @@ def load_and_execute_downloaders(directory="data_downloaders", datasets=None):
             downloader = downloader_class()
             try:
                 if downloader.download():
-                    downloader.process_data()
-                print(f"Processed {downloader.name}")
+                    input_examples = downloader.process_data()
+                    [example.confirm_types() for example in input_examples]
+                    downloader.save_to_json(input_examples)
+                print(f"\033[92m[COMPLETED]\033[0m Processed {downloader.name}")
             except Exception as e:
-                sys.stderr.write(f"Error processing {downloader.name}:\n{e}\n")
+                print(f"\033[91m[ERROR]\033[0m Error processing {downloader.name}: {e}")
                 traceback.print_exc()
+        else:
+            print(f"\033[93m[WARNING]\033[0m No downloader class found in {file.name}")
+        print("\033[90m" + "-" * 40 + "\033[0m")  # Separator for clarity
 
 
 if __name__ == "__main__":
