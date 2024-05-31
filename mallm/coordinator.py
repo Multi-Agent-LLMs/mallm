@@ -249,11 +249,12 @@ Decision-making: {self.decision_making.__class__.__name__}
 
         global_mem = self.get_global_memory()
         agent_mems = []
-        extracted_draft: str = None
         for a in self.agents:
             agent_mems.append(a.get_memories()[0])
-        if turn >= max_turns:  # if no agreement was reached
-            current_draft = "No agreement was reached."
+
+        if turn >= max_turns and not force_all_turns:  # if no agreement was reached
+            current_draft = "No aggreement was reached."
+            extracted_draft = "No aggreement was reached."
         else:
             extracted_draft = self.llm.invoke(
                 generate_chat_prompt_extract_result(task_instruction, current_draft),
