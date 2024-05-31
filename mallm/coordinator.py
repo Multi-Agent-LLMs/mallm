@@ -168,12 +168,19 @@ class Coordinator:
         paradigm: str,
         decision_protocol: str,
         max_turns: int,
+        force_all_turns: bool,
         context_length: int,
         include_current_turn_in_memory: bool,
         extract_all_drafts: bool,
         debate_rounds: Optional[int],
     ) -> tuple[
-        str, list[Memory], list[Optional[list[Memory]]], int, list[Agreement], float
+        str,
+        str,
+        list[Memory],
+        list[Optional[list[Memory]]],
+        int,
+        list[Agreement],
+        float,
     ]:
         """
         The routine responsible for the discussion between agents to solve a task.
@@ -230,6 +237,7 @@ Decision-making: {self.decision_making.__class__.__name__}
             use_moderator,
             feedback_sentences,
             max_turns,
+            force_all_turns,
             context_length,
             include_current_turn_in_memory,
             extract_all_drafts,
@@ -241,14 +249,23 @@ Decision-making: {self.decision_making.__class__.__name__}
 
         global_mem = self.get_global_memory()
         agent_mems = []
+        extracted_draft: str = None
         for a in self.agents:
             agent_mems.append(a.get_memories()[0])
         if turn >= max_turns:  # if no agreement was reached
             current_draft = "No agreement was reached."
         else:
-            current_draft = self.llm.invoke(
-                generate_chat_prompt_extract_result(input_str, current_draft),
+            extracted_draft = self.llm.invoke(
+                generate_chat_prompt_extract_result(task_instruction, current_draft),
                 client=self.client,
             )
 
-        return current_draft, global_mem, agent_mems, turn, agreements, discussion_time
+        return (
+            current_draft,
+            extracted_draft,
+            global_mem,
+            agent_mems,
+            turn,
+            agreements,
+            discussion_time,
+        )

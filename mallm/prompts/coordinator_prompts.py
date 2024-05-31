@@ -2,17 +2,17 @@ from typing import Optional
 
 
 def generate_chat_prompt_extract_result(
-    question: Optional[str], result: str
+    instruction: Optional[str], result: str
 ) -> list[dict[str, str]]:
     prompts = [
         {
             "role": "system",
-            "content": "Extract the final answer from the provided text. Ignore any statements of agreement or disagreement. Only provide the final answer without any additional text or modifications.",
+            "content": "Extract the final solution to the task from the provided text. Remove statements of agreement, disagreement, and explanations. Only extract text and do not modify.",
         }
     ]
 
-    if question:
-        user_content = f"Question: {question}\n\nResult: {result}"
+    if instruction:
+        user_content = f"\n\Task: {instruction}\n\nText: {result}"
     else:
         user_content = result
 
