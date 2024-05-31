@@ -18,6 +18,7 @@ from mallm.prompts.agent_prompts import (
     generate_chat_prompt_draft,
     generate_chat_prompt_feedback,
     generate_chat_prompt_improve,
+    generate_chat_prompt_agree,
 )
 from mallm.prompts.coordinator_prompts import generate_chat_prompt_extract_result
 from mallm.utils.types import Agreement, Memory, TemplateFilling
@@ -96,16 +97,30 @@ class Agent:
         extract_all_drafts: bool,
         agreements: list[Agreement],
     ) -> tuple[str, Memory, list[Agreement]]:
-        res = self.llm.invoke(
-            generate_chat_prompt_improve(template_filling), client=self.client
+        # Step 1: Check agreement
+        agree_res = self.llm.invoke(
+            generate_chat_prompt_agree(template_filling), client=self.client
         )
-        agreements = self.agree(res, agreements)
-        current_draft = None
-        if extract_all_drafts:
-            current_draft = self.llm.invoke(
-                generate_chat_prompt_extract_result(template_filling.input_str, res),
-                client=self.client,
+        agreements = self.agree(agree_res, agreements)
+
+        # Step 2: Handle response based on agreement
+        if agreements[-1].agreement:
+            current_draft = template_filling.current_draft
+            res = agree_res
+        else:
+            res = self.llm.invoke(
+                generate_chat_prompt_improve(template_filling), client=self.client
             )
+            if extract_all_drafts:
+                current_draft = self.llm.invoke(
+                    generate_chat_prompt_extract_result(
+                        template_filling.input_str, res
+                    ),
+                    client=self.client,
+                )
+            else:
+                current_draft = None
+
         memory = Memory(
             message_id=unique_id,
             turn=turn,
@@ -132,22 +147,37 @@ class Agent:
         agreements: list[Agreement],
         is_moderator: bool = False,
     ) -> tuple[str, Memory, list[Agreement]]:
-        res = self.llm.invoke(
-            generate_chat_prompt_draft(template_filling), client=self.client
+        # Step 1: Check agreement
+        agree_res = self.llm.invoke(
+            generate_chat_prompt_agree(template_filling), client=self.client
         )
-        agreements = self.agree(res, agreements, self_drafted=True)
-        current_draft = None
-        if extract_all_drafts:
-            current_draft = self.llm.invoke(
-                generate_chat_prompt_extract_result(template_filling.input_str, res),
-                client=self.client,
+        agreements = self.agree(agree_res, agreements, self_drafted=True)
+
+        # Step 2: Handle response based on agreement
+        if agreements[-1].agreement:
+            current_draft = template_filling.current_draft
+            res = agree_res
+        else:
+            res = self.llm.invoke(
+                generate_chat_prompt_draft(template_filling), client=self.client
             )
+            if extract_all_drafts:
+                current_draft = self.llm.invoke(
+                    generate_chat_prompt_extract_result(
+                        template_filling.input_str, res
+                    ),
+                    client=self.client,
+                )
+            else:
+                current_draft = None
+
         if is_moderator:
             agreement = Agreement(
                 agreement=None, agent_id=self.id, persona=self.persona, response=res
             )
         else:
             agreement = agreements[-1]
+
         memory = Memory(
             message_id=unique_id,
             turn=turn,
@@ -172,10 +202,20 @@ class Agent:
         template_filling: TemplateFilling,
         agreements: list[Agreement],
     ) -> tuple[str, Memory, list[Agreement]]:
-        res = self.llm.invoke(
-            generate_chat_prompt_feedback(template_filling), client=self.client
+        # Step 1: Check agreement
+        agree_res = self.llm.invoke(
+            generate_chat_prompt_agree(template_filling), client=self.client
         )
-        agreements = self.agree(res, agreements)
+        agreements = self.agree(agree_res, agreements)
+
+        # Step 2: Handle response based on agreement
+        if agreements[-1].agreement:
+            res = agree_res
+        else:
+            res = self.llm.invoke(
+                generate_chat_prompt_feedback(template_filling), client=self.client
+            )
+
         memory = Memory(
             message_id=unique_id,
             turn=turn,
@@ -230,14 +270,14 @@ class Agent:
                             if memory.contribution == "draft" or (
                                 memory.contribution == "improve"
                             ):
-                                current_draft = memory.text
+                                current_draft = memory.extracted_draft or memory.text
                 else:
                     context_memory.append(memory)
                     memory_ids.append(int(memory.message_id))
                     if memory.contribution == "draft" or (
                         memory.contribution == "improve"
                     ):
-                        current_draft = memory.text
+                        current_draft = memory.extracted_draft or memory.text
         else:
             context_memory = None
 
