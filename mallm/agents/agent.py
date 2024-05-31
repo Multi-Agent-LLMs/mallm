@@ -248,7 +248,7 @@ class Agent:
             )
         return context_memory, memory_ids, current_draft
 
-    def get_debate_history(
+    def get_discussion_history(
         self,
         context_length: Optional[int] = None,
         turn: Optional[int] = None,

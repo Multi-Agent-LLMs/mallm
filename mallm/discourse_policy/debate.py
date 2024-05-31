@@ -84,7 +84,7 @@ class DiscourseDebate(DiscoursePolicy):
             # ---- Agent A1
             if use_moderator and coordinator.moderator is not None:
                 debate_history, memory_ids, current_draft = (
-                    coordinator.moderator.get_debate_history(
+                    coordinator.moderator.get_discussion_history(
                         context_length=context_length,
                         turn=turn,
                         include_this_turn=include_current_turn_in_memory,
@@ -114,7 +114,7 @@ class DiscourseDebate(DiscoursePolicy):
             else:
                 debate_history, memory_ids, current_draft = coordinator.panelists[
                     0
-                ].get_debate_history(
+                ].get_discussion_history(
                     context_length=context_length,
                     turn=turn,
                     include_this_turn=include_current_turn_in_memory,
@@ -151,10 +151,12 @@ class DiscourseDebate(DiscoursePolicy):
                     # We call participate() below, which is a method of Panelist
                     assert isinstance(a, Panelist)
 
-                    debate_history, memory_ids, current_draft = a.get_debate_history(
-                        context_length=context_length,
-                        turn=turn,
-                        include_this_turn=include_current_turn_in_memory,
+                    debate_history, memory_ids, current_draft = (
+                        a.get_discussion_history(
+                            context_length=context_length,
+                            turn=turn,
+                            include_this_turn=include_current_turn_in_memory,
+                        )
                     )
                     next_a = i + 2
                     if i == len(coordinator.agents[1:]) - 1:

@@ -42,10 +42,12 @@ class DiscoursePolicy(ABC):
             logger.info(f"Ongoing. Current turn: {self.turn}")
 
             for i, agent in enumerate(coordinator.agents):
-                debate_history, memory_ids, current_draft = agent.get_debate_history(
-                    context_length=context_length,
-                    turn=self.turn,
-                    include_this_turn=include_current_turn_in_memory,
+                debate_history, memory_ids, current_draft = (
+                    agent.get_discussion_history(
+                        context_length=context_length,
+                        turn=self.turn,
+                        include_this_turn=include_current_turn_in_memory,
+                    )
                 )
 
                 template_filling = TemplateFilling(
