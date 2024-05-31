@@ -116,7 +116,7 @@ We provide some basic evaluation metrics that can be directly applied to the out
 
 From terminal:
 
-`python .\mallm\evaluation\evaluator.py --input_file_path="test_out.json" --output_file_path="test_out_evaluated.json" --metrics=[bleu,rouge]`
+`python mallm/evaluation/evaluator.py --input_file_path="test_out.json" --output_file_path="test_out_evaluated.json" --metrics=[bleu,rouge]`
 
 From script:
 

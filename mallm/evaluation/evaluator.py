@@ -1,28 +1,42 @@
 import json
-from mallm.evaluation.metrics.bleu import BLEU
-from mallm.evaluation.metrics.rouge import ROUGE
-from mallm.evaluation.metrics.bertscore import BERTScore
-from mallm.evaluation.metrics.meteor import METEOR
+from typing import Any, Optional
+
 import fire
 from tqdm import tqdm
-from typing import Any
+
+from mallm.evaluation.metrics.bertscore import BERTScore
+from mallm.evaluation.metrics.bleu import BLEU
+from mallm.evaluation.metrics.meteor import METEOR
+from mallm.evaluation.metrics.rouge import ROUGE
+
+ALL_METRICS = [BLEU(), ROUGE(), BERTScore(), METEOR()]
 
 
 class Evaluator:
     def __init__(
-        self, input_file_path: str, output_file_path: str, metrics: list[str] = ["bleu"]
+        self,
+        input_file_path: str,
+        output_file_path: str,
+        metrics: Optional[list[str]] = None,
     ) -> None:
+        if metrics is None:
+            metrics = ["bleu"]
         self.output_file_path = output_file_path
-        with open(input_file_path, "r") as file:
+        with open(input_file_path) as file:
             self.data = json.load(file)
 
-        all_metrics = [BLEU(), ROUGE(), BERTScore(), METEOR()]
         metrics = [m.lower() for m in metrics]
 
-        self.metrics = []
-        for metric in all_metrics:
-            if metric.get_metric_name().lower() in metrics:
-                self.metrics.append(metric)
+        self.metrics = [
+            metric_class
+            for metric_class in ALL_METRICS
+            if metric_class.name.lower() in metrics
+        ]
+
+        print("Metrics to calculate: " + str([m.name for m in self.metrics]))
+
+        if not self.metrics:
+            raise ValueError(f"No metrics found for {metrics}")
 
     def calculate_scores(self, answer: str, references: list[str]) -> dict[str, Any]:
         # Tokenize the answer and references
@@ -49,7 +63,6 @@ class Evaluator:
 
 
 def main(input_file_path: str, output_file_path: str, metrics: list[str]) -> None:
-    print("Metrics to calculate: " + str(metrics))
     evaluator = Evaluator(input_file_path, output_file_path, metrics)
     evaluator.process()
     print(f"Scores added and saved to {output_file_path}")
