@@ -3,7 +3,7 @@ from typing import Any
 from nltk import download, word_tokenize
 from nltk.translate.meteor_score import meteor_score
 
-from .metric import Metric
+from mallm.evaluation.metrics.metric import Metric
 
 download("wordnet")
 

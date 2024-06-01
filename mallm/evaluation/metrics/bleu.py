@@ -1,11 +1,11 @@
 from typing import Any
 
-from datasets import load_metric
+from evaluate import load
 from nltk import word_tokenize
 
-from .metric import Metric
+from mallm.evaluation.metrics.metric import Metric
 
-# from nltk.translate.bleu_score import sentence_bleu    # preferred but broken with python 3.12 at commit time
+# from nltk.translate.bleu_score import sentence_bleu    # TODO: preferred but broken with python 3.12 at commit time
 
 
 class BLEU(Metric):
@@ -17,11 +17,8 @@ class BLEU(Metric):
 
     @staticmethod
     def evaluate(generated_text: str, reference_texts: list[str]) -> dict[str, Any]:
-        # Tokenize the input texts
-        generated_tokens = [word_tokenize(generated_text)]
-        reference_tokens = [[word_tokenize(r)] for r in reference_texts]
         # Calculate BLEU score
-        score = load_metric("bleu", trust_remote_code=True).compute(
-            references=reference_tokens, predictions=generated_tokens
+        score = load("bleu", trust_remote_code=True).compute(
+            references=[reference_texts], predictions=[generated_text]
         )
         return {"bleu": score["bleu"]}

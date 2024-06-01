@@ -2,7 +2,7 @@ from typing import Any
 
 from bert_score import score as bert_score
 
-from .metric import Metric
+from mallm.evaluation.metrics.metric import Metric
 
 
 class BERTScore(Metric):

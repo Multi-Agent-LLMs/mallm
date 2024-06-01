@@ -2,7 +2,7 @@ from typing import Any
 
 from rouge_score import rouge_scorer
 
-from .metric import Metric
+from mallm.evaluation.metrics.metric import Metric
 
 
 class ROUGE(Metric):
