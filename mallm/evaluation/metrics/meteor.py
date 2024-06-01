@@ -5,13 +5,15 @@ from nltk.translate.meteor_score import meteor_score
 
 from mallm.evaluation.metrics.metric import Metric
 
-download("wordnet")
-
 
 class METEOR(Metric):
     """
     A class to evaluate the METEOR score for text generation tasks.
     """
+
+    def __init__(self) -> None:
+        super().__init__()
+        download("wordnet")
 
     _name = "METEOR"
 
