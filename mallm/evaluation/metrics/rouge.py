@@ -18,7 +18,7 @@ class ROUGE(Metric):
             rouge_types=["rouge1", "rouge2", "rouge3", "rougeL"], use_stemmer=True
         )
         scores = scorer.score(
-            generated_text, reference_texts[0]
+            target=reference_texts[0], prediction=generated_text
         )  # rouge only takes one reference
         return {
             "rouge1": {
