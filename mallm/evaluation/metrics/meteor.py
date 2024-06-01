@@ -19,7 +19,7 @@ class METEOR(Metric):
     def evaluate(generated_text: str, reference_texts: list[str]) -> dict[str, Any]:
         # Tokenize the input texts
         generated_tokens = word_tokenize(generated_text)
-        reference_tokens = word_tokenize(reference_texts[0])
+        reference_tokens = [word_tokenize(r) for r in reference_texts]
         # Calculate METEOR score
-        score = meteor_score([generated_tokens], reference_tokens)
+        score = meteor_score(hypothesis=generated_tokens, references=reference_tokens)
         return {"meteor": score}
