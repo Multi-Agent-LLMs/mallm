@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import uuid
+from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 import httpx
@@ -214,7 +215,7 @@ class Agent:
         memories: list[Memory] = []
         memory_ids = []
         current_draft = None
-        if os.path.exists(self.memory_bucket + ".dat"):
+        if Path(self.memory_bucket + ".dat").exists():
             with dbm.open(self.memory_bucket, "r") as db:
                 for key in db.keys():
                     json_object = json.loads(db[key].decode())
