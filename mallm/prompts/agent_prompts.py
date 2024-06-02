@@ -11,71 +11,54 @@ def base_prompt(data: TemplateFilling) -> list[dict[str, str]]:
         {
             "role": "system",
             "content": f"Your role: {data.persona} ({data.persona_description}) \nYou are participating in a discussion. Answer in {data.sents_min} to {data.sents_max} sentences!",
-        }
+        },
+        {
+            "role": "user",
+            "content": f"Your Task: {data.task_instruction}\nInput: {data.input_str}\nPlease consider the task and input provided and think it step by step.",
+        },
     ]
     if data.agent_memory is not None:
         prompts.append(
             {
-                "role": "system",
+                "role": "user",
                 "content": f"This is the discussion to the current point.",
             }
         )
         prompts += data.agent_memory
 
-    prompts.append(
-        {
-            "role": "user",
-            "content": f"Your Task: {data.task_instruction} Please consider the example provided and think it step by step. Input: {data.input_str}",
-        }
-    )
-
-    if data.current_draft is not None:
-        prompts.append(
-            {
-                "role": "user",
-                "content": f"Here is the current solution you need to consider:\nSolution: {data.current_draft}",
-            }
-        )
     return prompts
 
 
 def generate_chat_prompt_feedback(data: TemplateFilling) -> list[dict[str, str]]:
     prompts = base_prompt(data)
-    if data.agent_memory is not None:
-        prompts.append(
-            {
-                "role": "user",
-                "content": "Based on the current solution, give constructive feedback. Improve the answer considering the feedback.",
-            }
-        )
-
+    prompts.append(
+        {
+            "role": "user",
+            "content": "Based on the current solution, give constructive feedback. Improve the answer considering the feedback.",
+        }
+    )
     return prompts
 
 
 def generate_chat_prompt_agree(data: TemplateFilling) -> list[dict[str, str]]:
     prompts = base_prompt(data)
-    if data.agent_memory is not None:
-        prompts.append(
-            {
-                "role": "user",
-                "content": "Do you agree with the current answer? Please consider it step by step and respond with [AGREE] or [DISAGREE].",
-            }
-        )
-
-    logger.debug(f"Sending prompt: {json.dumps(prompts, indent=2)}")
-
+    prompts.append(
+        {
+            "role": "user",
+            "content": "THINK CRITCAL. Do you agree with the current solution? Please consider it step by step and after that respond with AGREE or DISAGREE.",
+        }
+    )
     return prompts
 
 
 def generate_chat_prompt_improve(data: TemplateFilling) -> list[dict[str, str]]:
     prompts = base_prompt(data)
-    if data.agent_memory is not None:
-        prompts.append(
-            {
-                "role": "user",
-                "content": "Improve the current answer.",
-            }
-        )
+    prompts.append(
+        {
+            "role": "user",
+            "content": "You dont agree with the current solution. Improve the current answer.",
+        }
+    )
 
     logger.debug(f"Sending prompt: {json.dumps(prompts, indent=2)}")
 
@@ -84,13 +67,12 @@ def generate_chat_prompt_improve(data: TemplateFilling) -> list[dict[str, str]]:
 
 def generate_chat_prompt_draft(data: TemplateFilling) -> list[dict[str, str]]:
     prompts = base_prompt(data)
-    if data.agent_memory is not None:
-        prompts.append(
-            {
-                "role": "user",
-                "content": "Based on the provided feedback, carefully re-examine your previous solution and create a new draft.",
-            }
-        )
+    prompts.append(
+        {
+            "role": "user",
+            "content": "Based on the provided feedback, carefully re-examine your previous solution and create a new draft.",
+        }
+    )
 
     logger.debug(f"Sending prompt: {json.dumps(prompts, indent=2)}")
 

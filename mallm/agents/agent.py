@@ -98,9 +98,12 @@ class Agent:
         agreements: list[Agreement],
     ) -> tuple[str, Memory, list[Agreement]]:
         # Step 1: Check agreement
-        agree_res = self.llm.invoke(
-            generate_chat_prompt_agree(template_filling), client=self.client
-        )
+        if template_filling.agent_memory:
+            agree_res = self.llm.invoke(
+                generate_chat_prompt_agree(template_filling), client=self.client
+            )
+        else:
+            agree_res = "DISAGREE"
         agreements = self.agree(agree_res, agreements)
 
         # Step 2: Handle response based on agreement
@@ -148,9 +151,12 @@ class Agent:
         is_moderator: bool = False,
     ) -> tuple[str, Memory, list[Agreement]]:
         # Step 1: Check agreement
-        agree_res = self.llm.invoke(
-            generate_chat_prompt_agree(template_filling), client=self.client
-        )
+        if template_filling.agent_memory:
+            agree_res = self.llm.invoke(
+                generate_chat_prompt_agree(template_filling), client=self.client
+            )
+        else:
+            agree_res = "DISAGREE"
         agreements = self.agree(agree_res, agreements, self_drafted=True)
 
         # Step 2: Handle response based on agreement
@@ -203,9 +209,12 @@ class Agent:
         agreements: list[Agreement],
     ) -> tuple[str, Memory, list[Agreement]]:
         # Step 1: Check agreement
-        agree_res = self.llm.invoke(
-            generate_chat_prompt_agree(template_filling), client=self.client
-        )
+        if template_filling.agent_memory:
+            agree_res = self.llm.invoke(
+                generate_chat_prompt_agree(template_filling), client=self.client
+            )
+        else:
+            agree_res = "DISAGREE"
         agreements = self.agree(agree_res, agreements)
 
         # Step 2: Handle response based on agreement

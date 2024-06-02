@@ -187,7 +187,7 @@ class Coordinator:
         """
         if context:
             for c in context:
-                task_instruction += "\n" + c
+                task_instruction += "\n Here is some context you need to consider:" + c
         input_str = ""
         for num, input_line in enumerate(input_lines):
             if len(input_lines) > 1:
