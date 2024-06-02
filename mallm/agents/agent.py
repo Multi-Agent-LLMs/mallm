@@ -215,7 +215,8 @@ class Agent:
         memories: list[Memory] = []
         memory_ids = []
         current_draft = None
-        if Path(self.memory_bucket + ".dat").exists():
+
+        try:
             with dbm.open(self.memory_bucket, "r") as db:
                 for key in db.keys():
                     json_object = json.loads(db[key].decode())
@@ -239,7 +240,7 @@ class Agent:
                         memory.contribution == "improve"
                     ):
                         current_draft = memory.text
-        else:
+        except dbm.error:
             context_memory = None
 
         if current_draft and extract_draft:
