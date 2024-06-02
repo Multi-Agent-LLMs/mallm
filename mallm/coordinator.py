@@ -16,11 +16,11 @@ from mallm.agents.panelist import Panelist
 from mallm.decision_making.DecisionProtocol import DecisionProtocol
 from mallm.decision_making.MajorityConsensus import MajorityConsensus
 from mallm.decision_making.Voting import Voting
-from mallm.discourse_policy.DiscourceDebate import DiscourseDebate
-from mallm.discourse_policy.DiscourceMemory import DiscourseMemory
-from mallm.discourse_policy.DiscourceRelay import DiscourseRelay
-from mallm.discourse_policy.DiscourceReport import DiscourseReport
-from mallm.discourse_policy.DiscoursePolicy import DiscoursePolicy
+from mallm.discourse_policy.debate import DiscourseDebate
+from mallm.discourse_policy.memory import DiscourseMemory
+from mallm.discourse_policy.relay import DiscourseRelay
+from mallm.discourse_policy.report import DiscourseReport
+from mallm.discourse_policy.policy import DiscoursePolicy
 from mallm.models.Chat import Chat
 from mallm.models.personas.ExpertGenerator import ExpertGenerator
 from mallm.prompts.coordinator_prompts import generate_chat_prompt_extract_result
@@ -161,8 +161,8 @@ class Coordinator:
     def discuss(
         self,
         task_instruction: str,
-        input_str: str,
-        context: list[str],
+        input_lines: list[str],
+        context: Optional[list[str]],
         use_moderator: bool,
         feedback_sentences: tuple[int, int],
         paradigm: str,
@@ -185,9 +185,15 @@ class Coordinator:
 
         Returns the final response agreed on, the global memory, agent specific memory, turns needed, last agreements of agents
         """
-        if context and isinstance(context, list):
+        if context:
             for c in context:
                 task_instruction += "\n" + c
+        input_str = ""
+        for num, input_line in enumerate(input_lines):
+            if len(input_lines) > 1:
+                input_str += str(num + 1) + ") " + input_line + "\n"
+            else:
+                input_str = input_line
 
         self.init_agents(task_instruction, input_str, use_moderator=use_moderator)
 

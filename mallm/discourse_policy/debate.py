@@ -3,8 +3,9 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Optional
 
+from mallm.agents.moderator import Moderator
 from mallm.agents.panelist import Panelist
-from mallm.discourse_policy.DiscoursePolicy import DiscoursePolicy
+from mallm.discourse_policy.policy import DiscoursePolicy
 from mallm.utils.types import Agreement, TemplateFilling
 
 if TYPE_CHECKING:
@@ -14,6 +15,32 @@ logger = logging.getLogger("mallm")
 
 
 class DiscourseDebate(DiscoursePolicy):
+    def moderator_call(
+        self,
+        moderator: Moderator,
+        coordinator: Coordinator,
+        agent_index: int,
+        memory_ids: list[int],
+        template_filling: TemplateFilling,
+        extract_all_drafts: bool,
+    ) -> None:
+        pass
+
+    def panelist_call(
+        self,
+        agent: Panelist,
+        coordinator: Coordinator,
+        agent_index: int,
+        memory_ids: list[int],
+        template_filling: TemplateFilling,
+        extract_all_drafts: bool,
+    ) -> None:
+        pass
+
+    def __init__(self, debate_rounds: int = 1):
+        super().__init__("")
+        self.debate_rounds = debate_rounds
+
     def discuss(
         self,
         coordinator: Coordinator,
@@ -57,7 +84,7 @@ class DiscourseDebate(DiscoursePolicy):
             # ---- Agent A1
             if use_moderator and coordinator.moderator is not None:
                 debate_history, memory_ids, current_draft = (
-                    coordinator.moderator.get_debate_history(
+                    coordinator.moderator.get_discussion_history(
                         context_length=context_length,
                         turn=turn,
                         include_this_turn=include_current_turn_in_memory,
@@ -87,7 +114,7 @@ class DiscourseDebate(DiscoursePolicy):
             else:
                 debate_history, memory_ids, current_draft = coordinator.panelists[
                     0
-                ].get_debate_history(
+                ].get_discussion_history(
                     context_length=context_length,
                     turn=turn,
                     include_this_turn=include_current_turn_in_memory,
@@ -124,10 +151,12 @@ class DiscourseDebate(DiscoursePolicy):
                     # We call participate() below, which is a method of Panelist
                     assert isinstance(a, Panelist)
 
-                    debate_history, memory_ids, current_draft = a.get_debate_history(
-                        context_length=context_length,
-                        turn=turn,
-                        include_this_turn=include_current_turn_in_memory,
+                    debate_history, memory_ids, current_draft = (
+                        a.get_discussion_history(
+                            context_length=context_length,
+                            turn=turn,
+                            include_this_turn=include_current_turn_in_memory,
+                        )
                     )
                     next_a = i + 2
                     if i == len(coordinator.agents[1:]) - 1:

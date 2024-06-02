@@ -2,6 +2,7 @@ import json
 import uuid
 
 from data.data_download import DatasetDownloader
+from mallm.utils.types import InputExample
 
 
 class GSM8KDownloader(DatasetDownloader):
@@ -11,9 +12,18 @@ class GSM8KDownloader(DatasetDownloader):
     def __init__(self):
         super().__init__("gsm8k")
 
-    def process_data(self):
+    def process_data(self) -> list[InputExample]:
         data = self.shuffle_and_select("test")
-        json_str = ""
+        input_examples = []
         for s in data.iter(batch_size=1):
-            json_str += f"""{{ "exampleId":"{str(uuid.uuid4())}", "datasetId": null, "input":[{json.dumps(s['question'][0])}], "context": null, "references": [{json.dumps(s['answer'][0])}], "personas": null }}\n"""
-        self.save_to_json(json_str)
+            input_examples.append(
+                InputExample(
+                    example_id=str(uuid.uuid4()),
+                    dataset_id=None,
+                    input_str=[s["question"][0]],
+                    context=None,
+                    references=[s["answer"][0]],
+                    personas=None,
+                )
+            )
+        return input_examples
