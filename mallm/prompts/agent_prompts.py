@@ -45,7 +45,7 @@ def generate_chat_prompt_agree(data: TemplateFilling) -> list[dict[str, str]]:
     prompts.append(
         {
             "role": "user",
-            "content": "THINK CRITCAL. Do you agree with the current solution? Please consider it step by step and after that respond with AGREE or DISAGREE.",
+            "content": "Do you agree with the conclusion, considering the arguments and evidence presented? Please provide your reasoning step-by-step. After that respond with AGREE or DISAGREE.",
         }
     )
     return prompts
@@ -53,12 +53,13 @@ def generate_chat_prompt_agree(data: TemplateFilling) -> list[dict[str, str]]:
 
 def generate_chat_prompt_improve(data: TemplateFilling) -> list[dict[str, str]]:
     prompts = base_prompt(data)
-    prompts.append(
-        {
-            "role": "user",
-            "content": "You dont agree with the current solution. Improve the current answer.",
-        }
-    )
+    if data.agent_memory:
+        prompts.append(
+            {
+                "role": "user",
+                "content": "You dont agree with the current solution. Improve the current answer.",
+            }
+        )
 
     logger.debug(f"Sending prompt: {json.dumps(prompts, indent=2)}")
 
