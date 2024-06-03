@@ -2,6 +2,7 @@ import json
 import uuid
 
 from data.data_download import DatasetDownloader
+from mallm.utils.types import InputExample
 
 
 class MultiNewsDownloader(DatasetDownloader):
@@ -10,23 +11,26 @@ class MultiNewsDownloader(DatasetDownloader):
 
     def __init__(self):
         super().__init__(
-            name="multi_news", version="default", dataset_name="multi_news"
+            name="multi_news",
+            version="default",
+            dataset_name="multi_news",
+            trust_remote_code=True,
         )
 
-    def process_data(self):
+    def process_data(self) -> list[InputExample]:
         data = self.shuffle_and_select("test")
-        examples = []
+        input_examples = []
 
         for sample in data.iter(batch_size=1):
             docs = sample["document"][0].split(" ||||| ")
-            example = {
-                "exampleId": str(uuid.uuid4()),
-                "datasetId": None,
-                "input": docs,  # note: there exist few samples with just one input doc
-                "context": None,
-                "references": sample["summary"],
-                "personas": None,
-            }
-            examples.append(json.dumps(example) + "\n")
-
-        self.save_to_json("".join(examples))
+            input_examples.append(
+                InputExample(
+                    example_id=str(uuid.uuid4()),
+                    dataset_id=None,
+                    input_str=docs,
+                    context=None,
+                    references=sample["summary"],
+                    personas=None,
+                )
+            )
+        return input_examples

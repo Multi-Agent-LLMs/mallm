@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import uuid
+from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 import httpx
@@ -211,15 +212,16 @@ class Agent:
         Retrieves memory from the agents memory bucket as a Memory
         Returns: Memory
         """
-        memories = []
+        memories: list[Memory] = []
         memory_ids = []
         current_draft = None
-        if os.path.exists(self.memory_bucket + ".dat"):
+
+        try:
             with dbm.open(self.memory_bucket, "r") as db:
                 for key in db.keys():
                     json_object = json.loads(db[key].decode())
-                    memories.append(Memory(**json_object))  # TODO: Maybe reverse sort
-            # memory = sorted(memory.items(), key=lambda x: x["messageId"], reverse=False)
+                    memories.append(Memory(**json_object))
+            memories = sorted(memories, key=lambda x: x.message_id, reverse=False)
             context_memory = []
             for memory in memories:
                 if context_length:
@@ -238,7 +240,7 @@ class Agent:
                         memory.contribution == "improve"
                     ):
                         current_draft = memory.text
-        else:
+        except dbm.error:
             context_memory = None
 
         if current_draft and extract_draft:
@@ -248,7 +250,7 @@ class Agent:
             )
         return context_memory, memory_ids, current_draft
 
-    def get_debate_history(
+    def get_discussion_history(
         self,
         context_length: Optional[int] = None,
         turn: Optional[int] = None,
@@ -275,7 +277,7 @@ class Agent:
                     debate_history.append(
                         {
                             "role": "user",
-                            "content": f"Contribution from agent {memory.persona}:\n\n {memory.text}",
+                            "content": f"Contribution from {memory.persona}:\n\n {memory.text}",
                         }
                     )
         else:

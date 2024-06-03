@@ -34,3 +34,37 @@ class TemplateFilling:
     agent_memory: Optional[list[dict[str, str]]]
     sents_min: Optional[int] = None
     sents_max: Optional[int] = None
+
+
+@dataclass
+class InputExample:
+    example_id: str
+    dataset_id: Optional[str]
+    input_str: list[str]
+    context: Optional[list[str]]
+    references: list[str]
+    personas: Optional[list[str]]
+
+    def confirm_types(self) -> None:
+        # Confirm type of example_id
+        assert isinstance(self.example_id, str)
+        # Confirm type of dataset_id
+        if self.dataset_id is not None:
+            assert isinstance(self.dataset_id, str)
+        # Confirm type of input
+        assert isinstance(self.input_str, list)
+        # Confirm type of references
+        assert isinstance(self.references, list)
+        # Confirm type of personas
+        if self.personas is not None:
+            assert isinstance(self.personas, list)
+            for p in self.personas:
+                assert isinstance(p, str)
+        # Confirm type of context
+        if self.context is not None:
+            assert isinstance(self.context, list)
+            for c in self.context:
+                assert isinstance(c, str)
+        # Confirm type of references
+        for r in self.references:
+            assert isinstance(r, str)

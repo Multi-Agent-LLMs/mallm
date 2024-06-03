@@ -17,6 +17,7 @@ from mallm.coordinator import Coordinator
 from mallm.models.Chat import Chat
 from mallm.models.personas.ExpertGenerator import ExpertGenerator
 from mallm.utils.CustomFormatter import CustomFormatter
+from mallm.utils.types import InputExample
 
 just_fix_windows_console()
 
@@ -114,17 +115,18 @@ class Scheduler:
 
         # Read input data (format: json lines)
         logger.info(f"""Reading {data_file}...""")
-        d = []
         with open(data_file) as f:
-            for line in f:
-                try:
-                    d.append(json.loads(line))
-                except ValueError as e:
-                    logger.error(
-                        f"""Invalid JSON in {data_file}! Please provide the input data in json lines format: {e}"""
-                    )
+            json_data = json.loads(f.readline())
 
-        self.data = d
+        self.data = [InputExample(**data) for data in json_data]
+        try:
+            for data in self.data:
+                data.confirm_types()
+        except AssertionError as e:
+            logger.error(
+                "Input data has wrong format. Please delete and download the data again."
+            )
+            sys.exit(1)
         self.out = out
         self.instruction = instruction
         self.endpoint_url = endpoint_url
@@ -153,13 +155,13 @@ class Scheduler:
         client: httpx.Client,
         llm: Chat,
         agent_generator: ExpertGenerator,
-        sample: dict[str, Any],
+        sample: InputExample,
     ) -> Optional[str]:
         """
         Runs a single discussion between agents on a sample.
         """
 
-        logger.info(f"""Starting discussion of sample {sample["exampleId"]}""")
+        logger.info(f"""Starting discussion of sample {sample.example_id}""")
         try:
             coordinator = Coordinator(
                 use_moderator=self.use_moderator,
@@ -177,8 +179,8 @@ class Scheduler:
             answer, global_mem, agent_mems, turn, agreements, discussion_time = (
                 coordinator.discuss(
                     self.instruction,
-                    sample["input"],
-                    sample["context"],
+                    sample.input_str,
+                    sample.context,
                     self.use_moderator,
                     feedback_sentences=self.feedback_sentences,
                     paradigm=self.paradigm,
@@ -213,16 +215,16 @@ class Scheduler:
         output_dicts.append(
             {
                 "dataset": "placeholder",
-                "exampleId": sample["exampleId"],
-                "datasetId": sample["datasetId"],
+                "exampleId": sample.example_id,
+                "datasetId": sample.dataset_id,
                 "instruction": self.instruction,
                 "coordinatorId": coordinator.id,
                 "personas": coordinator.get_agents(),
                 "paradigm": self.paradigm,
-                "input": sample["input"],
-                "context": sample["context"],
+                "input": sample.input_str,
+                "context": sample.context,
                 "answer": answer,
-                "references": sample["references"],
+                "references": sample.references,
                 "agreements": [
                     dataclasses.asdict(agreement) for agreement in agreements
                 ],
@@ -323,15 +325,16 @@ def main(
     out: str,
     instruction: str,
     endpoint_url: str = "https://api.openai.com",
-    model: str = "gpt-3.5-turbo",  # use "tgi" for Text Generation Inference by HuggingFace or one of these: https://platform.openai.com/docs/models
+    model: str = "gpt-3.5-turbo",
+    # use "tgi" for Text Generation Inference by HuggingFace or one of these: https://platform.openai.com/docs/models
     api_key: str = "-",
     use_moderator: bool = False,
     max_turns: int = 10,
     feedback_sentences: tuple[int, int] = (3, 4),
     paradigm: str = "memory",
     decision_protocol: str = "majority_consensus",
-    context_length: int = 1,
-    include_current_turn_in_memory: bool = False,
+    context_length: int = 3,
+    include_current_turn_in_memory: bool = True,
     extract_all_drafts: bool = False,
     debate_rounds: Optional[int] = None,
     max_concurrent_requests: int = 100,
