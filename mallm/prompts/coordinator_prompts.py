@@ -7,7 +7,7 @@ def generate_chat_prompt_extract_result(
     prompts = [
         {
             "role": "system",
-            "content": "Extract the final solution to the task from the provided text. Remove statements of agreement, disagreement, and explanations. Only extract text and do not modify.",
+            "content": "Extract the final solution to the task from the provided text. Remove statements of agreement, disagreement, and explanations. Do not modify the text.",
         }
     ]
 
