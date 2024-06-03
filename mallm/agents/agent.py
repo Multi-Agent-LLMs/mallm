@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import uuid
+from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 import httpx
@@ -263,7 +264,8 @@ class Agent:
         memories: list[Memory] = []
         memory_ids = []
         current_draft = None
-        if os.path.exists(self.memory_bucket + ".dat"):
+
+        try:
             with dbm.open(self.memory_bucket, "r") as db:
                 for key in db.keys():
                     json_object = json.loads(db[key].decode())
@@ -287,7 +289,7 @@ class Agent:
                         memory.contribution == "improve"
                     ):
                         current_draft = memory.extracted_draft or memory.text
-        else:
+        except dbm.error:
             context_memory = None
 
         if current_draft and extract_draft:
