@@ -12,7 +12,7 @@ def generate_chat_prompt_extract_result(
     ]
 
     if instruction:
-        user_content = f"\n\Task: {instruction}\n\nText: {result}"
+        user_content = f"\nTask: {instruction}\n\nText: {result}"
     else:
         user_content = result
 
