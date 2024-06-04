@@ -281,7 +281,7 @@ class Agent:
                     debate_history.append(
                         {
                             "role": "user",
-                            "content": f"Contribution from {memory.persona}:\n\n {memory.text}",
+                            "content": f"{memory.persona}: {memory.text}",
                         }
                     )
         else:
