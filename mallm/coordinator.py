@@ -257,7 +257,7 @@ Decision-making: {self.decision_making.__class__.__name__}
             extracted_draft = "No aggreement was reached."
         else:
             extracted_draft = self.llm.invoke(
-                generate_chat_prompt_extract_result(task_instruction, current_draft),
+                generate_chat_prompt_extract_result(current_draft),
                 client=self.client,
             )
 

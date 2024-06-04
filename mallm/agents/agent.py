@@ -104,9 +104,7 @@ class Agent:
         current_draft = None
         if extract_all_drafts:
             current_draft = self.llm.invoke(
-                generate_chat_prompt_extract_result(
-                    template_filling.task_instruction, res
-                ),
+                generate_chat_prompt_extract_result(res),
                 client=self.client,
             )
         memory = Memory(
@@ -142,9 +140,7 @@ class Agent:
         current_draft = None
         if extract_all_drafts:
             current_draft = self.llm.invoke(
-                generate_chat_prompt_extract_result(
-                    template_filling.task_instruction, res
-                ),
+                generate_chat_prompt_extract_result(res),
                 client=self.client,
             )
         if is_moderator:
@@ -249,7 +245,7 @@ class Agent:
 
         if current_draft and extract_draft:
             current_draft = self.llm.invoke(
-                generate_chat_prompt_extract_result(None, current_draft),
+                generate_chat_prompt_extract_result(current_draft),
                 client=self.client,
             )
         return context_memory, memory_ids, current_draft
