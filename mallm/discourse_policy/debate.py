@@ -60,7 +60,6 @@ class DiscourseDebate(DiscoursePolicy):
         unique_id = 0
         memories = []
         agreements: list[Agreement] = []
-        draft = ""
 
         logger.debug(
             f"""Paradigm: Debate (rounds: {debate_rounds})
@@ -210,4 +209,4 @@ class DiscourseDebate(DiscoursePolicy):
                 agreements, turn, task_instruction, input_str
             )
 
-        return draft, turn, agreements
+        return current_draft, turn, agreements

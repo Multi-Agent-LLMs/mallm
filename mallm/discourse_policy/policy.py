@@ -95,7 +95,8 @@ class DiscoursePolicy(ABC):
             self.draft, self.decision = coordinator.decision_making.make_decision(
                 self.agreements, self.turn, task_instruction, input_str
             )
-        return self.draft, self.turn, self.agreements
+
+        return current_draft, self.turn, self.agreements
 
     @abstractmethod
     def moderator_call(
