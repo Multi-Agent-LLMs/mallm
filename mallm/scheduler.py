@@ -53,6 +53,7 @@ class Scheduler:
         api_key: str = "-",
         use_moderator: bool = False,
         max_turns: int = 10,
+        force_all_turns: bool = False,
         feedback_sentences: tuple[int, int] = (3, 4),
         paradigm: str = "memory",
         decision_protocol: str = "majority_consensus",
@@ -134,6 +135,7 @@ class Scheduler:
         self.api_key = api_key
         self.use_moderator = use_moderator
         self.max_turns = max_turns
+        self.force_all_turns = force_all_turns
         self.feedback_sentences = feedback_sentences
         self.paradigm = paradigm
         self.decision_protocol = decision_protocol
@@ -176,21 +178,28 @@ class Scheduler:
             return None
 
         try:
-            answer, global_mem, agent_mems, turn, agreements, discussion_time = (
-                coordinator.discuss(
-                    self.instruction,
-                    sample.input_str,
-                    sample.context,
-                    self.use_moderator,
-                    feedback_sentences=self.feedback_sentences,
-                    paradigm=self.paradigm,
-                    decision_protocol=self.decision_protocol,
-                    max_turns=self.max_turns,
-                    context_length=self.context_length,
-                    include_current_turn_in_memory=self.include_current_turn_in_memory,
-                    extract_all_drafts=self.extract_all_drafts,
-                    debate_rounds=self.debate_rounds,
-                )
+            (
+                answer,
+                extracted_answer,
+                global_mem,
+                agent_mems,
+                turn,
+                agreements,
+                discussion_time,
+            ) = coordinator.discuss(
+                self.instruction,
+                sample.input_str,
+                sample.context,
+                self.use_moderator,
+                feedback_sentences=self.feedback_sentences,
+                paradigm=self.paradigm,
+                decision_protocol=self.decision_protocol,
+                max_turns=self.max_turns,
+                force_all_turns=self.force_all_turns,
+                context_length=self.context_length,
+                include_current_turn_in_memory=self.include_current_turn_in_memory,
+                extract_all_drafts=self.extract_all_drafts,
+                debate_rounds=self.debate_rounds,
             )
         except Exception:
             # More extensive error logging to ease debugging during async execution
@@ -224,6 +233,7 @@ class Scheduler:
                 "input": sample.input_str,
                 "context": sample.context,
                 "answer": answer,
+                "extracted_answer": extracted_answer,
                 "references": sample.references,
                 "agreements": [
                     dataclasses.asdict(agreement) for agreement in agreements
@@ -330,6 +340,7 @@ def main(
     api_key: str = "-",
     use_moderator: bool = False,
     max_turns: int = 10,
+    force_all_turns: bool = False,
     feedback_sentences: tuple[int, int] = (3, 4),
     paradigm: str = "memory",
     decision_protocol: str = "majority_consensus",
@@ -350,6 +361,7 @@ def main(
         api_key=api_key,
         use_moderator=use_moderator,
         max_turns=max_turns,
+        force_all_turns=force_all_turns,
         feedback_sentences=feedback_sentences,
         paradigm=paradigm,
         decision_protocol=decision_protocol,

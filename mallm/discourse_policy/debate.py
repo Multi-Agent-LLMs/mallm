@@ -49,6 +49,7 @@ class DiscourseDebate(DiscoursePolicy):
         use_moderator: bool = False,
         feedback_sentences: tuple[int, int] = (3, 4),
         max_turns: Optional[int] = None,
+        force_all_turns: bool = False,
         context_length: int = 1,
         include_current_turn_in_memory: bool = False,
         extract_all_drafts: bool = False,

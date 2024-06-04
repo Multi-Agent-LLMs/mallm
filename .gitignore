@@ -171,6 +171,7 @@ cython_debug/
 
 log.txt
 test_out.json
+test_out_evaluated.json
 
 data/result.json
 

@@ -155,4 +155,7 @@ If you want to contribute, please use this pre-commit hook to ensure the same fo
 pip install pre-commit
 pre-commit install
 ```
-Please do not develop on master and create a branch. Thank you!
+
+### Testing
+You can run unit tests locally:
+`pytest ./test/`
