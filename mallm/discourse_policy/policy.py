@@ -37,7 +37,7 @@ class DiscoursePolicy(ABC):
         extract_all_drafts: bool = False,
         debate_rounds: int = 1,
         chain_of_thought: bool = True,
-    ) -> tuple[str, int, list[Agreement]]:
+    ) -> tuple[Optional[str], int, list[Agreement]]:
         logger.debug(self.paradigm_str)
         while (not self.decision or (force_all_turns)) and self.turn < max_turns:
             self.turn += 1

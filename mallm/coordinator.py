@@ -175,8 +175,8 @@ class Coordinator:
         debate_rounds: Optional[int],
         chain_of_thought: bool = True,
     ) -> tuple[
-        str,
-        str,
+        Optional[str],
+        Optional[str],
         list[Memory],
         list[Optional[list[Memory]]],
         int,
@@ -255,13 +255,15 @@ Decision-making: {self.decision_making.__class__.__name__}
             agent_mems.append(a.get_memories()[0])
 
         if turn >= max_turns and not force_all_turns:  # if no agreement was reached
-            current_draft = "No aggreement was reached."
-            extracted_draft = "No aggreement was reached."
-        else:
+            current_draft = None
+            extracted_draft = None
+        elif current_draft:
             extracted_draft = self.llm.invoke(
                 generate_chat_prompt_extract_result(current_draft),
                 client=self.client,
             )
+        else:
+            current_draft = None
 
         return (
             current_draft,

@@ -220,14 +220,14 @@ class Agent:
         turn: Optional[int] = None,
         include_this_turn: bool = True,
         extract_draft: bool = False,
-    ) -> tuple[Optional[list[Memory]], list[int], str]:
+    ) -> tuple[Optional[list[Memory]], list[int], Optional[str]]:
         """
         Retrieves memory from the agents memory bucket as a Memory
         Returns: Memory
         """
         memories: list[Memory] = []
         memory_ids = []
-        current_draft = ""
+        current_draft = None
 
         try:
             with dbm.open(self.memory_bucket, "r") as db:
@@ -283,7 +283,7 @@ class Agent:
         turn: Optional[int] = None,
         include_this_turn: bool = True,
         extract_draft: bool = False,
-    ) -> tuple[Optional[list[dict[str, str]]], list[int], str]:
+    ) -> tuple[Optional[list[dict[str, str]]], list[int], Optional[str]]:
         """
         Retrieves memory from the agents memory bucket as a string
         context_length refers to the amount of turns the agent can use as rationale

@@ -3,7 +3,7 @@ from typing import Optional
 from mallm.utils.types import TemplateFilling
 
 
-def generate_chat_prompt_extract_result(result: str) -> list[dict[str, str]]:
+def generate_chat_prompt_extract_result(result: Optional[str]) -> list[dict[str, str]]:
     prompts = [
         {
             "role": "system",

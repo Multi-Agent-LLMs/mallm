@@ -57,7 +57,7 @@ class DiscourseDebate(DiscoursePolicy):
         extract_all_drafts: bool = False,
         debate_rounds: int = 1,
         chain_of_thought: bool = True,
-    ) -> tuple[str, int, list[Agreement]]:
+    ) -> tuple[Optional[str], int, list[Agreement]]:
         decision = None
         turn = 0
         unique_id = 0
