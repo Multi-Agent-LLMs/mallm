@@ -173,6 +173,7 @@ class Coordinator:
         include_current_turn_in_memory: bool,
         extract_all_drafts: bool,
         debate_rounds: Optional[int],
+        chain_of_thought: bool = True,
     ) -> tuple[
         str,
         str,
@@ -241,6 +242,7 @@ Decision-making: {self.decision_making.__class__.__name__}
             context_length,
             include_current_turn_in_memory,
             extract_all_drafts,
+            chain_of_thought,
         )
 
         discussion_time = timedelta(

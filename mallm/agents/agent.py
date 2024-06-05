@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 import httpx
-from langchain_core.language_models import LLM
+from mallm.models.Chat import Chat
 
 if TYPE_CHECKING:
     from mallm.agents.moderator import Moderator
@@ -29,7 +29,7 @@ logger = logging.getLogger("mallm")
 class Agent:
     def __init__(
         self,
-        llm: LLM,
+        llm: Chat,
         client: httpx.Client,
         coordinator: Coordinator,
         persona: str,
@@ -96,9 +96,13 @@ class Agent:
         template_filling: TemplateFilling,
         extract_all_drafts: bool,
         agreements: list[Agreement],
+        chain_of_thought: bool = True,
     ) -> tuple[str, Memory, list[Agreement]]:
         res = self.llm.invoke(
-            generate_chat_prompt_improve(template_filling), client=self.client
+            generate_chat_prompt_improve(
+                template_filling, chain_of_thought=chain_of_thought
+            ),
+            client=self.client,
         )
         agreements = self.agree(res, agreements)
         current_draft = None
@@ -133,9 +137,13 @@ class Agent:
         extract_all_drafts: bool,
         agreements: list[Agreement],
         is_moderator: bool = False,
+        chain_of_thought: bool = True,
     ) -> tuple[str, Memory, list[Agreement]]:
         res = self.llm.invoke(
-            generate_chat_prompt_draft(template_filling), client=self.client
+            generate_chat_prompt_draft(
+                template_filling, chain_of_thought=chain_of_thought
+            ),
+            client=self.client,
         )
         agreements = self.agree(res, agreements, self_drafted=True)
         current_draft = None
@@ -173,9 +181,13 @@ class Agent:
         memory_ids: list[int],
         template_filling: TemplateFilling,
         agreements: list[Agreement],
+        chain_of_thought: bool = True,
     ) -> tuple[str, Memory, list[Agreement]]:
         res = self.llm.invoke(
-            generate_chat_prompt_feedback(template_filling), client=self.client
+            generate_chat_prompt_feedback(
+                template_filling, chain_of_thought=chain_of_thought
+            ),
+            client=self.client,
         )
         agreements = self.agree(res, agreements)
         memory = Memory(

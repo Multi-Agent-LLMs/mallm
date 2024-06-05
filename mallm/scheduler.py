@@ -71,6 +71,7 @@ class Scheduler:
         clear_memory_bucket: bool = True,
         memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
         baseline: bool = False,
+        chain_of_thought: bool = True,
     ) -> None:
         # Check for the correct aruments provided
         # TODO: make this more robust and conclusive. All arguments should be checked for validity, making the use of MALLM as fool-proof as possible.
@@ -157,6 +158,7 @@ class Scheduler:
         self.total_samples = len(self.data)
         self.completed_samples = 0
         self.baseline = baseline
+        self.chain_of_thought = chain_of_thought
         logger.info(f"""Found {self.total_samples} samples to process.""")
 
         logger.info("Finished initializing the scheduler.")
@@ -209,6 +211,7 @@ class Scheduler:
                 include_current_turn_in_memory=self.include_current_turn_in_memory,
                 extract_all_drafts=self.extract_all_drafts,
                 debate_rounds=self.debate_rounds,
+                chain_of_thought=self.chain_of_thought,
             )
         except Exception:
             # More extensive error logging to ease debugging during async execution
@@ -334,7 +337,9 @@ class Scheduler:
             start_time = time.perf_counter()
             answer = llm.invoke(
                 generate_chat_prompt_baseline(
-                    task_instruction=self.instruction, input_str=input_str
+                    task_instruction=self.instruction,
+                    input_str=input_str,
+                    chain_of_thought=self.chain_of_thought,
                 ),
                 client=client,
             )
@@ -479,6 +484,7 @@ def main(
     clear_memory_bucket: bool = True,
     memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
     baseline: bool = False,
+    chain_of_thought: bool = True,
 ) -> None:
     scheduler = Scheduler(
         data,
@@ -501,6 +507,7 @@ def main(
         clear_memory_bucket=clear_memory_bucket,
         memory_bucket_dir=memory_bucket_dir,
         baseline=baseline,
+        chain_of_thought=chain_of_thought,
     )
     scheduler.run()
 
