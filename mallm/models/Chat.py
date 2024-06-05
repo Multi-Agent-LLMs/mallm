@@ -76,7 +76,7 @@ class Chat(LLM):
             The model output as a string. Actual completions SHOULD NOT include the prompt.
         """
         chat_completion = self.client.chat.completions.create(
-            model="tgi",
+            model=self.model,
             messages=prompt,
             stream=True,
             stop=self.stop_tokens,
@@ -117,7 +117,7 @@ class Chat(LLM):
             An iterator of GenerationChunks.
         """
         chat_completion = self.client.chat.completions.create(
-            model="tgi",
+            model=self.model,
             messages=prompt,
             stream=True,
             stop=self.stop_tokens,

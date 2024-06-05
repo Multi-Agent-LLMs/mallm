@@ -19,7 +19,7 @@ def base_prompt(data: TemplateFilling) -> list[dict[str, str]]:
     prompts = [
         {
             "role": "system",
-            "content": f"You are participating in a discussion to solve the following task: {data.task_instruction}. \nInput: {data.input_str} \nYour role: {data.persona} ({data.persona_description}) \nExplain your reasoning in {data.sents_min} to {data.sents_max} sentences! Think step by step. {appendix}",
+            "content": f"You are participating in a discussion to solve the following task: {data.task_instruction} \nInput: {data.input_str} \nYour role: {data.persona} ({data.persona_description}) \nExplain your reasoning in {data.sents_min} to {data.sents_max} sentences! Think step by step. {appendix}",
         }
     ]
     if data.agent_memory is not None:

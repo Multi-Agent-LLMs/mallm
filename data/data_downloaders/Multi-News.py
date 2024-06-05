@@ -27,7 +27,7 @@ class MultiNewsDownloader(DatasetDownloader):
                 InputExample(
                     example_id=str(uuid.uuid4()),
                     dataset_id=None,
-                    input_str=docs,
+                    inputs=docs,
                     context=None,
                     references=sample["summary"],
                     personas=None,

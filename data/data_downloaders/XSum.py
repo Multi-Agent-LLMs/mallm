@@ -22,7 +22,7 @@ class XSUMDownloader(DatasetDownloader):
                 InputExample(
                     example_id=str(uuid.uuid4()),
                     dataset_id=s["xsum_id"][0],
-                    input_str=[s["document"][0]],
+                    inputs=[s["document"][0]],
                     context=None,
                     references=s["references"][0],
                     personas=None,

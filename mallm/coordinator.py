@@ -105,7 +105,7 @@ class Coordinator:
             agent_dicts.append(
                 {
                     "agentId": a.id,
-                    "model": "placeholder",  # TODO: automatically detect model name
+                    "model": a.llm.model,
                     "persona": a.persona,
                     "personaDescription": a.persona_description,
                 }
