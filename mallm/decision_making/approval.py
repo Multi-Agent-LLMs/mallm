@@ -4,8 +4,8 @@ from collections import Counter
 from mallm.agents.panelist import Panelist
 from mallm.decision_making.decision_protocol import DecisionProtocol
 from mallm.prompts.agent_prompts import (
-    generate_final_answer_prompt,
     generate_approval_voting_prompt,
+    generate_final_answer_prompt,
 )
 from mallm.utils.types import Agreement
 
