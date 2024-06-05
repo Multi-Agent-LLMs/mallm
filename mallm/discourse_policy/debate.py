@@ -54,13 +54,12 @@ class DiscourseDebate(DiscoursePolicy):
         include_current_turn_in_memory: bool = False,
         extract_all_drafts: bool = False,
         debate_rounds: int = 1,
-    ) -> tuple[str, int, list[Agreement]]:
+    ) -> tuple[Optional[str], int, list[Agreement]]:
         decision = None
         turn = 0
         unique_id = 0
         memories = []
         agreements: list[Agreement] = []
-        draft = ""
 
         logger.debug(
             f"""Paradigm: Debate (rounds: {debate_rounds})
@@ -210,4 +209,4 @@ class DiscourseDebate(DiscoursePolicy):
                 agreements, turn, task_instruction, input_str
             )
 
-        return draft, turn, agreements
+        return current_draft, turn, agreements

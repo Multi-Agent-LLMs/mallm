@@ -36,7 +36,7 @@ class DiscoursePolicy(ABC):
         include_current_turn_in_memory: bool = False,
         extract_all_drafts: bool = False,
         debate_rounds: int = 1,
-    ) -> tuple[str, int, list[Agreement]]:
+    ) -> tuple[Optional[str], int, list[Agreement]]:
         logger.debug(self.paradigm_str)
         while (not self.decision or (force_all_turns)) and self.turn < max_turns:
             self.turn += 1
@@ -95,7 +95,8 @@ class DiscoursePolicy(ABC):
             self.draft, self.decision = coordinator.decision_making.make_decision(
                 self.agreements, self.turn, task_instruction, input_str
             )
-        return self.draft, self.turn, self.agreements
+
+        return current_draft, self.turn, self.agreements
 
     @abstractmethod
     def moderator_call(

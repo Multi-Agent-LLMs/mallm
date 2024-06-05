@@ -1,7 +1,7 @@
 from typing import Optional
 
 
-def generate_chat_prompt_extract_result(result: str) -> list[dict[str, str]]:
+def generate_chat_prompt_extract_result(result: Optional[str]) -> list[dict[str, str]]:
     prompts = [
         {
             "role": "system",

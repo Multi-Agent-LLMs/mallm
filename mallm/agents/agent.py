@@ -102,7 +102,8 @@ class Agent:
         )
         agreements = self.agree(res, agreements)
         current_draft = None
-        if extract_all_drafts:
+        # new drafts are only proposed upon disagreement, thus we do not want to overwrite unnecessarily
+        if extract_all_drafts and not agreements[-1].agreement:
             current_draft = self.llm.invoke(
                 generate_chat_prompt_extract_result(res),
                 client=self.client,
@@ -223,6 +224,7 @@ class Agent:
                     memories.append(Memory(**json_object))
             memories = sorted(memories, key=lambda x: x.message_id, reverse=False)
             context_memory = []
+            extracted = False
             for memory in memories:
                 if context_length:
                     if turn and memory.turn >= turn - context_length:
@@ -231,19 +233,32 @@ class Agent:
                             memory_ids.append(int(memory.message_id))
                             if memory.contribution == "draft" or (
                                 memory.contribution == "improve"
+                                and memory.agreement == False
                             ):
-                                current_draft = memory.text
+                                if memory.extracted_draft:
+                                    current_draft = memory.extracted_draft
+                                    extracted = True
+                                else:
+                                    current_draft = memory.text
+                                    extracted = False
                 else:
                     context_memory.append(memory)
                     memory_ids.append(int(memory.message_id))
                     if memory.contribution == "draft" or (
-                        memory.contribution == "improve"
+                        memory.contribution == "improve" and memory.agreement == False
                     ):
-                        current_draft = memory.text
+                        if memory.extracted_draft:
+                            current_draft = memory.extracted_draft
+                            extracted = True
+                        else:
+                            current_draft = memory.text
+                            extracted = False
         except dbm.error:
             context_memory = None
 
-        if current_draft and extract_draft:
+        if (
+            current_draft != "" and extract_draft and not extracted
+        ):  # if not extracted already
             current_draft = self.llm.invoke(
                 generate_chat_prompt_extract_result(current_draft),
                 client=self.client,
@@ -277,7 +292,7 @@ class Agent:
                     debate_history.append(
                         {
                             "role": "user",
-                            "content": f"Contribution from {memory.persona}:\n\n {memory.text}",
+                            "content": f"{memory.persona}: {memory.text}",
                         }
                     )
         else:
