@@ -58,7 +58,7 @@ def generate_chat_prompt_improve(
         prompts.append(
             {
                 "role": "user",
-                "content": "Improve the current answer and if you agree, answer with [AGREE], else answer with [DISAGREE] and repeat the answer.",
+                "content": "Improve the current answer. If you agree with the current answer, answer with [AGREE], else answer with [DISAGREE].",
             }
         )
         if chain_of_thought:
