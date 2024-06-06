@@ -1,5 +1,7 @@
 from typing import Optional
 
+from mallm.utils.types import TemplateFilling
+
 
 def generate_chat_prompt_extract_result(result: Optional[str]) -> list[dict[str, str]]:
     prompts = [
@@ -17,24 +19,20 @@ def generate_chat_prompt_extract_result(result: Optional[str]) -> list[dict[str,
 
 
 def generate_chat_prompt_baseline(
-    task_instruction: str, input_str: str
+    task_instruction: str, input_str: str, chain_of_thought: bool
 ) -> list[dict[str, str]]:
+    # Use Zero-Shot-CoT: https://arxiv.org/pdf/2205.11916
     prompts = [
         {
             "role": "system",
-            "content": "Please consider the example provided and think it step by step.",
-        },
-        {
-            "role": "system",
-            "content": f"Task: {task_instruction}",
-        },
-        {
-            "role": "system",
-            "content": f"Input: {input_str}",
-        },
-        {
-            "role": "user",
-            "content": "Utilize your talent and critical thinking to provide a solution.",
-        },
+            "content": f"Solve the following task: {task_instruction} \nInput: {input_str}",
+        }
     ]
+    if chain_of_thought:
+        prompts.append(
+            {
+                "role": "assistant",
+                "content": "Let's think step by step.",
+            }
+        )
     return prompts

@@ -105,7 +105,7 @@ class Coordinator:
             agent_dicts.append(
                 {
                     "agentId": a.id,
-                    "model": "placeholder",  # TODO: automatically detect model name
+                    "model": a.llm.model,
                     "persona": a.persona,
                     "personaDescription": a.persona_description,
                 }
@@ -173,6 +173,7 @@ class Coordinator:
         include_current_turn_in_memory: bool,
         extract_all_drafts: bool,
         debate_rounds: Optional[int],
+        chain_of_thought: bool = True,
     ) -> tuple[
         Optional[str],
         Optional[str],
@@ -241,6 +242,7 @@ Decision-making: {self.decision_making.__class__.__name__}
             context_length,
             include_current_turn_in_memory,
             extract_all_drafts,
+            chain_of_thought,
         )
 
         discussion_time = timedelta(
@@ -252,9 +254,9 @@ Decision-making: {self.decision_making.__class__.__name__}
         for a in self.agents:
             agent_mems.append(a.get_memories()[0])
 
+        extracted_draft = None
         if turn >= max_turns and not force_all_turns:  # if no agreement was reached
             current_draft = None
-            extracted_draft = None
         elif current_draft:
             extracted_draft = self.llm.invoke(
                 generate_chat_prompt_extract_result(current_draft),

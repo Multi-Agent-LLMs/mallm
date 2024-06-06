@@ -26,7 +26,7 @@ class EuroparlDownloader(DatasetDownloader):
                 InputExample(
                     example_id=str(uuid.uuid4()),
                     dataset_id=s["id"][0],
-                    input_str=[s["question"][0]],
+                    inputs=[s["question"][0]],
                     context=[s["context"][0]],
                     references=s["answers"][0]["text"],
                     personas=None,

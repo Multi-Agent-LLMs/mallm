@@ -40,7 +40,7 @@ class TemplateFilling:
 class InputExample:
     example_id: str
     dataset_id: Optional[str]
-    input_str: list[str]
+    inputs: list[str]
     context: Optional[list[str]]
     references: list[str]
     personas: Optional[list[str]]
@@ -52,7 +52,7 @@ class InputExample:
         if self.dataset_id is not None:
             assert isinstance(self.dataset_id, str)
         # Confirm type of input
-        assert isinstance(self.input_str, list)
+        assert isinstance(self.inputs, list)
         # Confirm type of references
         assert isinstance(self.references, list)
         # Confirm type of personas
