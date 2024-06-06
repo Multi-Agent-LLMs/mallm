@@ -282,6 +282,7 @@ class Scheduler:
         Discussions are handled in a queue of length max_concurrent_requests.
         Once a spot in the queue is free because a discussion ended, the next discussion is initialized.
         """
+        logger.debug("Starting discussion manager...")
         # Creating HuggingFace endpoint
         llm = Chat(
             client=OpenAI(base_url=f"{self.endpoint_url}/v1", api_key=self.api_key),
@@ -321,10 +322,9 @@ class Scheduler:
         """
         Task a single LM to solve a sample.
         """
-
-        if sample.context:
-            for c in sample.context:
-                self.instruction += "\n" + c
+        sample_instruction = self.instruction
+        for c in sample.context:
+            sample_instruction += "\n" + c
         input_str = ""
         for num, input_line in enumerate(sample.inputs):
             if len(sample.inputs) > 1:
@@ -337,7 +337,7 @@ class Scheduler:
             start_time = time.perf_counter()
             answer = llm.invoke(
                 generate_chat_prompt_baseline(
-                    task_instruction=self.instruction,
+                    task_instruction=sample_instruction,
                     input_str=input_str,
                     chain_of_thought=self.chain_of_thought,
                 ),
@@ -405,14 +405,12 @@ class Scheduler:
         Manages all samples of the data.
         The LM answers the query with a single request with no discussion being held.
         """
-
+        logger.debug("Starting baseline manager...")
         # Creating HuggingFace endpoint
         llm = Chat(
             client=OpenAI(base_url=f"{self.endpoint_url}/v1", api_key=self.api_key),
             model=self.model,
         )
-
-        agent_generator = ExpertGenerator(llm=llm)
 
         pool = ThreadPool(processes=self.max_concurrent_requests)
         results = []
@@ -420,12 +418,12 @@ class Scheduler:
             try:
                 results.append(
                     pool.apply_async(
-                        self.run_discussion,
-                        (client, llm, agent_generator, sample),
+                        self.run_baseline,
+                        (client, llm, sample),
                     )
                 )
             except Exception as e:
-                logger.error("Failed to run discussion.")
+                logger.error("Failed running baseline.")
                 logger.error(e)
         pool.close()  # Done adding tasks.
         pool.join()  # Wait for all tasks to complete.

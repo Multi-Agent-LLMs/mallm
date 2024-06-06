@@ -90,29 +90,31 @@ You can test stuff in the `notebooks` directory.
 
 All arguments the scheduler can parse:
 ```py
-data: str,
-out: str,
 instruction: str,
 endpoint_url: str = "https://api.openai.com",
-model: str = "gpt-3.5-turbo",  # use "tgi" for Text Generation Inference by HuggingFace or one of these: https://platform.openai.com/docs/models
-api_key: str = None,
+model: str = "gpt-3.5-turbo", # use "tgi" for Text Generation Inference by HuggingFace or one of these: https://platform.openai.com/docs/models
+api_key: str = "-",
 use_moderator: bool = False,
 max_turns: int = 10,
+force_all_turns: bool = False,
 feedback_sentences: tuple[int, int] = (3, 4),
 paradigm: str = "memory",
 decision_protocol: str = "majority_consensus",
-context_length: int = 1,
-include_current_turn_in_memory: bool = False,
-extract_all_drafts: bool = False,
+context_length: int = 3,
+include_current_turn_in_memory: bool = True,
+extract_all_drafts: bool = True,
 debate_rounds: Optional[int] = None,
-max_concurrent_requests: int = 100, # us a reasonable number. TGI can only handle 250.
+max_concurrent_requests: int = 100, # TGI can handle max 250 concurrent requests
 clear_memory_bucket: bool = True,
 memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
+baseline: bool = False,
+chain_of_thought: bool = True,
 ```
 
 ## Evaluation
 
 We provide some basic evaluation metrics that can be directly applied to the output json of mallm.
+Implemented metrics: `bleu`, `rouge`, `meteor`, `bleu`, `bertscore`
 
 From terminal:
 
