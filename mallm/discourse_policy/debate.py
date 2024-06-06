@@ -23,6 +23,7 @@ class DiscourseDebate(DiscoursePolicy):
         memory_ids: list[int],
         template_filling: TemplateFilling,
         extract_all_drafts: bool,
+        chain_of_thought: bool,
     ) -> None:
         pass
 
@@ -34,6 +35,7 @@ class DiscourseDebate(DiscoursePolicy):
         memory_ids: list[int],
         template_filling: TemplateFilling,
         extract_all_drafts: bool,
+        chain_of_thought: bool,
     ) -> None:
         pass
 
@@ -49,17 +51,18 @@ class DiscourseDebate(DiscoursePolicy):
         use_moderator: bool = False,
         feedback_sentences: tuple[int, int] = (3, 4),
         max_turns: Optional[int] = None,
+        force_all_turns: bool = False,
         context_length: int = 1,
         include_current_turn_in_memory: bool = False,
         extract_all_drafts: bool = False,
         debate_rounds: int = 1,
-    ) -> tuple[str, int, list[Agreement]]:
+        chain_of_thought: bool = True,
+    ) -> tuple[Optional[str], int, list[Agreement]]:
         decision = None
         turn = 0
         unique_id = 0
         memories = []
         agreements: list[Agreement] = []
-        draft = ""
 
         logger.debug(
             f"""Paradigm: Debate (rounds: {debate_rounds})
@@ -99,13 +102,14 @@ class DiscourseDebate(DiscoursePolicy):
                     agent_memory=debate_history,
                 )
                 res, memory, agreements = coordinator.moderator.draft(
-                    unique_id,
-                    turn,
-                    memory_ids,
-                    template_filling,
-                    extract_all_drafts,
-                    agreements,
+                    unique_id=unique_id,
+                    turn=turn,
+                    memory_ids=memory_ids,
+                    template_filling=template_filling,
+                    extract_all_drafts=extract_all_drafts,
+                    agreements=agreements,
                     is_moderator=True,
+                    chain_of_thought=chain_of_thought,
                 )
                 memories.append(memory)
                 coordinator.update_memories(memories, coordinator.agents)
@@ -128,13 +132,14 @@ class DiscourseDebate(DiscoursePolicy):
                     agent_memory=debate_history,
                 )
                 res, memory, agreements = coordinator.panelists[0].draft(
-                    unique_id,
-                    turn,
-                    memory_ids,
-                    template_filling,
-                    extract_all_drafts,
-                    agreements,
+                    unique_id=unique_id,
+                    turn=turn,
+                    memory_ids=memory_ids,
+                    template_filling=template_filling,
+                    extract_all_drafts=extract_all_drafts,
+                    agreements=agreements,
                     is_moderator=True,
+                    chain_of_thought=chain_of_thought,
                 )
                 memories.append(memory)
                 coordinator.update_memories(memories, coordinator.agents)
@@ -182,15 +187,16 @@ class DiscourseDebate(DiscoursePolicy):
                     else:
                         agents_to_update = [a, coordinator.agents[next_a]]
                     debate_agreements = a.participate(
-                        use_moderator,
-                        memories,
-                        unique_id,
-                        turn,
-                        memory_ids,
-                        template_filling,
-                        extract_all_drafts,
-                        agents_to_update,
-                        debate_agreements,
+                        use_moderator=use_moderator,
+                        memories=memories,
+                        unique_id=unique_id,
+                        turn=turn,
+                        memory_ids=memory_ids,
+                        template_filling=template_filling,
+                        extract_all_drafts=extract_all_drafts,
+                        agents_to_update=agents_to_update,
+                        agreements=debate_agreements,
+                        chain_of_thought=chain_of_thought,
                     )
                     num_agents = len(coordinator.agents)
                     if len(debate_agreements) > num_agents - 1:
@@ -209,4 +215,4 @@ class DiscourseDebate(DiscoursePolicy):
                 agreements, turn, task_instruction, input_str
             )
 
-        return draft, turn, agreements
+        return current_draft, turn, agreements

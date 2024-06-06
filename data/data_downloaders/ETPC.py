@@ -25,7 +25,7 @@ class ETPCDownloader(DatasetDownloader):
                     InputExample(
                         example_id=str(uuid.uuid4()),
                         dataset_id=s["idx"][0],
-                        input_str=[s["sentence1"][0]],
+                        inputs=[s["sentence1"][0]],
                         context=[paraphrase_types_str],
                         references=[s["sentence2"][0]],
                         personas=None,

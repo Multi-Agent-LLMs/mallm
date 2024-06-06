@@ -6,6 +6,8 @@ import os
 import sys
 from multiprocessing.pool import ThreadPool
 from typing import Any, Optional
+import time
+from datetime import timedelta
 
 import fire
 import httpx
@@ -18,6 +20,10 @@ from mallm.models.Chat import Chat
 from mallm.models.personas.ExpertGenerator import ExpertGenerator
 from mallm.utils.CustomFormatter import CustomFormatter
 from mallm.utils.types import InputExample
+from mallm.prompts.coordinator_prompts import (
+    generate_chat_prompt_baseline,
+    generate_chat_prompt_extract_result,
+)
 
 just_fix_windows_console()
 
@@ -53,16 +59,19 @@ class Scheduler:
         api_key: str = "-",
         use_moderator: bool = False,
         max_turns: int = 10,
+        force_all_turns: bool = False,
         feedback_sentences: tuple[int, int] = (3, 4),
         paradigm: str = "memory",
         decision_protocol: str = "majority_consensus",
         context_length: int = 1,
         include_current_turn_in_memory: bool = False,
-        extract_all_drafts: bool = False,
+        extract_all_drafts: bool = True,
         debate_rounds: Optional[int] = None,
         max_concurrent_requests: int = 100,
         clear_memory_bucket: bool = True,
         memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
+        baseline: bool = False,
+        chain_of_thought: bool = True,
     ) -> None:
         # Check for the correct aruments provided
         # TODO: make this more robust and conclusive. All arguments should be checked for validity, making the use of MALLM as fool-proof as possible.
@@ -116,6 +125,7 @@ class Scheduler:
         # Read input data (format: json lines)
         logger.info(f"""Reading {data_file}...""")
         with open(data_file) as f:
+            self.dataset_name = f.name
             json_data = json.loads(f.readline())
 
         self.data = [InputExample(**data) for data in json_data]
@@ -134,6 +144,7 @@ class Scheduler:
         self.api_key = api_key
         self.use_moderator = use_moderator
         self.max_turns = max_turns
+        self.force_all_turns = force_all_turns
         self.feedback_sentences = feedback_sentences
         self.paradigm = paradigm
         self.decision_protocol = decision_protocol
@@ -146,7 +157,9 @@ class Scheduler:
         self.memory_bucket_dir = memory_bucket_dir
         self.total_samples = len(self.data)
         self.completed_samples = 0
-        logger.info(f"""Found {self.total_samples} samples to discuss.""")
+        self.baseline = baseline
+        self.chain_of_thought = chain_of_thought
+        logger.info(f"""Found {self.total_samples} samples to process.""")
 
         logger.info("Finished initializing the scheduler.")
 
@@ -176,21 +189,29 @@ class Scheduler:
             return None
 
         try:
-            answer, global_mem, agent_mems, turn, agreements, discussion_time = (
-                coordinator.discuss(
-                    self.instruction,
-                    sample.input_str,
-                    sample.context,
-                    self.use_moderator,
-                    feedback_sentences=self.feedback_sentences,
-                    paradigm=self.paradigm,
-                    decision_protocol=self.decision_protocol,
-                    max_turns=self.max_turns,
-                    context_length=self.context_length,
-                    include_current_turn_in_memory=self.include_current_turn_in_memory,
-                    extract_all_drafts=self.extract_all_drafts,
-                    debate_rounds=self.debate_rounds,
-                )
+            (
+                answer,
+                extracted_answer,
+                global_mem,
+                agent_mems,
+                turn,
+                agreements,
+                discussion_time,
+            ) = coordinator.discuss(
+                self.instruction,
+                sample.inputs,
+                sample.context,
+                self.use_moderator,
+                feedback_sentences=self.feedback_sentences,
+                paradigm=self.paradigm,
+                decision_protocol=self.decision_protocol,
+                max_turns=self.max_turns,
+                force_all_turns=self.force_all_turns,
+                context_length=self.context_length,
+                include_current_turn_in_memory=self.include_current_turn_in_memory,
+                extract_all_drafts=self.extract_all_drafts,
+                debate_rounds=self.debate_rounds,
+                chain_of_thought=self.chain_of_thought,
             )
         except Exception:
             # More extensive error logging to ease debugging during async execution
@@ -214,16 +235,17 @@ class Scheduler:
 
         output_dicts.append(
             {
-                "dataset": "placeholder",
+                "dataset": self.dataset_name,
                 "exampleId": sample.example_id,
                 "datasetId": sample.dataset_id,
                 "instruction": self.instruction,
                 "coordinatorId": coordinator.id,
                 "personas": coordinator.get_agents(),
                 "paradigm": self.paradigm,
-                "input": sample.input_str,
+                "input": sample.inputs,
                 "context": sample.context,
                 "answer": answer,
+                "extracted_answer": extracted_answer,
                 "references": sample.references,
                 "agreements": [
                     dataclasses.asdict(agreement) for agreement in agreements
@@ -260,6 +282,7 @@ class Scheduler:
         Discussions are handled in a queue of length max_concurrent_requests.
         Once a spot in the queue is free because a discussion ended, the next discussion is initialized.
         """
+        logger.debug("Starting discussion manager...")
         # Creating HuggingFace endpoint
         llm = Chat(
             client=OpenAI(base_url=f"{self.endpoint_url}/v1", api_key=self.api_key),
@@ -290,6 +313,122 @@ class Scheduler:
             else:
                 logger.error("Process %s failed!" % i)
 
+    def run_baseline(
+        self,
+        client: httpx.Client,
+        llm: Chat,
+        sample: InputExample,
+    ) -> Optional[str]:
+        """
+        Task a single LM to solve a sample.
+        """
+        sample_instruction = self.instruction
+        if sample.context:
+            for c in sample.context:
+                sample_instruction += "\n" + c
+        input_str = ""
+        for num, input_line in enumerate(sample.inputs):
+            if len(sample.inputs) > 1:
+                input_str += str(num + 1) + ") " + input_line + "\n"
+            else:
+                input_str = input_line
+
+        logger.info(f"""Starting baseline processing of sample {sample.example_id}""")
+        try:
+            start_time = time.perf_counter()
+            answer = llm.invoke(
+                generate_chat_prompt_baseline(
+                    task_instruction=sample_instruction,
+                    input_str=input_str,
+                    chain_of_thought=self.chain_of_thought,
+                ),
+                client=client,
+            )
+            discussion_time = timedelta(
+                seconds=time.perf_counter() - start_time
+            ).total_seconds()
+
+            extracted_answer = None
+            if self.extract_all_drafts:
+                extracted_answer = llm.invoke(
+                    generate_chat_prompt_extract_result(answer),
+                    client=client,
+                )
+        except Exception as e:
+            logger.error("Failed running baseline.")
+            logger.error(e)
+            return None
+
+        logger.info(
+            f"""--> Baseline LM generated the final answer within {'%.2f' % discussion_time} seconds: \n"""
+            + str(answer)
+        )
+
+        output_dicts.append(
+            {
+                "dataset": self.dataset_name,
+                "exampleId": sample.example_id,
+                "datasetId": sample.dataset_id,
+                "instruction": self.instruction,
+                "coordinatorId": None,
+                "personas": None,
+                "paradigm": None,
+                "input": sample.inputs,
+                "context": sample.context,
+                "answer": answer,
+                "extracted_answer": extracted_answer,
+                "references": sample.references,
+                "agreements": None,
+                "turns": None,
+                "clockSeconds": float("%.2f" % discussion_time),
+                "globalMemory": None,
+                "agentMemory": None,
+            }
+        )
+        try:
+            with open(self.out, "w") as file:
+                file.write(
+                    json.dumps(output_dicts)
+                )  # TODO: ensure correct json formatting (sometimes there is an invalid escape sequence warning)
+                file.truncate()
+        except Exception as e:
+            logger.error("Failed to write output to file.")
+            logger.error(e)
+
+        self.completed_samples += 1
+        logger.info(
+            f"""Completed samples: {self.completed_samples}. Samples left: {self.total_samples - self.completed_samples}."""
+        )
+        return answer
+
+    def manage_baseline(self, client: httpx.Client) -> None:
+        """
+        Manages all samples of the data.
+        The LM answers the query with a single request with no discussion being held.
+        """
+        logger.debug("Starting baseline manager...")
+        # Creating HuggingFace endpoint
+        llm = Chat(
+            client=OpenAI(base_url=f"{self.endpoint_url}/v1", api_key=self.api_key),
+            model=self.model,
+        )
+
+        pool = ThreadPool(processes=self.max_concurrent_requests)
+        results = []
+        for sample in self.data:
+            try:
+                results.append(
+                    pool.apply_async(
+                        self.run_baseline,
+                        (client, llm, sample),
+                    )
+                )
+            except Exception as e:
+                logger.error("Failed running baseline.")
+                logger.error(e)
+        pool.close()  # Done adding tasks.
+        pool.join()  # Wait for all tasks to complete.
+
     def clean_memory_bucket(self, memory_bucket_dir: Optional[str] = None) -> None:
         """
         Deletes all stored global memory
@@ -315,9 +454,11 @@ class Scheduler:
         """
         The routine that starts the discussions between LLM agents iteratively on the provided data.
         """
-
         with httpx.Client() as client:
-            self.manage_discussions(client)
+            if self.baseline:
+                self.manage_baseline(client)  # baseline (single LM)
+            else:
+                self.manage_discussions(client)  # multi-agent discussion
 
 
 def main(
@@ -330,16 +471,19 @@ def main(
     api_key: str = "-",
     use_moderator: bool = False,
     max_turns: int = 10,
+    force_all_turns: bool = False,
     feedback_sentences: tuple[int, int] = (3, 4),
     paradigm: str = "memory",
     decision_protocol: str = "majority_consensus",
     context_length: int = 3,
     include_current_turn_in_memory: bool = True,
-    extract_all_drafts: bool = False,
+    extract_all_drafts: bool = True,
     debate_rounds: Optional[int] = None,
     max_concurrent_requests: int = 100,
     clear_memory_bucket: bool = True,
     memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
+    baseline: bool = False,
+    chain_of_thought: bool = True,
 ) -> None:
     scheduler = Scheduler(
         data,
@@ -350,6 +494,7 @@ def main(
         api_key=api_key,
         use_moderator=use_moderator,
         max_turns=max_turns,
+        force_all_turns=force_all_turns,
         feedback_sentences=feedback_sentences,
         paradigm=paradigm,
         decision_protocol=decision_protocol,
@@ -360,6 +505,8 @@ def main(
         max_concurrent_requests=max_concurrent_requests,
         clear_memory_bucket=clear_memory_bucket,
         memory_bucket_dir=memory_bucket_dir,
+        baseline=baseline,
+        chain_of_thought=chain_of_thought,
     )
     scheduler.run()
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import httpx
-from langchain_core.language_models import LLM
+from mallm.models.Chat import Chat
 
 from mallm.agents.agent import Agent
 
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 class Moderator(Agent):
     def __init__(
         self,
-        llm: LLM,
+        llm: Chat,
         client: httpx.Client,
         coordinator: Coordinator,
         persona: str = "Moderator",

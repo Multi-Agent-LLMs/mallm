@@ -103,7 +103,7 @@ class BTVoteDownloader(DatasetDownloader):
                 InputExample(
                     example_id=example_id,
                     dataset_id=None,
-                    input_str=[input_data],
+                    inputs=[input_data],
                     context=None,
                     references=[reference_data],
                     personas=None,

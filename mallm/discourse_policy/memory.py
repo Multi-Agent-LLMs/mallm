@@ -37,17 +37,19 @@ class DiscourseMemory(DiscoursePolicy):
         memory_ids: list[int],
         template_filling: TemplateFilling,
         extract_all_drafts: bool,
+        chain_of_thought: bool,
     ) -> None:
         self.agreements = agent.participate(
-            coordinator.moderator is not None,
-            self.memories,
-            self.unique_id,
-            self.turn,
-            memory_ids,
-            template_filling,
-            extract_all_drafts,
-            coordinator.agents,
-            self.agreements,
+            use_moderator=coordinator.moderator is not None,
+            memories=self.memories,
+            unique_id=self.unique_id,
+            turn=self.turn,
+            memory_ids=memory_ids,
+            template_filling=template_filling,
+            extract_all_drafts=extract_all_drafts,
+            agents_to_update=coordinator.agents,
+            agreements=self.agreements,
+            chain_of_thought=chain_of_thought,
         )
 
     def moderator_call(
@@ -58,15 +60,17 @@ class DiscourseMemory(DiscoursePolicy):
         memory_ids: list[int],
         template_filling: TemplateFilling,
         extract_all_drafts: bool,
+        chain_of_thought: bool,
     ) -> None:
         res, memory, self.agreements = moderator.draft(
-            self.unique_id,
-            self.turn,
-            memory_ids,
-            template_filling,
-            extract_all_drafts,
-            self.agreements,
+            unique_id=self.unique_id,
+            turn=self.turn,
+            memory_ids=memory_ids,
+            template_filling=template_filling,
+            extract_all_drafts=extract_all_drafts,
+            agreements=self.agreements,
             is_moderator=True,
+            chain_of_thought=chain_of_thought,
         )
         self.memories.append(memory)
         coordinator.update_memories(self.memories, coordinator.agents)

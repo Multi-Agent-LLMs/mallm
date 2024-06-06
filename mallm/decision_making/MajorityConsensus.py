@@ -44,7 +44,9 @@ class MajorityConsensus(DecisionProtocol):
                 return "", False
 
             return (
-                agents_agree[-1].response,
+                agents_agree[
+                    -1
+                ].response,  # TODO: It is misleading how this is a generic [AGREE] string rather than the most recent draft
                 len([a.agreement for a in agreements if a.agreement])
                 > len(self.panelists) / 2,
             )

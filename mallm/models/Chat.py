@@ -36,6 +36,7 @@ class Chat(LLM):
         "<|eot_id|>",
         "<|reserved_special_token",
     ]
+    max_tokens: int = 1024
 
     # Overwrite to send direct chat structure to tgi endpoint
     def _convert_input(self, input: LanguageModelInput) -> PromptValue:
@@ -76,10 +77,11 @@ class Chat(LLM):
             The model output as a string. Actual completions SHOULD NOT include the prompt.
         """
         chat_completion = self.client.chat.completions.create(
-            model="tgi",
+            model=self.model,
             messages=prompt,
             stream=True,
             stop=self.stop_tokens,
+            max_tokens=self.max_tokens,
         )
         # iterate and print stream
         collected_messages = []
@@ -117,10 +119,11 @@ class Chat(LLM):
             An iterator of GenerationChunks.
         """
         chat_completion = self.client.chat.completions.create(
-            model="tgi",
+            model=self.model,
             messages=prompt,
             stream=True,
             stop=self.stop_tokens,
+            max_tokens=self.max_tokens,
         )
         # iterate and print stream
         for message in chat_completion:

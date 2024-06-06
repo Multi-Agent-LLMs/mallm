@@ -34,7 +34,7 @@ class GPQADownloader(DatasetDownloader):
                 InputExample(
                     example_id=str(uuid.uuid4()),
                     dataset_id=sample["Canary String"][0],
-                    input_str=[question_and_answers],
+                    inputs=[question_and_answers],
                     context=None,
                     references=[correct_answer_label],
                     personas=None,

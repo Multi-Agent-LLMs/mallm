@@ -105,7 +105,7 @@ class Coordinator:
             agent_dicts.append(
                 {
                     "agentId": a.id,
-                    "model": "placeholder",  # TODO: automatically detect model name
+                    "model": a.llm.model,
                     "persona": a.persona,
                     "personaDescription": a.persona_description,
                 }
@@ -168,12 +168,20 @@ class Coordinator:
         paradigm: str,
         decision_protocol: str,
         max_turns: int,
+        force_all_turns: bool,
         context_length: int,
         include_current_turn_in_memory: bool,
         extract_all_drafts: bool,
         debate_rounds: Optional[int],
+        chain_of_thought: bool = True,
     ) -> tuple[
-        str, list[Memory], list[Optional[list[Memory]]], int, list[Agreement], float
+        Optional[str],
+        Optional[str],
+        list[Memory],
+        list[Optional[list[Memory]]],
+        int,
+        list[Agreement],
+        float,
     ]:
         """
         The routine responsible for the discussion between agents to solve a task.
@@ -230,9 +238,11 @@ Decision-making: {self.decision_making.__class__.__name__}
             use_moderator,
             feedback_sentences,
             max_turns,
+            force_all_turns,
             context_length,
             include_current_turn_in_memory,
             extract_all_drafts,
+            chain_of_thought,
         )
 
         discussion_time = timedelta(
@@ -243,12 +253,24 @@ Decision-making: {self.decision_making.__class__.__name__}
         agent_mems = []
         for a in self.agents:
             agent_mems.append(a.get_memories()[0])
-        if turn >= max_turns:  # if no agreement was reached
-            current_draft = "No agreement was reached."
-        else:
-            current_draft = self.llm.invoke(
-                generate_chat_prompt_extract_result(input_str, current_draft),
+
+        extracted_draft = None
+        if turn >= max_turns and not force_all_turns:  # if no agreement was reached
+            current_draft = None
+        elif current_draft:
+            extracted_draft = self.llm.invoke(
+                generate_chat_prompt_extract_result(current_draft),
                 client=self.client,
             )
+        else:
+            current_draft = None
 
-        return current_draft, global_mem, agent_mems, turn, agreements, discussion_time
+        return (
+            current_draft,
+            extracted_draft,
+            global_mem,
+            agent_mems,
+            turn,
+            agreements,
+            discussion_time,
+        )

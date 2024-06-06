@@ -20,7 +20,7 @@ class GSM8KDownloader(DatasetDownloader):
                 InputExample(
                     example_id=str(uuid.uuid4()),
                     dataset_id=None,
-                    input_str=[s["question"][0]],
+                    inputs=[s["question"][0]],
                     context=None,
                     references=[s["answer"][0]],
                     personas=None,
