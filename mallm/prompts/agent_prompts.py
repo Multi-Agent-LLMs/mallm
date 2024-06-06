@@ -28,6 +28,17 @@ def base_prompt(data: TemplateFilling) -> list[dict[str, str]]:
     return prompts
 
 
+def generate_chat_prompt_agree(data: TemplateFilling) -> list[dict[str, str]]:
+    prompts = base_prompt(data)
+    prompts.append(
+        {
+            "role": "user",
+            "content": "Do you agree with the conclusion, considering the arguments and evidence presented? Please provide your reasoning step-by-step. After that respond with AGREE or DISAGREE.",
+        }
+    )
+    return prompts
+
+
 def generate_chat_prompt_feedback(
     data: TemplateFilling, chain_of_thought: bool
 ) -> list[dict[str, str]]:
@@ -36,7 +47,7 @@ def generate_chat_prompt_feedback(
         prompts.append(
             {
                 "role": "user",
-                "content": "Based on the current solution, give constructive feedback. Be open to compromise too. If you agree, answer with [AGREE], else answer with [DISAGREE] and explain why.",
+                "content": "Based on the current solution, give constructive feedback. Be open to compromise too.",
             }
         )
         if chain_of_thought:
@@ -58,7 +69,7 @@ def generate_chat_prompt_improve(
         prompts.append(
             {
                 "role": "user",
-                "content": "Improve the current answer. If you agree with the current answer, answer with [AGREE], else answer with [DISAGREE].",
+                "content": "You dont agree with the current answer. Use critical thinking to improve the correctness.",
             }
         )
         if chain_of_thought:
