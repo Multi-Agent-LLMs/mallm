@@ -323,8 +323,9 @@ class Scheduler:
         Task a single LM to solve a sample.
         """
         sample_instruction = self.instruction
-        for c in sample.context:
-            sample_instruction += "\n" + c
+        if sample.context:
+            for c in sample.context:
+                sample_instruction += "\n" + c
         input_str = ""
         for num, input_line in enumerate(sample.inputs):
             if len(sample.inputs) > 1:
