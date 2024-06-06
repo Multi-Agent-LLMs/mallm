@@ -3,6 +3,7 @@ import os
 import random
 import urllib
 import uuid
+from typing import Optional
 
 from data.data_download import DatasetDownloader
 from mallm.utils.types import InputExample
@@ -20,8 +21,10 @@ class StrategyGADownloader(DatasetDownloader):
         self.dataset = json.loads(open(file_path, encoding="utf-8").read())["examples"]
         random.shuffle(self.dataset)
 
-    def __init__(self):
-        super().__init__("strategyqa", hf_dataset=False)
+    def __init__(
+        self, sample_size: Optional[int] = None, hf_token: Optional[str] = None
+    ):
+        super().__init__(name="strategyqa", hf_dataset=False, sample_size=sample_size)
 
     def process_data(self) -> list[InputExample]:
         input_examples = []
