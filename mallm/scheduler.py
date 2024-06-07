@@ -51,11 +51,12 @@ os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
 class Scheduler:
     def __init__(
         self,
-        data_file: str,
+        data: str,
         out: str,
         instruction: str,
         endpoint_url: str = "https://api.openai.com",
         model: str = "gpt-3.5-turbo",
+        # use "tgi" for Text Generation Inference by HuggingFace or one of these: https://platform.openai.com/docs/models
         api_key: str = "-",
         use_moderator: bool = False,
         max_turns: int = 10,
@@ -63,8 +64,8 @@ class Scheduler:
         feedback_sentences: tuple[int, int] = (3, 4),
         paradigm: str = "memory",
         decision_protocol: str = "majority_consensus",
-        context_length: int = 1,
-        include_current_turn_in_memory: bool = False,
+        context_length: int = 3,
+        include_current_turn_in_memory: bool = True,
         extract_all_drafts: bool = True,
         debate_rounds: Optional[int] = None,
         max_concurrent_requests: int = 100,
@@ -75,12 +76,12 @@ class Scheduler:
     ) -> None:
         # Check for the correct aruments provided
         # TODO: make this more robust and conclusive. All arguments should be checked for validity, making the use of MALLM as fool-proof as possible.
-        if not os.path.exists(data_file):
+        if not os.path.exists(data):
             logger.error(
                 "The input file you provided does not exist. Please specify a json lines file using --data."
             )
             sys.exit(1)
-        if not data_file.endswith(".json"):
+        if not data.endswith(".json"):
             logger.error(
                 "The input file you provided is not a json file. Please specify a json lines file using --data."
             )
@@ -123,8 +124,8 @@ class Scheduler:
             self.clean_memory_bucket(memory_bucket_dir)
 
         # Read input data (format: json lines)
-        logger.info(f"""Reading {data_file}...""")
-        with open(data_file) as f:
+        logger.info(f"""Reading {data}...""")
+        with open(data) as f:
             self.dataset_name = f.name
             json_data = json.loads(f.readline())
 
