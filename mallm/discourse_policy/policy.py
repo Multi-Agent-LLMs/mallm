@@ -29,8 +29,8 @@ class DiscoursePolicy(ABC):
         task_instruction: str,
         input_str: str,
         use_moderator: bool = False,
-        feedback_sentences: tuple[int, int] = (3, 4),
-        max_turns: int = 10,
+        feedback_sentences: Optional[tuple[int, int]] = None,
+        max_turns: Optional[int] = None,
         force_all_turns: bool = False,
         context_length: int = 1,
         include_current_turn_in_memory: bool = False,
@@ -39,7 +39,9 @@ class DiscoursePolicy(ABC):
         chain_of_thought: bool = True,
     ) -> tuple[Optional[str], int, list[Agreement]]:
         logger.debug(self.paradigm_str)
-        while (not self.decision or (force_all_turns)) and self.turn < max_turns:
+        while (not self.decision or (force_all_turns)) and (
+            max_turns is None or self.turn < max_turns
+        ):
             self.turn += 1
             logger.info(f"Ongoing. Current turn: {self.turn}")
 
@@ -59,13 +61,11 @@ class DiscoursePolicy(ABC):
                     persona=agent.persona,
                     persona_description=agent.persona_description,
                     agent_memory=debate_history,
-                    sents_max=feedback_sentences[1],
-                    sents_min=feedback_sentences[0],
+                    feedback_sentences=feedback_sentences,
                 )
 
                 if isinstance(agent, Moderator):
-                    template_filling.sents_min = None
-                    template_filling.sents_max = None
+                    template_filling.feedback_sentences = None
                     self.moderator_call(
                         moderator=agent,
                         template_filling=template_filling,

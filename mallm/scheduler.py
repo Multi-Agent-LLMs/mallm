@@ -51,8 +51,8 @@ os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
 class Scheduler:
     def __init__(
         self,
-        data: str,
-        out: str,
+        data_file: str,
+        out_file: str,
         instruction: str,
         endpoint_url: str = "https://api.openai.com",
         model: str = "gpt-3.5-turbo",
@@ -61,7 +61,7 @@ class Scheduler:
         use_moderator: bool = False,
         max_turns: int = 10,
         force_all_turns: bool = False,
-        feedback_sentences: tuple[int, int] = (3, 4),
+        feedback_sentences: Optional[tuple[int, int]] = None,
         paradigm: str = "memory",
         decision_protocol: str = "majority_consensus",
         context_length: int = 3,
@@ -76,17 +76,17 @@ class Scheduler:
     ) -> None:
         # Check for the correct aruments provided
         # TODO: make this more robust and conclusive. All arguments should be checked for validity, making the use of MALLM as fool-proof as possible.
-        if not os.path.exists(data):
+        if not os.path.exists(data_file):
             logger.error(
                 "The input file you provided does not exist. Please specify a json lines file using --data."
             )
             sys.exit(1)
-        if not data.endswith(".json"):
+        if not data_file.endswith(".json"):
             logger.error(
                 "The input file you provided is not a json file. Please specify a json lines file using --data."
             )
             sys.exit(1)
-        if not out.endswith(".json"):
+        if not out_file.endswith(".json"):
             logger.error(
                 "The output file does not seem to be a json file. Please specify a file path using --out."
             )
@@ -115,17 +115,17 @@ class Scheduler:
             sys.exit(1)
 
         # Cleaning other files
-        if os.path.exists(out):
-            os.remove(out)
-            logger.info(f"""The file {out} has been deleted.""")
+        if os.path.exists(out_file):
+            os.remove(out_file)
+            logger.info(f"""The file {out_file} has been deleted.""")
 
         # Cleaning the memory bucked from previous runs
         if clear_memory_bucket:
             self.clean_memory_bucket(memory_bucket_dir)
 
         # Read input data (format: json lines)
-        logger.info(f"""Reading {data}...""")
-        with open(data) as f:
+        logger.info(f"""Reading {data_file}...""")
+        with open(data_file) as f:
             self.dataset_name = f.name
             json_data = json.loads(f.readline())
 
@@ -138,7 +138,7 @@ class Scheduler:
                 "Input data has wrong format. Please delete and download the data again."
             )
             sys.exit(1)
-        self.out = out
+        self.out = out_file
         self.instruction = instruction
         self.endpoint_url = endpoint_url
         self.model = model
@@ -473,7 +473,7 @@ def main(
     use_moderator: bool = False,
     max_turns: int = 10,
     force_all_turns: bool = False,
-    feedback_sentences: tuple[int, int] = (3, 4),
+    feedback_sentences: Optional[tuple[int, int]] = None,
     paradigm: str = "memory",
     decision_protocol: str = "majority_consensus",
     context_length: int = 3,

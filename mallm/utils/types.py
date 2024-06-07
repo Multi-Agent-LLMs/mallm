@@ -32,8 +32,7 @@ class TemplateFilling:
     persona: str
     persona_description: str
     agent_memory: Optional[list[dict[str, str]]]
-    sents_min: Optional[int] = None
-    sents_max: Optional[int] = None
+    feedback_sentences: Optional[tuple[int, int]] = None
 
 
 @dataclass

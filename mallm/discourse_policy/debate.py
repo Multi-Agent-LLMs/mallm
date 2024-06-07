@@ -49,7 +49,7 @@ class DiscourseDebate(DiscoursePolicy):
         task_instruction: str,
         input_str: str,
         use_moderator: bool = False,
-        feedback_sentences: tuple[int, int] = (3, 4),
+        feedback_sentences: Optional[tuple[int, int]] = None,
         max_turns: Optional[int] = None,
         force_all_turns: bool = False,
         context_length: int = 1,
@@ -80,7 +80,9 @@ class DiscourseDebate(DiscoursePolicy):
 
         logger.info("Debate rounds between agents A2, ..., An: " + str(debate_rounds))
 
-        while not decision and (max_turns is None or turn < max_turns):
+        while not (decision or (force_all_turns)) and (
+            max_turns is None or turn < max_turns
+        ):
             turn = turn + 1
             logger.info("Ongoing. Current turn: " + str(turn))
 
@@ -174,8 +176,7 @@ class DiscourseDebate(DiscoursePolicy):
                         persona=a.persona,
                         persona_description=a.persona_description,
                         agent_memory=debate_history,
-                        sents_max=feedback_sentences[1],
-                        sents_min=feedback_sentences[0],
+                        feedback_sentences=feedback_sentences,
                     )
 
                     if r == debate_rounds - 1:  # last debate round

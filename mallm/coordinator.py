@@ -164,7 +164,7 @@ class Coordinator:
         input_lines: list[str],
         context: Optional[list[str]],
         use_moderator: bool,
-        feedback_sentences: tuple[int, int],
+        feedback_sentences: Optional[tuple[int, int]],
         paradigm: str,
         decision_protocol: str,
         max_turns: int,
