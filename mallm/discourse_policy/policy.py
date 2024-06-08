@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Optional
 
 from mallm.agents.moderator import Moderator
 from mallm.agents.panelist import Panelist
-from mallm.utils.types import Agreement, TemplateFilling, Memory
+from mallm.utils.types import Agreement, Memory, TemplateFilling
 
 if TYPE_CHECKING:
     from mallm.coordinator import Coordinator

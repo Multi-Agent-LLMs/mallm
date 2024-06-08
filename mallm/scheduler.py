@@ -4,10 +4,10 @@ import json
 import logging
 import os
 import sys
-from multiprocessing.pool import ThreadPool
-from typing import Any, Optional
 import time
 from datetime import timedelta
+from multiprocessing.pool import ThreadPool
+from typing import Any, Optional
 
 import fire
 import httpx
@@ -18,12 +18,12 @@ from openai import OpenAI
 from mallm.coordinator import Coordinator
 from mallm.models.Chat import Chat
 from mallm.models.personas.ExpertGenerator import ExpertGenerator
-from mallm.utils.CustomFormatter import CustomFormatter
-from mallm.utils.types import InputExample
 from mallm.prompts.coordinator_prompts import (
     generate_chat_prompt_baseline,
     generate_chat_prompt_extract_result,
 )
+from mallm.utils.CustomFormatter import CustomFormatter
+from mallm.utils.types import InputExample
 
 just_fix_windows_console()
 
