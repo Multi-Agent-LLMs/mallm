@@ -4,7 +4,6 @@ import dataclasses
 import dbm
 import json
 import logging
-import os
 import uuid
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional

@@ -13,6 +13,10 @@ def generate_chat_prompt_extract_result(result: Optional[str]) -> list[dict[str,
             "role": "user",
             "content": f"Text: {result}",
         },
+        {
+            "role": "assistant",
+            "content": "Final solution:",
+        },
     ]
 
     return prompts
