@@ -19,11 +19,11 @@ from mallm.decision_making.MajorityConsensus import MajorityConsensus
 from mallm.decision_making.Voting import Voting
 from mallm.discourse_policy.debate import DiscourseDebate
 from mallm.discourse_policy.memory import DiscourseMemory
+from mallm.discourse_policy.policy import DiscoursePolicy
 from mallm.discourse_policy.relay import DiscourseRelay
 from mallm.discourse_policy.report import DiscourseReport
-from mallm.discourse_policy.policy import DiscoursePolicy
 from mallm.models.Chat import Chat
-from mallm.models.personas.ExpertGenerator import ExpertGenerator
+from mallm.models.personas.PersonaGenerator import PersonaGenerator
 from mallm.prompts.coordinator_prompts import generate_chat_prompt_extract_result
 from mallm.utils.types import Agreement, Memory
 
@@ -50,7 +50,7 @@ class Coordinator:
         self,
         model: Chat,
         client: httpx.Client,
-        agent_generator: Optional[ExpertGenerator] = None,
+        agent_generator: Optional[PersonaGenerator] = None,
         use_moderator: bool = False,
         memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
     ):
@@ -86,7 +86,6 @@ class Coordinator:
         personas = self.agent_generator.generate_personas(
             f"{task_instruction} {input_str}", 3
         )
-        # personas = [{"role": "Panelist", "description": "panelist"} for _ in range(3)]
 
         if use_moderator:
             self.moderator = Moderator(self.llm, self.client, self)

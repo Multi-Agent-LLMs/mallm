@@ -10,11 +10,10 @@ https://github.com/openai/simple-evals/blob/main/gpqa_eval.py
 
 import sys
 
-
 ANSWER_PATTERN_MULTICHOICE = r"(?i)Answer\s*:\s*([A-D])"
 
-import re
 import json
+import re
 
 out_file = sys.argv[1]
 

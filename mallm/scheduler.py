@@ -4,10 +4,10 @@ import json
 import logging
 import os
 import sys
-from multiprocessing.pool import ThreadPool
-from typing import Any, Optional
 import time
 from datetime import timedelta
+from multiprocessing.pool import ThreadPool
+from typing import Any, Optional, Type
 
 import fire
 import httpx
@@ -18,12 +18,14 @@ from openai import OpenAI
 from mallm.coordinator import Coordinator
 from mallm.models.Chat import Chat
 from mallm.models.personas.ExpertGenerator import ExpertGenerator
-from mallm.utils.CustomFormatter import CustomFormatter
-from mallm.utils.types import InputExample
+from mallm.models.personas.IPIPPersonaGenerator import IPIPPersonaGenerator
+from mallm.models.personas.PersonaGenerator import PersonaGenerator
 from mallm.prompts.coordinator_prompts import (
     generate_chat_prompt_baseline,
     generate_chat_prompt_extract_result,
 )
+from mallm.utils.CustomFormatter import CustomFormatter
+from mallm.utils.types import InputExample
 
 just_fix_windows_console()
 
@@ -46,6 +48,12 @@ logger = logging.getLogger("mallm")
 output_dicts: list[dict[str, Any]] = []
 
 os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
+
+
+PERSONA_GENERATORS: dict[str, Type[PersonaGenerator]] = {
+    "expert": ExpertGenerator,
+    "ipip": IPIPPersonaGenerator,
+}
 
 
 class Scheduler:
@@ -72,6 +80,7 @@ class Scheduler:
         memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
         baseline: bool = False,
         chain_of_thought: bool = True,
+        personas: str = "expert",
     ) -> None:
         # Check for the correct aruments provided
         # TODO: make this more robust and conclusive. All arguments should be checked for validity, making the use of MALLM as fool-proof as possible.
@@ -137,6 +146,13 @@ class Scheduler:
                 "Input data has wrong format. Please delete and download the data again."
             )
             sys.exit(1)
+
+        if personas not in PERSONA_GENERATORS:
+            logger.error(
+                f"Invalid persona generator: {personas}. Please choose one of: {', '.join(PERSONA_GENERATORS.keys())}"
+            )
+            sys.exit(1)
+
         self.out = out
         self.instruction = instruction
         self.endpoint_url = endpoint_url
@@ -159,6 +175,7 @@ class Scheduler:
         self.completed_samples = 0
         self.baseline = baseline
         self.chain_of_thought = chain_of_thought
+        self.personas = personas
         logger.info(f"""Found {self.total_samples} samples to process.""")
 
         logger.info("Finished initializing the scheduler.")
@@ -290,7 +307,7 @@ class Scheduler:
             model=self.model,
         )
 
-        agent_generator = ExpertGenerator(llm=llm)
+        agent_generator = PERSONA_GENERATORS[self.personas](llm=llm)
 
         pool = ThreadPool(processes=self.max_concurrent_requests)
         results = []
@@ -485,6 +502,7 @@ def main(
     memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
     baseline: bool = False,
     chain_of_thought: bool = True,
+    personas: str = "expert",
 ) -> None:
     scheduler = Scheduler(
         data,
@@ -508,6 +526,7 @@ def main(
         memory_bucket_dir=memory_bucket_dir,
         baseline=baseline,
         chain_of_thought=chain_of_thought,
+        personas=personas,
     )
     scheduler.run()
 

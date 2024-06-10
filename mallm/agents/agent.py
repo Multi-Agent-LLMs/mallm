@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 import httpx
+
 from mallm.models.Chat import Chat
 
 if TYPE_CHECKING:
