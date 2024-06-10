@@ -50,7 +50,7 @@ class DiscourseDebate(DiscoursePolicy):
         input_str: str,
         use_moderator: bool = False,
         feedback_sentences: Optional[tuple[int, int]] = None,
-        max_turns: Optional[int] = None,
+        max_turns: Optional[int] = 10,
         force_all_turns: bool = False,
         context_length: int = 1,
         include_current_turn_in_memory: bool = False,
