@@ -34,7 +34,9 @@ def test_init_agents_with_valid_persona_generator():
     coordinator = Coordinator(
         model, client, agent_generator=agent_generator, memory_bucket_dir="./test/data/"
     )
-    coordinator.init_agents("task_instruction", "input_str", use_moderator=False)
+    coordinator.init_agents(
+        "task_instruction", "input_str", use_moderator=False, num_agents=3
+    )
     assert len(coordinator.agents) == 3
 
 
@@ -44,7 +46,9 @@ def test_init_agents_without_persona_generator():
     client = Mock()
     coordinator = Coordinator(model, client, memory_bucket_dir="./test/data/")
     with pytest.raises(Exception, match="No persona generator provided."):
-        coordinator.init_agents("task_instruction", "input_str", use_moderator=False)
+        coordinator.init_agents(
+            "task_instruction", "input_str", use_moderator=False, num_agents=3
+        )
 
 
 # Test updating global memory
@@ -105,7 +109,9 @@ def test_update_memories():
     coordinator = Coordinator(
         model, client, agent_generator=agent_generator, memory_bucket_dir="./test/data/"
     )
-    coordinator.init_agents("task_instruction", "input_str", use_moderator=False)
+    coordinator.init_agents(
+        "task_instruction", "input_str", use_moderator=False, num_agents=3
+    )
     memories = [
         Memory(
             message_id=1,
