@@ -1,16 +1,15 @@
 import json
 import logging
 
-from openai import OpenAI
-
+from mallm.models.Chat import Chat
 from mallm.models.personas.PersonaGenerator import PersonaGenerator
 
 logger = logging.getLogger("mallm")
 
 
-class SimplePersonaGenerator(PersonaGenerator):
-    def __init__(self, client: OpenAI):
-        self.client = client
+class ExpertGenerator(PersonaGenerator):
+    def __init__(self, llm: Chat):
+        self.llm = llm
         self.base_prompt = {
             "role": "system",
             "content": """
@@ -39,7 +38,9 @@ New Participant:
         """,
         }
 
-    def generate_personas(self, task_description, num_agents):
+    def generate_personas(
+        self, task_description: str, num_agents: int
+    ) -> list[dict[str, str]]:
         current_prompt = [
             self.base_prompt,
             {
@@ -49,31 +50,28 @@ New Participant:
         ]
 
         logger.debug("Creating " + str(num_agents) + " agents...")
-        agents = []
+        agents: list[dict[str, str]] = []
+        retry = 0
         while len(agents) < num_agents:
             # Send the prompt to the InferenceClient
-            chat_completion = self.client.chat.completions.create(
-                model="tgi",
-                messages=current_prompt
-                + [
+            response = self.llm.invoke(
+                [
+                    *current_prompt,
                     {
                         "role": "user",
                         "content": "Please use the follow the examples to generate a useful persona for the task! Only answer with the JSON for the next persona!",
-                    }
-                ],
-                stream=False,
-                stop=["<|eot_id|>"],
+                    },
+                ]
             )
-
-            response = chat_completion.choices[0].message.content.strip()
             try:
                 new_agent = json.loads(response)
                 if new_agent["role"] == "" or new_agent["description"] == "":
                     continue
                 agents.append(new_agent)
             except json.decoder.JSONDecodeError as e:
+                retry = retry + 1
                 logger.debug(
-                    "Could not decode json (will attempt retry): "
+                    f"Could not decode json (will attempt retry no. {str(retry)}): "
                     + str(e)
                     + "\nResponse string: "
                     + str(response)
@@ -87,5 +85,6 @@ New Participant:
                     "content": f"Already Generated Participants:\n{response}",
                 }
             )
+        logger.debug("Found agents: \n" + str(agents))
 
         return agents

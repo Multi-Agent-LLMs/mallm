@@ -1,4 +1,4 @@
-# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# This workflow will install Python dependencies, run tests, and lint with a variety of Python versions
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
 
 name: Python package
@@ -10,34 +10,140 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
+  lint:
+    runs-on: ubuntu-latest
 
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.12
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v2
+      - name: Install dependencies
+        run: poetry install --with dev
+      - name: Lint with flake8
+        run: |
+          # stop the build if there are Python syntax errors or undefined names
+          poetry run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+          poetry run flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+  type-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.12
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v2
+      - name: Install dependencies
+        run: poetry install --with dev
+      - name: Type check with mypy
+        run: poetry run mypy mallm/
+
+  test:
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12"]
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        python -m pip install flake8 pytest
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-    - name: Lint with flake8
-      run: |
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Install mallm
-      run: |
-        pip install -e .
-    - name: Test with pytest
-      run: |
-        pytest
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v2
+      - name: Install dependencies
+        run: poetry install --with dev
+      - name: Test with pytest
+        run: poetry run pytest
+
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.12
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v2
+      - name: Install dependencies
+        run: poetry install --with dev
+      - name: Test with pytest and generate coverage report
+        run: |
+          poetry run coverage run -m pytest
+          poetry run coverage report
+          poetry run coverage xml
+          poetry run coverage-badge -o coverage.svg
+      - name: Commit and push coverage badge
+        if: github.event_name == 'push'
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git checkout -b gh-pages
+          mkdir -p docs
+          mv coverage.svg docs/coverage.svg
+          git add docs/coverage.svg
+          git commit -m 'Update coverage badge'
+          git push origin gh-pages --force
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Post coverage result as PR comment
+        if: github.event_name == 'pull_request'
+        run: |
+          poetry run coverage report > coverage_report.txt
+          echo '### Coverage Report' > coverage_comment.md
+          echo '```' >> coverage_comment.md
+          cat coverage_report.txt >> coverage_comment.md
+          echo '```' >> coverage_comment.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Update or Create Pull Request Comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const commentBody = fs.readFileSync('coverage_comment.md', 'utf8');
+            console.log("Read coverage_comment.md content:");
+            console.log(commentBody);
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+            });
+            console.log("Fetched comments:");
+            console.log(comments);
+
+            const botComment = comments.find(comment => comment.user.login === 'github-actions[bot]' && comment.body.includes('### Coverage Report'));
+            console.log("Found bot comment:");
+            console.log(botComment);
+
+            if (botComment) {
+              console.log("Updating existing comment");
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: commentBody,
+              });
+            } else {
+              console.log("Creating new comment");
+              await github.rest.issues.createComment({
+                issue_number: context.payload.pull_request.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: commentBody,
+              });
+            }
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,12 +1,14 @@
 <br />
 <p align="center">
-<a><img src="image/mallm.webp" alt="MALLM" width="128" height="128" title="FawnRescue"></a>
+<a><img src="image/mallm.webp" alt="MALLM" width="128" height="128" title="MALLM"></a>
   <h3 align="center">MALLM</h3>
   <p align="center">
     Multi-Agent LLMs For Conversational Task-Solving: Framework<br />
     <p align="center">
   <a href="https://github.com/Multi-Agent-LLMs/mallm/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Multi-Agent-LLMs/mallm" alt="License"></a>
   <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="Black"></a>
+  <a href="https://codecov.io/gh/Multi-Agent-LLMs/mallm"><img src="https://codecov.io/gh/Multi-Agent-LLMs/mallm/graph/badge.svg?token=CBUZTPV5KA" alt="Coverage"></a>
+  <a href="https://github.com/Multi-Agent-LLMs/mallm/actions/workflows/python-package.yml"><img src="https://github.com/Multi-Agent-LLMs/mallm/actions/workflows/python-package.yml/badge.svg" alt="Pipeline"></a>
   <a href="https://github.com/Multi-Agent-LLMs/mallm/network/members"><img src="https://img.shields.io/github/forks/Multi-Agent-LLMs/mallm?style=social" alt="GitHub forks"></a>
   <a href="https://github.com/Multi-Agent-LLMs/mallm/stargazers"><img src="https://img.shields.io/github/stars/Multi-Agent-LLMs/mallm?style=social" alt="GitHub stars"></a>
 </p>
@@ -31,28 +33,19 @@ Install as a package:
 Create the test data
 `python data/data_downloader.py`
 
-You also need the checkpoints for the LLM you want to use. Currently, LLaMA-2-70b-chat has been tested and is working.
+You also need the checkpoints for the LLM you want to use. Use instruction-tuned models for the best performance.
 
-### Run Discussions
-MALLM relies on an external API (Text Generation Inference by Huggingface).
+### Run from Terminal
+MALLM relies on an external API like OpenAI or Text Generation Inference by Huggingface.
 Check the information [here (tg-hpc)](https://github.com/Multi-Agent-LLMs/tgi-hpc) or [here (tgi-scc)](https://github.com/Multi-Agent-LLMs/tgi-scc) about how to host a model yourself.
 
-Once the endpoint is available, you can initiate all discussions by a single script. Example:
+Once the endpoint is available, you can initiate all discussions by a single script. Example with TGI:
 
-`python mallm/scheduler.py --data=data/datasets/etpc_debugging.json --out=test_out.json --instruction="Paraphrase the input text." --endpoint_url="http://127.0.0.1:8080" --hf_api_token="YOUR_TOKEN" --max_concurrent_requests=100`
+`python mallm/scheduler.py --data=data/datasets/etpc_debugging.json --out=test_out.json --instruction="Paraphrase the input text." --endpoint_url="http://127.0.0.1:8080" --model="tgi"`
 
-While each discussion is sequential, multiple discussions can be processed in parallel for significant speedup. Please set `max_concurrent_requests` to a reasonable number so that you do not block the GPU for all other users of the TGI instance.
+Or with OpenAI:
 
-More parameters:
-```
-use_moderator=False,
-max_turns=10,
-feedback_sentences=[3, 4],
-paradigm="memory",
-context_length=1,
-include_current_turn_in_memory=False,
-max_concurrent_requests=100,
-```
+`python mallm/scheduler.py --data=data/datasets/etpc_debugging.json --out=test_out.json --instruction="Paraphrase the input text." --endpoint_url="https://api.openai.com" --model="gpt-3.5-turbo" --api_key="<your-key>"`
 
 ## Run as Module
 If installed, you can use MALLM from anywhere on your system:
@@ -63,9 +56,22 @@ mallm_scheduler = scheduler.Scheduler(
     data="data/datasets/etpc_debugging.json",
     out="test_out.json",
     instruction="Paraphrase the input text.",
-    endpoint_url="http://127.0.0.1:8080"
+    endpoint_url="http://127.0.0.1:8080",
+    model="tgi"
 )
 mallm_scheduler.run()
+```
+
+You can also call the API from OpenAI:
+```py
+mallm_scheduler = scheduler.Scheduler(
+    data="data/datasets/etpc_debugging.json",
+    out="test_out.json",
+    instruction="Paraphrase the input text.",
+    endpoint_url="https://api.openai.com",
+    model="gpt-3.5-turbo", # or another model from this list: https://platform.openai.com/docs/models
+    api_key="<your-key>"
+)
 ```
 
 ## Project Structure
@@ -80,7 +86,48 @@ The framework follows this structure and can be found in the `mallm` directory.
 Experiments can be implemented as a seperate repository, loading MALLM as a package.
 You can test stuff in the `notebooks` directory.
 
-Please do not develop on master and create a branch. Thank you!
+## Arguments
+
+All arguments the scheduler can parse:
+```py
+instruction: str,
+endpoint_url: str = "https://api.openai.com",
+model: str = "gpt-3.5-turbo", # use "tgi" for Text Generation Inference by HuggingFace or one of these: https://platform.openai.com/docs/models
+api_key: str = "-",
+use_moderator: bool = False,
+max_turns: int = 10,
+force_all_turns: bool = False,
+feedback_sentences: tuple[int, int] = (3, 4),
+paradigm: str = "memory",
+decision_protocol: str = "majority_consensus",
+context_length: int = 3,
+include_current_turn_in_memory: bool = True,
+extract_all_drafts: bool = True,
+debate_rounds: Optional[int] = None,
+max_concurrent_requests: int = 100, # TGI can handle max 250 concurrent requests
+clear_memory_bucket: bool = True,
+memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
+baseline: bool = False,
+chain_of_thought: bool = True,
+```
+
+## Evaluation
+
+We provide some basic evaluation metrics that can be directly applied to the output json of mallm.
+Implemented metrics: `bleu`, `rouge`, `meteor`, `bleu`, `bertscore`
+
+From terminal:
+
+`python mallm/evaluation/evaluator.py --input_file_path="test_out.json" --output_file_path="test_out_evaluated.json" --metrics=[bleu,rouge]`
+
+From script:
+
+```py
+from mallm.evaluation.evaluator import Evaluator
+
+evaluator = Evaluator(input_file_path= "test_out.json", output_file_path ="test_out_evaluated.json", metrics = ["bleu","rouge"])
+evaluator.process()
+```
 
 ## Logging
 
@@ -110,3 +157,7 @@ If you want to contribute, please use this pre-commit hook to ensure the same fo
 pip install pre-commit
 pre-commit install
 ```
+
+### Testing
+You can run unit tests locally:
+`pytest ./test/`

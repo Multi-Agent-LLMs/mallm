@@ -1,13 +1,12 @@
 import json
 import os
-import random
-import urllib
 import uuid
 
 import pandas as pd
 import requests
 
 from data.data_download import DatasetDownloader
+from mallm.utils.types import InputExample
 
 
 def list_files(dataset_persistent_id):
@@ -46,7 +45,7 @@ class BTVoteDownloader(DatasetDownloader):
         file_ids_vote_characteristics = list_files("doi:10.7910/DVN/AHBBXY")
 
         if not os.path.exists("data/datasets/btvote"):
-            os.mkdir("data/datasets/btvote", exist_ok=True)
+            os.mkdir("data/datasets/btvote")
 
         download_file(file_ids_vote_behaviour[1], "data/datasets/btvote/behaviour.dta")
         download_file(
@@ -76,7 +75,7 @@ class BTVoteDownloader(DatasetDownloader):
     def __init__(self):
         super().__init__("btvote", hf_dataset=False)
 
-    def process_data(self):
+    def process_data(self) -> list[InputExample]:
         merged_df = pd.merge(
             self.dataset["behaviour"],
             self.dataset["vote_characteristics"],
@@ -93,14 +92,21 @@ class BTVoteDownloader(DatasetDownloader):
         ).fillna(0)
 
         pivot_table = pivot_table.reset_index()
-
-        json_str = ""
+        input_examples = []
         for idx, row in pivot_table.iterrows():
             example_id = str(uuid.uuid4())
             input_data = row["vote_title"]
             reference_data = json.dumps(
                 {col: row[col] for col in pivot_table.columns if col != "vote_title"}
             )
-
-            json_str += f"""{{ "exampleId":"{example_id}", "datasetId": null, "input": \"{input_data}\", "context": null, "references": {reference_data}, "personas": null }}\n"""
-        self.save_to_json(json_str)
+            input_examples.append(
+                InputExample(
+                    example_id=example_id,
+                    dataset_id=None,
+                    inputs=[input_data],
+                    context=None,
+                    references=[reference_data],
+                    personas=None,
+                )
+            )
+        return input_examples

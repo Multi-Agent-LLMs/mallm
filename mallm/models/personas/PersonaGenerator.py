@@ -14,7 +14,7 @@ class PersonaGenerator(ABC):
         num_agents (int): Number of persona descriptions to generate.
 
         Returns:
-        List[Dict[str, str]]: A list of dictionaries, where each dictionary represents a persona
+        list[dict[str, str]]: A list of dictionaries, where each dictionary represents a persona
                                with keys like 'role' and 'persona' (or other relevant descriptors),
                                each mapped to their respective string description.
         """

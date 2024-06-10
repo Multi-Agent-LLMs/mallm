@@ -176,3 +176,8 @@ log.txt
 /*.json
 
 data/result.json
+
+test/data/*.json
+test/data/*.dir
+test/data/*.dat
+test/data/*.bak
