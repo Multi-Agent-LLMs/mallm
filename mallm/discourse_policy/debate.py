@@ -80,7 +80,7 @@ class DiscourseDebate(DiscoursePolicy):
 
         logger.info("Debate rounds between agents A2, ..., An: " + str(debate_rounds))
 
-        while not (decision or (force_all_turns)) and (
+        while (not decision or force_all_turns) and (
             max_turns is None or turn < max_turns
         ):
             turn = turn + 1
