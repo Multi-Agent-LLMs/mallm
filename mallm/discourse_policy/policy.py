@@ -30,7 +30,7 @@ class DiscoursePolicy(ABC):
         input_str: str,
         use_moderator: bool = False,
         feedback_sentences: Optional[tuple[int, int]] = None,
-        max_turns: Optional[int] = 10,
+        max_turns: int = 10,
         force_all_turns: bool = False,
         context_length: int = 1,
         include_current_turn_in_memory: bool = False,
@@ -39,9 +39,7 @@ class DiscoursePolicy(ABC):
         chain_of_thought: bool = True,
     ) -> tuple[Optional[str], int, list[Agreement]]:
         logger.debug(self.paradigm_str)
-        while (not self.decision or force_all_turns) and (
-            max_turns is None or self.turn < max_turns
-        ):
+        while (not self.decision or force_all_turns) and self.turn < max_turns:
             self.turn += 1
             logger.info(f"Ongoing. Current turn: {self.turn}")
 

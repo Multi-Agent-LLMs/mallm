@@ -50,7 +50,7 @@ class DiscourseDebate(DiscoursePolicy):
         input_str: str,
         use_moderator: bool = False,
         feedback_sentences: Optional[tuple[int, int]] = None,
-        max_turns: Optional[int] = 10,
+        max_turns: int = 10,
         force_all_turns: bool = False,
         context_length: int = 1,
         include_current_turn_in_memory: bool = False,
@@ -80,9 +80,7 @@ class DiscourseDebate(DiscoursePolicy):
 
         logger.info("Debate rounds between agents A2, ..., An: " + str(debate_rounds))
 
-        while (not decision or force_all_turns) and (
-            max_turns is None or turn < max_turns
-        ):
+        while (not self.decision or force_all_turns) and self.turn < max_turns:
             turn = turn + 1
             logger.info("Ongoing. Current turn: " + str(turn))
 
