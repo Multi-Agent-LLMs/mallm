@@ -54,7 +54,7 @@ class Agent:
     ) -> list[Agreement]:
         """
         Determines whether a string given by an agent means an agreement or disagreement.
-        Returns a list of bools
+        Returns a list of Agreements
         """
         if (
             "agree" in res.lower()
