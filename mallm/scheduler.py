@@ -232,7 +232,7 @@ class Scheduler:
             f"""--> Agents discussed for {turn} turns, {'%.2f' % discussion_time} seconds ({'%.2f' % (float(discussion_time) / 60.0)} minutes) to get the final answer: \n"""
             + str(answer)
         )
-        logger.info(f"""Reference answer: {sample["references"][0]}""")
+        logger.info(f"""Reference answer: {sample.references}""")
 
         output_dicts.append(
             {
