@@ -1,23 +1,29 @@
 name: discussion_X
 agents:
   moderator:
-    model: LLaMA-3-70B-Instruct
-    persona: Moderator
-    persona_description: An objective observer that does not inflict personal opinion.
+    - model: LLaMA-3-70B-Instruct
+      id: 0
+      persona: Moderator
+      persona_description: An objective observer that does not inflict personal opinion.
   panelists:
-    - model: ChatGPT
+    - model: GPT-4
+      id: 1
       persona: food expert
       persona_description: a very knowledgeable person about food.
-    - model: ChatGPT
+    - model: GPT-3.5
+      id: 2
       persona: tea scientist
       persona_description: he knows all things about camellia sinensis.
 paradigm:
   name: memory
   sequence:
-    - turn: agent 1
-    - turn: agent 2
-    - turn: agent 3
-    - decision: majority
+    - turn: 0
+    - turn: 1
+    - turn: 2
+  visibility:
+    - 0: [1,2]
+    - 1: [2,0]
+    - 2: [0,1] 
 decision:
   name: majority
   type: consensus
@@ -32,7 +38,5 @@ models:
       endpoint: <endpoint_url>
 parameters:
   context_length: 1
-  feedback_sentences: 
-    - 3
-    - 4
+  feedback_sentences: [3,4]
   max_turns: 7
