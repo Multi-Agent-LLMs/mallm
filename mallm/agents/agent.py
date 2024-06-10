@@ -55,10 +55,12 @@ class Agent:
     ) -> list[Agreement]:
         """
         Determines whether a string given by an agent means an agreement or disagreement.
-        Returns bool
+        Returns a list of bools
         """
-        if ("agree" in res.lower() and "disagree" not in res.lower()) and (
-            not self == self.moderator
+        if (
+            "agree" in res.lower()
+            and "disagree" not in res.lower()
+            and not self_drafted
         ):
             agreements.append(
                 Agreement(
@@ -66,14 +68,7 @@ class Agent:
                 )
             )
             logger.debug(f"Agent {self.short_id} agreed")
-        elif self_drafted and not self == self.moderator:
-            agreements.append(
-                Agreement(
-                    agreement=True, agent_id=self.id, persona=self.persona, response=res
-                )
-            )
-            logger.debug(f"Agent {self.short_id} agreed")
-        elif not self == self.moderator:
+        else:
             agreements.append(
                 Agreement(
                     agreement=False,
@@ -85,8 +80,8 @@ class Agent:
             logger.debug(f"Agent {self.short_id} disagreed")
 
         # Only keep the most recent agreements
-        if len(agreements) > len(self.coordinator.panelists):
-            agreements = agreements[-len(self.coordinator.panelists) :]
+        if len(agreements) > len(self.coordinator.agents):
+            agreements = agreements[-len(self.coordinator.agents) :]
         return agreements
 
     def improve(
@@ -153,12 +148,6 @@ class Agent:
                 generate_chat_prompt_extract_result(res),
                 client=self.client,
             )
-        if is_moderator:
-            agreement = Agreement(
-                agreement=None, agent_id=self.id, persona=self.persona, response=res
-            )
-        else:
-            agreement = agreements[-1]
         memory = Memory(
             message_id=unique_id,
             turn=turn,
@@ -166,7 +155,7 @@ class Agent:
             persona=self.persona,
             contribution="draft",
             text=res,
-            agreement=agreement.agreement,
+            agreement=agreements[-1].agreement,
             extracted_draft=current_draft,
             memory_ids=memory_ids,
             additional_args=dataclasses.asdict(template_filling),

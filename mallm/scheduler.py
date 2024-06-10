@@ -73,6 +73,7 @@ class Scheduler:
         memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
         baseline: bool = False,
         chain_of_thought: bool = True,
+        num_agents: int = 3,
     ) -> None:
         # Check for the correct aruments provided
         # TODO: make this more robust and conclusive. All arguments should be checked for validity, making the use of MALLM as fool-proof as possible.
@@ -160,6 +161,7 @@ class Scheduler:
         self.completed_samples = 0
         self.baseline = baseline
         self.chain_of_thought = chain_of_thought
+        self.num_agents = num_agents
         logger.info(f"""Found {self.total_samples} samples to process.""")
 
         logger.info("Finished initializing the scheduler.")
@@ -213,6 +215,7 @@ class Scheduler:
                 extract_all_drafts=self.extract_all_drafts,
                 debate_rounds=self.debate_rounds,
                 chain_of_thought=self.chain_of_thought,
+                num_agents=self.num_agents,
             )
         except Exception:
             # More extensive error logging to ease debugging during async execution
@@ -485,6 +488,7 @@ def main(
     memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
     baseline: bool = False,
     chain_of_thought: bool = True,
+    num_agents: int = 3,
 ) -> None:
     scheduler = Scheduler(
         data,
@@ -508,6 +512,7 @@ def main(
         memory_bucket_dir=memory_bucket_dir,
         baseline=baseline,
         chain_of_thought=chain_of_thought,
+        num_agents=num_agents,
     )
     scheduler.run()
 

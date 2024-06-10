@@ -49,7 +49,7 @@ New Participant:
             },
         ]
 
-        logger.debug("Creating " + str(num_agents) + " agents...")
+        logger.debug("Creating " + str(num_agents) + " personas...")
         agents: list[dict[str, str]] = []
         retry = 0
         while len(agents) < num_agents:

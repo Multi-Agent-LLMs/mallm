@@ -158,6 +158,7 @@ def test_discuss_with_invalid_paradigm():
             False,
             False,
             None,
+            3,
         )
 
 
@@ -191,4 +192,5 @@ def test_discuss_with_invalid_decision_protocol():
             False,
             False,
             None,
+            3,
         )

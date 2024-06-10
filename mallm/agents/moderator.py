@@ -6,6 +6,7 @@ import httpx
 
 from mallm.agents.agent import Agent
 from mallm.models.Chat import Chat
+from mallm.utils.types import Agreement
 
 if TYPE_CHECKING:
     from mallm.coordinator import Coordinator
@@ -21,3 +22,20 @@ class Moderator(Agent):
         persona_description: str = "A super-intelligent individual with critical thinking who has a neutral position at all times. He acts as a mediator between other discussion participants.",
     ) -> None:
         super().__init__(llm, client, coordinator, persona, persona_description)
+
+    def agree(
+        self, res: str, agreements: list[Agreement], self_drafted: bool = True
+    ) -> list[Agreement]:
+        """
+        Determines whether a string given by an agent means an agreement or disagreement.
+        Returns a list of bools
+        """
+        agreements.append(
+            Agreement(
+                agreement=None, agent_id=self.id, persona=self.persona, response=res
+            )
+        )
+        # Only keep the most recent agreements
+        if len(agreements) > len(self.coordinator.agents):
+            agreements = agreements[-len(self.coordinator.agents) :]
+        return agreements

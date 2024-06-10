@@ -67,7 +67,11 @@ class Coordinator:
         self.agent_generator = agent_generator
 
     def init_agents(
-        self, task_instruction: str, input_str: str, use_moderator: bool
+        self,
+        task_instruction: str,
+        input_str: str,
+        use_moderator: bool,
+        num_agents: int,
     ) -> None:
         """
         Instantiates the agents by
@@ -82,7 +86,7 @@ class Coordinator:
             raise Exception("No persona generator provided.")
 
         personas = self.agent_generator.generate_personas(
-            f"{task_instruction} {input_str}", 3
+            f"{task_instruction} {input_str}", num_agents
         )
 
         if use_moderator:
@@ -174,6 +178,7 @@ class Coordinator:
         extract_all_drafts: bool,
         debate_rounds: Optional[int],
         chain_of_thought: bool = True,
+        num_agents: int = 3,
     ) -> tuple[
         Optional[str],
         Optional[str],
@@ -203,13 +208,22 @@ class Coordinator:
             else:
                 input_str = input_line
 
-        self.init_agents(task_instruction, input_str, use_moderator=use_moderator)
+        if use_moderator:
+            num_agents -= 1
+        self.init_agents(
+            task_instruction,
+            input_str,
+            use_moderator=use_moderator,
+            num_agents=num_agents,
+        )
 
         if decision_protocol not in DECISION_PROTOCOLS:
             logger.error(f"No valid decision protocol for {decision_protocol}")
             raise Exception(f"No valid decision protocol for {decision_protocol}")
 
-        self.decision_making = DECISION_PROTOCOLS[decision_protocol](self.panelists)
+        self.decision_making = DECISION_PROTOCOLS[decision_protocol](
+            self.panelists, use_moderator
+        )
 
         start_time = time.perf_counter()
 
@@ -255,15 +269,11 @@ Decision-making: {self.decision_making.__class__.__name__}
             agent_mems.append(a.get_memories()[0])
 
         extracted_draft = None
-        if turn >= max_turns and not force_all_turns:  # if no agreement was reached
-            current_draft = None
-        elif current_draft:
+        if current_draft:
             extracted_draft = self.llm.invoke(
                 generate_chat_prompt_extract_result(current_draft),
                 client=self.client,
             )
-        else:
-            current_draft = None
 
         return (
             current_draft,
