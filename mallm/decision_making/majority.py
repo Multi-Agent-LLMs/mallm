@@ -24,7 +24,12 @@ class MajorityConsensus(DecisionProtocol):
         self.majority_agents = majority_agents
 
     def make_decision(
-        self, agreements: list[Agreement], turn: int, task: str, question: str
+        self,
+        agreements: list[Agreement],
+        turn: int,
+        agent_index: int,
+        task: str,
+        question: str,
     ) -> tuple[str, bool]:
         min_agents = len(self.panelists)
         if not self.use_moderator:

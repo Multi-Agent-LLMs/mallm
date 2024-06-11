@@ -13,8 +13,11 @@ import httpx
 from mallm.agents.agent import Agent
 from mallm.agents.moderator import Moderator
 from mallm.agents.panelist import Panelist
+from mallm.decision_making.approval import ApprovalVoting
+from mallm.decision_making.cumulative import CumulativeVoting
 from mallm.decision_making.decision_protocol import DecisionProtocol
 from mallm.decision_making.majority import MajorityConsensus
+from mallm.decision_making.ranked import RankedVoting
 from mallm.decision_making.voting import Voting
 from mallm.discourse_policy.debate import DiscourseDebate
 from mallm.discourse_policy.memory import DiscourseMemory
@@ -36,6 +39,9 @@ logger = logging.getLogger("mallm")
 DECISION_PROTOCOLS: dict[str, Type[DecisionProtocol]] = {
     "majority_consensus": MajorityConsensus,
     "voting": Voting,
+    "approval": ApprovalVoting,
+    "cumulative": CumulativeVoting,
+    "ranked": RankedVoting,
 }
 
 PROTOCOLS: dict[str, Type[DiscoursePolicy]] = {

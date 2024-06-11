@@ -18,12 +18,19 @@ class CumulativeVoting(DecisionProtocol):
     The solution with the highest total points is selected as the final decision.
     """
 
-    def __init__(self, panelists: list[Panelist], vote_turn: int = 3):
-        super().__init__(panelists)
+    def __init__(
+        self, panelists: list[Panelist], use_moderator: bool, vote_turn: int = 3
+    ):
+        super().__init__(panelists, use_moderator)
         self.vote_turn = vote_turn
 
     def make_decision(
-        self, agreements: list[Agreement], turn: int, task: str, question: str
+        self,
+        agreements: list[Agreement],
+        turn: int,
+        agent_index: int,
+        task: str,
+        question: str,
     ) -> tuple[str, bool]:
         if turn < self.vote_turn:
             return "", False
