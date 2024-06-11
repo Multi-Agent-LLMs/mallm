@@ -40,7 +40,7 @@ class ThresholdConsensus(DecisionProtocol):
             ),
             (None, None),
         )
-        if not current_agreement:
+        if not current_agreement or not num_agreements:
             return "", False
 
         if (self.threshold_agents and len(self.panelists) <= self.threshold_agents) or (

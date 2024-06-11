@@ -6,6 +6,7 @@ from mallm.decision_making.decision_protocol import DecisionProtocol
 from mallm.prompts.agent_prompts import (
     generate_approval_voting_prompt,
     generate_final_answer_prompt,
+    generate_cumulative_voting_prompt,
 )
 from mallm.utils.types import Agreement
 
