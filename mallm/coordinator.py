@@ -16,7 +16,13 @@ from mallm.agents.panelist import Panelist
 from mallm.decision_making.approval import ApprovalVoting
 from mallm.decision_making.cumulative import CumulativeVoting
 from mallm.decision_making.decision_protocol import DecisionProtocol
-from mallm.decision_making.majority import MajorityConsensus
+from mallm.decision_making.majority import (
+    ThresholdConsensus,
+    MajorityConsensus,
+    SupermajorityConsensus,
+    HybridMajorityConsensus,
+    UnanimousConsensus,
+)
 from mallm.decision_making.ranked import RankedVoting
 from mallm.decision_making.voting import Voting
 from mallm.discourse_policy.debate import DiscourseDebate
@@ -38,6 +44,9 @@ logger = logging.getLogger("mallm")
 
 DECISION_PROTOCOLS: dict[str, Type[DecisionProtocol]] = {
     "majority_consensus": MajorityConsensus,
+    "supermajority_consensus": SupermajorityConsensus,
+    "hybrid_consensus": HybridMajorityConsensus,
+    "unanimous_consensus": UnanimousConsensus,
     "voting": Voting,
     "approval": ApprovalVoting,
     "cumulative": CumulativeVoting,

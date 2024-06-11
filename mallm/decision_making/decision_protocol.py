@@ -11,8 +11,9 @@ class DecisionProtocol(ABC):
     """
 
     def __init__(self, panelists: list[Panelist], use_moderator: bool):
-        self.panelists = panelists
-        self.use_moderator = use_moderator
+        self.panelists: list[Panelist] = panelists
+        self.use_moderator: bool = use_moderator
+        self.total_agents: int = len(panelists) + (1 if use_moderator else 0)
 
     @abstractmethod
     def make_decision(
