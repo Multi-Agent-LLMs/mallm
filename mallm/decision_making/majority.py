@@ -16,7 +16,7 @@ class ThresholdConsensus(DecisionProtocol):
         threshold_percent: float = 0.5,
         threshold_turn: Optional[int] = None,
         threshold_agents: Optional[int] = None,
-    ):
+    ) -> None:
         super().__init__(panelists, use_moderator)
         self.threshold_turn = threshold_turn
         self.threshold_agents = threshold_agents

@@ -10,7 +10,7 @@ class DecisionProtocol(ABC):
     Any concrete decision protocol must implement the make_decision method.
     """
 
-    def __init__(self, panelists: list[Panelist], use_moderator: bool):
+    def __init__(self, panelists: list[Panelist], use_moderator: bool) -> None:
         self.panelists: list[Panelist] = panelists
         self.use_moderator: bool = use_moderator
         self.total_agents: int = len(panelists) + (1 if use_moderator else 0)

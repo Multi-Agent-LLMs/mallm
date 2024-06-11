@@ -19,7 +19,7 @@ class Voting(DecisionProtocol):
 
     def __init__(
         self, panelists: list[Panelist], use_moderator: bool, vote_turn: int = 3
-    ):
+    ) -> None:
         super().__init__(panelists, use_moderator)
         self.vote_turn = vote_turn
 
@@ -31,7 +31,7 @@ class Voting(DecisionProtocol):
         task: str,
         question: str,
     ) -> tuple[str, bool]:
-        if turn < self.vote_turn:
+        if turn < self.vote_turn or agent_index != self.total_agents - 1:
             return "", False
         final_answers = []
         for panelist in self.panelists:
