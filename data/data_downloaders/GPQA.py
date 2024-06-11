@@ -1,6 +1,7 @@
 import json
 import random
 import uuid
+from typing import Optional
 
 from data.data_download import DatasetDownloader
 from mallm.utils.types import InputExample
@@ -10,9 +11,15 @@ class GPQADownloader(DatasetDownloader):
     def custom_download(self):
         pass
 
-    def __init__(self):
+    def __init__(
+        self, sample_size: Optional[int] = None, hf_token: Optional[str] = None
+    ):
         super().__init__(
-            name="gpqa", dataset_name="Idavidrein/gpqa", version="gpqa_extended"
+            name="gpqa",
+            dataset_name="Idavidrein/gpqa",
+            version="gpqa_extended",
+            sample_size=sample_size,
+            hf_token=hf_token,
         )
 
     def process_data(self) -> list[InputExample]:
@@ -43,7 +50,7 @@ class GPQADownloader(DatasetDownloader):
         return input_examples
 
     @staticmethod
-    def _format_answers(sample):
+    def _format_answers(sample: InputExample):
         answers = [json.dumps(sample[f"Incorrect Answer {i}"][0]) for i in range(1, 4)]
         answers.insert(0, json.dumps(sample["Correct Answer"][0]))
         random.shuffle(answers)

@@ -74,6 +74,7 @@ class Scheduler:
         baseline: bool = False,
         chain_of_thought: bool = True,
         num_agents: int = 3,
+        agent_generator: str = "expert",
     ) -> None:
         # Check for the correct aruments provided
         # TODO: make this more robust and conclusive. All arguments should be checked for validity, making the use of MALLM as fool-proof as possible.
@@ -139,6 +140,7 @@ class Scheduler:
                 "Input data has wrong format. Please delete and download the data again."
             )
             sys.exit(1)
+            
         self.out = out_file
         self.instruction = instruction
         self.endpoint_url = endpoint_url
@@ -162,6 +164,7 @@ class Scheduler:
         self.baseline = baseline
         self.chain_of_thought = chain_of_thought
         self.num_agents = num_agents
+        self.agent_generator = agent_generator
         logger.info(f"""Found {self.total_samples} samples to process.""")
 
         logger.info("Finished initializing the scheduler.")
@@ -170,7 +173,6 @@ class Scheduler:
         self,
         client: httpx.Client,
         llm: Chat,
-        agent_generator: ExpertGenerator,
         sample: InputExample,
     ) -> Optional[str]:
         """
@@ -182,7 +184,7 @@ class Scheduler:
             coordinator = Coordinator(
                 use_moderator=self.use_moderator,
                 model=llm,
-                agent_generator=agent_generator,
+                agent_generator=self.agent_generator,
                 client=client,
                 memory_bucket_dir=self.memory_bucket_dir,
             )
@@ -236,6 +238,7 @@ class Scheduler:
             f"""--> Agents discussed for {turn} turns, {'%.2f' % discussion_time} seconds ({'%.2f' % (float(discussion_time) / 60.0)} minutes) to get the final answer: \n"""
             + str(answer)
         )
+        logger.info(f"""Reference answer: {sample.references}""")
 
         output_dicts.append(
             {
@@ -293,8 +296,6 @@ class Scheduler:
             model=self.model,
         )
 
-        agent_generator = ExpertGenerator(llm=llm)
-
         pool = ThreadPool(processes=self.max_concurrent_requests)
         results = []
         for sample in self.data:
@@ -302,7 +303,7 @@ class Scheduler:
                 results.append(
                     pool.apply_async(
                         self.run_discussion,
-                        (client, llm, agent_generator, sample),
+                        (client, llm, sample),
                     )
                 )
             except Exception as e:
@@ -489,6 +490,7 @@ def main(
     baseline: bool = False,
     chain_of_thought: bool = True,
     num_agents: int = 3,
+    agent_generator: str = "expert",
 ) -> None:
     scheduler = Scheduler(
         data,
@@ -513,6 +515,7 @@ def main(
         baseline=baseline,
         chain_of_thought=chain_of_thought,
         num_agents=num_agents,
+        agent_generator=agent_generator,
     )
     scheduler.run()
 

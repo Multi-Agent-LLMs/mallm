@@ -23,6 +23,9 @@ from mallm.discourse_policy.relay import DiscourseRelay
 from mallm.discourse_policy.report import DiscourseReport
 from mallm.models.Chat import Chat
 from mallm.models.personas.ExpertGenerator import ExpertGenerator
+from mallm.models.personas.IPIPPersonaGenerator import IPIPPersonaGenerator
+from mallm.models.personas.MockGenerator import MockGenerator
+from mallm.models.personas.PersonaGenerator import PersonaGenerator
 from mallm.prompts.coordinator_prompts import generate_chat_prompt_extract_result
 from mallm.utils.types import Agreement, Memory
 
@@ -42,13 +45,19 @@ PROTOCOLS: dict[str, Type[DiscoursePolicy]] = {
     "debate": DiscourseDebate,
 }
 
+PERSONA_GENERATORS: dict[str, Type[PersonaGenerator]] = {
+    "expert": ExpertGenerator,
+    "ipip": IPIPPersonaGenerator,
+    "mock": MockGenerator,
+}
+
 
 class Coordinator:
     def __init__(
         self,
         model: Chat,
         client: httpx.Client,
-        agent_generator: Optional[ExpertGenerator] = None,
+        agent_generator: str = "mock",
         use_moderator: bool = False,
         memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
     ):
@@ -81,9 +90,11 @@ class Coordinator:
         self.panelists = []
         self.agents = []
 
-        if self.agent_generator is None:
-            logger.error("No persona generator provided.")
-            raise Exception("No persona generator provided.")
+        if self.agent_generator not in PERSONA_GENERATORS:
+            logger.error(
+                f"Invalid persona generator: {self.agent_generator}. Please choose one of: {', '.join(PERSONA_GENERATORS.keys())}"
+            )
+            raise Exception("Invalid persona generator.")
 
         personas = self.agent_generator.generate_personas(
             f"{task_instruction} {input_str}", num_agents
