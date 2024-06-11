@@ -22,9 +22,9 @@ from mallm.discourse_policy.policy import DiscoursePolicy
 from mallm.discourse_policy.relay import DiscourseRelay
 from mallm.discourse_policy.report import DiscourseReport
 from mallm.models.Chat import Chat
-from mallm.models.personas.MockGenerator import MockGenerator
 from mallm.models.personas.ExpertGenerator import ExpertGenerator
 from mallm.models.personas.IPIPPersonaGenerator import IPIPPersonaGenerator
+from mallm.models.personas.MockGenerator import MockGenerator
 from mallm.models.personas.PersonaGenerator import PersonaGenerator
 from mallm.prompts.coordinator_prompts import generate_chat_prompt_extract_result
 from mallm.utils.types import Agreement, Memory
