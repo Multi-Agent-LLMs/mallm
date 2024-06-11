@@ -96,9 +96,9 @@ class Coordinator:
             )
             raise Exception("Invalid persona generator.")
 
-        personas = self.agent_generator.generate_personas(
-            f"{task_instruction} {input_str}", num_agents
-        )
+        personas = PERSONA_GENERATORS[self.agent_generator](
+            llm=self.llm
+        ).generate_personas(f"{task_instruction} {input_str}", 3)
 
         if use_moderator:
             self.moderator = Moderator(self.llm, self.client, self)
