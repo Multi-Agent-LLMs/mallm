@@ -22,6 +22,7 @@ from mallm.discourse_policy.policy import DiscoursePolicy
 from mallm.discourse_policy.relay import DiscourseRelay
 from mallm.discourse_policy.report import DiscourseReport
 from mallm.models.Chat import Chat
+from mallm.models.personas.MockGenerator import MockGenerator
 from mallm.models.personas.ExpertGenerator import ExpertGenerator
 from mallm.models.personas.IPIPPersonaGenerator import IPIPPersonaGenerator
 from mallm.models.personas.PersonaGenerator import PersonaGenerator
@@ -47,6 +48,7 @@ PROTOCOLS: dict[str, Type[DiscoursePolicy]] = {
 PERSONA_GENERATORS: dict[str, Type[PersonaGenerator]] = {
     "expert": ExpertGenerator,
     "ipip": IPIPPersonaGenerator,
+    "mock": MockGenerator,
 }
 
 
@@ -55,7 +57,7 @@ class Coordinator:
         self,
         model: Chat,
         client: httpx.Client,
-        agent_generator: Optional[str] = None,
+        agent_generator: str = "mock",
         use_moderator: bool = False,
         memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
     ):
@@ -83,10 +85,6 @@ class Coordinator:
         """
         self.panelists = []
         self.agents = []
-
-        if self.agent_generator is None:
-            logger.error("No persona generator provided.")
-            raise Exception("No persona generator provided.")
 
         if self.agent_generator not in PERSONA_GENERATORS:
             logger.error(
