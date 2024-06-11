@@ -50,7 +50,6 @@ def test_no_unanimous_decision_in_first_five_turns():
 def test_no_unanimous_decision_in_first_five_turns_with_moderator():
     mc = MajorityConsensus(panelists[:2], use_moderator=True)
     agreements = [
-        Agreement(agreement=True, agent_id="", persona="", response=""),
         Agreement(agreement=None, agent_id="", persona="", response=""),
         Agreement(agreement=False, agent_id="", persona="", response=""),
         Agreement(agreement=True, agent_id="", persona="", response=""),
