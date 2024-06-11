@@ -3,9 +3,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import httpx
-from mallm.models.Chat import Chat
 
 from mallm.agents.agent import Agent
+from mallm.models.Chat import Chat
 
 if TYPE_CHECKING:
     from mallm.coordinator import Coordinator

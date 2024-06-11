@@ -9,6 +9,8 @@ from mallm.evaluation.metrics.bleu import BLEU
 from mallm.evaluation.metrics.meteor import METEOR
 from mallm.evaluation.metrics.rouge import ROUGE
 
+# ANSWER_PATTERN_MULTICHOICE = re.compile(r"(?i)Answer\s*:\s*([A-D])")
+
 ALL_METRICS = [BLEU(), ROUGE(), BERTScore(), METEOR()]
 
 
