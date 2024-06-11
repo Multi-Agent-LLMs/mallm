@@ -31,7 +31,6 @@ class ThresholdConsensus(DecisionProtocol):
         question: str,
     ) -> tuple[str, bool]:
         reversed_agreements = agreements[::-1]
-        print(reversed_agreements)
         # latest disagreement is the current draft
         num_agreements, current_agreement = next(
             (
@@ -41,7 +40,6 @@ class ThresholdConsensus(DecisionProtocol):
             ),
             (None, None),
         )
-        print(num_agreements, current_agreement)
         if not current_agreement:
             return "", False
 
@@ -56,11 +54,6 @@ class ThresholdConsensus(DecisionProtocol):
             )
         else:
             # more than <threshold_percent> of the agents need to agree
-            print(
-                num_agreements + 1,
-                self.total_agents * self.threshold_percent,
-                num_agreements + 1 > self.total_agents * self.threshold_percent,
-            )
             return (
                 current_agreement.response,
                 num_agreements + 1 > self.total_agents * self.threshold_percent,
