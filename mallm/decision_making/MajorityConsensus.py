@@ -27,19 +27,6 @@ class MajorityConsensus(DecisionProtocol):
         self, agreements: list[Agreement], turn: int, task: str, question: str
     ) -> tuple[str, bool]:
         min_agents = len(self.panelists)
-        if self.use_moderator:
-            # remove all agreements before the last moderator draft
-            agreements = agreements[
-                next(
-                    (
-                        i
-                        for i, agreement in reversed(list(enumerate(agreements)))
-                        if agreement.agreement == None
-                    ),
-                    -1,
-                )
-                + 1 :
-            ]
         if not self.use_moderator:
             min_agents -= 1
 
