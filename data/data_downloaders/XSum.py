@@ -1,5 +1,5 @@
-import json
 import uuid
+from typing import Optional
 
 from data.data_download import DatasetDownloader
 from mallm.utils.types import InputExample
@@ -9,9 +9,15 @@ class XSUMDownloader(DatasetDownloader):
     def custom_download(self):
         pass
 
-    def __init__(self):
+    def __init__(
+        self, sample_size: Optional[int] = None, hf_token: Optional[str] = None
+    ):
         super().__init__(
-            name="xsum", version="xsum", dataset_name="GEM/xsum", trust_remote_code=True
+            name="xsum",
+            version="xsum",
+            dataset_name="GEM/xsum",
+            trust_remote_code=True,
+            sample_size=sample_size,
         )
 
     def process_data(self) -> list[InputExample]:

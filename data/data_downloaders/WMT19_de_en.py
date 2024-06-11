@@ -1,4 +1,5 @@
 import uuid
+from typing import Optional
 
 from data.data_download import DatasetDownloader
 from mallm.utils.types import InputExample
@@ -8,12 +9,14 @@ class WMT19Downloader(DatasetDownloader):
     def custom_download(self):
         pass
 
-    def __init__(self):
+    def __init__(
+        self, sample_size: Optional[int] = None, hf_token: Optional[str] = None
+    ):
         super().__init__(
             name="wmt19_de_en",
             version="de-en",
             dataset_name="wmt/wmt19",
-            sample_size=1000,
+            sample_size=sample_size,
         )
 
     def process_data(self) -> list[InputExample]:
