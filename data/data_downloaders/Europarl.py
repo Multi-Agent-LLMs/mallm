@@ -1,21 +1,36 @@
-import json
 import uuid
+from typing import Optional
 
 from data.data_download import DatasetDownloader
+from mallm.utils.types import InputExample
 
 
 class EuroparlDownloader(DatasetDownloader):
     def custom_download(self):
         pass
 
-    def __init__(self):
+    def __init__(
+        self, sample_size: Optional[int] = None, hf_token: Optional[str] = None
+    ):
         super().__init__(
-            name="europarl", version="de-en", dataset_name="Helsinki-NLP/europarl"
+            name="europarl",
+            version="de-en",
+            dataset_name="Helsinki-NLP/europarl",
+            sample_size=sample_size,
         )
 
-    def process_data(self):
+    def process_data(self) -> list[InputExample]:
         data = self.shuffle_and_select("train")
-        json_str = ""
+        input_examples = []
         for s in data.iter(batch_size=1):
-            json_str += f"""{{ "exampleId":"{str(uuid.uuid4())}", "datasetId": null, "input":[{json.dumps(s['translation'][0]['de'])}], "context": null, "references": [{json.dumps(s['translation'][0]['en'])}], "personas": null }}\n"""
-        self.save_to_json(json_str)
+            input_examples.append(
+                InputExample(
+                    example_id=str(uuid.uuid4()),
+                    dataset_id=None,
+                    inputs=[s["translation"][0]["de"]],
+                    context=None,
+                    references=[s["translation"][0]["en"]],
+                    personas=None,
+                )
+            )
+        return input_examples

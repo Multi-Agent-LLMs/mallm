@@ -16,13 +16,16 @@ from mallm.agents.panelist import Panelist
 from mallm.decision_making.decision_protocol import DecisionProtocol
 from mallm.decision_making.majority import MajorityConsensus
 from mallm.decision_making.voting import Voting
-from mallm.discourse_policy.DiscourceDebate import DiscourseDebate
-from mallm.discourse_policy.DiscourceMemory import DiscourseMemory
-from mallm.discourse_policy.DiscourceRelay import DiscourseRelay
-from mallm.discourse_policy.DiscourceReport import DiscourseReport
-from mallm.discourse_policy.DiscoursePolicy import DiscoursePolicy
+from mallm.discourse_policy.debate import DiscourseDebate
+from mallm.discourse_policy.memory import DiscourseMemory
+from mallm.discourse_policy.policy import DiscoursePolicy
+from mallm.discourse_policy.relay import DiscourseRelay
+from mallm.discourse_policy.report import DiscourseReport
 from mallm.models.Chat import Chat
 from mallm.models.personas.ExpertGenerator import ExpertGenerator
+from mallm.models.personas.IPIPPersonaGenerator import IPIPPersonaGenerator
+from mallm.models.personas.MockGenerator import MockGenerator
+from mallm.models.personas.PersonaGenerator import PersonaGenerator
 from mallm.prompts.coordinator_prompts import generate_chat_prompt_extract_result
 from mallm.utils.types import Agreement, Memory
 
@@ -42,13 +45,19 @@ PROTOCOLS: dict[str, Type[DiscoursePolicy]] = {
     "debate": DiscourseDebate,
 }
 
+PERSONA_GENERATORS: dict[str, Type[PersonaGenerator]] = {
+    "expert": ExpertGenerator,
+    "ipip": IPIPPersonaGenerator,
+    "mock": MockGenerator,
+}
+
 
 class Coordinator:
     def __init__(
         self,
         model: Chat,
         client: httpx.Client,
-        agent_generator: Optional[ExpertGenerator] = None,
+        agent_generator: str = "expert",
         use_moderator: bool = False,
         memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
     ):
@@ -67,7 +76,11 @@ class Coordinator:
         self.agent_generator = agent_generator
 
     def init_agents(
-        self, task_instruction: str, input_str: str, use_moderator: bool
+        self,
+        task_instruction: str,
+        input_str: str,
+        use_moderator: bool,
+        num_agents: int,
     ) -> None:
         """
         Instantiates the agents by
@@ -77,13 +90,15 @@ class Coordinator:
         self.panelists = []
         self.agents = []
 
-        if self.agent_generator is None:
-            logger.error("No persona generator provided.")
-            raise Exception("No persona generator provided.")
+        if self.agent_generator not in PERSONA_GENERATORS:
+            logger.error(
+                f"Invalid persona generator: {self.agent_generator}. Please choose one of: {', '.join(PERSONA_GENERATORS.keys())}"
+            )
+            raise Exception("Invalid persona generator.")
 
-        personas = self.agent_generator.generate_personas(
-            f"{task_instruction} {input_str}", 3
-        )
+        personas = PERSONA_GENERATORS[self.agent_generator](
+            llm=self.llm
+        ).generate_personas(f"{task_instruction} {input_str}", 3)
 
         if use_moderator:
             self.moderator = Moderator(self.llm, self.client, self)
@@ -105,7 +120,7 @@ class Coordinator:
             agent_dicts.append(
                 {
                     "agentId": a.id,
-                    "model": "placeholder",  # TODO: automatically detect model name
+                    "model": a.llm.model,
                     "persona": a.persona,
                     "personaDescription": a.persona_description,
                 }
@@ -161,19 +176,28 @@ class Coordinator:
     def discuss(
         self,
         task_instruction: str,
-        input_str: str,
-        context: list[str],
+        input_lines: list[str],
+        context: Optional[list[str]],
         use_moderator: bool,
-        feedback_sentences: tuple[int, int],
+        feedback_sentences: Optional[tuple[int, int]],
         paradigm: str,
         decision_protocol: str,
         max_turns: int,
+        force_all_turns: bool,
         context_length: int,
         include_current_turn_in_memory: bool,
         extract_all_drafts: bool,
         debate_rounds: Optional[int],
+        chain_of_thought: bool = True,
+        num_agents: int = 3,
     ) -> tuple[
-        str, list[Memory], list[Optional[list[Memory]]], int, list[Agreement], float
+        Optional[str],
+        Optional[str],
+        list[Memory],
+        list[Optional[list[Memory]]],
+        int,
+        list[Agreement],
+        float,
     ]:
         """
         The routine responsible for the discussion between agents to solve a task.
@@ -185,17 +209,32 @@ class Coordinator:
 
         Returns the final response agreed on, the global memory, agent specific memory, turns needed, last agreements of agents
         """
-        if context and isinstance(context, list):
+        if context:
             for c in context:
                 task_instruction += "\n" + c
+        input_str = ""
+        for num, input_line in enumerate(input_lines):
+            if len(input_lines) > 1:
+                input_str += str(num + 1) + ") " + input_line + "\n"
+            else:
+                input_str = input_line
 
-        self.init_agents(task_instruction, input_str, use_moderator=use_moderator)
+        if use_moderator:
+            num_agents -= 1
+        self.init_agents(
+            task_instruction,
+            input_str,
+            use_moderator=use_moderator,
+            num_agents=num_agents,
+        )
 
         if decision_protocol not in DECISION_PROTOCOLS:
             logger.error(f"No valid decision protocol for {decision_protocol}")
             raise Exception(f"No valid decision protocol for {decision_protocol}")
 
-        self.decision_making = DECISION_PROTOCOLS[decision_protocol](self.panelists)
+        self.decision_making = DECISION_PROTOCOLS[decision_protocol](
+            self.panelists, use_moderator
+        )
 
         start_time = time.perf_counter()
 
@@ -224,9 +263,11 @@ Decision-making: {self.decision_making.__class__.__name__}
             use_moderator,
             feedback_sentences,
             max_turns,
+            force_all_turns,
             context_length,
             include_current_turn_in_memory,
             extract_all_drafts,
+            chain_of_thought,
         )
 
         discussion_time = timedelta(
@@ -237,12 +278,20 @@ Decision-making: {self.decision_making.__class__.__name__}
         agent_mems = []
         for a in self.agents:
             agent_mems.append(a.get_memories()[0])
-        if turn >= max_turns:  # if no agreement was reached
-            current_draft = "No agreement was reached."
-        else:
-            current_draft = self.llm.invoke(
-                generate_chat_prompt_extract_result(input_str, current_draft),
+
+        extracted_draft = None
+        if current_draft:
+            extracted_draft = self.llm.invoke(
+                generate_chat_prompt_extract_result(current_draft),
                 client=self.client,
             )
 
-        return current_draft, global_mem, agent_mems, turn, agreements, discussion_time
+        return (
+            current_draft,
+            extracted_draft,
+            global_mem,
+            agent_mems,
+            turn,
+            agreements,
+            discussion_time,
+        )

@@ -4,12 +4,13 @@ import dataclasses
 import dbm
 import json
 import logging
-import os
 import uuid
+from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 import httpx
-from langchain_core.language_models import LLM
+
+from mallm.models.Chat import Chat
 
 if TYPE_CHECKING:
     from mallm.agents.moderator import Moderator
@@ -28,7 +29,7 @@ logger = logging.getLogger("mallm")
 class Agent:
     def __init__(
         self,
-        llm: LLM,
+        llm: Chat,
         client: httpx.Client,
         coordinator: Coordinator,
         persona: str,
@@ -53,10 +54,12 @@ class Agent:
     ) -> list[Agreement]:
         """
         Determines whether a string given by an agent means an agreement or disagreement.
-        Returns bool
+        Returns a list of Agreements
         """
-        if ("agree" in res.lower() and "disagree" not in res.lower()) and (
-            not self == self.moderator
+        if (
+            "agree" in res.lower()
+            and "disagree" not in res.lower()
+            and not self_drafted
         ):
             agreements.append(
                 Agreement(
@@ -64,14 +67,7 @@ class Agent:
                 )
             )
             logger.debug(f"Agent {self.short_id} agreed")
-        elif self_drafted and not self == self.moderator:
-            agreements.append(
-                Agreement(
-                    agreement=True, agent_id=self.id, persona=self.persona, response=res
-                )
-            )
-            logger.debug(f"Agent {self.short_id} agreed")
-        elif not self == self.moderator:
+        else:
             agreements.append(
                 Agreement(
                     agreement=False,
@@ -83,8 +79,8 @@ class Agent:
             logger.debug(f"Agent {self.short_id} disagreed")
 
         # Only keep the most recent agreements
-        if len(agreements) > len(self.coordinator.panelists):
-            agreements = agreements[-len(self.coordinator.panelists) :]
+        if len(agreements) > len(self.coordinator.agents):
+            agreements = agreements[-len(self.coordinator.agents) :]
         return agreements
 
     def improve(
@@ -95,15 +91,20 @@ class Agent:
         template_filling: TemplateFilling,
         extract_all_drafts: bool,
         agreements: list[Agreement],
+        chain_of_thought: bool = True,
     ) -> tuple[str, Memory, list[Agreement]]:
         res = self.llm.invoke(
-            generate_chat_prompt_improve(template_filling), client=self.client
+            generate_chat_prompt_improve(
+                template_filling, chain_of_thought=chain_of_thought
+            ),
+            client=self.client,
         )
         agreements = self.agree(res, agreements)
         current_draft = None
-        if extract_all_drafts:
+        # new drafts are only proposed upon disagreement, thus we do not want to overwrite unnecessarily
+        if extract_all_drafts and not agreements[-1].agreement:
             current_draft = self.llm.invoke(
-                generate_chat_prompt_extract_result(template_filling.input_str, res),
+                generate_chat_prompt_extract_result(res),
                 client=self.client,
             )
         memory = Memory(
@@ -131,23 +132,21 @@ class Agent:
         extract_all_drafts: bool,
         agreements: list[Agreement],
         is_moderator: bool = False,
+        chain_of_thought: bool = True,
     ) -> tuple[str, Memory, list[Agreement]]:
         res = self.llm.invoke(
-            generate_chat_prompt_draft(template_filling), client=self.client
+            generate_chat_prompt_draft(
+                template_filling, chain_of_thought=chain_of_thought
+            ),
+            client=self.client,
         )
         agreements = self.agree(res, agreements, self_drafted=True)
         current_draft = None
         if extract_all_drafts:
             current_draft = self.llm.invoke(
-                generate_chat_prompt_extract_result(template_filling.input_str, res),
+                generate_chat_prompt_extract_result(res),
                 client=self.client,
             )
-        if is_moderator:
-            agreement = Agreement(
-                agreement=None, agent_id=self.id, persona=self.persona, response=res
-            )
-        else:
-            agreement = agreements[-1]
         memory = Memory(
             message_id=unique_id,
             turn=turn,
@@ -155,7 +154,7 @@ class Agent:
             persona=self.persona,
             contribution="draft",
             text=res,
-            agreement=agreement.agreement,
+            agreement=agreements[-1].agreement,
             extracted_draft=current_draft,
             memory_ids=memory_ids,
             additional_args=dataclasses.asdict(template_filling),
@@ -171,9 +170,13 @@ class Agent:
         memory_ids: list[int],
         template_filling: TemplateFilling,
         agreements: list[Agreement],
+        chain_of_thought: bool = True,
     ) -> tuple[str, Memory, list[Agreement]]:
         res = self.llm.invoke(
-            generate_chat_prompt_feedback(template_filling), client=self.client
+            generate_chat_prompt_feedback(
+                template_filling, chain_of_thought=chain_of_thought
+            ),
+            client=self.client,
         )
         agreements = self.agree(res, agreements)
         memory = Memory(
@@ -211,16 +214,18 @@ class Agent:
         Retrieves memory from the agents memory bucket as a Memory
         Returns: Memory
         """
-        memories = []
+        memories: list[Memory] = []
         memory_ids = []
         current_draft = None
-        if os.path.exists(self.memory_bucket + ".dat"):
+
+        try:
             with dbm.open(self.memory_bucket, "r") as db:
                 for key in db.keys():
                     json_object = json.loads(db[key].decode())
-                    memories.append(Memory(**json_object))  # TODO: Maybe reverse sort
-            # memory = sorted(memory.items(), key=lambda x: x["messageId"], reverse=False)
+                    memories.append(Memory(**json_object))
+            memories = sorted(memories, key=lambda x: x.message_id, reverse=False)
             context_memory = []
+            extracted = False
             for memory in memories:
                 if context_length:
                     if turn and memory.turn >= turn - context_length:
@@ -229,26 +234,39 @@ class Agent:
                             memory_ids.append(int(memory.message_id))
                             if memory.contribution == "draft" or (
                                 memory.contribution == "improve"
+                                and memory.agreement == False
                             ):
-                                current_draft = memory.text
+                                if memory.extracted_draft:
+                                    current_draft = memory.extracted_draft
+                                    extracted = True
+                                else:
+                                    current_draft = memory.text
+                                    extracted = False
                 else:
                     context_memory.append(memory)
                     memory_ids.append(int(memory.message_id))
                     if memory.contribution == "draft" or (
-                        memory.contribution == "improve"
+                        memory.contribution == "improve" and memory.agreement == False
                     ):
-                        current_draft = memory.text
-        else:
+                        if memory.extracted_draft:
+                            current_draft = memory.extracted_draft
+                            extracted = True
+                        else:
+                            current_draft = memory.text
+                            extracted = False
+        except dbm.error:
             context_memory = None
 
-        if current_draft and extract_draft:
+        if (
+            current_draft != "" and extract_draft and not extracted
+        ):  # if not extracted already
             current_draft = self.llm.invoke(
-                generate_chat_prompt_extract_result(None, current_draft),
+                generate_chat_prompt_extract_result(current_draft),
                 client=self.client,
             )
         return context_memory, memory_ids, current_draft
 
-    def get_debate_history(
+    def get_discussion_history(
         self,
         context_length: Optional[int] = None,
         turn: Optional[int] = None,
@@ -275,7 +293,7 @@ class Agent:
                     debate_history.append(
                         {
                             "role": "user",
-                            "content": f"Contribution from agent {memory.persona}:\n\n {memory.text}",
+                            "content": f"{memory.persona}: {memory.text}",
                         }
                     )
         else:

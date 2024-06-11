@@ -1,22 +1,30 @@
 import json
 import random
 import uuid
+from typing import Optional
 
 from data.data_download import DatasetDownloader
+from mallm.utils.types import InputExample
 
 
 class GPQADownloader(DatasetDownloader):
     def custom_download(self):
         pass
 
-    def __init__(self):
+    def __init__(
+        self, sample_size: Optional[int] = None, hf_token: Optional[str] = None
+    ):
         super().__init__(
-            name="gpqa", dataset_name="Idavidrein/gpqa", version="gpqa_extended"
+            name="gpqa",
+            dataset_name="Idavidrein/gpqa",
+            version="gpqa_extended",
+            sample_size=sample_size,
+            hf_token=hf_token,
         )
 
-    def process_data(self):
+    def process_data(self) -> list[InputExample]:
         data = self.shuffle_and_select()
-        examples = []
+        input_examples = []
 
         for sample in data.iter(batch_size=1):
             answers = self._format_answers(sample)
@@ -29,19 +37,20 @@ class GPQADownloader(DatasetDownloader):
             formatted_answers = self._format_answer_choices(answers)
             question_and_answers = f"{question_text}\n\n" + "\n".join(formatted_answers)
 
-            example = {
-                "exampleId": str(uuid.uuid4()),
-                "datasetId": sample["Canary String"][0],
-                "input": question_and_answers,
-                "context": None,
-                "references": [correct_answer_label],
-                "personas": None,
-            }
-            examples.append(json.dumps(example) + "\n")
+            input_examples.append(
+                InputExample(
+                    example_id=str(uuid.uuid4()),
+                    dataset_id=sample["Canary String"][0],
+                    inputs=[question_and_answers],
+                    context=None,
+                    references=[correct_answer_label],
+                    personas=None,
+                )
+            )
+        return input_examples
 
-        self.save_to_json("".join(examples))
-
-    def _format_answers(self, sample):
+    @staticmethod
+    def _format_answers(sample: InputExample):
         answers = [json.dumps(sample[f"Incorrect Answer {i}"][0]) for i in range(1, 4)]
         answers.insert(0, json.dumps(sample["Correct Answer"][0]))
         random.shuffle(answers)

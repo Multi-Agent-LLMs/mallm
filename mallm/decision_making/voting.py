@@ -17,8 +17,10 @@ class Voting(DecisionProtocol):
     The Voting decision protocol allows panelists to vote for the best answer after a certain number of turns.
     """
 
-    def __init__(self, panelists: list[Panelist], vote_turn: int = 3):
-        super().__init__(panelists)
+    def __init__(
+        self, panelists: list[Panelist], use_moderator: bool, vote_turn: int = 3
+    ):
+        super().__init__(panelists, use_moderator)
         self.vote_turn = vote_turn
 
     def make_decision(
