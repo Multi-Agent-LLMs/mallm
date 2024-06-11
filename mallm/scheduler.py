@@ -17,9 +17,6 @@ from openai import OpenAI
 
 from mallm.coordinator import Coordinator
 from mallm.models.Chat import Chat
-from mallm.models.personas.ExpertGenerator import ExpertGenerator
-from mallm.models.personas.IPIPPersonaGenerator import IPIPPersonaGenerator
-from mallm.models.personas.PersonaGenerator import PersonaGenerator
 from mallm.prompts.coordinator_prompts import (
     generate_chat_prompt_baseline,
     generate_chat_prompt_extract_result,
@@ -50,12 +47,6 @@ output_dicts: list[dict[str, Any]] = []
 os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
 
 
-PERSONA_GENERATORS: dict[str, Type[PersonaGenerator]] = {
-    "expert": ExpertGenerator,
-    "ipip": IPIPPersonaGenerator,
-}
-
-
 class Scheduler:
     def __init__(
         self,
@@ -80,7 +71,7 @@ class Scheduler:
         memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
         baseline: bool = False,
         chain_of_thought: bool = True,
-        personas: str = "expert",
+        agent_generator: str = "expert",
     ) -> None:
         # Check for the correct aruments provided
         # TODO: make this more robust and conclusive. All arguments should be checked for validity, making the use of MALLM as fool-proof as possible.
@@ -147,12 +138,6 @@ class Scheduler:
             )
             sys.exit(1)
 
-        if personas not in PERSONA_GENERATORS:
-            logger.error(
-                f"Invalid persona generator: {personas}. Please choose one of: {', '.join(PERSONA_GENERATORS.keys())}"
-            )
-            sys.exit(1)
-
         self.out = out
         self.instruction = instruction
         self.endpoint_url = endpoint_url
@@ -175,7 +160,7 @@ class Scheduler:
         self.completed_samples = 0
         self.baseline = baseline
         self.chain_of_thought = chain_of_thought
-        self.personas = personas
+        self.agent_generator = agent_generator
         logger.info(f"""Found {self.total_samples} samples to process.""")
 
         logger.info("Finished initializing the scheduler.")
@@ -184,7 +169,6 @@ class Scheduler:
         self,
         client: httpx.Client,
         llm: Chat,
-        agent_generator: ExpertGenerator,
         sample: InputExample,
     ) -> Optional[str]:
         """
@@ -196,7 +180,7 @@ class Scheduler:
             coordinator = Coordinator(
                 use_moderator=self.use_moderator,
                 model=llm,
-                agent_generator=agent_generator,
+                agent_generator=self.agent_generator,
                 client=client,
                 memory_bucket_dir=self.memory_bucket_dir,
             )
@@ -307,8 +291,6 @@ class Scheduler:
             model=self.model,
         )
 
-        agent_generator = PERSONA_GENERATORS[self.personas](llm=llm)
-
         pool = ThreadPool(processes=self.max_concurrent_requests)
         results = []
         for sample in self.data:
@@ -316,7 +298,7 @@ class Scheduler:
                 results.append(
                     pool.apply_async(
                         self.run_discussion,
-                        (client, llm, agent_generator, sample),
+                        (client, llm, sample),
                     )
                 )
             except Exception as e:
@@ -502,7 +484,7 @@ def main(
     memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
     baseline: bool = False,
     chain_of_thought: bool = True,
-    personas: str = "expert",
+    agent_generator: str = "expert",
 ) -> None:
     scheduler = Scheduler(
         data,
@@ -526,7 +508,7 @@ def main(
         memory_bucket_dir=memory_bucket_dir,
         baseline=baseline,
         chain_of_thought=chain_of_thought,
-        personas=personas,
+        agent_generator=agent_generator,
     )
     scheduler.run()
 

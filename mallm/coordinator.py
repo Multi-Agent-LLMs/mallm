@@ -3,7 +3,6 @@ import dbm
 import json
 import logging
 import os
-import re
 import time
 import uuid
 from datetime import timedelta
@@ -23,6 +22,8 @@ from mallm.discourse_policy.policy import DiscoursePolicy
 from mallm.discourse_policy.relay import DiscourseRelay
 from mallm.discourse_policy.report import DiscourseReport
 from mallm.models.Chat import Chat
+from mallm.models.personas.ExpertGenerator import ExpertGenerator
+from mallm.models.personas.IPIPPersonaGenerator import IPIPPersonaGenerator
 from mallm.models.personas.PersonaGenerator import PersonaGenerator
 from mallm.prompts.coordinator_prompts import generate_chat_prompt_extract_result
 from mallm.utils.types import Agreement, Memory
@@ -31,7 +32,6 @@ os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
 
 logger = logging.getLogger("mallm")
 
-ANSWER_PATTERN_MULTICHOICE = re.compile(r"(?i)Answer\s*:\s*([A-D])")
 DECISION_PROTOCOLS: dict[str, Type[DecisionProtocol]] = {
     "majority_consensus": MajorityConsensus,
     "voting": Voting,
@@ -44,13 +44,18 @@ PROTOCOLS: dict[str, Type[DiscoursePolicy]] = {
     "debate": DiscourseDebate,
 }
 
+PERSONA_GENERATORS: dict[str, Type[PersonaGenerator]] = {
+    "expert": ExpertGenerator,
+    "ipip": IPIPPersonaGenerator,
+}
+
 
 class Coordinator:
     def __init__(
         self,
         model: Chat,
         client: httpx.Client,
-        agent_generator: Optional[PersonaGenerator] = None,
+        agent_generator: Optional[str] = None,
         use_moderator: bool = False,
         memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
     ):
@@ -83,9 +88,15 @@ class Coordinator:
             logger.error("No persona generator provided.")
             raise Exception("No persona generator provided.")
 
-        personas = self.agent_generator.generate_personas(
-            f"{task_instruction} {input_str}", 3
-        )
+        if self.agent_generator not in PERSONA_GENERATORS:
+            logger.error(
+                f"Invalid persona generator: {self.agent_generator}. Please choose one of: {', '.join(PERSONA_GENERATORS.keys())}"
+            )
+            raise Exception("Invalid persona generator.")
+
+        personas = PERSONA_GENERATORS[self.agent_generator](
+            llm=self.llm
+        ).generate_personas(f"{task_instruction} {input_str}", 3)
 
         if use_moderator:
             self.moderator = Moderator(self.llm, self.client, self)
