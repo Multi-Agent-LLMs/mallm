@@ -41,20 +41,9 @@ class MajorityConsensus(DecisionProtocol):
                 + 1 :
             ]
         if not self.use_moderator:
-            # remove all agreements before the last disagreement
-            agreements = agreements[
-                next(
-                    (
-                        i
-                        for i, agreement in reversed(list(enumerate(agreements)))
-                        if not agreement.agreement
-                    ),
-                    -1,
-                )
-                + 1 :
-            ]
             min_agents -= 1
-        if len(self.panelists) <= self.majority_agents and turn < self.majority_turn:
+
+        if len(self.panelists) <= self.majority_agents or turn < self.majority_turn:
             # all agents need to agree in the first <majority_turn> turns
             agents_agree = [
                 agreement for agreement in agreements if agreement.agreement
