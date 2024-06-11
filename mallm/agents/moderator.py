@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import httpx
-import logging
 
 from mallm.agents.agent import Agent
 from mallm.models.Chat import Chat
@@ -11,8 +10,6 @@ from mallm.utils.types import Agreement
 
 if TYPE_CHECKING:
     from mallm.coordinator import Coordinator
-
-logger = logging.getLogger("mallm")
 
 
 class Moderator(Agent):
@@ -33,11 +30,9 @@ class Moderator(Agent):
         Determines whether a string given by an agent means an agreement or disagreement.
         Returns a list of bools
         """
-        # reset agreements
         agreements = [
             Agreement(
                 agreement=None, agent_id=self.id, persona=self.persona, response=res
             )
         ]
-        logger.debug(f"Agent {self.short_id} remained neutral.")
         return agreements

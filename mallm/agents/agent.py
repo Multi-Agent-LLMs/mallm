@@ -66,19 +66,21 @@ class Agent:
                     agreement=True, agent_id=self.id, persona=self.persona, response=res
                 )
             )
-            logger.debug(f"Agent {self.short_id} agreed.")
+            logger.debug(f"Agent {self.short_id} agreed")
         else:
-            # reset agreements
-            agreements = [
+            agreements.append(
                 Agreement(
                     agreement=False,
                     agent_id=self.id,
                     persona=self.persona,
                     response=res,
                 )
-            ]
-            logger.debug(f"Agent {self.short_id} disagreed.")
+            )
+            logger.debug(f"Agent {self.short_id} disagreed")
 
+        # Only keep the most recent agreements
+        if len(agreements) > len(self.coordinator.agents):
+            agreements = agreements[-len(self.coordinator.agents) :]
         return agreements
 
     def improve(
