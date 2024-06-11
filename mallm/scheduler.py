@@ -7,7 +7,7 @@ import sys
 import time
 from datetime import timedelta
 from multiprocessing.pool import ThreadPool
-from typing import Any, Optional, Type
+from typing import Any, Optional
 
 import fire
 import httpx
@@ -17,6 +17,7 @@ from openai import OpenAI
 
 from mallm.coordinator import Coordinator
 from mallm.models.Chat import Chat
+from mallm.models.personas.ExpertGenerator import ExpertGenerator
 from mallm.prompts.coordinator_prompts import (
     generate_chat_prompt_baseline,
     generate_chat_prompt_extract_result,
@@ -51,19 +52,20 @@ class Scheduler:
     def __init__(
         self,
         data_file: str,
-        out: str,
+        out_file: str,
         instruction: str,
         endpoint_url: str = "https://api.openai.com",
         model: str = "gpt-3.5-turbo",
+        # use "tgi" for Text Generation Inference by HuggingFace or one of these: https://platform.openai.com/docs/models
         api_key: str = "-",
         use_moderator: bool = False,
         max_turns: int = 10,
         force_all_turns: bool = False,
-        feedback_sentences: tuple[int, int] = (3, 4),
+        feedback_sentences: Optional[tuple[int, int]] = None,
         paradigm: str = "memory",
         decision_protocol: str = "majority_consensus",
-        context_length: int = 1,
-        include_current_turn_in_memory: bool = False,
+        context_length: int = 3,
+        include_current_turn_in_memory: bool = True,
         extract_all_drafts: bool = True,
         debate_rounds: Optional[int] = None,
         max_concurrent_requests: int = 100,
@@ -71,6 +73,7 @@ class Scheduler:
         memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
         baseline: bool = False,
         chain_of_thought: bool = True,
+        num_agents: int = 3,
         agent_generator: str = "expert",
     ) -> None:
         # Check for the correct aruments provided
@@ -85,7 +88,7 @@ class Scheduler:
                 "The input file you provided is not a json file. Please specify a json lines file using --data."
             )
             sys.exit(1)
-        if not out.endswith(".json"):
+        if not out_file.endswith(".json"):
             logger.error(
                 "The output file does not seem to be a json file. Please specify a file path using --out."
             )
@@ -114,9 +117,9 @@ class Scheduler:
             sys.exit(1)
 
         # Cleaning other files
-        if os.path.exists(out):
-            os.remove(out)
-            logger.info(f"""The file {out} has been deleted.""")
+        if os.path.exists(out_file):
+            os.remove(out_file)
+            logger.info(f"""The file {out_file} has been deleted.""")
 
         # Cleaning the memory bucked from previous runs
         if clear_memory_bucket:
@@ -137,8 +140,8 @@ class Scheduler:
                 "Input data has wrong format. Please delete and download the data again."
             )
             sys.exit(1)
-
-        self.out = out
+            
+        self.out = out_file
         self.instruction = instruction
         self.endpoint_url = endpoint_url
         self.model = model
@@ -160,6 +163,7 @@ class Scheduler:
         self.completed_samples = 0
         self.baseline = baseline
         self.chain_of_thought = chain_of_thought
+        self.num_agents = num_agents
         self.agent_generator = agent_generator
         logger.info(f"""Found {self.total_samples} samples to process.""")
 
@@ -213,6 +217,7 @@ class Scheduler:
                 extract_all_drafts=self.extract_all_drafts,
                 debate_rounds=self.debate_rounds,
                 chain_of_thought=self.chain_of_thought,
+                num_agents=self.num_agents,
             )
         except Exception:
             # More extensive error logging to ease debugging during async execution
@@ -472,7 +477,7 @@ def main(
     use_moderator: bool = False,
     max_turns: int = 10,
     force_all_turns: bool = False,
-    feedback_sentences: tuple[int, int] = (3, 4),
+    feedback_sentences: Optional[tuple[int, int]] = None,
     paradigm: str = "memory",
     decision_protocol: str = "majority_consensus",
     context_length: int = 3,
@@ -484,6 +489,7 @@ def main(
     memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
     baseline: bool = False,
     chain_of_thought: bool = True,
+    num_agents: int = 3,
     agent_generator: str = "expert",
 ) -> None:
     scheduler = Scheduler(
@@ -508,6 +514,7 @@ def main(
         memory_bucket_dir=memory_bucket_dir,
         baseline=baseline,
         chain_of_thought=chain_of_thought,
+        num_agents=num_agents,
         agent_generator=agent_generator,
     )
     scheduler.run()

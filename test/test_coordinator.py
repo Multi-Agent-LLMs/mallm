@@ -4,6 +4,7 @@ import pytest
 
 from mallm.coordinator import Coordinator
 from mallm.utils.types import Memory
+from mallm.models.personas.ExpertGenerator import ExpertGenerator
 
 
 # Test initialization of Coordinator
@@ -26,7 +27,9 @@ def test_init_agents_with_default_persona_generator():
     model = Mock()
     client = Mock()
     coordinator = Coordinator(model, client, memory_bucket_dir="./test/data/")
-    coordinator.init_agents("task_instruction", "input_str", use_moderator=False)
+    coordinator.init_agents(
+        "task_instruction", "input_str", use_moderator=False, num_agents=3
+    )
     assert len(coordinator.agents) == 3  # TODO This hardcoded value is not good
 
 
@@ -39,7 +42,9 @@ def test_init_agents_with_wrong_persona_generator():
         model, client, agent_generator=agent_generator, memory_bucket_dir="./test/data/"
     )
     with pytest.raises(Exception, match="Invalid persona generator."):
-        coordinator.init_agents("task_instruction", "input_str", use_moderator=False)
+        coordinator.init_agents(
+            "task_instruction", "input_str", use_moderator=False, num_agents=3
+        )
 
 
 # Test updating global memory
@@ -92,7 +97,9 @@ def test_update_memories():
     model = Mock()
     client = Mock()
     coordinator = Coordinator(model, client, memory_bucket_dir="./test/data/")
-    coordinator.init_agents("task_instruction", "input_str", use_moderator=False)
+    coordinator.init_agents(
+        "task_instruction", "input_str", use_moderator=False, num_agents=3
+    )
     memories = [
         Memory(
             message_id=1,
@@ -137,6 +144,7 @@ def test_discuss_with_invalid_paradigm():
             False,
             False,
             None,
+            3,
         )
 
 
@@ -162,4 +170,5 @@ def test_discuss_with_invalid_decision_protocol():
             False,
             False,
             None,
+            3,
         )

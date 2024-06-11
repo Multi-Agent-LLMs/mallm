@@ -64,8 +64,7 @@ class DiscourseReport(DiscoursePolicy):
         chain_of_thought: bool,
     ) -> None:
         if agent_index == 0:
-            template_filling.sents_min = None
-            template_filling.sents_max = None
+            template_filling.feedback_sentences = None
             res, memory, self.agreements = coordinator.panelists[0].draft(
                 unique_id=self.unique_id,
                 turn=self.turn,

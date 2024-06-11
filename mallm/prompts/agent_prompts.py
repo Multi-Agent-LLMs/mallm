@@ -8,6 +8,8 @@ logger = logging.getLogger("mallm")
 
 def base_prompt(data: TemplateFilling) -> list[dict[str, str]]:
     appendix = ""
+    if data.feedback_sentences is not None:
+        appendix += f"\nExplain your reasoning in {data.feedback_sentences[0]} to {data.feedback_sentences[1]} sentences!"
     if data.current_draft is not None:
         appendix += f"\nHere is the current solution to the task: {data.current_draft}"
     else:
@@ -19,7 +21,7 @@ def base_prompt(data: TemplateFilling) -> list[dict[str, str]]:
     prompts = [
         {
             "role": "system",
-            "content": f"You are participating in a discussion to solve the following task: {data.task_instruction} \nInput: {data.input_str} \nYour role: {data.persona} ({data.persona_description}) \nExplain your reasoning in {data.sents_min} to {data.sents_max} sentences! {appendix}",
+            "content": f"You are participating in a discussion to solve the following task: {data.task_instruction} \nInput: {data.input_str} \nYour role: {data.persona} ({data.persona_description}) {appendix}",
         }
     ]
     if data.agent_memory is not None:
