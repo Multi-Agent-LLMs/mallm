@@ -1,7 +1,7 @@
 from mallm.agents.moderator import Moderator
 from mallm.agents.panelist import Panelist
 from mallm.coordinator import Coordinator
-from mallm.decision_making.majority import HybridMajorityConsensus
+from mallm.decision_protocol.majority import HybridMajorityConsensus
 from mallm.utils.types import Agreement
 
 coordinator = Coordinator(None, None)

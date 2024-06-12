@@ -13,18 +13,17 @@ import httpx
 from mallm.agents.agent import Agent
 from mallm.agents.moderator import Moderator
 from mallm.agents.panelist import Panelist
-from mallm.decision_making.approval import ApprovalVoting
-from mallm.decision_making.cumulative import CumulativeVoting
-from mallm.decision_making.decision_protocol import DecisionProtocol
-from mallm.decision_making.majority import (
-    ThresholdConsensus,
+from mallm.decision_protocol.approval import ApprovalVoting
+from mallm.decision_protocol.cumulative import CumulativeVoting
+from mallm.decision_protocol.protocol import DecisionProtocol
+from mallm.decision_protocol.majority import (
     MajorityConsensus,
     SupermajorityConsensus,
     HybridMajorityConsensus,
-    UnanimousConsensus,
+    UnanimityConsensus,
 )
-from mallm.decision_making.ranked import RankedVoting
-from mallm.decision_making.voting import Voting
+from mallm.decision_protocol.ranked import RankedVoting
+from mallm.decision_protocol.voting import Voting
 from mallm.discourse_policy.debate import DiscourseDebate
 from mallm.discourse_policy.memory import DiscourseMemory
 from mallm.discourse_policy.policy import DiscoursePolicy
@@ -46,7 +45,7 @@ DECISION_PROTOCOLS: dict[str, Type[DecisionProtocol]] = {
     "majority_consensus": MajorityConsensus,
     "supermajority_consensus": SupermajorityConsensus,
     "hybrid_consensus": HybridMajorityConsensus,
-    "unanimous_consensus": UnanimousConsensus,
+    "unanimity_consensus": UnanimityConsensus,
     "voting": Voting,
     "approval": ApprovalVoting,
     "cumulative": CumulativeVoting,

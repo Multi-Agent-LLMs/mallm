@@ -3,7 +3,7 @@ import json
 import logging
 
 from mallm.agents.panelist import Panelist
-from mallm.decision_making.decision_protocol import DecisionProtocol
+from mallm.decision_protocol.protocol import DecisionProtocol
 from mallm.prompts.agent_prompts import (
     generate_approval_voting_prompt,
     generate_final_answer_prompt,

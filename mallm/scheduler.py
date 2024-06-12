@@ -479,7 +479,7 @@ def main(
     force_all_turns: bool = False,
     feedback_sentences: Optional[tuple[int, int]] = None,
     paradigm: str = "memory",
-    decision_protocol: str = "majority_consensus",
+    decision_protocol: str = "hybrid_consensus",
     context_length: int = 3,
     include_current_turn_in_memory: bool = True,
     extract_all_drafts: bool = True,
