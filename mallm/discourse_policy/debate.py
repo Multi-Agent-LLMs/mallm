@@ -57,7 +57,7 @@ class DiscourseDebate(DiscoursePolicy):
         extract_all_drafts: bool = False,
         debate_rounds: int = 1,
         chain_of_thought: bool = True,
-    ) -> tuple[Optional[str], int, list[Agreement]]:
+    ) -> tuple[Optional[str], Optional[str], int, list[Agreement]]:
         turn = 0
         unique_id = 0
         memories = []
@@ -85,7 +85,7 @@ class DiscourseDebate(DiscoursePolicy):
 
             # ---- Agent A1
             if use_moderator and coordinator.moderator is not None:
-                debate_history, memory_ids, current_draft = (
+                debate_history, memory_ids, current_draft, full_draft = (
                     coordinator.moderator.get_discussion_history(
                         context_length=context_length,
                         turn=self.turn,
@@ -115,9 +115,12 @@ class DiscourseDebate(DiscoursePolicy):
                 memories = []
                 unique_id = unique_id + 1
             else:
-                debate_history, memory_ids, current_draft = coordinator.panelists[
-                    0
-                ].get_discussion_history(
+                (
+                    debate_history,
+                    memory_ids,
+                    current_draft,
+                    full_draft,
+                ) = coordinator.panelists[0].get_discussion_history(
                     context_length=context_length,
                     turn=self.turn,
                     include_this_turn=include_current_turn_in_memory,
@@ -155,7 +158,7 @@ class DiscourseDebate(DiscoursePolicy):
                     # We call participate() below, which is a method of Panelist
                     assert isinstance(a, Panelist)
 
-                    debate_history, memory_ids, current_draft = (
+                    debate_history, memory_ids, current_draft, full_draft = (
                         a.get_discussion_history(
                             context_length=context_length,
                             turn=self.turn,
@@ -216,4 +219,4 @@ class DiscourseDebate(DiscoursePolicy):
             if self.decision:
                 break
 
-        return current_draft, self.turn, self.agreements
+        return current_draft, full_draft, self.turn, self.agreements

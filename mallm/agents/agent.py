@@ -209,7 +209,7 @@ class Agent:
         turn: Optional[int] = None,
         include_this_turn: bool = True,
         extract_draft: bool = False,
-    ) -> tuple[Optional[list[Memory]], list[int], Optional[str]]:
+    ) -> tuple[Optional[list[Memory]], list[int], Optional[str], Optional[str]]:
         """
         Retrieves memory from the agents memory bucket as a Memory
         Returns: Memory
@@ -257,6 +257,7 @@ class Agent:
         except dbm.error:
             context_memory = None
 
+        full_draft = current_draft
         if (
             current_draft != "" and extract_draft and not extracted
         ):  # if not extracted already
@@ -264,7 +265,7 @@ class Agent:
                 generate_chat_prompt_extract_result(current_draft),
                 client=self.client,
             )
-        return context_memory, memory_ids, current_draft
+        return context_memory, memory_ids, current_draft, full_draft
 
     def get_discussion_history(
         self,
@@ -272,13 +273,13 @@ class Agent:
         turn: Optional[int] = None,
         include_this_turn: bool = True,
         extract_draft: bool = False,
-    ) -> tuple[Optional[list[dict[str, str]]], list[int], Optional[str]]:
+    ) -> tuple[Optional[list[dict[str, str]]], list[int], Optional[str], Optional[str]]:
         """
         Retrieves memory from the agents memory bucket as a string
         context_length refers to the amount of turns the agent can use as rationale
         Returns: string
         """
-        memories, memory_ids, current_draft = self.get_memories(
+        memories, memory_ids, current_draft, full_draft = self.get_memories(
             context_length=context_length,
             turn=turn,
             include_this_turn=include_this_turn,
@@ -298,7 +299,7 @@ class Agent:
                     )
         else:
             debate_history = None
-        return debate_history, memory_ids, current_draft
+        return debate_history, memory_ids, current_draft, full_draft
 
     def save_memory_to_json(self, out: Optional[str] = None) -> None:
         """
@@ -306,7 +307,7 @@ class Agent:
         """
         save_path = out if out else self.memory_bucket + ".json"
         try:
-            memories, memory_ids, current_draft = self.get_memories()
+            memories, memory_ids, current_draft, full_draft = self.get_memories()
             if memories:
                 with open(save_path, "w") as f:
                     json.dump(

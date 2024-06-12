@@ -41,7 +41,7 @@ class SimpleEthicalQuestionsDownloader(DatasetDownloader):
                     example_id=str(uuid.uuid4()),
                     dataset_id=None,
                     inputs=[s["input"]],
-                    context=None,
+                    context=[multiple_choice_str],
                     references=[ref[0]],
                     personas=None,
                 )

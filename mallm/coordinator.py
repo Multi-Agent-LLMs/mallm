@@ -258,7 +258,7 @@ Decision-making: {self.decision_making.__class__.__name__}
 -------------"""
         )
 
-        current_draft, turn, agreements = policy.discuss(
+        current_draft, full_draft, turn, agreements = policy.discuss(
             self,
             task_instruction,
             input_str,

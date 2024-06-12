@@ -37,14 +37,14 @@ class DiscoursePolicy(ABC):
         extract_all_drafts: bool = False,
         debate_rounds: int = 1,
         chain_of_thought: bool = True,
-    ) -> tuple[Optional[str], int, list[Agreement]]:
+    ) -> tuple[Optional[str], Optional[str], int, list[Agreement]]:
         logger.debug(self.paradigm_str)
         while (not self.decision or force_all_turns) and self.turn < max_turns:
             self.turn += 1
             logger.info(f"Ongoing. Current turn: {self.turn}")
 
             for i, agent in enumerate(coordinator.agents):
-                debate_history, memory_ids, current_draft = (
+                debate_history, memory_ids, current_draft, full_draft = (
                     agent.get_discussion_history(
                         context_length=context_length,
                         turn=self.turn,
@@ -99,7 +99,7 @@ class DiscoursePolicy(ABC):
                 if self.decision:
                     break
 
-        return current_draft, self.turn, self.agreements
+        return current_draft, full_draft, self.turn, self.agreements
 
     @abstractmethod
     def moderator_call(
