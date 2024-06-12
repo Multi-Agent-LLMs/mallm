@@ -69,7 +69,7 @@ class MajorityConsensus(ThresholdConsensus):
         super().__init__(panelists, use_moderator, 0.5, None, None)
 
 
-class UnanimousConsensus(ThresholdConsensus):
+class UnanimityConsensus(ThresholdConsensus):
     def __init__(
         self,
         panelists: list[Panelist],
