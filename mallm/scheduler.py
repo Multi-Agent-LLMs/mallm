@@ -16,14 +16,13 @@ from openai import OpenAI
 
 from mallm.coordinator import Coordinator
 from mallm.models.Chat import Chat
-from mallm.prompts.coordinator_prompts import (
-    generate_chat_prompt_baseline,
-    generate_chat_prompt_extract_result,
-)
+
 from mallm.utils.CustomFormatter import CustomFormatter
 from mallm.utils.config import Config
 from mallm.utils.types import InputExample
 from mallm.utils.utils import suppress_output, pretty_print_dict
+from mallm.utils.functions import extract_draft
+from mallm.utils.prompts import generate_chat_prompt_baseline
 
 just_fix_windows_console()
 
@@ -256,12 +255,7 @@ class Scheduler:
                 seconds=time.perf_counter() - start_time
             ).total_seconds()
 
-            extracted_answer = None
-            if self.config.extract_all_drafts:
-                extracted_answer = llm.invoke(
-                    generate_chat_prompt_extract_result(answer),
-                    client=client,
-                )
+            extracted_answer = extract_draft(answer)
         except Exception as e:
             logger.error("Failed running baseline.")
             logger.error(e)
