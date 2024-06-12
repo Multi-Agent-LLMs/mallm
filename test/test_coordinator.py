@@ -21,7 +21,7 @@ def test_coordinator_initialization():
     assert coordinator.agents == []
     assert coordinator.use_moderator is False
     assert coordinator.moderator is None
-    assert coordinator.decision_making is None
+    assert coordinator.decision_protocol is None
 
 
 # Test initialization of agents with a valid PersonaGenerator

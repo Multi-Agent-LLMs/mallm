@@ -13,9 +13,17 @@ import httpx
 from mallm.agents.agent import Agent
 from mallm.agents.moderator import Moderator
 from mallm.agents.panelist import Panelist
-from mallm.decision_making.DecisionProtocol import DecisionProtocol
-from mallm.decision_making.MajorityConsensus import MajorityConsensus
-from mallm.decision_making.Voting import Voting
+from mallm.decision_protocol.approval import ApprovalVoting
+from mallm.decision_protocol.cumulative import CumulativeVoting
+from mallm.decision_protocol.protocol import DecisionProtocol
+from mallm.decision_protocol.majority import (
+    MajorityConsensus,
+    SupermajorityConsensus,
+    HybridMajorityConsensus,
+    UnanimityConsensus,
+)
+from mallm.decision_protocol.ranked import RankedVoting
+from mallm.decision_protocol.voting import Voting
 from mallm.discourse_policy.debate import DiscourseDebate
 from mallm.discourse_policy.memory import DiscourseMemory
 from mallm.discourse_policy.policy import DiscoursePolicy
@@ -35,7 +43,13 @@ logger = logging.getLogger("mallm")
 
 DECISION_PROTOCOLS: dict[str, Type[DecisionProtocol]] = {
     "majority_consensus": MajorityConsensus,
+    "supermajority_consensus": SupermajorityConsensus,
+    "hybrid_consensus": HybridMajorityConsensus,
+    "unanimity_consensus": UnanimityConsensus,
     "voting": Voting,
+    "approval": ApprovalVoting,
+    "cumulative": CumulativeVoting,
+    "ranked": RankedVoting,
 }
 
 PROTOCOLS: dict[str, Type[DiscoursePolicy]] = {
@@ -70,7 +84,7 @@ class Coordinator:
         self.moderator: Optional[Moderator] = None
         self.memory_bucket_dir = memory_bucket_dir
         self.memory_bucket = self.memory_bucket_dir + "global_" + self.id
-        self.decision_making: Optional[DecisionProtocol] = None
+        self.decision_protocol: Optional[DecisionProtocol] = None
         self.llm = model
         self.client = client
         self.agent_generator = agent_generator
@@ -232,7 +246,7 @@ class Coordinator:
             logger.error(f"No valid decision protocol for {decision_protocol}")
             raise Exception(f"No valid decision protocol for {decision_protocol}")
 
-        self.decision_making = DECISION_PROTOCOLS[decision_protocol](
+        self.decision_protocol = DECISION_PROTOCOLS[decision_protocol](
             self.panelists, use_moderator
         )
 
@@ -252,7 +266,7 @@ Feedback sentences: {feedback_sentences!s}
 Maximum turns: {max_turns}
 Agents: {[a.persona for a in self.agents]!s}
 Paradigm: {policy.__class__.__name__}
-Decision-making: {self.decision_making.__class__.__name__}
+Decision-protocol: {self.decision_protocol.__class__.__name__}
 -------------"""
         )
 

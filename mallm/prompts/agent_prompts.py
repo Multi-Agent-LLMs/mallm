@@ -159,3 +159,111 @@ def generate_voting_prompt(
     )
 
     return prompts
+
+
+def generate_approval_voting_prompt(
+    persona: str,
+    persona_description: str,
+    task: str,
+    question: str,
+    solutions: list[str],
+) -> list[dict[str, str]]:
+    prompts = [
+        {
+            "role": "system",
+            "content": f"Your role: {persona} ({persona_description})",
+        },
+        {
+            "role": "user",
+            "content": f"You are tasked with approving any number of solutions from the list provided below based on the given task.\nTask: {task}\nQuestion: {question}\n\nHere are the possible solutions:",
+        },
+    ]
+
+    for i, solution in enumerate(solutions):
+        prompts.append(
+            {
+                "role": "user",
+                "content": f"Solution {i}: {solution}",
+            }
+        )
+
+    prompts.append(
+        {
+            "role": "user",
+            "content": "Based on the above solutions, please provide the numbers of the solutions you are approving, separated by commas. Answer only with the numbers.",
+        }
+    )
+
+    return prompts
+
+
+def generate_cumulative_voting_prompt(
+    persona: str,
+    persona_description: str,
+    task: str,
+    question: str,
+    solutions: list[str],
+) -> list[dict[str, str]]:
+    prompts = [
+        {
+            "role": "system",
+            "content": f"Your role: {persona} ({persona_description})",
+        },
+        {
+            "role": "user",
+            "content": f"You are tasked with distributing 10 points among the provided solutions based on the given task.\nTask: {task}\nQuestion: {question}\n\nHere are the possible solutions:",
+        },
+    ]
+
+    for i, solution in enumerate(solutions):
+        prompts.append(
+            {
+                "role": "user",
+                "content": f"Solution {i}: {solution}",
+            }
+        )
+
+    prompts.append(
+        {
+            "role": "user",
+            "content": "Based on the above solutions, please distribute 10 points among the solutions. Provide your points allocation as a JSON dictionary where keys are solution numbers (as int) and values are the points. The total points should sum up to 10. Answer only with the JSON dictionary.",
+        }
+    )
+
+    return prompts
+
+
+def generate_ranking_prompt(
+    persona: str,
+    persona_description: str,
+    task: str,
+    question: str,
+    solutions: list[str],
+) -> list[dict[str, str]]:
+    prompts = [
+        {
+            "role": "system",
+            "content": f"Your role: {persona} ({persona_description})",
+        },
+        {
+            "role": "user",
+            "content": f"You are tasked with ranking the solutions from the most preferred to the least preferred based on the given task.\nTask: {task}\nQuestion: {question}\n\nHere are the possible solutions:",
+        },
+    ]
+
+    for i, solution in enumerate(solutions):
+        prompts.append(
+            {
+                "role": "user",
+                "content": f"Solution {i}: {solution}",
+            }
+        )
+
+    prompts.append(
+        {
+            "role": "user",
+            "content": "Based on the above solutions, please provide the rankings of the solutions separated by spaces. Example: '0 2 1' if you prefer Solution 0 the most, then Solution 2, and finally Solution 1. Provide up to 5 rankings. Only answer with the rankings.",
+        }
+    )
+
+    return prompts

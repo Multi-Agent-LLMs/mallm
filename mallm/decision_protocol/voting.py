@@ -2,7 +2,7 @@ import logging
 from collections import Counter
 
 from mallm.agents.panelist import Panelist
-from mallm.decision_making.DecisionProtocol import DecisionProtocol
+from mallm.decision_protocol.protocol import DecisionProtocol
 from mallm.prompts.agent_prompts import (
     generate_final_answer_prompt,
     generate_voting_prompt,
@@ -19,14 +19,19 @@ class Voting(DecisionProtocol):
 
     def __init__(
         self, panelists: list[Panelist], use_moderator: bool, vote_turn: int = 3
-    ):
+    ) -> None:
         super().__init__(panelists, use_moderator)
         self.vote_turn = vote_turn
 
     def make_decision(
-        self, agreements: list[Agreement], turn: int, task: str, question: str
+        self,
+        agreements: list[Agreement],
+        turn: int,
+        agent_index: int,
+        task: str,
+        question: str,
     ) -> tuple[str, bool]:
-        if turn < self.vote_turn:
+        if turn < self.vote_turn or agent_index != self.total_agents - 1:
             return "", False
         final_answers = []
         for panelist in self.panelists:
