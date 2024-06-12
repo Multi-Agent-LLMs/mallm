@@ -59,7 +59,7 @@ def generate_chat_prompt_feedback(
         prompts.append(
             {
                 "role": "user",
-                "content": f"{prefix}Based on the current solution, give constructive feedback. Be open to compromise too.{"" if split_agree_and_answer else " If you agree, answer with [AGREE], else answer with [DISAGREE] and explain why."}",
+                "content": f"{prefix}Based on the current solution, give constructive feedback. Be open to compromise too.{'' if split_agree_and_answer else ' If you agree, answer with [AGREE], else answer with [DISAGREE] and explain why.'}",
             }
         )
         if chain_of_thought:
@@ -89,7 +89,7 @@ def generate_chat_prompt_improve(
         prompts.append(
             {
                 "role": "user",
-                "content": f"{prefix}Improve the current answer.{"" if split_agree_and_answer else " If you agree with the current answer, answer with [AGREE], else answer with [DISAGREE] and explain why!"}",
+                "content": f"{prefix}Improve the current answer.{'' if split_agree_and_answer else ' If you agree with the current answer, answer with [AGREE], else answer with [DISAGREE] and explain why!'}",
             }
         )
         if chain_of_thought:
