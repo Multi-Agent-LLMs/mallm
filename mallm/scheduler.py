@@ -140,7 +140,7 @@ class Scheduler:
                 "Input data has wrong format. Please delete and download the data again."
             )
             sys.exit(1)
-            
+
         self.out = out_file
         self.instruction = instruction
         self.endpoint_url = endpoint_url
@@ -236,7 +236,7 @@ class Scheduler:
 
         logger.info(
             f"""--> Agents discussed for {turn} turns, {'%.2f' % discussion_time} seconds ({'%.2f' % (float(discussion_time) / 60.0)} minutes) to get the final answer: \n"""
-            + str(answer)
+            + str(extracted_answer)
         )
         logger.info(f"""Reference answer: {sample.references}""")
 

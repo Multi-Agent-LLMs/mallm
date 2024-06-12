@@ -226,7 +226,7 @@ def generate_cumulative_voting_prompt(
     prompts.append(
         {
             "role": "user",
-            "content": "Based on the above solutions, please distribute 10 points among the solutions. Provide your points allocation as a JSON dictionary where keys are solution numbers (as strings) and values are the points. The total points should sum up to 10. Answer only with the JSON dictionary.",
+            "content": "Based on the above solutions, please distribute 10 points among the solutions. Provide your points allocation as a JSON dictionary where keys are solution numbers (as int) and values are the points. The total points should sum up to 10. Answer only with the JSON dictionary.",
         }
     )
 

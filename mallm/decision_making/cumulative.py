@@ -1,3 +1,4 @@
+import ast
 import json
 import logging
 
@@ -65,8 +66,12 @@ class CumulativeVoting(DecisionProtocol):
                         final_answers,
                     )
                 )
+                point_distribution = (
+                    point_distribution.replace("\n", "").replace(" ", "").strip()
+                )
                 try:
-                    points_dict = json.loads(point_distribution.strip())
+                    points_dict = ast.literal_eval(point_distribution)
+                    points_dict = {int(k): int(v) for k, v in points_dict.items()}
                     if self.validate_points_distribution(
                         points_dict, len(final_answers)
                     ):
@@ -86,9 +91,9 @@ class CumulativeVoting(DecisionProtocol):
         total_points = [0] * len(final_answers)
         for points in point_distributions:
             for index, point in points.items():
-                total_points[int(index)] += point
+                total_points[index] += point
 
-        # Determine the solution with the highest points
+        # Determine the solution with the highest points, break ties by selecting the first solution
         max_points = max(total_points)
         best_solution_index = total_points.index(max_points)
         logger.info(
@@ -104,7 +109,9 @@ class CumulativeVoting(DecisionProtocol):
         total_points = sum(points_dict.values())
         if total_points != 10:
             return False
-        for index in points_dict.keys():
+        for index in points_dict:
             if not isinstance(index, int) or not (0 <= index < num_solutions):
                 return False
+        if any(x < 0 for x in points_dict.values()):
+            return False
         return True
