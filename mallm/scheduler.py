@@ -122,7 +122,7 @@ class Scheduler:
             )
         except Exception:
             # More extensive error logging to ease debugging during async execution
-            logger.error("Failed discussion.")
+            logger.error(f"Failed discussion of sample {sample.example_id}.")
             exc_type, exc_obj, exc_tb = sys.exc_info()
             logger.error(exc_type)
             logger.error(exc_obj)
