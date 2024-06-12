@@ -11,16 +11,17 @@ from typing import TYPE_CHECKING, Optional
 import httpx
 
 from mallm.models.Chat import Chat
+from mallm.utils.functions import extract_draft
 
 if TYPE_CHECKING:
     from mallm.agents.moderator import Moderator
     from mallm.coordinator import Coordinator
-from mallm.prompts.agent_prompts import (
+
+from mallm.utils.prompts import (
     generate_chat_prompt_draft,
     generate_chat_prompt_feedback,
     generate_chat_prompt_improve,
 )
-from mallm.prompts.coordinator_prompts import generate_chat_prompt_extract_result
 from mallm.utils.types import Agreement, Memory, TemplateFilling
 
 logger = logging.getLogger("mallm")
@@ -103,10 +104,7 @@ class Agent:
         current_draft = None
         # new drafts are only proposed upon disagreement, thus we do not want to overwrite unnecessarily
         if extract_all_drafts and not agreements[-1].agreement:
-            current_draft = self.llm.invoke(
-                generate_chat_prompt_extract_result(res),
-                client=self.client,
-            )
+            current_draft = extract_draft(current_draft)
         memory = Memory(
             message_id=unique_id,
             turn=turn,
@@ -143,10 +141,7 @@ class Agent:
         agreements = self.agree(res, agreements, self_drafted=True)
         current_draft = None
         if extract_all_drafts:
-            current_draft = self.llm.invoke(
-                generate_chat_prompt_extract_result(res),
-                client=self.client,
-            )
+            current_draft = extract_draft(current_draft)
         memory = Memory(
             message_id=unique_id,
             turn=turn,
@@ -208,7 +203,7 @@ class Agent:
         context_length: Optional[int] = None,
         turn: Optional[int] = None,
         include_this_turn: bool = True,
-        extract_draft: bool = False,
+        extract: bool = False,
     ) -> tuple[Optional[list[Memory]], list[int], Optional[str]]:
         """
         Retrieves memory from the agents memory bucket as a Memory
@@ -258,12 +253,9 @@ class Agent:
             context_memory = None
 
         if (
-            current_draft != "" and extract_draft and not extracted
+            current_draft != "" and extract and not extracted
         ):  # if not extracted already
-            current_draft = self.llm.invoke(
-                generate_chat_prompt_extract_result(current_draft),
-                client=self.client,
-            )
+            current_draft = extract_draft(current_draft)
         return context_memory, memory_ids, current_draft
 
     def get_discussion_history(
@@ -271,7 +263,7 @@ class Agent:
         context_length: Optional[int] = None,
         turn: Optional[int] = None,
         include_this_turn: bool = True,
-        extract_draft: bool = False,
+        extract: bool = False,
     ) -> tuple[Optional[list[dict[str, str]]], list[int], Optional[str]]:
         """
         Retrieves memory from the agents memory bucket as a string
@@ -282,7 +274,7 @@ class Agent:
             context_length=context_length,
             turn=turn,
             include_this_turn=include_this_turn,
-            extract_draft=extract_draft,
+            extract=extract,
         )
         if memories:
             debate_history = []

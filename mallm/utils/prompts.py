@@ -6,6 +6,26 @@ from mallm.utils.types import TemplateFilling
 logger = logging.getLogger("mallm")
 
 
+def generate_chat_prompt_baseline(
+    task_instruction: str, input_str: str, chain_of_thought: bool
+) -> list[dict[str, str]]:
+    # Use Zero-Shot-CoT: https://arxiv.org/pdf/2205.11916
+    prompts = [
+        {
+            "role": "system",
+            "content": f"Solve the following task: {task_instruction} \nInput: {input_str}",
+        }
+    ]
+    if chain_of_thought:
+        prompts.append(
+            {
+                "role": "assistant",
+                "content": "Let's think step by step.",
+            }
+        )
+    return prompts
+
+
 def base_prompt(data: TemplateFilling) -> list[dict[str, str]]:
     appendix = ""
     if data.feedback_sentences is not None:
@@ -21,7 +41,7 @@ def base_prompt(data: TemplateFilling) -> list[dict[str, str]]:
     prompts = [
         {
             "role": "system",
-            "content": f"You are participating in a discussion to solve the following task: {data.task_instruction} \nInput: {data.input_str} \nYour role: {data.persona} ({data.persona_description}) {appendix}",
+            "content": f"You are participating in a discussion to solve the following task: {data.task_instruction} \nInput: {data.input_str} \nYour role: {data.persona} ({data.persona_description}) \nProvide your final answer in the end after the term 'FINAL ANSWER:'. {appendix}",
         }
     ]
     if data.agent_memory is not None:
@@ -60,7 +80,7 @@ def generate_chat_prompt_improve(
         prompts.append(
             {
                 "role": "user",
-                "content": "Improve the current answer. If you agree with the current answer, answer with [AGREE], else answer with [DISAGREE].",
+                "content": "Improve the current answer. If you agree with the current answer, answer with [AGREE], else answer with [DISAGREE]",
             }
         )
         if chain_of_thought:

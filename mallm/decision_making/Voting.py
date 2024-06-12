@@ -3,7 +3,7 @@ from collections import Counter
 
 from mallm.agents.panelist import Panelist
 from mallm.decision_making.DecisionProtocol import DecisionProtocol
-from mallm.prompts.agent_prompts import (
+from mallm.utils.prompts import (
     generate_final_answer_prompt,
     generate_voting_prompt,
 )

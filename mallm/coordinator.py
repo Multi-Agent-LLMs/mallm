@@ -26,8 +26,8 @@ from mallm.models.personas.ExpertGenerator import ExpertGenerator
 from mallm.models.personas.IPIPPersonaGenerator import IPIPPersonaGenerator
 from mallm.models.personas.MockGenerator import MockGenerator
 from mallm.models.personas.PersonaGenerator import PersonaGenerator
-from mallm.prompts.coordinator_prompts import generate_chat_prompt_extract_result
 from mallm.utils.types import Agreement, Memory
+from mallm.utils.functions import extract_draft
 
 os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
 
@@ -283,10 +283,7 @@ Decision-making: {self.decision_making.__class__.__name__}
 
         extracted_draft = None
         if current_draft:
-            extracted_draft = self.llm.invoke(
-                generate_chat_prompt_extract_result(current_draft),
-                client=self.client,
-            )
+            extracted_draft = extract_draft(current_draft)
 
         return (
             current_draft,
