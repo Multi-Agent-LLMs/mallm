@@ -140,7 +140,7 @@ class Scheduler:
                 "Input data has wrong format. Please delete and download the data again."
             )
             sys.exit(1)
-            
+
         self.out = out_file
         self.instruction = instruction
         self.endpoint_url = endpoint_url
@@ -221,7 +221,7 @@ class Scheduler:
             )
         except Exception:
             # More extensive error logging to ease debugging during async execution
-            logger.error("Failed discussion.")
+            logger.error(f"Failed discussion of sample {sample.example_id}.")
             exc_type, exc_obj, exc_tb = sys.exc_info()
             logger.error(exc_type)
             logger.error(exc_obj)
