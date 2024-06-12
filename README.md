@@ -81,7 +81,7 @@ The framework follows this structure and can be found in the `mallm` directory.
 
 1) Agents (subdirectory: `mallm/agents/`)
 2) Discourse Policy (subdirectory: `mallm/discourse_policy/`)
-3) Decision Making (subdirectory: `mallm/decision_making/`)
+3) Decision Protocol (subdirectory: `mallm/decision_protocol/`)
 
 Experiments can be implemented as a seperate repository, loading MALLM as a package.
 You can test stuff in the `notebooks` directory.

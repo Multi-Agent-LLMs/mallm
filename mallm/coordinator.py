@@ -84,7 +84,7 @@ class Coordinator:
         self.moderator: Optional[Moderator] = None
         self.memory_bucket_dir = memory_bucket_dir
         self.memory_bucket = self.memory_bucket_dir + "global_" + self.id
-        self.decision_making: Optional[DecisionProtocol] = None
+        self.decision_protocol: Optional[DecisionProtocol] = None
         self.llm = model
         self.client = client
         self.agent_generator = agent_generator
@@ -246,7 +246,7 @@ class Coordinator:
             logger.error(f"No valid decision protocol for {decision_protocol}")
             raise Exception(f"No valid decision protocol for {decision_protocol}")
 
-        self.decision_making = DECISION_PROTOCOLS[decision_protocol](
+        self.decision_protocol = DECISION_PROTOCOLS[decision_protocol](
             self.panelists, use_moderator
         )
 
@@ -266,7 +266,7 @@ Feedback sentences: {feedback_sentences!s}
 Maximum turns: {max_turns}
 Agents: {[a.persona for a in self.agents]!s}
 Paradigm: {policy.__class__.__name__}
-Decision-making: {self.decision_making.__class__.__name__}
+Decision-protocol: {self.decision_protocol.__class__.__name__}
 -------------"""
         )
 

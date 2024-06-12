@@ -89,11 +89,11 @@ class DiscoursePolicy(ABC):
                 self.unique_id += 1
                 self.memories = []
 
-                if coordinator.decision_making is None:
-                    logger.error("No decision making module found.")
-                    raise Exception("No decision making module found.")
+                if coordinator.decision_protocol is None:
+                    logger.error("No decision protocol module found.")
+                    raise Exception("No decision protocol module found.")
 
-                self.draft, self.decision = coordinator.decision_making.make_decision(
+                self.draft, self.decision = coordinator.decision_protocol.make_decision(
                     self.agreements, self.turn, i, task_instruction, input_str
                 )
                 if self.decision:

@@ -206,11 +206,11 @@ class DiscourseDebate(DiscoursePolicy):
             if len(agreements) > len(coordinator.panelists):
                 self.agreements = self.agreements[-len(coordinator.panelists) :]
 
-            if coordinator.decision_making is None:
-                logger.error("No decision making module found.")
-                raise Exception("No decision making module found.")
+            if coordinator.decision_protocol is None:
+                logger.error("No decision protocol module found.")
+                raise Exception("No decision protocol module found.")
 
-            self.draft, self.decision = coordinator.decision_making.make_decision(
+            self.draft, self.decision = coordinator.decision_protocol.make_decision(
                 self.agreements,
                 self.turn,
                 len(coordinator.agents),
