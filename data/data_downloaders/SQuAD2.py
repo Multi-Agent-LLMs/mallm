@@ -1,5 +1,5 @@
-import json
 import uuid
+from typing import Optional
 
 from data.data_download import DatasetDownloader
 from mallm.utils.types import InputExample
@@ -9,13 +9,15 @@ class EuroparlDownloader(DatasetDownloader):
     def custom_download(self):
         pass
 
-    def __init__(self):
+    def __init__(
+        self, sample_size: Optional[int] = None, hf_token: Optional[str] = None
+    ):
         super().__init__(
             name="squad_v2",
             version="squad_v2",
             dataset_name="rajpurkar/squad_v2",
             trust_remote_code=True,
-            sample_size=1000,
+            sample_size=sample_size,
         )
 
     def process_data(self) -> list[InputExample]:

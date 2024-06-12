@@ -49,8 +49,8 @@ class DiscourseDebate(DiscoursePolicy):
         task_instruction: str,
         input_str: str,
         use_moderator: bool = False,
-        feedback_sentences: tuple[int, int] = (3, 4),
-        max_turns: Optional[int] = None,
+        feedback_sentences: Optional[tuple[int, int]] = None,
+        max_turns: int = 10,
         force_all_turns: bool = False,
         context_length: int = 1,
         include_current_turn_in_memory: bool = False,
@@ -58,7 +58,6 @@ class DiscourseDebate(DiscoursePolicy):
         debate_rounds: int = 1,
         chain_of_thought: bool = True,
     ) -> tuple[Optional[str], int, list[Agreement]]:
-        decision = None
         turn = 0
         unique_id = 0
         memories = []
@@ -80,16 +79,16 @@ class DiscourseDebate(DiscoursePolicy):
 
         logger.info("Debate rounds between agents A2, ..., An: " + str(debate_rounds))
 
-        while not decision and (max_turns is None or turn < max_turns):
-            turn = turn + 1
-            logger.info("Ongoing. Current turn: " + str(turn))
+        while (not self.decision or force_all_turns) and self.turn < max_turns:
+            self.turn = self.turn + 1
+            logger.info("Ongoing. Current turn: " + str(self.turn))
 
             # ---- Agent A1
             if use_moderator and coordinator.moderator is not None:
                 debate_history, memory_ids, current_draft = (
                     coordinator.moderator.get_discussion_history(
                         context_length=context_length,
-                        turn=turn,
+                        turn=self.turn,
                         include_this_turn=include_current_turn_in_memory,
                     )
                 )
@@ -103,7 +102,7 @@ class DiscourseDebate(DiscoursePolicy):
                 )
                 res, memory, agreements = coordinator.moderator.draft(
                     unique_id=unique_id,
-                    turn=turn,
+                    turn=self.turn,
                     memory_ids=memory_ids,
                     template_filling=template_filling,
                     extract_all_drafts=extract_all_drafts,
@@ -120,7 +119,7 @@ class DiscourseDebate(DiscoursePolicy):
                     0
                 ].get_discussion_history(
                     context_length=context_length,
-                    turn=turn,
+                    turn=self.turn,
                     include_this_turn=include_current_turn_in_memory,
                 )
                 template_filling = TemplateFilling(
@@ -133,7 +132,7 @@ class DiscourseDebate(DiscoursePolicy):
                 )
                 res, memory, agreements = coordinator.panelists[0].draft(
                     unique_id=unique_id,
-                    turn=turn,
+                    turn=self.turn,
                     memory_ids=memory_ids,
                     template_filling=template_filling,
                     extract_all_drafts=extract_all_drafts,
@@ -159,7 +158,7 @@ class DiscourseDebate(DiscoursePolicy):
                     debate_history, memory_ids, current_draft = (
                         a.get_discussion_history(
                             context_length=context_length,
-                            turn=turn,
+                            turn=self.turn,
                             include_this_turn=include_current_turn_in_memory,
                         )
                     )
@@ -174,8 +173,7 @@ class DiscourseDebate(DiscoursePolicy):
                         persona=a.persona,
                         persona_description=a.persona_description,
                         agent_memory=debate_history,
-                        sents_max=feedback_sentences[1],
-                        sents_min=feedback_sentences[0],
+                        feedback_sentences=feedback_sentences,
                     )
 
                     if r == debate_rounds - 1:  # last debate round
@@ -190,7 +188,7 @@ class DiscourseDebate(DiscoursePolicy):
                         use_moderator=use_moderator,
                         memories=memories,
                         unique_id=unique_id,
-                        turn=turn,
+                        turn=self.turn,
                         memory_ids=memory_ids,
                         template_filling=template_filling,
                         extract_all_drafts=extract_all_drafts,
@@ -198,21 +196,28 @@ class DiscourseDebate(DiscoursePolicy):
                         agreements=debate_agreements,
                         chain_of_thought=chain_of_thought,
                     )
-                    num_agents = len(coordinator.agents)
-                    if len(debate_agreements) > num_agents - 1:
-                        debate_agreements = debate_agreements[1 - num_agents :]
+                    if len(debate_agreements) > len(coordinator.agents) - 1:
+                        debate_agreements = debate_agreements[
+                            1 - len(coordinator.agents) :
+                        ]
                     unique_id = unique_id + 1
 
-            agreements = agreements + debate_agreements
+            self.agreements = self.agreements + debate_agreements
             if len(agreements) > len(coordinator.panelists):
-                agreements = agreements[-len(coordinator.panelists) :]
+                self.agreements = self.agreements[-len(coordinator.panelists) :]
 
-            if coordinator.decision_making is None:
-                logger.error("No decision making module found.")
-                raise Exception("No decision making module found.")
+            if coordinator.decision_protocol is None:
+                logger.error("No decision protocol module found.")
+                raise Exception("No decision protocol module found.")
 
-            draft, decision = coordinator.decision_making.make_decision(
-                agreements, turn, task_instruction, input_str
+            self.draft, self.decision = coordinator.decision_protocol.make_decision(
+                self.agreements,
+                self.turn,
+                len(coordinator.agents),
+                task_instruction,
+                input_str,
             )
+            if self.decision:
+                break
 
-        return current_draft, turn, agreements
+        return self.draft, self.turn, self.agreements

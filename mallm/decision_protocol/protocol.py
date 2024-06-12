@@ -10,12 +10,19 @@ class DecisionProtocol(ABC):
     Any concrete decision protocol must implement the make_decision method.
     """
 
-    def __init__(self, panelists: list[Panelist]):
-        self.panelists = panelists
+    def __init__(self, panelists: list[Panelist], use_moderator: bool) -> None:
+        self.panelists: list[Panelist] = panelists
+        self.use_moderator: bool = use_moderator
+        self.total_agents: int = len(panelists) + (1 if use_moderator else 0)
 
     @abstractmethod
     def make_decision(
-        self, agreements: list[Agreement], turn: int, task: str, question: str
+        self,
+        agreements: list[Agreement],
+        turn: int,
+        agent_index: int,
+        task: str,
+        question: str,
     ) -> tuple[str, bool]:
         """
         Abstract method to make a decision based on agreements, the current turn number, and the list of panelists.

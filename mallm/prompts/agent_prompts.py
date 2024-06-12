@@ -8,6 +8,8 @@ logger = logging.getLogger("mallm")
 
 def base_prompt(data: TemplateFilling) -> list[dict[str, str]]:
     appendix = ""
+    if data.feedback_sentences is not None:
+        appendix += f"\nExplain your reasoning in {data.feedback_sentences[0]} to {data.feedback_sentences[1]} sentences!"
     if data.current_draft is not None:
         appendix += f"\nHere is the current solution to the task: {data.current_draft}"
     else:
@@ -19,7 +21,7 @@ def base_prompt(data: TemplateFilling) -> list[dict[str, str]]:
     prompts = [
         {
             "role": "system",
-            "content": f"You are participating in a discussion to solve the following task: {data.task_instruction} \nInput: {data.input_str} \nYour role: {data.persona} ({data.persona_description}) \nExplain your reasoning in {data.sents_min} to {data.sents_max} sentences! {appendix}",
+            "content": f"You are participating in a discussion to solve the following task: {data.task_instruction} \nInput: {data.input_str} \nYour role: {data.persona} ({data.persona_description}) {appendix}",
         }
     ]
     if data.agent_memory is not None:
@@ -164,6 +166,114 @@ def generate_voting_prompt(
         {
             "role": "user",
             "content": "Based on the above solutions, please provide the number of the solution you are voting for. Answer only with the number.",
+        }
+    )
+
+    return prompts
+
+
+def generate_approval_voting_prompt(
+    persona: str,
+    persona_description: str,
+    task: str,
+    question: str,
+    solutions: list[str],
+) -> list[dict[str, str]]:
+    prompts = [
+        {
+            "role": "system",
+            "content": f"Your role: {persona} ({persona_description})",
+        },
+        {
+            "role": "user",
+            "content": f"You are tasked with approving any number of solutions from the list provided below based on the given task.\nTask: {task}\nQuestion: {question}\n\nHere are the possible solutions:",
+        },
+    ]
+
+    for i, solution in enumerate(solutions):
+        prompts.append(
+            {
+                "role": "user",
+                "content": f"Solution {i}: {solution}",
+            }
+        )
+
+    prompts.append(
+        {
+            "role": "user",
+            "content": "Based on the above solutions, please provide the numbers of the solutions you are approving, separated by commas. Answer only with the numbers.",
+        }
+    )
+
+    return prompts
+
+
+def generate_cumulative_voting_prompt(
+    persona: str,
+    persona_description: str,
+    task: str,
+    question: str,
+    solutions: list[str],
+) -> list[dict[str, str]]:
+    prompts = [
+        {
+            "role": "system",
+            "content": f"Your role: {persona} ({persona_description})",
+        },
+        {
+            "role": "user",
+            "content": f"You are tasked with distributing 10 points among the provided solutions based on the given task.\nTask: {task}\nQuestion: {question}\n\nHere are the possible solutions:",
+        },
+    ]
+
+    for i, solution in enumerate(solutions):
+        prompts.append(
+            {
+                "role": "user",
+                "content": f"Solution {i}: {solution}",
+            }
+        )
+
+    prompts.append(
+        {
+            "role": "user",
+            "content": "Based on the above solutions, please distribute 10 points among the solutions. Provide your points allocation as a JSON dictionary where keys are solution numbers (as int) and values are the points. The total points should sum up to 10. Answer only with the JSON dictionary.",
+        }
+    )
+
+    return prompts
+
+
+def generate_ranking_prompt(
+    persona: str,
+    persona_description: str,
+    task: str,
+    question: str,
+    solutions: list[str],
+) -> list[dict[str, str]]:
+    prompts = [
+        {
+            "role": "system",
+            "content": f"Your role: {persona} ({persona_description})",
+        },
+        {
+            "role": "user",
+            "content": f"You are tasked with ranking the solutions from the most preferred to the least preferred based on the given task.\nTask: {task}\nQuestion: {question}\n\nHere are the possible solutions:",
+        },
+    ]
+
+    for i, solution in enumerate(solutions):
+        prompts.append(
+            {
+                "role": "user",
+                "content": f"Solution {i}: {solution}",
+            }
+        )
+
+    prompts.append(
+        {
+            "role": "user",
+            "content": "Based on the above solutions, please provide the rankings of the solutions separated by spaces. Example: '0 2 1' if you prefer Solution 0 the most, then Solution 2, and finally Solution 1. Provide up to 5 rankings. Only answer with the rankings.",
         }
     )
 

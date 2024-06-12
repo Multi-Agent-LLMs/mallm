@@ -6,9 +6,11 @@ import sys
 import traceback
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import Optional
 
 import fire
 from datasets import load_dataset
+
 from mallm.utils.types import InputExample
 
 
@@ -19,8 +21,9 @@ class DatasetDownloader(ABC):
         hf_dataset: bool = True,
         dataset_name: str = None,
         version: str = "main",
-        sample_size: int = None,
+        sample_size: Optional[int] = None,
         trust_remote_code: bool = False,
+        hf_token: Optional[str] = None,
     ):
         self.name = name
         self.version = version
@@ -33,6 +36,7 @@ class DatasetDownloader(ABC):
         else:
             self.dataset_name = dataset_name
         self.hf_dataset = hf_dataset
+        self.hf_token = hf_token
         self.trust_remote_code = trust_remote_code
 
     def download(self) -> bool:
@@ -49,7 +53,10 @@ class DatasetDownloader(ABC):
 
     def hf_download(self):
         self.dataset = load_dataset(
-            self.dataset_name, self.version, trust_remote_code=self.trust_remote_code
+            self.dataset_name,
+            self.version,
+            trust_remote_code=self.trust_remote_code,
+            token=self.hf_token,
         )
         self.dataset.save_to_disk(self.dataset_path)
 
@@ -66,9 +73,10 @@ class DatasetDownloader(ABC):
             file.write(json.dumps([dataclasses.asdict(example) for example in data]))
         print(f"\033[93m[INFO]\033[0m Data saved to {self.output_path}")
 
-    def shuffle_and_select(self, split="train"):
+    def shuffle_and_select(self, split: str = "train", select: bool = True):
         if self.dataset:
-            if self.sample_size:
+            if self.sample_size and select:
+                print("shuffling")
                 return (
                     self.dataset[split].shuffle(seed=42).select(range(self.sample_size))
                 )
@@ -78,7 +86,7 @@ class DatasetDownloader(ABC):
             raise ValueError("Dataset not loaded.")
 
 
-def find_downloader_classes(module):
+def find_downloader_classes(module: str):
     for attribute_name in dir(module):
         if attribute_name == "DatasetDownloader":
             continue
@@ -90,7 +98,12 @@ def find_downloader_classes(module):
     return None
 
 
-def load_and_execute_downloaders(directory="data_downloaders", datasets=None):
+def load_and_execute_downloaders(
+    directory: str = "data_downloaders",
+    datasets: list[str] = None,
+    sample_size: Optional[int] = None,
+    hf_token: Optional[str] = None,
+):
     # Path to the directory containing downloader modules
     base_path = Path(__file__).parent / directory
     # Iterate over each file in the directory
@@ -109,7 +122,7 @@ def load_and_execute_downloaders(directory="data_downloaders", datasets=None):
         downloader_class = find_downloader_classes(module)
         if downloader_class:
             # Instantiate and execute the downloader
-            downloader = downloader_class()
+            downloader = downloader_class(sample_size=sample_size, hf_token=hf_token)
             try:
                 if downloader.download():
                     input_examples = downloader.process_data()

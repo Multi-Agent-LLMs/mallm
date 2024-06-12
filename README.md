@@ -1,6 +1,6 @@
 <br />
 <p align="center">
-<a><img src="image/mallm.webp" alt="MALLM" width="128" height="128" title="FawnRescue"></a>
+<a><img src="image/mallm.webp" alt="MALLM" width="128" height="128" title="MALLM"></a>
   <h3 align="center">MALLM</h3>
   <p align="center">
     Multi-Agent LLMs For Conversational Task-Solving: Framework<br />
@@ -81,7 +81,7 @@ The framework follows this structure and can be found in the `mallm` directory.
 
 1) Agents (subdirectory: `mallm/agents/`)
 2) Discourse Policy (subdirectory: `mallm/discourse_policy/`)
-3) Decision Making (subdirectory: `mallm/decision_making/`)
+3) Decision Protocol (subdirectory: `mallm/decision_protocol/`)
 
 Experiments can be implemented as a seperate repository, loading MALLM as a package.
 You can test stuff in the `notebooks` directory.

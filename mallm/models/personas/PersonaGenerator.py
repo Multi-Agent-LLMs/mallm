@@ -1,7 +1,13 @@
 from abc import ABC, abstractmethod
 
+from mallm.models.Chat import Chat
+
 
 class PersonaGenerator(ABC):
+    @abstractmethod
+    def __init__(self, llm: Chat):
+        pass
+
     @abstractmethod
     def generate_personas(
         self, task_description: str, num_agents: int

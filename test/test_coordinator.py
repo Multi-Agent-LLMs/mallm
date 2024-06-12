@@ -4,13 +4,16 @@ import pytest
 
 from mallm.coordinator import Coordinator
 from mallm.utils.types import Memory
+from mallm.models.personas.ExpertGenerator import ExpertGenerator
 
 
 # Test initialization of Coordinator
 def test_coordinator_initialization():
     model = Mock()
     client = Mock()
-    coordinator = Coordinator(model, client, memory_bucket_dir="./test/data/")
+    coordinator = Coordinator(
+        model, client, agent_generator="mock", memory_bucket_dir="./test/data/"
+    )
     assert coordinator.llm == model
     assert coordinator.client == client
     assert coordinator.personas is None
@@ -18,40 +21,43 @@ def test_coordinator_initialization():
     assert coordinator.agents == []
     assert coordinator.use_moderator is False
     assert coordinator.moderator is None
-    assert coordinator.decision_making is None
+    assert coordinator.decision_protocol is None
 
 
 # Test initialization of agents with a valid PersonaGenerator
-def test_init_agents_with_valid_persona_generator():
+def test_init_agents_with_persona_generator():
     model = Mock()
     client = Mock()
-    agent_generator = Mock()
-    agent_generator.generate_personas.return_value = [
-        {"role": "role1", "description": "desc1"},
-        {"role": "role2", "description": "desc2"},
-        {"role": "role3", "description": "desc3"},
-    ]
+    coordinator = Coordinator(
+        model, client, agent_generator="mock", memory_bucket_dir="./test/data/"
+    )
+    coordinator.init_agents(
+        "task_instruction", "input_str", use_moderator=False, num_agents=3
+    )
+    assert len(coordinator.agents) == 3  # TODO This hardcoded value is not good
+
+
+# Test initialization of agents with an invalid PersonaGenerator
+def test_init_agents_with_wrong_persona_generator():
+    model = Mock()
+    client = Mock()
+    agent_generator = "exp"
     coordinator = Coordinator(
         model, client, agent_generator=agent_generator, memory_bucket_dir="./test/data/"
     )
-    coordinator.init_agents("task_instruction", "input_str", use_moderator=False)
-    assert len(coordinator.agents) == 3
-
-
-# Test initialization of agents without a PersonaGenerator
-def test_init_agents_without_persona_generator():
-    model = Mock()
-    client = Mock()
-    coordinator = Coordinator(model, client, memory_bucket_dir="./test/data/")
-    with pytest.raises(Exception, match="No persona generator provided."):
-        coordinator.init_agents("task_instruction", "input_str", use_moderator=False)
+    with pytest.raises(Exception, match="Invalid persona generator."):
+        coordinator.init_agents(
+            "task_instruction", "input_str", use_moderator=False, num_agents=3
+        )
 
 
 # Test updating global memory
 def test_update_global_memory():
     model = Mock()
     client = Mock()
-    coordinator = Coordinator(model, client, memory_bucket_dir="./test/data/")
+    coordinator = Coordinator(
+        model, client, agent_generator="mock", memory_bucket_dir="./test/data/"
+    )
     memory = Memory(
         message_id=1,
         text="content",
@@ -75,7 +81,9 @@ def test_update_global_memory():
 def test_update_global_memory_fail():
     model = Mock()
     client = Mock()
-    coordinator = Coordinator(model, client, memory_bucket_dir="./test/data_invalid/")
+    coordinator = Coordinator(
+        model, client, agent_generator="mock", memory_bucket_dir="./test/data_invalid/"
+    )
     memory = Memory(
         message_id=1,
         text="content",
@@ -96,16 +104,12 @@ def test_update_global_memory_fail():
 def test_update_memories():
     model = Mock()
     client = Mock()
-    agent_generator = Mock()
-    agent_generator.generate_personas.return_value = [
-        {"role": "role1", "description": "desc1"},
-        {"role": "role2", "description": "desc2"},
-        {"role": "role3", "description": "desc3"},
-    ]
     coordinator = Coordinator(
-        model, client, agent_generator=agent_generator, memory_bucket_dir="./test/data/"
+        model, client, agent_generator="mock", memory_bucket_dir="./test/data/"
     )
-    coordinator.init_agents("task_instruction", "input_str", use_moderator=False)
+    coordinator.init_agents(
+        "task_instruction", "input_str", use_moderator=False, num_agents=3
+    )
     memories = [
         Memory(
             message_id=1,
@@ -132,14 +136,8 @@ def test_update_memories():
 def test_discuss_with_invalid_paradigm():
     model = Mock()
     client = Mock()
-    agent_generator = Mock()
-    agent_generator.generate_personas.return_value = [
-        {"role": "role1", "description": "desc1"},
-        {"role": "role2", "description": "desc2"},
-        {"role": "role3", "description": "desc3"},
-    ]
     coordinator = Coordinator(
-        model, client, agent_generator, memory_bucket_dir="./test/data/"
+        model, client, agent_generator="mock", memory_bucket_dir="./test/data/"
     )
     with pytest.raises(
         Exception, match="No valid discourse policy for paradigm invalid_paradigm"
@@ -158,6 +156,7 @@ def test_discuss_with_invalid_paradigm():
             False,
             False,
             None,
+            3,
         )
 
 
@@ -165,14 +164,8 @@ def test_discuss_with_invalid_paradigm():
 def test_discuss_with_invalid_decision_protocol():
     model = Mock()
     client = Mock()
-    agent_generator = Mock()
-    agent_generator.generate_personas.return_value = [
-        {"role": "role1", "description": "desc1"},
-        {"role": "role2", "description": "desc2"},
-        {"role": "role3", "description": "desc3"},
-    ]
     coordinator = Coordinator(
-        model, client, agent_generator, memory_bucket_dir="./test/data/"
+        model, client, agent_generator="mock", memory_bucket_dir="./test/data/"
     )
     with pytest.raises(
         Exception, match="No valid decision protocol for invalid_protocol"
@@ -191,4 +184,5 @@ def test_discuss_with_invalid_decision_protocol():
             False,
             False,
             None,
+            3,
         )

@@ -4,6 +4,8 @@ import uuid
 
 import pandas as pd
 import requests
+import random
+from typing import Optional
 
 from data.data_download import DatasetDownloader
 from mallm.utils.types import InputExample
@@ -72,8 +74,8 @@ class BTVoteDownloader(DatasetDownloader):
             "vote_characteristics": data_vote_characteristics,
         }
 
-    def __init__(self):
-        super().__init__("btvote", hf_dataset=False)
+    def __init__(self, sample_size: Optional[int], hf_token: Optional[str] = None):
+        super().__init__("btvote", hf_dataset=False, sample_size=sample_size)
 
     def process_data(self) -> list[InputExample]:
         merged_df = pd.merge(
@@ -109,4 +111,6 @@ class BTVoteDownloader(DatasetDownloader):
                     personas=None,
                 )
             )
+        random.shuffle(input_examples)
+        input_examples = input_examples[: self.sample_size]
         return input_examples
