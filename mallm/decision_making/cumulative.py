@@ -93,14 +93,21 @@ class CumulativeVoting(DecisionProtocol):
             for index, point in points.items():
                 total_points[index] += point
 
-        # Determine the solution with the highest points, break ties by selecting the first solution
+        # Determine the solution with the highest points, break ties by selecting the first solution and go for another round
         max_points = max(total_points)
         best_solution_index = total_points.index(max_points)
+        best_answers = [
+            final_answers[i]
+            for i, score in enumerate(total_points)
+            if score == max_points
+        ]
+        agreed = len(best_answers) == 1
+
         logger.info(
             f"Selected answer from agent {self.panelists[best_solution_index].short_id} with {max_points} points"
         )
 
-        return final_answers[best_solution_index], True
+        return final_answers[best_solution_index], agreed
 
     @staticmethod
     def validate_points_distribution(

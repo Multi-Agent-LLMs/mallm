@@ -76,9 +76,7 @@ class RankedVoting(DecisionProtocol):
                         )
                         break
                     else:
-                        logger.debug(
-                            f"{panelist.short_id} cast an invalid ranking: {ranking}. Asking to rank again."
-                        )
+                        raise ValueError
                 except ValueError:
                     logger.debug(
                         f"{panelist.short_id} cast an invalid ranking: {ranking}. Asking to rank again."
@@ -87,17 +85,24 @@ class RankedVoting(DecisionProtocol):
         # Calculate the score for each answer based on the rankings
         scores = [0] * len(final_answers)
         for ranking_list in rankings:
-            for i, rank in enumerate(ranking_list):
-                scores[rank] += 5 - i  # Score 5 for the 1st rank, 4 for the 2nd, etc.
+            for rank, agent_index in enumerate(ranking_list):
+                scores[agent_index] += (
+                    min(5, self.total_agents) - rank
+                )  # Score 5 for the 1st rank, 4 for the 2nd, etc.
 
         # Find the answer with the highest score
         highest_score = max(scores)
+        index = scores.index(highest_score)
         best_answers = [
             final_answers[i] for i, score in enumerate(scores) if score == highest_score
         ]
 
-        # If there's a tie, pick the latest answer among the best
-        result = best_answers[-1] if best_answers else ""
+        # If there's a tie, pick the first answer among the best
+        result = final_answers[index]
+        # If all panelists agree on the best answer finished else go for another round
         agreed = len(best_answers) == 1
+        logger.info(
+            f"Selected answer from agent {self.panelists[index].short_id} with {highest_score} points"
+        )
 
         return result, agreed
