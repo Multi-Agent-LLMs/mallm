@@ -17,7 +17,6 @@ from openai import OpenAI
 
 from mallm.coordinator import Coordinator
 from mallm.models.Chat import Chat
-from mallm.models.personas.ExpertGenerator import ExpertGenerator
 from mallm.prompts.coordinator_prompts import (
     generate_chat_prompt_baseline,
     generate_chat_prompt_extract_result,
@@ -75,6 +74,7 @@ class Scheduler:
         chain_of_thought: bool = True,
         num_agents: int = 3,
         agent_generator: str = "expert",
+        split_agree_and_answer: bool = False,
     ) -> None:
         # Check for the correct aruments provided
         # TODO: make this more robust and conclusive. All arguments should be checked for validity, making the use of MALLM as fool-proof as possible.
@@ -165,6 +165,7 @@ class Scheduler:
         self.chain_of_thought = chain_of_thought
         self.num_agents = num_agents
         self.agent_generator = agent_generator
+        self.split_agree_and_answer = split_agree_and_answer
         logger.info(f"""Found {self.total_samples} samples to process.""")
 
         logger.info("Finished initializing the scheduler.")
@@ -192,7 +193,6 @@ class Scheduler:
             logger.error("Failed intializing coordinator.")
             logger.error(e)
             return None
-
         try:
             (
                 answer,
@@ -218,6 +218,7 @@ class Scheduler:
                 debate_rounds=self.debate_rounds,
                 chain_of_thought=self.chain_of_thought,
                 num_agents=self.num_agents,
+                split_agree_and_answer=self.split_agree_and_answer,
             )
         except Exception:
             # More extensive error logging to ease debugging during async execution
@@ -491,6 +492,7 @@ def main(
     chain_of_thought: bool = True,
     num_agents: int = 3,
     agent_generator: str = "expert",
+    split_agree_and_answer: bool = False,
 ) -> None:
     scheduler = Scheduler(
         data,
@@ -516,6 +518,7 @@ def main(
         chain_of_thought=chain_of_thought,
         num_agents=num_agents,
         agent_generator=agent_generator,
+        split_agree_and_answer=split_agree_and_answer,
     )
     scheduler.run()
 

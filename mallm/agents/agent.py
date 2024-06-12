@@ -5,8 +5,7 @@ import dbm
 import json
 import logging
 import uuid
-from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Callable
 
 import httpx
 
@@ -36,6 +35,7 @@ class Agent:
         persona: str,
         persona_description: str,
         moderator: Optional[Moderator] = None,
+        split_agree_and_answer: bool = False,
     ):
         self.id = str(uuid.uuid4())
         self.short_id = self.id[:4]
@@ -46,9 +46,49 @@ class Agent:
         self.moderator = moderator
         self.llm = llm
         self.client = client
+        self.split_agree_and_answer = split_agree_and_answer
         logger.info(
             f"Creating agent {self.short_id} with personality {self.persona}: {self.persona_description}"
         )
+
+    def answer(
+        self,
+        agreements: list[Agreement],
+        extract_all_drafts: bool,
+        self_drafted: bool,
+        template_filling: TemplateFilling,
+        prompt_callback: Callable[[Optional[bool]], list[dict[str, str]]],
+    ) -> tuple[list[Agreement], Optional[str], str]:
+        # Step 1: Check agreement
+        if self.split_agree_and_answer:
+            if template_filling.agent_memory:
+                agree_res = self.llm.invoke(
+                    generate_chat_prompt_agree(template_filling), client=self.client
+                )
+            else:
+                agree_res = "DISAGREE"
+        else:
+            agree_res = self.llm.invoke(
+                prompt_callback(None),
+                client=self.client,
+            )
+        agreements = self.agree(agree_res, agreements, self_drafted=self_drafted)
+        # Step 2: Handle response based on agreement
+        if self.split_agree_and_answer:
+            res = self.llm.invoke(
+                prompt_callback(agreements[-1].agreement),
+                client=self.client,
+            )
+            agreements[-1].response = res
+        else:
+            res = agree_res
+        current_draft = None
+        if extract_all_drafts and not agreements[-1].agreement:
+            current_draft = self.llm.invoke(
+                generate_chat_prompt_extract_result(res),
+                client=self.client,
+            )
+        return agreements, current_draft, res
 
     def agree(
         self, res: str, agreements: list[Agreement], self_drafted: bool = False
@@ -94,33 +134,18 @@ class Agent:
         agreements: list[Agreement],
         chain_of_thought: bool = True,
     ) -> tuple[str, Memory, list[Agreement]]:
-        # Step 1: Check agreement
-        if template_filling.agent_memory:
-            agree_res = self.llm.invoke(
-                generate_chat_prompt_agree(template_filling), client=self.client
-            )
-        else:
-            agree_res = "DISAGREE"
-        agreements = self.agree(agree_res, agreements)
-
-        # Step 2: Handle response based on agreement
-        if agreements[-1].agreement:
-            current_draft = template_filling.current_draft
-            res = agree_res
-        else:
-            res = self.llm.invoke(
-                generate_chat_prompt_improve(
-                    template_filling, chain_of_thought=chain_of_thought
-                ),
-                client=self.client,
-            )
-            current_draft = None
-            # new drafts are only proposed upon disagreement, thus we do not want to overwrite unnecessarily
-            if extract_all_drafts and not agreements[-1].agreement:
-                current_draft = self.llm.invoke(
-                    generate_chat_prompt_extract_result(res),
-                    client=self.client,
-                )
+        agreements, current_draft, res = self.answer(
+            agreements=agreements,
+            extract_all_drafts=extract_all_drafts,
+            template_filling=template_filling,
+            self_drafted=False,
+            prompt_callback=lambda agreement: generate_chat_prompt_improve(
+                data=template_filling,
+                chain_of_thought=chain_of_thought,
+                split_agree_and_answer=self.split_agree_and_answer,
+                agreement=agreement,
+            ),
+        )
         memory = Memory(
             message_id=unique_id,
             turn=turn,
@@ -148,32 +173,16 @@ class Agent:
         is_moderator: bool = False,
         chain_of_thought: bool = True,
     ) -> tuple[str, Memory, list[Agreement]]:
-        # Step 1: Check agreement
-        if template_filling.agent_memory:
-            agree_res = self.llm.invoke(
-                generate_chat_prompt_agree(template_filling), client=self.client
-            )
-        else:
-            agree_res = "DISAGREE"
-        agreements = self.agree(agree_res, agreements, self_drafted=True)
-
-        # Step 2: Handle response based on agreement
-        if agreements[-1].agreement:
-            current_draft = template_filling.current_draft
-            res = agree_res
-        else:
-            res = self.llm.invoke(
-                generate_chat_prompt_draft(
-                    template_filling, chain_of_thought=chain_of_thought
-                ),
-                client=self.client,
-            )
-            current_draft = None
-            if extract_all_drafts:
-                current_draft = self.llm.invoke(
-                    generate_chat_prompt_extract_result(res),
-                    client=self.client,
-                )
+        agreements, current_draft, res = self.answer(
+            agreements=agreements,
+            extract_all_drafts=extract_all_drafts,
+            template_filling=template_filling,
+            self_drafted=True,
+            prompt_callback=lambda _: generate_chat_prompt_draft(
+                data=template_filling,
+                chain_of_thought=chain_of_thought,
+            ),
+        )
 
         memory = Memory(
             message_id=unique_id,
@@ -200,23 +209,18 @@ class Agent:
         agreements: list[Agreement],
         chain_of_thought: bool = True,
     ) -> tuple[str, Memory, list[Agreement]]:
-        # Step 1: Check agreement
-        if template_filling.agent_memory:
-            agree_res = self.llm.invoke(
-                generate_chat_prompt_agree(template_filling), client=self.client
-            )
-        else:
-            agree_res = "DISAGREE"
-        agreements = self.agree(agree_res, agreements)
-        if agreements[-1].agreement:
-            res = agree_res
-        else:
-            res = self.llm.invoke(
-                generate_chat_prompt_feedback(
-                    template_filling, chain_of_thought=chain_of_thought
-                ),
-                client=self.client,
-            )
+        agreements, current_draft, res = self.answer(
+            agreements=agreements,
+            extract_all_drafts=False,
+            template_filling=template_filling,
+            self_drafted=False,
+            prompt_callback=lambda agreement: generate_chat_prompt_feedback(
+                data=template_filling,
+                chain_of_thought=chain_of_thought,
+                split_agree_and_answer=self.split_agree_and_answer,
+                agreement=agreement,
+            ),
+        )
         memory = Memory(
             message_id=unique_id,
             turn=turn,

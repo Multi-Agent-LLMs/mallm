@@ -15,13 +15,13 @@ from mallm.agents.moderator import Moderator
 from mallm.agents.panelist import Panelist
 from mallm.decision_protocol.approval import ApprovalVoting
 from mallm.decision_protocol.cumulative import CumulativeVoting
-from mallm.decision_protocol.protocol import DecisionProtocol
 from mallm.decision_protocol.majority import (
     MajorityConsensus,
     SupermajorityConsensus,
     HybridMajorityConsensus,
     UnanimityConsensus,
 )
+from mallm.decision_protocol.protocol import DecisionProtocol
 from mallm.decision_protocol.ranked import RankedVoting
 from mallm.decision_protocol.voting import Voting
 from mallm.discourse_policy.debate import DiscourseDebate
@@ -95,6 +95,7 @@ class Coordinator:
         input_str: str,
         use_moderator: bool,
         num_agents: int,
+        split_agree_and_answer: bool,
     ) -> None:
         """
         Instantiates the agents by
@@ -119,7 +120,12 @@ class Coordinator:
         for persona in personas:
             self.panelists.append(
                 Panelist(
-                    self.llm, self.client, self, persona["role"], persona["description"]
+                    self.llm,
+                    self.client,
+                    self,
+                    persona["role"],
+                    persona["description"],
+                    split_agree_and_answer=split_agree_and_answer,
                 )
             )
 
@@ -204,6 +210,7 @@ class Coordinator:
         debate_rounds: Optional[int],
         chain_of_thought: bool = True,
         num_agents: int = 3,
+        split_agree_and_answer: bool = False,
     ) -> tuple[
         Optional[str],
         Optional[str],
@@ -240,6 +247,7 @@ class Coordinator:
             input_str,
             use_moderator=use_moderator,
             num_agents=num_agents,
+            split_agree_and_answer=split_agree_and_answer,
         )
 
         if decision_protocol not in DECISION_PROTOCOLS:
