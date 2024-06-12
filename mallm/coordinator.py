@@ -98,7 +98,9 @@ class Coordinator:
 
         personas = PERSONA_GENERATORS[self.agent_generator](
             llm=self.llm
-        ).generate_personas(f"{task_instruction} {input_str}", 3)
+        ).generate_personas(
+            task_description=f"{task_instruction} {input_str}", num_agents=num_agents
+        )
 
         if use_moderator:
             self.moderator = Moderator(self.llm, self.client, self)
