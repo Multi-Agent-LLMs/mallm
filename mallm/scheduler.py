@@ -11,7 +11,6 @@ from typing import Any, Optional
 
 import fire
 import httpx
-import requests
 from colorama import just_fix_windows_console
 from openai import OpenAI
 
@@ -51,45 +50,7 @@ os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
 
 class Scheduler:
     def __init__(self, config: Config) -> None:
-        # Check for the correct aruments provided
-        # TODO: make this more robust and conclusive. All arguments should be checked for validity, making the use of MALLM as fool-proof as possible.
-        if not os.path.exists(config.data):
-            logger.error(
-                "The input file you provided does not exist. Please specify a json lines file using --data."
-            )
-            sys.exit(1)
-        if not config.data.endswith(".json"):
-            logger.error(
-                "The input file you provided is not a json file. Please specify a json lines file using --data."
-            )
-            sys.exit(1)
-        if not config.out.endswith(".json"):
-            logger.error(
-                "The output file does not seem to be a json file. Please specify a file path using --out."
-            )
-            sys.exit(1)
-        if "api.openai.com" in config.endpoint_url and config.api_key == "-":
-            logger.error(
-                "When using the OpenAI API, you need to provide a key with the argument: --api_key=<your key>"
-            )
-            sys.exit(1)
-        if config.endpoint_url.endswith("/"):
-            logger.warning("Removing trailing / from the endpoint url.")
-            endpoint_url = config.endpoint_url[:-1]
-        try:
-            logger.info("Testing availability of the endpoint...")
-            page = requests.get(config.endpoint_url)
-            logger.info("Status: " + str(page.status_code))
-        except Exception as e:
-            logger.error("HTTP Error: Could not connect to the provided endpoint url.")
-            logger.error(e)
-            sys.exit(1)
-
-        if config.max_concurrent_requests > 500:
-            logger.error(
-                "max_concurrent_requests is too large. TGI can only handle about 500 requests. Please make sure to leave computing for other poeple too. Recommended: ~250."
-            )
-            sys.exit(1)
+        config.check_config()
 
         # Cleaning other files
         if os.path.exists(config.out):
