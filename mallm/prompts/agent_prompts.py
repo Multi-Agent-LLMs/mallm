@@ -1,5 +1,6 @@
 import json
 import logging
+from typing import Optional
 
 from mallm.utils.types import TemplateFilling
 
@@ -30,15 +31,35 @@ def base_prompt(data: TemplateFilling) -> list[dict[str, str]]:
     return prompts
 
 
+def generate_chat_prompt_agree(data: TemplateFilling) -> list[dict[str, str]]:
+    prompts = base_prompt(data)
+    prompts.append(
+        {
+            "role": "user",
+            "content": "Do you agree with the conclusion, considering the arguments and evidence presented? Please provide your reasoning step-by-step. After that respond with [AGREE] or [DISAGREE].",
+        }
+    )
+    return prompts
+
+
 def generate_chat_prompt_feedback(
-    data: TemplateFilling, chain_of_thought: bool
+    data: TemplateFilling,
+    chain_of_thought: bool,
+    split_agree_and_answer: bool,
+    agreement: Optional[bool],
 ) -> list[dict[str, str]]:
     prompts = base_prompt(data)
-    if data.agent_memory is not None:
+
+    if data.agent_memory:
+        prefix = {
+            None: "",
+            True: "You agree with the current answer. ",
+            False: "You disagree with the current answer. ",
+        }[agreement]
         prompts.append(
             {
                 "role": "user",
-                "content": "Based on the current solution, give constructive feedback. Be open to compromise too. If you agree, answer with [AGREE], else answer with [DISAGREE] and explain why.",
+                "content": f"{prefix}Based on the current solution, give constructive feedback. Be open to compromise too.{'' if split_agree_and_answer else ' If you agree, answer with [AGREE], else answer with [DISAGREE] and explain why.'}",
             }
         )
         if chain_of_thought:
@@ -53,14 +74,22 @@ def generate_chat_prompt_feedback(
 
 
 def generate_chat_prompt_improve(
-    data: TemplateFilling, chain_of_thought: bool
+    data: TemplateFilling,
+    chain_of_thought: bool,
+    split_agree_and_answer: bool,
+    agreement: Optional[bool],
 ) -> list[dict[str, str]]:
     prompts = base_prompt(data)
-    if data.agent_memory is not None:
+    if data.agent_memory:
+        prefix = {
+            None: "",
+            True: "You agree with the current answer. ",
+            False: "You disagree with the current answer. ",
+        }[agreement]
         prompts.append(
             {
                 "role": "user",
-                "content": "Improve the current answer. If you agree with the current answer, answer with [AGREE], else answer with [DISAGREE].",
+                "content": f"{prefix}Improve the current answer.{'' if split_agree_and_answer else ' If you agree with the current answer, answer with [AGREE], else answer with [DISAGREE] and explain why!'}",
             }
         )
         if chain_of_thought:

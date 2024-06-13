@@ -16,7 +16,6 @@ class Panelist(Agent):
         extract_all_drafts: bool,
         agents_to_update: Sequence[Agent],
         agreements: list[Agreement],
-        chain_of_thought: bool,
     ) -> list[Agreement]:
         """
         Either calls feedback() or improve() depending on whether a moderator is present
@@ -28,7 +27,6 @@ class Panelist(Agent):
                 memory_ids=memory_ids,
                 template_filling=template_filling,
                 agreements=agreements,
-                chain_of_thought=chain_of_thought,
             )
         else:
             res, memory, agreements = self.improve(
@@ -38,7 +36,6 @@ class Panelist(Agent):
                 template_filling=template_filling,
                 extract_all_drafts=extract_all_drafts,
                 agreements=agreements,
-                chain_of_thought=chain_of_thought,
             )
 
         memories.append(memory)

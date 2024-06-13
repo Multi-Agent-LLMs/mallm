@@ -15,13 +15,13 @@ from mallm.agents.moderator import Moderator
 from mallm.agents.panelist import Panelist
 from mallm.decision_protocol.approval import ApprovalVoting
 from mallm.decision_protocol.cumulative import CumulativeVoting
-from mallm.decision_protocol.protocol import DecisionProtocol
 from mallm.decision_protocol.majority import (
     MajorityConsensus,
     SupermajorityConsensus,
     HybridMajorityConsensus,
     UnanimityConsensus,
 )
+from mallm.decision_protocol.protocol import DecisionProtocol
 from mallm.decision_protocol.ranked import RankedVoting
 from mallm.decision_protocol.voting import Voting
 from mallm.discourse_policy.debate import DiscourseDebate
@@ -95,6 +95,8 @@ class Coordinator:
         input_str: str,
         use_moderator: bool,
         num_agents: int,
+        split_agree_and_answer: bool,
+        chain_of_thought: bool,
     ) -> None:
         """
         Instantiates the agents by
@@ -112,14 +114,20 @@ class Coordinator:
 
         personas = PERSONA_GENERATORS[self.agent_generator](
             llm=self.llm
-        ).generate_personas(f"{task_instruction} {input_str}", 3)
+        ).generate_personas(f"{task_instruction} {input_str}", num_agents)
 
         if use_moderator:
             self.moderator = Moderator(self.llm, self.client, self)
         for persona in personas:
             self.panelists.append(
                 Panelist(
-                    self.llm, self.client, self, persona["role"], persona["description"]
+                    llm=self.llm,
+                    client=self.client,
+                    coordinator=self,
+                    persona=persona["role"],
+                    persona_description=persona["description"],
+                    split_agree_and_answer=split_agree_and_answer,
+                    chain_of_thought=chain_of_thought,
                 )
             )
 
@@ -204,6 +212,7 @@ class Coordinator:
         debate_rounds: Optional[int],
         chain_of_thought: bool = True,
         num_agents: int = 3,
+        split_agree_and_answer: bool = False,
     ) -> tuple[
         Optional[str],
         Optional[str],
@@ -225,7 +234,7 @@ class Coordinator:
         """
         if context:
             for c in context:
-                task_instruction += "\n" + c
+                task_instruction += "\n Here is some context you need to consider:" + c
         input_str = ""
         for num, input_line in enumerate(input_lines):
             if len(input_lines) > 1:
@@ -236,10 +245,12 @@ class Coordinator:
         if use_moderator:
             num_agents -= 1
         self.init_agents(
-            task_instruction,
-            input_str,
+            task_instruction=task_instruction,
+            input_str=input_str,
             use_moderator=use_moderator,
             num_agents=num_agents,
+            split_agree_and_answer=split_agree_and_answer,
+            chain_of_thought=chain_of_thought,
         )
 
         if decision_protocol not in DECISION_PROTOCOLS:
