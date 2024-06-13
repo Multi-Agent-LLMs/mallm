@@ -115,7 +115,7 @@ def test_update_memories():
         model, client, agent_generator="mock", memory_bucket_dir="./test/data/"
     )
     coordinator.init_agents(
-        "task_instruction",
+        task_instruction="task_instruction",
         "input_str",
         use_moderator=False,
         num_agents=3,
