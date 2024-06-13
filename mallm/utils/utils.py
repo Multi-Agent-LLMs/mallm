@@ -1,15 +1,23 @@
 import os
 import sys
-from contextlib import contextmanager
-from typing import Generator
+from typing import Any, ContextManager, TextIO
 
 
-@contextmanager
-def suppress_stdout() -> Generator:
-    with open(os.devnull, "w") as devnull:
-        old_stdout = sys.stdout
-        sys.stdout = devnull
-        try:
-            yield
-        finally:
-            sys.stdout = old_stdout
+class SuppressOutput:
+    def __init__(self) -> None:
+        self._original_stdout: TextIO = sys.stdout
+        self._original_stderr: TextIO = sys.stderr
+
+    def __enter__(self) -> None:
+        sys.stdout = open(os.devnull, "w")
+        sys.stderr = open(os.devnull, "w")
+
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        sys.stdout.close()
+        sys.stderr.close()
+        sys.stdout = self._original_stdout
+        sys.stderr = self._original_stderr
+
+
+def suppress_output() -> ContextManager[None]:
+    return SuppressOutput()

@@ -24,7 +24,7 @@ from mallm.prompts.coordinator_prompts import (
 from mallm.utils.CustomFormatter import CustomFormatter
 from mallm.utils.config import Config
 from mallm.utils.types import InputExample
-from mallm.utils.utils import suppress_stdout
+from mallm.utils.utils import suppress_output
 
 just_fix_windows_console()
 
@@ -411,7 +411,7 @@ class Scheduler:
 
 
 def main() -> None:
-    with suppress_stdout():
+    with suppress_output():
         config = fire.Fire(Config)
     scheduler = Scheduler(config)
     scheduler.run()
