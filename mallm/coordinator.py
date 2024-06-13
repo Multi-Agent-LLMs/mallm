@@ -96,6 +96,7 @@ class Coordinator:
         use_moderator: bool,
         num_agents: int,
         split_agree_and_answer: bool,
+        chain_of_thought: bool,
     ) -> None:
         """
         Instantiates the agents by
@@ -113,19 +114,20 @@ class Coordinator:
 
         personas = PERSONA_GENERATORS[self.agent_generator](
             llm=self.llm
-        ).generate_personas(f"{task_instruction} {input_str}", 3)
+        ).generate_personas(f"{task_instruction} {input_str}", num_agents)
 
         if use_moderator:
             self.moderator = Moderator(self.llm, self.client, self)
         for persona in personas:
             self.panelists.append(
                 Panelist(
-                    self.llm,
-                    self.client,
-                    self,
-                    persona["role"],
-                    persona["description"],
+                    llm=self.llm,
+                    client=self.client,
+                    coordinator=self,
+                    persona=persona["role"],
+                    persona_description=persona["description"],
                     split_agree_and_answer=split_agree_and_answer,
+                    chain_of_thought=chain_of_thought,
                 )
             )
 
@@ -243,11 +245,12 @@ class Coordinator:
         if use_moderator:
             num_agents -= 1
         self.init_agents(
-            task_instruction,
-            input_str,
+            task_instruction=task_instruction,
+            input_str=input_str,
             use_moderator=use_moderator,
             num_agents=num_agents,
             split_agree_and_answer=split_agree_and_answer,
+            chain_of_thought=chain_of_thought,
         )
 
         if decision_protocol not in DECISION_PROTOCOLS:

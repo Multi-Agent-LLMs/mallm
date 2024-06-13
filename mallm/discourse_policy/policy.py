@@ -36,7 +36,6 @@ class DiscoursePolicy(ABC):
         include_current_turn_in_memory: bool = False,
         extract_all_drafts: bool = False,
         debate_rounds: int = 1,
-        chain_of_thought: bool = True,
     ) -> tuple[Optional[str], int, list[Agreement]]:
         logger.debug(self.paradigm_str)
         while (not self.decision or force_all_turns) and self.turn < max_turns:
@@ -71,7 +70,6 @@ class DiscoursePolicy(ABC):
                         agent_index=i,
                         coordinator=coordinator,
                         extract_all_drafts=extract_all_drafts,
-                        chain_of_thought=chain_of_thought,
                     )
                 elif isinstance(agent, Panelist):
                     self.panelist_call(
@@ -81,7 +79,6 @@ class DiscoursePolicy(ABC):
                         extract_all_drafts=extract_all_drafts,
                         memory_ids=memory_ids,
                         agent=agent,
-                        chain_of_thought=chain_of_thought,
                     )
                 else:
                     logger.error("Agent type not recognized.")
@@ -110,7 +107,6 @@ class DiscoursePolicy(ABC):
         memory_ids: list[int],
         template_filling: TemplateFilling,
         extract_all_drafts: bool,
-        chain_of_thought: bool,
     ) -> None:
         pass
 
@@ -123,6 +119,5 @@ class DiscoursePolicy(ABC):
         memory_ids: list[int],
         template_filling: TemplateFilling,
         extract_all_drafts: bool,
-        chain_of_thought: bool,
     ) -> None:
         pass

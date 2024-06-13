@@ -36,6 +36,7 @@ def test_init_agents_with_persona_generator():
         use_moderator=False,
         num_agents=3,
         split_agree_and_answer=False,
+        chain_of_thought=False,
     )
     assert len(coordinator.agents) == 3  # TODO This hardcoded value is not good
 
@@ -55,6 +56,7 @@ def test_init_agents_with_wrong_persona_generator():
             use_moderator=False,
             num_agents=3,
             split_agree_and_answer=False,
+            chain_of_thought=False,
         )
 
 
@@ -120,6 +122,7 @@ def test_update_memories():
         use_moderator=False,
         num_agents=3,
         split_agree_and_answer=False,
+        chain_of_thought=False,
     )
     memories = [
         Memory(
@@ -155,7 +158,7 @@ def test_discuss_with_invalid_paradigm():
     ):
         coordinator.discuss(
             "task_instruction",
-            "input_str",
+            ["input_str"],
             [],
             False,
             (0, 0),
@@ -167,7 +170,7 @@ def test_discuss_with_invalid_paradigm():
             False,
             False,
             None,
-            3,
+            False,
         )
 
 
@@ -183,7 +186,7 @@ def test_discuss_with_invalid_decision_protocol():
     ):
         coordinator.discuss(
             "task_instruction",
-            "input_str",
+            ["input_str"],
             [],
             False,
             (0, 0),
@@ -195,5 +198,5 @@ def test_discuss_with_invalid_decision_protocol():
             False,
             False,
             None,
-            3,
+            False,
         )

@@ -36,6 +36,7 @@ class Agent:
         persona_description: str,
         moderator: Optional[Moderator] = None,
         split_agree_and_answer: bool = False,
+        chain_of_thought: bool = False,
     ):
         self.id = str(uuid.uuid4())
         self.short_id = self.id[:4]
@@ -47,6 +48,7 @@ class Agent:
         self.llm = llm
         self.client = client
         self.split_agree_and_answer = split_agree_and_answer
+        self.chain_of_thought = chain_of_thought
         logger.info(
             f"Creating agent {self.short_id} with personality {self.persona}: {self.persona_description}"
         )
@@ -132,7 +134,6 @@ class Agent:
         template_filling: TemplateFilling,
         extract_all_drafts: bool,
         agreements: list[Agreement],
-        chain_of_thought: bool = True,
     ) -> tuple[str, Memory, list[Agreement]]:
         agreements, current_draft, res = self.answer(
             agreements=agreements,
@@ -141,7 +142,7 @@ class Agent:
             self_drafted=False,
             prompt_callback=lambda agreement: generate_chat_prompt_improve(
                 data=template_filling,
-                chain_of_thought=chain_of_thought,
+                chain_of_thought=self.chain_of_thought,
                 split_agree_and_answer=self.split_agree_and_answer,
                 agreement=agreement,
             ),
@@ -171,7 +172,6 @@ class Agent:
         extract_all_drafts: bool,
         agreements: list[Agreement],
         is_moderator: bool = False,
-        chain_of_thought: bool = True,
     ) -> tuple[str, Memory, list[Agreement]]:
         agreements, current_draft, res = self.answer(
             agreements=agreements,
@@ -180,7 +180,7 @@ class Agent:
             self_drafted=True,
             prompt_callback=lambda _: generate_chat_prompt_draft(
                 data=template_filling,
-                chain_of_thought=chain_of_thought,
+                chain_of_thought=self.chain_of_thought,
             ),
         )
 
@@ -207,7 +207,6 @@ class Agent:
         memory_ids: list[int],
         template_filling: TemplateFilling,
         agreements: list[Agreement],
-        chain_of_thought: bool = True,
     ) -> tuple[str, Memory, list[Agreement]]:
         agreements, current_draft, res = self.answer(
             agreements=agreements,
@@ -216,7 +215,7 @@ class Agent:
             self_drafted=False,
             prompt_callback=lambda agreement: generate_chat_prompt_feedback(
                 data=template_filling,
-                chain_of_thought=chain_of_thought,
+                chain_of_thought=self.chain_of_thought,
                 split_agree_and_answer=self.split_agree_and_answer,
                 agreement=agreement,
             ),
