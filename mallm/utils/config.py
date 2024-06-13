@@ -60,7 +60,7 @@ class Config:
             sys.exit(1)
         if self.endpoint_url.endswith("/"):
             logger.warning("Removing trailing / from the endpoint url.")
-            endpoint_url = self.endpoint_url[:-1]
+            self.endpoint_url = self.endpoint_url[:-1]
         try:
             logger.info("Testing availability of the endpoint...")
             page = requests.get(self.endpoint_url)
