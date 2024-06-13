@@ -25,5 +25,6 @@ class Config:
     memory_bucket_dir: str = "./mallm/utils/memory_bucket/"
     baseline: bool = False
     chain_of_thought: bool = True
+    split_agree_and_answer: bool = True
     num_agents: int = 3
     agent_generator: str = "expert"

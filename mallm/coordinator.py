@@ -96,6 +96,8 @@ class Coordinator:
         input_str: str,
         use_moderator: bool,
         num_agents: int,
+        split_agree_and_answer: bool,
+        chain_of_thought: bool,
     ) -> None:
         """
         Instantiates the agents by
@@ -113,14 +115,20 @@ class Coordinator:
 
         personas = PERSONA_GENERATORS[self.agent_generator](
             llm=self.llm
-        ).generate_personas(f"{task_instruction} {input_str}", 3)
+        ).generate_personas(f"{task_instruction} {input_str}", num_agents)
 
         if use_moderator:
             self.moderator = Moderator(self.llm, self.client, self)
         for persona in personas:
             self.panelists.append(
                 Panelist(
-                    self.llm, self.client, self, persona["role"], persona["description"]
+                    llm=self.llm,
+                    client=self.client,
+                    coordinator=self,
+                    persona=persona["role"],
+                    persona_description=persona["description"],
+                    split_agree_and_answer=split_agree_and_answer,
+                    chain_of_thought=chain_of_thought,
                 )
             )
 
@@ -214,7 +222,9 @@ class Coordinator:
         """
         if context:
             for c in context:
-                config.instruction += "\n" + c
+                config.instruction += (
+                    "\n Here is some context you need to consider:" + c
+                )
         input_str = ""
         for num, input_line in enumerate(input_lines):
             if len(input_lines) > 1:
@@ -229,6 +239,8 @@ class Coordinator:
             input_str,
             use_moderator=config.use_moderator,
             num_agents=config.num_agents,
+            split_agree_and_answer=config.split_agree_and_answer,
+            chain_of_thought=config.chain_of_thought,
         )
 
         if config.decision_protocol not in DECISION_PROTOCOLS:

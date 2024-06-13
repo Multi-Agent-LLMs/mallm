@@ -113,23 +113,15 @@ jobs:
           script: |
             const fs = require('fs');
             const commentBody = fs.readFileSync('coverage_comment.md', 'utf8');
-            console.log("Read coverage_comment.md content:");
-            console.log(commentBody);
-
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.payload.pull_request.number,
             });
-            console.log("Fetched comments:");
-            console.log(comments);
 
             const botComment = comments.find(comment => comment.user.login === 'github-actions[bot]' && comment.body.includes('### Coverage Report'));
-            console.log("Found bot comment:");
-            console.log(botComment);
 
             if (botComment) {
-              console.log("Updating existing comment");
               await github.rest.issues.updateComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -137,7 +129,6 @@ jobs:
                 body: commentBody,
               });
             } else {
-              console.log("Creating new comment");
               await github.rest.issues.createComment({
                 issue_number: context.payload.pull_request.number,
                 owner: context.repo.owner,

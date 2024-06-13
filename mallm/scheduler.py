@@ -147,7 +147,6 @@ class Scheduler:
             logger.error("Failed intializing coordinator.")
             logger.error(e)
             return None
-
         try:
             (
                 answer,

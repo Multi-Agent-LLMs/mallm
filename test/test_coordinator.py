@@ -32,7 +32,12 @@ def test_init_agents_with_persona_generator():
         model, client, agent_generator="mock", memory_bucket_dir="./test/data/"
     )
     coordinator.init_agents(
-        "task_instruction", "input_str", use_moderator=False, num_agents=3
+        "task_instruction",
+        "input_str",
+        use_moderator=False,
+        num_agents=3,
+        split_agree_and_answer=False,
+        chain_of_thought=False,
     )
     assert len(coordinator.agents) == 3  # TODO This hardcoded value is not good
 
@@ -47,7 +52,12 @@ def test_init_agents_with_wrong_persona_generator():
     )
     with pytest.raises(Exception, match="Invalid persona generator."):
         coordinator.init_agents(
-            "task_instruction", "input_str", use_moderator=False, num_agents=3
+            "task_instruction",
+            "input_str",
+            use_moderator=False,
+            num_agents=3,
+            split_agree_and_answer=False,
+            chain_of_thought=False,
         )
 
 
@@ -108,7 +118,12 @@ def test_update_memories():
         model, client, agent_generator="mock", memory_bucket_dir="./test/data/"
     )
     coordinator.init_agents(
-        "task_instruction", "input_str", use_moderator=False, num_agents=3
+        task_instruction="task_instruction",
+        input_str="input_str",
+        use_moderator=False,
+        num_agents=3,
+        split_agree_and_answer=False,
+        chain_of_thought=False,
     )
     memories = [
         Memory(
