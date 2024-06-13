@@ -1,4 +1,5 @@
 import os
+import pprint
 import sys
 from typing import Any, ContextManager, TextIO
 
@@ -21,3 +22,26 @@ class SuppressOutput:
 
 def suppress_output() -> ContextManager[None]:
     return SuppressOutput()
+
+
+def pretty_print_dict(
+    config_dict: dict[str, Any], indent: int = 4, width: int = 80
+) -> None:
+    """
+    Pretty prints a dictionary in a readable and styled format.
+
+    Parameters:
+    config_dict (dict): The dictionary to be pretty printed.
+    indent (int): The number of spaces to use for indentation.
+    width (int): The maximum number of characters per line.
+    """
+    print("\n" + "=" * width)
+    print("CONFIGURATION PARAMETERS".center(width))
+    print("=" * width + "\n")
+
+    pp = pprint.PrettyPrinter(indent=indent, width=width)
+    pp.pprint(config_dict)
+
+    print("\n" + "=" * width)
+    print("END OF CONFIGURATION PARAMETERS".center(width))
+    print("=" * width + "\n")
