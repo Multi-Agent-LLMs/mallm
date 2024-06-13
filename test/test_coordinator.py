@@ -116,7 +116,7 @@ def test_update_memories():
     )
     coordinator.init_agents(
         task_instruction="task_instruction",
-        "input_str",
+        input_str="input_str",
         use_moderator=False,
         num_agents=3,
         split_agree_and_answer=False,
