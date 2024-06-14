@@ -34,7 +34,6 @@ from mallm.models.personas.ExpertGenerator import ExpertGenerator
 from mallm.models.personas.IPIPPersonaGenerator import IPIPPersonaGenerator
 from mallm.models.personas.MockGenerator import MockGenerator
 from mallm.models.personas.PersonaGenerator import PersonaGenerator
-from mallm.prompts.coordinator_prompts import generate_chat_prompt_extract_result
 from mallm.utils.config import Config
 from mallm.utils.types import Agreement, Memory
 from mallm.utils.functions import extract_draft
@@ -223,11 +222,11 @@ class Coordinator:
 
         Returns the final response agreed on, the global memory, agent specific memory, turns needed, last agreements of agents
         """
+        sample_instruction = config.instruction
         if context:
-            for c in context:
-                config.instruction += (
-                    "\n Here is some context you need to consider:" + c
-                )
+            sample_instruction += "\nHere is some context you need to consider:"
+            for i, c in enumerate(context):
+                sample_instruction += f"\n" + c
         input_str = ""
         for num, input_line in enumerate(input_lines):
             if len(input_lines) > 1:
@@ -235,13 +234,14 @@ class Coordinator:
             else:
                 input_str = input_line
 
+        sample_num_agents = config.num_agents
         if config.use_moderator:
-            config.num_agents -= 1
+            sample_num_agents -= 1
         self.init_agents(
-            config.instruction,
+            sample_instruction,
             input_str,
             use_moderator=config.use_moderator,
-            num_agents=config.num_agents,
+            num_agents=sample_num_agents,
             split_agree_and_answer=config.split_agree_and_answer,
             chain_of_thought=config.chain_of_thought,
         )
@@ -266,7 +266,7 @@ class Coordinator:
         logger.info(
             f"""Starting discussion with coordinator {self.id}...
 -------------
-Instruction: {config.instruction}
+Instruction: {sample_instruction}
 Input: {input_str}
 Feedback sentences: {config.feedback_sentences!s}
 Maximum turns: {config.max_turns}

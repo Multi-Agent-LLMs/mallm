@@ -57,7 +57,6 @@ class Agent:
     def answer(
         self,
         agreements: list[Agreement],
-        extract_all_drafts: bool,
         self_drafted: bool,
         template_filling: TemplateFilling,
         prompt_callback: Callable[[Optional[bool]], list[dict[str, str]]],
@@ -86,11 +85,8 @@ class Agent:
         else:
             res = agree_res
         current_draft = None
-        if extract_all_drafts and not agreements[-1].agreement:
-            current_draft = self.llm.invoke(
-                generate_chat_prompt_extract_result(res),
-                client=self.client,
-            )
+        if agreements[-1].agreement:
+            current_draft = extract_draft(res)
         return agreements, current_draft, res
 
     def agree(
@@ -211,7 +207,6 @@ class Agent:
     ) -> tuple[str, Memory, list[Agreement]]:
         agreements, current_draft, res = self.answer(
             agreements=agreements,
-            extract_all_drafts=False,
             template_filling=template_filling,
             self_drafted=False,
             prompt_callback=lambda agreement: generate_chat_prompt_feedback(

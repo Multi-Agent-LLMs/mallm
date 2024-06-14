@@ -22,7 +22,6 @@ class DiscourseDebate(DiscoursePolicy):
         agent_index: int,
         memory_ids: list[int],
         template_filling: TemplateFilling,
-        chain_of_thought: bool,
     ) -> None:
         pass
 
@@ -33,7 +32,6 @@ class DiscourseDebate(DiscoursePolicy):
         agent_index: int,
         memory_ids: list[int],
         template_filling: TemplateFilling,
-        chain_of_thought: bool,
     ) -> None:
         pass
 

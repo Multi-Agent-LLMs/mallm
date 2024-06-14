@@ -68,7 +68,6 @@ class DiscoursePolicy(ABC):
                         memory_ids=memory_ids,
                         agent_index=i,
                         coordinator=coordinator,
-                        chain_of_thought=chain_of_thought,
                     )
                 elif isinstance(agent, Panelist):
                     self.panelist_call(
@@ -104,7 +103,6 @@ class DiscoursePolicy(ABC):
         agent_index: int,
         memory_ids: list[int],
         template_filling: TemplateFilling,
-        chain_of_thought: bool,
     ) -> None:
         pass
 
@@ -116,6 +114,5 @@ class DiscoursePolicy(ABC):
         agent_index: int,
         memory_ids: list[int],
         template_filling: TemplateFilling,
-        chain_of_thought: bool,
     ) -> None:
         pass

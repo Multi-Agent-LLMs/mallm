@@ -36,7 +36,6 @@ class DiscourseReport(DiscoursePolicy):
         agent_index: int,
         memory_ids: list[int],
         template_filling: TemplateFilling,
-        chain_of_thought: bool,
     ) -> None:
         res, memory, self.agreements = moderator.draft(
             unique_id=self.unique_id,
@@ -57,7 +56,6 @@ class DiscourseReport(DiscoursePolicy):
         agent_index: int,
         memory_ids: list[int],
         template_filling: TemplateFilling,
-        chain_of_thought: bool,
     ) -> None:
         if agent_index == 0:
             template_filling.feedback_sentences = None

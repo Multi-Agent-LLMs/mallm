@@ -1,5 +1,6 @@
 import json
 import logging
+from typing import Optional
 
 from mallm.utils.types import TemplateFilling
 
@@ -50,15 +51,35 @@ def base_prompt(data: TemplateFilling) -> list[dict[str, str]]:
     return prompts
 
 
+def generate_chat_prompt_agree(data: TemplateFilling) -> list[dict[str, str]]:
+    prompts = base_prompt(data)
+    prompts.append(
+        {
+            "role": "user",
+            "content": "Do you agree with the conclusion, considering the arguments and evidence presented? Please provide your reasoning step-by-step. After that respond with [AGREE] or [DISAGREE].",
+        }
+    )
+    return prompts
+
+
 def generate_chat_prompt_feedback(
-    data: TemplateFilling, chain_of_thought: bool
+    data: TemplateFilling,
+    chain_of_thought: bool,
+    split_agree_and_answer: bool,
+    agreement: Optional[bool],
 ) -> list[dict[str, str]]:
     prompts = base_prompt(data)
-    if data.agent_memory is not None:
+
+    if data.agent_memory:
+        prefix = {
+            None: "",
+            True: "You agree with the current answer. ",
+            False: "You disagree with the current answer. ",
+        }[agreement]
         prompts.append(
             {
                 "role": "user",
-                "content": "Based on the current solution, give constructive feedback. Be open to compromise too. If you agree, answer with [AGREE], else answer with [DISAGREE] and explain why.",
+                "content": f"{prefix}Based on the current solution, give constructive feedback. Be open to compromise too.{'' if split_agree_and_answer else ' If you agree, answer with [AGREE], else answer with [DISAGREE] and explain why.'}",
             }
         )
         if chain_of_thought:
@@ -73,14 +94,22 @@ def generate_chat_prompt_feedback(
 
 
 def generate_chat_prompt_improve(
-    data: TemplateFilling, chain_of_thought: bool
+    data: TemplateFilling,
+    chain_of_thought: bool,
+    split_agree_and_answer: bool,
+    agreement: Optional[bool],
 ) -> list[dict[str, str]]:
     prompts = base_prompt(data)
-    if data.agent_memory is not None:
+    if data.agent_memory:
+        prefix = {
+            None: "",
+            True: "You agree with the current answer. ",
+            False: "You disagree with the current answer. ",
+        }[agreement]
         prompts.append(
             {
                 "role": "user",
-                "content": "Improve the current answer. If you agree with the current answer, answer with [AGREE], else answer with [DISAGREE].",
+                "content": f"{prefix}Improve the current answer.{'' if split_agree_and_answer else ' If you agree with the current answer, answer with [AGREE], else answer with [DISAGREE] and explain why!'}",
             }
         )
         if chain_of_thought:
@@ -175,6 +204,114 @@ def generate_voting_prompt(
         {
             "role": "user",
             "content": "Based on the above solutions, please provide the number of the solution you are voting for. Answer only with the number.",
+        }
+    )
+
+    return prompts
+
+
+def generate_approval_voting_prompt(
+    persona: str,
+    persona_description: str,
+    task: str,
+    question: str,
+    solutions: list[str],
+) -> list[dict[str, str]]:
+    prompts = [
+        {
+            "role": "system",
+            "content": f"Your role: {persona} ({persona_description})",
+        },
+        {
+            "role": "user",
+            "content": f"You are tasked with approving any number of solutions from the list provided below based on the given task.\nTask: {task}\nQuestion: {question}\n\nHere are the possible solutions:",
+        },
+    ]
+
+    for i, solution in enumerate(solutions):
+        prompts.append(
+            {
+                "role": "user",
+                "content": f"Solution {i}: {solution}",
+            }
+        )
+
+    prompts.append(
+        {
+            "role": "user",
+            "content": "Based on the above solutions, please provide the numbers of the solutions you are approving, separated by commas. Answer only with the numbers.",
+        }
+    )
+
+    return prompts
+
+
+def generate_cumulative_voting_prompt(
+    persona: str,
+    persona_description: str,
+    task: str,
+    question: str,
+    solutions: list[str],
+) -> list[dict[str, str]]:
+    prompts = [
+        {
+            "role": "system",
+            "content": f"Your role: {persona} ({persona_description})",
+        },
+        {
+            "role": "user",
+            "content": f"You are tasked with distributing 10 points among the provided solutions based on the given task.\nTask: {task}\nQuestion: {question}\n\nHere are the possible solutions:",
+        },
+    ]
+
+    for i, solution in enumerate(solutions):
+        prompts.append(
+            {
+                "role": "user",
+                "content": f"Solution {i}: {solution}",
+            }
+        )
+
+    prompts.append(
+        {
+            "role": "user",
+            "content": "Based on the above solutions, please distribute 10 points among the solutions. Provide your points allocation as a JSON dictionary where keys are solution numbers (as int) and values are the points. The total points should sum up to 10. Answer only with the JSON dictionary.",
+        }
+    )
+
+    return prompts
+
+
+def generate_ranking_prompt(
+    persona: str,
+    persona_description: str,
+    task: str,
+    question: str,
+    solutions: list[str],
+) -> list[dict[str, str]]:
+    prompts = [
+        {
+            "role": "system",
+            "content": f"Your role: {persona} ({persona_description})",
+        },
+        {
+            "role": "user",
+            "content": f"You are tasked with ranking the solutions from the most preferred to the least preferred based on the given task.\nTask: {task}\nQuestion: {question}\n\nHere are the possible solutions:",
+        },
+    ]
+
+    for i, solution in enumerate(solutions):
+        prompts.append(
+            {
+                "role": "user",
+                "content": f"Solution {i}: {solution}",
+            }
+        )
+
+    prompts.append(
+        {
+            "role": "user",
+            "content": "Based on the above solutions, please provide the rankings of the solutions separated by spaces. Example: '0 2 1' if you prefer Solution 0 the most, then Solution 2, and finally Solution 1. Provide up to 5 rankings. Only answer with the rankings.",
         }
     )
 

@@ -36,7 +36,6 @@ class DiscourseMemory(DiscoursePolicy):
         agent_index: int,
         memory_ids: list[int],
         template_filling: TemplateFilling,
-        chain_of_thought: bool,
     ) -> None:
         self.agreements = agent.participate(
             use_moderator=coordinator.moderator is not None,
@@ -56,7 +55,6 @@ class DiscourseMemory(DiscoursePolicy):
         agent_index: int,
         memory_ids: list[int],
         template_filling: TemplateFilling,
-        chain_of_thought: bool,
     ) -> None:
         res, memory, self.agreements = moderator.draft(
             unique_id=self.unique_id,
