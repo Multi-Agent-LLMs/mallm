@@ -278,7 +278,7 @@ Decision-protocol: {self.decision_protocol.__class__.__name__}
 
         current_draft, turn, agreements = policy.discuss(
             self,
-            config.instruction,
+            sample_instruction,
             input_str,
             config.use_moderator,
             config.feedback_sentences,
