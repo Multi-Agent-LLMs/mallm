@@ -3,6 +3,7 @@ from unittest.mock import Mock
 import pytest
 
 from mallm.coordinator import Coordinator
+from mallm.utils.config import Config
 from mallm.utils.types import Memory
 
 
@@ -157,20 +158,16 @@ def test_discuss_with_invalid_paradigm():
         Exception, match="No valid discourse policy for paradigm invalid_paradigm"
     ):
         coordinator.discuss(
-            "task_instruction",
+            Config(
+                data="",
+                out="",
+                instruction="task_instruction",
+                paradigm="invalid_paradigm",
+                decision_protocol="majority_consensus",
+                num_agents=3,
+            ),
             ["input_str"],
             [],
-            False,
-            (0, 0),
-            "invalid_paradigm",
-            "majority_consensus",
-            10,
-            False,
-            100,
-            False,
-            False,
-            None,
-            False,
         )
 
 
@@ -185,18 +182,14 @@ def test_discuss_with_invalid_decision_protocol():
         Exception, match="No valid decision protocol for invalid_protocol"
     ):
         coordinator.discuss(
-            "task_instruction",
+            Config(
+                data="",
+                out="",
+                instruction="task_instruction",
+                paradigm="memory",
+                decision_protocol="invalid_protocol",
+                num_agents=3,
+            ),
             ["input_str"],
             [],
-            False,
-            (0, 0),
-            "memory",
-            "invalid_protocol",
-            10,
-            False,
-            100,
-            False,
-            False,
-            None,
-            False,
         )

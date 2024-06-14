@@ -11,7 +11,6 @@ from typing import Any, Optional
 
 import fire
 import httpx
-import requests
 from colorama import just_fix_windows_console
 from openai import OpenAI
 
@@ -22,7 +21,9 @@ from mallm.prompts.coordinator_prompts import (
     generate_chat_prompt_extract_result,
 )
 from mallm.utils.CustomFormatter import CustomFormatter
+from mallm.utils.config import Config
 from mallm.utils.types import InputExample
+from mallm.utils.utils import suppress_output, pretty_print_dict
 
 just_fix_windows_console()
 
@@ -48,86 +49,21 @@ os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
 
 
 class Scheduler:
-    def __init__(
-        self,
-        data_file: str,
-        out_file: str,
-        instruction: str,
-        endpoint_url: str = "https://api.openai.com",
-        model: str = "gpt-3.5-turbo",
-        # use "tgi" for Text Generation Inference by HuggingFace or one of these: https://platform.openai.com/docs/models
-        api_key: str = "-",
-        use_moderator: bool = False,
-        max_turns: int = 10,
-        force_all_turns: bool = False,
-        feedback_sentences: Optional[tuple[int, int]] = None,
-        paradigm: str = "memory",
-        decision_protocol: str = "majority_consensus",
-        context_length: int = 3,
-        include_current_turn_in_memory: bool = True,
-        extract_all_drafts: bool = True,
-        debate_rounds: Optional[int] = None,
-        max_concurrent_requests: int = 100,
-        clear_memory_bucket: bool = True,
-        memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
-        baseline: bool = False,
-        chain_of_thought: bool = True,
-        num_agents: int = 3,
-        agent_generator: str = "expert",
-        split_agree_and_answer: bool = False,
-    ) -> None:
-        # Check for the correct aruments provided
-        # TODO: make this more robust and conclusive. All arguments should be checked for validity, making the use of MALLM as fool-proof as possible.
-        if not os.path.exists(data_file):
-            logger.error(
-                "The input file you provided does not exist. Please specify a json lines file using --data."
-            )
-            sys.exit(1)
-        if not data_file.endswith(".json"):
-            logger.error(
-                "The input file you provided is not a json file. Please specify a json lines file using --data."
-            )
-            sys.exit(1)
-        if not out_file.endswith(".json"):
-            logger.error(
-                "The output file does not seem to be a json file. Please specify a file path using --out."
-            )
-            sys.exit(1)
-        if "api.openai.com" in endpoint_url and api_key == "-":
-            logger.error(
-                "When using the OpenAI API, you need to provide a key with the argument: --api_key=<your key>"
-            )
-            sys.exit(1)
-        if endpoint_url.endswith("/"):
-            logger.warning("Removing trailing / from the endpoint url.")
-            endpoint_url = endpoint_url[:-1]
-        try:
-            logger.info("Testing availability of the endpoint...")
-            page = requests.get(endpoint_url)
-            logger.info("Status: " + str(page.status_code))
-        except Exception as e:
-            logger.error("HTTP Error: Could not connect to the provided endpoint url.")
-            logger.error(e)
-            sys.exit(1)
-
-        if max_concurrent_requests > 500:
-            logger.error(
-                "max_concurrent_requests is too large. TGI can only handle about 500 requests. Please make sure to leave computing for other poeple too. Recommended: ~250."
-            )
-            sys.exit(1)
+    def __init__(self, config: Config) -> None:
+        config.check_config()
 
         # Cleaning other files
-        if os.path.exists(out_file):
-            os.remove(out_file)
-            logger.info(f"""The file {out_file} has been deleted.""")
+        if os.path.exists(config.out):
+            os.remove(config.out)
+            logger.info(f"""The file {config.out} has been deleted.""")
 
         # Cleaning the memory bucked from previous runs
-        if clear_memory_bucket:
-            self.clean_memory_bucket(memory_bucket_dir)
+        if config.clear_memory_bucket:
+            self.clean_memory_bucket(config.memory_bucket_dir)
 
         # Read input data (format: json lines)
-        logger.info(f"""Reading {data_file}...""")
-        with open(data_file) as f:
+        logger.info(f"""Reading {config.data}...""")
+        with open(config.data) as f:
             self.dataset_name = f.name
             json_data = json.loads(f.readline())
 
@@ -141,31 +77,10 @@ class Scheduler:
             )
             sys.exit(1)
 
-        self.out = out_file
-        self.instruction = instruction
-        self.endpoint_url = endpoint_url
-        self.model = model
-        self.api_key = api_key
-        self.use_moderator = use_moderator
-        self.max_turns = max_turns
-        self.force_all_turns = force_all_turns
-        self.feedback_sentences = feedback_sentences
-        self.paradigm = paradigm
-        self.decision_protocol = decision_protocol
-        self.context_length = context_length
-        self.include_current_turn_in_memory = include_current_turn_in_memory
-        self.max_concurrent_requests = max_concurrent_requests
-        self.extract_all_drafts = extract_all_drafts
-        self.debate_rounds = debate_rounds
-        self.clear_memory_bucket = clear_memory_bucket
-        self.memory_bucket_dir = memory_bucket_dir
-        self.total_samples = len(self.data)
+        self.config = config
         self.completed_samples = 0
-        self.baseline = baseline
-        self.chain_of_thought = chain_of_thought
-        self.num_agents = num_agents
-        self.agent_generator = agent_generator
-        self.split_agree_and_answer = split_agree_and_answer
+        self.total_samples = len(self.data)
+
         logger.info(f"""Found {self.total_samples} samples to process.""")
 
         logger.info("Finished initializing the scheduler.")
@@ -183,11 +98,11 @@ class Scheduler:
         logger.info(f"""Starting discussion of sample {sample.example_id}""")
         try:
             coordinator = Coordinator(
-                use_moderator=self.use_moderator,
+                use_moderator=self.config.use_moderator,
                 model=llm,
-                agent_generator=self.agent_generator,
+                agent_generator=self.config.agent_generator,
                 client=client,
-                memory_bucket_dir=self.memory_bucket_dir,
+                memory_bucket_dir=self.config.memory_bucket_dir,
             )
         except Exception as e:
             logger.error("Failed intializing coordinator.")
@@ -203,22 +118,7 @@ class Scheduler:
                 agreements,
                 discussion_time,
             ) = coordinator.discuss(
-                self.instruction,
-                sample.inputs,
-                sample.context,
-                self.use_moderator,
-                feedback_sentences=self.feedback_sentences,
-                paradigm=self.paradigm,
-                decision_protocol=self.decision_protocol,
-                max_turns=self.max_turns,
-                force_all_turns=self.force_all_turns,
-                context_length=self.context_length,
-                include_current_turn_in_memory=self.include_current_turn_in_memory,
-                extract_all_drafts=self.extract_all_drafts,
-                debate_rounds=self.debate_rounds,
-                chain_of_thought=self.chain_of_thought,
-                num_agents=self.num_agents,
-                split_agree_and_answer=self.split_agree_and_answer,
+                config=self.config, input_lines=sample.inputs, context=sample.context
             )
         except Exception:
             # More extensive error logging to ease debugging during async execution
@@ -229,9 +129,9 @@ class Scheduler:
             deep_tb = exc_tb
             while deep_tb and deep_tb.tb_next:
                 deep_tb = deep_tb.tb_next
-                fname = os.path.split(deep_tb.tb_frame.f_code.co_filename)[1]
+                f_name = os.path.split(deep_tb.tb_frame.f_code.co_filename)[1]
                 logger.error(
-                    f"""-> at {fname}:{deep_tb.tb_lineno}, deeper function level error"""
+                    f"""-> at {f_name}:{deep_tb.tb_lineno}, deeper function level error"""
                 )
             return None
 
@@ -246,10 +146,10 @@ class Scheduler:
                 "dataset": self.dataset_name,
                 "exampleId": sample.example_id,
                 "datasetId": sample.dataset_id,
-                "instruction": self.instruction,
+                "instruction": self.config.instruction,
                 "coordinatorId": coordinator.id,
                 "personas": coordinator.get_agents(),
-                "paradigm": self.paradigm,
+                "paradigm": self.config.paradigm,
                 "input": sample.inputs,
                 "context": sample.context,
                 "answer": answer,
@@ -269,7 +169,7 @@ class Scheduler:
             }
         )
         try:
-            with open(self.out, "w") as file:
+            with open(self.config.out, "w") as file:
                 file.write(
                     json.dumps(output_dicts)
                 )  # TODO: ensure correct json formatting (sometimes there is an invalid escape sequence warning)
@@ -293,11 +193,13 @@ class Scheduler:
         logger.debug("Starting discussion manager...")
         # Creating HuggingFace endpoint
         llm = Chat(
-            client=OpenAI(base_url=f"{self.endpoint_url}/v1", api_key=self.api_key),
-            model=self.model,
+            client=OpenAI(
+                base_url=f"{self.config.endpoint_url}/v1", api_key=self.config.api_key
+            ),
+            model=self.config.model,
         )
 
-        pool = ThreadPool(processes=self.max_concurrent_requests)
+        pool = ThreadPool(processes=self.config.max_concurrent_requests)
         results = []
         for sample in self.data:
             try:
@@ -328,7 +230,7 @@ class Scheduler:
         """
         Task a single LM to solve a sample.
         """
-        sample_instruction = self.instruction
+        sample_instruction = self.config.instruction
         if sample.context:
             for c in sample.context:
                 sample_instruction += "\n" + c
@@ -346,7 +248,7 @@ class Scheduler:
                 generate_chat_prompt_baseline(
                     task_instruction=sample_instruction,
                     input_str=input_str,
-                    chain_of_thought=self.chain_of_thought,
+                    chain_of_thought=self.config.chain_of_thought,
                 ),
                 client=client,
             )
@@ -355,7 +257,7 @@ class Scheduler:
             ).total_seconds()
 
             extracted_answer = None
-            if self.extract_all_drafts:
+            if self.config.extract_all_drafts:
                 extracted_answer = llm.invoke(
                     generate_chat_prompt_extract_result(answer),
                     client=client,
@@ -375,7 +277,7 @@ class Scheduler:
                 "dataset": self.dataset_name,
                 "exampleId": sample.example_id,
                 "datasetId": sample.dataset_id,
-                "instruction": self.instruction,
+                "instruction": self.config.instruction,
                 "coordinatorId": None,
                 "personas": None,
                 "paradigm": None,
@@ -392,7 +294,7 @@ class Scheduler:
             }
         )
         try:
-            with open(self.out, "w") as file:
+            with open(self.config.out, "w") as file:
                 file.write(
                     json.dumps(output_dicts)
                 )  # TODO: ensure correct json formatting (sometimes there is an invalid escape sequence warning)
@@ -415,11 +317,13 @@ class Scheduler:
         logger.debug("Starting baseline manager...")
         # Creating HuggingFace endpoint
         llm = Chat(
-            client=OpenAI(base_url=f"{self.endpoint_url}/v1", api_key=self.api_key),
-            model=self.model,
+            client=OpenAI(
+                base_url=f"{self.config.endpoint_url}/v1", api_key=self.config.api_key
+            ),
+            model=self.config.model,
         )
 
-        pool = ThreadPool(processes=self.max_concurrent_requests)
+        pool = ThreadPool(processes=self.config.max_concurrent_requests)
         results = []
         for sample in self.data:
             try:
@@ -440,7 +344,7 @@ class Scheduler:
         Deletes all stored global memory
         """
         if not memory_bucket_dir:
-            memory_bucket_dir = self.memory_bucket_dir
+            memory_bucket_dir = self.config.memory_bucket_dir
 
         filelist = glob.glob(os.path.join(memory_bucket_dir, "*.bak"))
         for f in filelist:
@@ -461,67 +365,19 @@ class Scheduler:
         The routine that starts the discussions between LLM agents iteratively on the provided data.
         """
         with httpx.Client() as client:
-            if self.baseline:
+            if self.config.baseline:
                 self.manage_baseline(client)  # baseline (single LM)
             else:
                 self.manage_discussions(client)  # multi-agent discussion
 
 
-def main(
-    data: str,
-    out: str,
-    instruction: str,
-    endpoint_url: str = "https://api.openai.com",
-    model: str = "gpt-3.5-turbo",
-    # use "tgi" for Text Generation Inference by HuggingFace or one of these: https://platform.openai.com/docs/models
-    api_key: str = "-",
-    use_moderator: bool = False,
-    max_turns: int = 10,
-    force_all_turns: bool = False,
-    feedback_sentences: Optional[tuple[int, int]] = None,
-    paradigm: str = "memory",
-    decision_protocol: str = "hybrid_consensus",
-    context_length: int = 3,
-    include_current_turn_in_memory: bool = True,
-    extract_all_drafts: bool = True,
-    debate_rounds: Optional[int] = None,
-    max_concurrent_requests: int = 100,
-    clear_memory_bucket: bool = True,
-    memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
-    baseline: bool = False,
-    chain_of_thought: bool = True,
-    num_agents: int = 3,
-    agent_generator: str = "expert",
-    split_agree_and_answer: bool = False,
-) -> None:
-    scheduler = Scheduler(
-        data,
-        out,
-        instruction,
-        endpoint_url,
-        model=model,
-        api_key=api_key,
-        use_moderator=use_moderator,
-        max_turns=max_turns,
-        force_all_turns=force_all_turns,
-        feedback_sentences=feedback_sentences,
-        paradigm=paradigm,
-        decision_protocol=decision_protocol,
-        context_length=context_length,
-        include_current_turn_in_memory=include_current_turn_in_memory,
-        extract_all_drafts=extract_all_drafts,
-        debate_rounds=debate_rounds,
-        max_concurrent_requests=max_concurrent_requests,
-        clear_memory_bucket=clear_memory_bucket,
-        memory_bucket_dir=memory_bucket_dir,
-        baseline=baseline,
-        chain_of_thought=chain_of_thought,
-        num_agents=num_agents,
-        agent_generator=agent_generator,
-        split_agree_and_answer=split_agree_and_answer,
-    )
+def main() -> None:
+    with suppress_output():
+        config = fire.Fire(Config, serialize=print)
+    pretty_print_dict(config)
+    scheduler = Scheduler(config)
     scheduler.run()
 
 
 if __name__ == "__main__":
-    fire.Fire(main)
+    main()

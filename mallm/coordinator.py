@@ -35,6 +35,7 @@ from mallm.models.personas.IPIPPersonaGenerator import IPIPPersonaGenerator
 from mallm.models.personas.MockGenerator import MockGenerator
 from mallm.models.personas.PersonaGenerator import PersonaGenerator
 from mallm.prompts.coordinator_prompts import generate_chat_prompt_extract_result
+from mallm.utils.config import Config
 from mallm.utils.types import Agreement, Memory
 
 os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
@@ -197,22 +198,9 @@ class Coordinator:
 
     def discuss(
         self,
-        task_instruction: str,
+        config: Config,
         input_lines: list[str],
         context: Optional[list[str]],
-        use_moderator: bool,
-        feedback_sentences: Optional[tuple[int, int]],
-        paradigm: str,
-        decision_protocol: str,
-        max_turns: int,
-        force_all_turns: bool,
-        context_length: int,
-        include_current_turn_in_memory: bool,
-        extract_all_drafts: bool,
-        debate_rounds: Optional[int],
-        chain_of_thought: bool = True,
-        num_agents: int = 3,
-        split_agree_and_answer: bool = False,
     ) -> tuple[
         Optional[str],
         Optional[str],
@@ -234,7 +222,9 @@ class Coordinator:
         """
         if context:
             for c in context:
-                task_instruction += "\n Here is some context you need to consider:" + c
+                config.instruction += (
+                    "\n Here is some context you need to consider:" + c
+                )
         input_str = ""
         for num, input_line in enumerate(input_lines):
             if len(input_lines) > 1:
@@ -242,39 +232,41 @@ class Coordinator:
             else:
                 input_str = input_line
 
-        if use_moderator:
-            num_agents -= 1
+        if config.use_moderator:
+            config.num_agents -= 1
         self.init_agents(
-            task_instruction=task_instruction,
-            input_str=input_str,
-            use_moderator=use_moderator,
-            num_agents=num_agents,
-            split_agree_and_answer=split_agree_and_answer,
-            chain_of_thought=chain_of_thought,
+            config.instruction,
+            input_str,
+            use_moderator=config.use_moderator,
+            num_agents=config.num_agents,
+            split_agree_and_answer=config.split_agree_and_answer,
+            chain_of_thought=config.chain_of_thought,
         )
 
-        if decision_protocol not in DECISION_PROTOCOLS:
-            logger.error(f"No valid decision protocol for {decision_protocol}")
-            raise Exception(f"No valid decision protocol for {decision_protocol}")
+        if config.decision_protocol not in DECISION_PROTOCOLS:
+            logger.error(f"No valid decision protocol for {config.decision_protocol}")
+            raise Exception(
+                f"No valid decision protocol for {config.decision_protocol}"
+            )
 
-        self.decision_protocol = DECISION_PROTOCOLS[decision_protocol](
-            self.panelists, use_moderator
+        self.decision_protocol = DECISION_PROTOCOLS[config.decision_protocol](
+            self.panelists, config.use_moderator
         )
 
         start_time = time.perf_counter()
 
-        if paradigm not in PROTOCOLS:
-            logger.error(f"No valid discourse policy for paradigm {paradigm}")
-            raise Exception(f"No valid discourse policy for paradigm {paradigm}")
-        policy: DiscoursePolicy = PROTOCOLS[paradigm]()
+        if config.paradigm not in PROTOCOLS:
+            logger.error(f"No valid discourse policy for paradigm {config.paradigm}")
+            raise Exception(f"No valid discourse policy for paradigm {config.paradigm}")
+        policy: DiscoursePolicy = PROTOCOLS[config.paradigm]()
 
         logger.info(
             f"""Starting discussion with coordinator {self.id}...
 -------------
-Instruction: {task_instruction}
+Instruction: {config.instruction}
 Input: {input_str}
-Feedback sentences: {feedback_sentences!s}
-Maximum turns: {max_turns}
+Feedback sentences: {config.feedback_sentences!s}
+Maximum turns: {config.max_turns}
 Agents: {[a.persona for a in self.agents]!s}
 Paradigm: {policy.__class__.__name__}
 Decision-protocol: {self.decision_protocol.__class__.__name__}
@@ -283,16 +275,16 @@ Decision-protocol: {self.decision_protocol.__class__.__name__}
 
         current_draft, turn, agreements = policy.discuss(
             self,
-            task_instruction,
+            config.instruction,
             input_str,
-            use_moderator,
-            feedback_sentences,
-            max_turns,
-            force_all_turns,
-            context_length,
-            include_current_turn_in_memory,
-            extract_all_drafts,
-            chain_of_thought,
+            config.use_moderator,
+            config.feedback_sentences,
+            config.max_turns,
+            config.force_all_turns,
+            config.context_length,
+            config.include_current_turn_in_memory,
+            config.extract_all_drafts,
+            config.chain_of_thought,
         )
 
         discussion_time = timedelta(
