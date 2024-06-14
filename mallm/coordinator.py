@@ -188,7 +188,6 @@ class Coordinator:
         force_all_turns: bool,
         context_length: int,
         include_current_turn_in_memory: bool,
-        extract_all_drafts: bool,
         debate_rounds: Optional[int],
         chain_of_thought: bool = True,
         num_agents: int = 3,
@@ -268,7 +267,6 @@ Decision-making: {self.decision_making.__class__.__name__}
             force_all_turns,
             context_length,
             include_current_turn_in_memory,
-            extract_all_drafts,
             chain_of_thought,
         )
 

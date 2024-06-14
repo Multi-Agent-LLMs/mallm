@@ -13,7 +13,6 @@ class Panelist(Agent):
         turn: int,
         memory_ids: list[int],
         template_filling: TemplateFilling,
-        extract_all_drafts: bool,
         agents_to_update: Sequence[Agent],
         agreements: list[Agreement],
         chain_of_thought: bool,
@@ -36,7 +35,6 @@ class Panelist(Agent):
                 turn=turn,
                 memory_ids=memory_ids,
                 template_filling=template_filling,
-                extract_all_drafts=extract_all_drafts,
                 agreements=agreements,
                 chain_of_thought=chain_of_thought,
             )

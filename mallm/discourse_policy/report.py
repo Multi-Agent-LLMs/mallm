@@ -36,7 +36,6 @@ class DiscourseReport(DiscoursePolicy):
         agent_index: int,
         memory_ids: list[int],
         template_filling: TemplateFilling,
-        extract_all_drafts: bool,
         chain_of_thought: bool,
     ) -> None:
         res, memory, self.agreements = moderator.draft(
@@ -44,7 +43,6 @@ class DiscourseReport(DiscoursePolicy):
             turn=self.turn,
             memory_ids=memory_ids,
             template_filling=template_filling,
-            extract_all_drafts=extract_all_drafts,
             agreements=self.agreements,
             is_moderator=True,
             chain_of_thought=chain_of_thought,
@@ -60,7 +58,6 @@ class DiscourseReport(DiscoursePolicy):
         agent_index: int,
         memory_ids: list[int],
         template_filling: TemplateFilling,
-        extract_all_drafts: bool,
         chain_of_thought: bool,
     ) -> None:
         if agent_index == 0:
@@ -70,7 +67,6 @@ class DiscourseReport(DiscoursePolicy):
                 turn=self.turn,
                 memory_ids=memory_ids,
                 template_filling=template_filling,
-                extract_all_drafts=extract_all_drafts,
                 agreements=self.agreements,
                 chain_of_thought=chain_of_thought,
             )
@@ -85,7 +81,6 @@ class DiscourseReport(DiscoursePolicy):
                 turn=self.turn,
                 memory_ids=memory_ids,
                 template_filling=template_filling,
-                extract_all_drafts=extract_all_drafts,
                 agents_to_update=[coordinator.agents[0], agent],
                 agreements=self.agreements,
                 chain_of_thought=chain_of_thought,

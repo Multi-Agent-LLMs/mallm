@@ -36,7 +36,6 @@ class DiscourseRelay(DiscoursePolicy):
         agent_index: int,
         memory_ids: list[int],
         template_filling: TemplateFilling,
-        extract_all_drafts: bool,
         chain_of_thought: bool,
     ) -> None:
         next_agent = (agent_index + 1) % len(coordinator.agents)
@@ -47,7 +46,6 @@ class DiscourseRelay(DiscoursePolicy):
             turn=self.turn,
             memory_ids=memory_ids,
             template_filling=template_filling,
-            extract_all_drafts=extract_all_drafts,
             agents_to_update=[agent, coordinator.agents[next_agent]],
             agreements=self.agreements,
             chain_of_thought=chain_of_thought,
@@ -60,7 +58,6 @@ class DiscourseRelay(DiscoursePolicy):
         agent_index: int,
         memory_ids: list[int],
         template_filling: TemplateFilling,
-        extract_all_drafts: bool,
         chain_of_thought: bool,
     ) -> None:
         next_agent = (agent_index + 1) % len(coordinator.agents)
@@ -69,7 +66,6 @@ class DiscourseRelay(DiscoursePolicy):
             turn=self.turn,
             memory_ids=memory_ids,
             template_filling=template_filling,
-            extract_all_drafts=extract_all_drafts,
             agreements=self.agreements,
             is_moderator=True,
             chain_of_thought=chain_of_thought,

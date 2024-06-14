@@ -22,7 +22,6 @@ class DiscourseDebate(DiscoursePolicy):
         agent_index: int,
         memory_ids: list[int],
         template_filling: TemplateFilling,
-        extract_all_drafts: bool,
         chain_of_thought: bool,
     ) -> None:
         pass
@@ -34,7 +33,6 @@ class DiscourseDebate(DiscoursePolicy):
         agent_index: int,
         memory_ids: list[int],
         template_filling: TemplateFilling,
-        extract_all_drafts: bool,
         chain_of_thought: bool,
     ) -> None:
         pass
@@ -54,7 +52,6 @@ class DiscourseDebate(DiscoursePolicy):
         force_all_turns: bool = False,
         context_length: int = 1,
         include_current_turn_in_memory: bool = False,
-        extract_all_drafts: bool = False,
         debate_rounds: int = 1,
         chain_of_thought: bool = True,
     ) -> tuple[Optional[str], int, list[Agreement]]:
@@ -105,7 +102,6 @@ class DiscourseDebate(DiscoursePolicy):
                     turn=self.turn,
                     memory_ids=memory_ids,
                     template_filling=template_filling,
-                    extract_all_drafts=extract_all_drafts,
                     agreements=agreements,
                     is_moderator=True,
                     chain_of_thought=chain_of_thought,
@@ -135,7 +131,6 @@ class DiscourseDebate(DiscoursePolicy):
                     turn=self.turn,
                     memory_ids=memory_ids,
                     template_filling=template_filling,
-                    extract_all_drafts=extract_all_drafts,
                     agreements=agreements,
                     is_moderator=True,
                     chain_of_thought=chain_of_thought,
@@ -191,7 +186,6 @@ class DiscourseDebate(DiscoursePolicy):
                         turn=self.turn,
                         memory_ids=memory_ids,
                         template_filling=template_filling,
-                        extract_all_drafts=extract_all_drafts,
                         agents_to_update=agents_to_update,
                         agreements=debate_agreements,
                         chain_of_thought=chain_of_thought,

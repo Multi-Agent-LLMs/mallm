@@ -41,7 +41,7 @@ def base_prompt(data: TemplateFilling) -> list[dict[str, str]]:
     prompts = [
         {
             "role": "system",
-            "content": f"You are participating in a discussion to solve the following task: {data.task_instruction} \nInput: {data.input_str} \nYour role: {data.persona} ({data.persona_description}) \nProvide your final answer in the end after the term 'FINAL ANSWER:'. {appendix}",
+            "content": f"You are participating in a discussion to solve the following task: {data.task_instruction} \nInput: {data.input_str} \nYour role: {data.persona} ({data.persona_description}) \nProvide your final answer in the end after the term [FINAL ANSWER]. {appendix}",
         }
     ]
     if data.agent_memory is not None:

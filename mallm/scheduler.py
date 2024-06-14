@@ -65,7 +65,6 @@ class Scheduler:
         decision_protocol: str = "majority_consensus",
         context_length: int = 3,
         include_current_turn_in_memory: bool = True,
-        extract_all_drafts: bool = True,
         debate_rounds: Optional[int] = None,
         max_concurrent_requests: int = 100,
         clear_memory_bucket: bool = True,
@@ -154,7 +153,6 @@ class Scheduler:
         self.context_length = context_length
         self.include_current_turn_in_memory = include_current_turn_in_memory
         self.max_concurrent_requests = max_concurrent_requests
-        self.extract_all_drafts = extract_all_drafts
         self.debate_rounds = debate_rounds
         self.clear_memory_bucket = clear_memory_bucket
         self.memory_bucket_dir = memory_bucket_dir
@@ -213,7 +211,6 @@ class Scheduler:
                 force_all_turns=self.force_all_turns,
                 context_length=self.context_length,
                 include_current_turn_in_memory=self.include_current_turn_in_memory,
-                extract_all_drafts=self.extract_all_drafts,
                 debate_rounds=self.debate_rounds,
                 chain_of_thought=self.chain_of_thought,
                 num_agents=self.num_agents,
@@ -352,9 +349,7 @@ class Scheduler:
                 seconds=time.perf_counter() - start_time
             ).total_seconds()
 
-            extracted_answer = None
-            if self.extract_all_drafts:
-                extracted_answer = extract_draft(answer)
+            extracted_answer = extract_draft(answer)
         except Exception as e:
             logger.error("Failed running baseline.")
             logger.error(e)
@@ -478,7 +473,6 @@ def main(
     decision_protocol: str = "majority_consensus",
     context_length: int = 3,
     include_current_turn_in_memory: bool = True,
-    extract_all_drafts: bool = True,
     debate_rounds: Optional[int] = None,
     max_concurrent_requests: int = 100,
     clear_memory_bucket: bool = True,
@@ -503,7 +497,6 @@ def main(
         decision_protocol=decision_protocol,
         context_length=context_length,
         include_current_turn_in_memory=include_current_turn_in_memory,
-        extract_all_drafts=extract_all_drafts,
         debate_rounds=debate_rounds,
         max_concurrent_requests=max_concurrent_requests,
         clear_memory_bucket=clear_memory_bucket,

@@ -90,7 +90,6 @@ class Agent:
         turn: int,
         memory_ids: list[int],
         template_filling: TemplateFilling,
-        extract_all_drafts: bool,
         agreements: list[Agreement],
         chain_of_thought: bool = True,
     ) -> tuple[str, Memory, list[Agreement]]:
@@ -101,10 +100,10 @@ class Agent:
             client=self.client,
         )
         agreements = self.agree(res, agreements)
-        current_draft = None
         # new drafts are only proposed upon disagreement, thus we do not want to overwrite unnecessarily
-        if extract_all_drafts and not agreements[-1].agreement:
-            current_draft = extract_draft(current_draft)
+        current_draft = None
+        if not agreements[-1].agreement:
+            current_draft = extract_draft(res)
         memory = Memory(
             message_id=unique_id,
             turn=turn,
@@ -127,7 +126,6 @@ class Agent:
         turn: int,
         memory_ids: list[int],
         template_filling: TemplateFilling,
-        extract_all_drafts: bool,
         agreements: list[Agreement],
         is_moderator: bool = False,
         chain_of_thought: bool = True,
@@ -139,9 +137,7 @@ class Agent:
             client=self.client,
         )
         agreements = self.agree(res, agreements, self_drafted=True)
-        current_draft = None
-        if extract_all_drafts:
-            current_draft = extract_draft(current_draft)
+        current_draft = extract_draft(res)
         memory = Memory(
             message_id=unique_id,
             turn=turn,
@@ -203,7 +199,6 @@ class Agent:
         context_length: Optional[int] = None,
         turn: Optional[int] = None,
         include_this_turn: bool = True,
-        extract: bool = False,
     ) -> tuple[Optional[list[Memory]], list[int], Optional[str]]:
         """
         Retrieves memory from the agents memory bucket as a Memory
@@ -220,7 +215,6 @@ class Agent:
                     memories.append(Memory(**json_object))
             memories = sorted(memories, key=lambda x: x.message_id, reverse=False)
             context_memory = []
-            extracted = False
             for memory in memories:
                 if context_length:
                     if turn and memory.turn >= turn - context_length:
@@ -233,10 +227,8 @@ class Agent:
                             ):
                                 if memory.extracted_draft:
                                     current_draft = memory.extracted_draft
-                                    extracted = True
                                 else:
                                     current_draft = memory.text
-                                    extracted = False
                 else:
                     context_memory.append(memory)
                     memory_ids.append(int(memory.message_id))
@@ -245,17 +237,11 @@ class Agent:
                     ):
                         if memory.extracted_draft:
                             current_draft = memory.extracted_draft
-                            extracted = True
                         else:
                             current_draft = memory.text
-                            extracted = False
         except dbm.error:
             context_memory = None
 
-        if (
-            current_draft != "" and extract and not extracted
-        ):  # if not extracted already
-            current_draft = extract_draft(current_draft)
         return context_memory, memory_ids, current_draft
 
     def get_discussion_history(
@@ -263,7 +249,6 @@ class Agent:
         context_length: Optional[int] = None,
         turn: Optional[int] = None,
         include_this_turn: bool = True,
-        extract: bool = False,
     ) -> tuple[Optional[list[dict[str, str]]], list[int], Optional[str]]:
         """
         Retrieves memory from the agents memory bucket as a string
@@ -274,7 +259,6 @@ class Agent:
             context_length=context_length,
             turn=turn,
             include_this_turn=include_this_turn,
-            extract=extract,
         )
         if memories:
             debate_history = []
