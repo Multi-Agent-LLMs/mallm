@@ -207,6 +207,7 @@ class Agent:
         memories: list[Memory] = []
         memory_ids = []
         current_draft = None
+        extraction_successful = True
 
         try:
             with dbm.open(self.memory_bucket, "r") as db:
@@ -229,6 +230,7 @@ class Agent:
                                     current_draft = memory.extracted_draft
                                 else:
                                     current_draft = memory.text
+                                    extraction_successful = False
                 else:
                     context_memory.append(memory)
                     memory_ids.append(int(memory.message_id))
@@ -239,8 +241,14 @@ class Agent:
                             current_draft = memory.extracted_draft
                         else:
                             current_draft = memory.text
+                            extraction_successful = False
         except dbm.error:
             context_memory = None
+
+        if not extraction_successful:
+            logger.debug(
+                f"Message {memory.message_id} of agent {memory.agent_id} could not be extracted. Using the full message as current draft."
+            )
 
         return context_memory, memory_ids, current_draft
 
