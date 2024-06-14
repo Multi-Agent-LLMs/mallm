@@ -373,7 +373,7 @@ class Scheduler:
 
 def main() -> None:
     with suppress_output():
-        config = fire.Fire(Config)
+        config = fire.Fire(Config, serialize=print)
     pretty_print_dict(config)
     scheduler = Scheduler(config)
     scheduler.run()
