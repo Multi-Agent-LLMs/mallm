@@ -274,6 +274,7 @@ class Agent:
                             ):
                                 if memory.extracted_draft:
                                     current_draft = memory.extracted_draft
+                                    extraction_successful = True
                                 else:
                                     current_draft = memory.text
                                     extraction_successful = False
@@ -285,6 +286,7 @@ class Agent:
                     ):
                         if memory.extracted_draft:
                             current_draft = memory.extracted_draft
+                            extraction_successful = True
                         else:
                             current_draft = memory.text
                             extraction_successful = False

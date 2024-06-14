@@ -136,6 +136,8 @@ class Scheduler:
 
         logger.info(
             f"""--> Agents discussed for {turn} turns, {'%.2f' % discussion_time} seconds ({'%.2f' % (float(discussion_time) / 60.0)} minutes) to get the final answer: \n"""
+            + str(answer)
+            + "\nExtracted answer: "
             + str(extracted_answer)
         )
         logger.info(f"""Reference answer: {sample.references}""")
@@ -264,6 +266,8 @@ class Scheduler:
         logger.info(
             f"""--> Baseline LM generated the final answer within {'%.2f' % discussion_time} seconds: \n"""
             + str(answer)
+            + "\nExtracted answer: "
+            + str(extracted_answer)
         )
 
         output_dicts.append(
