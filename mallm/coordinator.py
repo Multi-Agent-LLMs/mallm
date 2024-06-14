@@ -286,7 +286,6 @@ Decision-protocol: {self.decision_protocol.__class__.__name__}
             config.force_all_turns,
             config.context_length,
             config.include_current_turn_in_memory,
-            config.extract_all_drafts,
             config.chain_of_thought,
         )
 

@@ -34,7 +34,6 @@ class DiscoursePolicy(ABC):
         force_all_turns: bool = False,
         context_length: int = 1,
         include_current_turn_in_memory: bool = False,
-        extract_all_drafts: bool = False,
         debate_rounds: int = 1,
     ) -> tuple[Optional[str], int, list[Agreement]]:
         logger.debug(self.paradigm_str)
@@ -69,14 +68,13 @@ class DiscoursePolicy(ABC):
                         memory_ids=memory_ids,
                         agent_index=i,
                         coordinator=coordinator,
-                        extract_all_drafts=extract_all_drafts,
+                        chain_of_thought=chain_of_thought,
                     )
                 elif isinstance(agent, Panelist):
                     self.panelist_call(
                         agent_index=i,
                         template_filling=template_filling,
                         coordinator=coordinator,
-                        extract_all_drafts=extract_all_drafts,
                         memory_ids=memory_ids,
                         agent=agent,
                     )
@@ -106,7 +104,7 @@ class DiscoursePolicy(ABC):
         agent_index: int,
         memory_ids: list[int],
         template_filling: TemplateFilling,
-        extract_all_drafts: bool,
+        chain_of_thought: bool,
     ) -> None:
         pass
 
@@ -118,6 +116,6 @@ class DiscoursePolicy(ABC):
         agent_index: int,
         memory_ids: list[int],
         template_filling: TemplateFilling,
-        extract_all_drafts: bool,
+        chain_of_thought: bool,
     ) -> None:
         pass
