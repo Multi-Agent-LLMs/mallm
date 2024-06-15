@@ -42,8 +42,6 @@ library_logger.addHandler(stream_handler)
 logging.basicConfig(filename="log.txt", filemode="w")
 logger = logging.getLogger("mallm")
 
-output_dicts: list[dict[str, Any]] = []
-
 os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
 
 
@@ -79,6 +77,7 @@ class Scheduler:
         self.config = config
         self.completed_samples = 0
         self.total_samples = len(self.data)
+        self.output_dicts = []
 
         logger.info(f"""Found {self.total_samples} samples to process.""")
 
@@ -142,7 +141,7 @@ class Scheduler:
         )
         logger.info(f"""Reference answer: {sample.references}""")
 
-        output_dicts.append(
+        self.output_dicts.append(
             {
                 "dataset": self.dataset_name,
                 "exampleId": sample.example_id,
@@ -172,7 +171,7 @@ class Scheduler:
         try:
             with open(self.config.out, "w") as file:
                 file.write(
-                    json.dumps(output_dicts)
+                    json.dumps(self.output_dicts)
                 )  # TODO: ensure correct json formatting (sometimes there is an invalid escape sequence warning)
                 file.truncate()
         except Exception as e:
@@ -270,7 +269,7 @@ class Scheduler:
             + str(extracted_answer)
         )
 
-        output_dicts.append(
+        self.output_dicts.append(
             {
                 "dataset": self.dataset_name,
                 "exampleId": sample.example_id,
@@ -294,7 +293,7 @@ class Scheduler:
         try:
             with open(self.config.out, "w") as file:
                 file.write(
-                    json.dumps(output_dicts)
+                    json.dumps(self.output_dicts)
                 )  # TODO: ensure correct json formatting (sometimes there is an invalid escape sequence warning)
                 file.truncate()
         except Exception as e:
@@ -356,7 +355,7 @@ class Scheduler:
         filelist = glob.glob(os.path.join(memory_bucket_dir, "*.json"))
         for f in filelist:
             os.remove(f)
-        logger.info("Cleaned the memory bucket.")
+        logger.info(f"Cleaned the memory bucket {str(memory_bucket_dir)}.")
 
     def run(self) -> None:
         """
