@@ -84,10 +84,10 @@ class Agent:
             agreements[-1].response = res
         else:
             res = agree_res
-        current_draft = None
-        if agreements[-1].agreement:
-            current_draft = extract_draft(res)
-        return agreements, current_draft, res
+        extracted_draft = None
+        if not agreements[-1].agreement:
+            extracted_draft = extract_draft(res)
+        return agreements, extracted_draft, res
 
     def agree(
         self, res: str, agreements: list[Agreement], self_drafted: bool = False
@@ -131,7 +131,7 @@ class Agent:
         template_filling: TemplateFilling,
         agreements: list[Agreement],
     ) -> tuple[str, Memory, list[Agreement]]:
-        agreements, current_draft, res = self.answer(
+        agreements, extracted_draft, res = self.answer(
             agreements=agreements,
             template_filling=template_filling,
             self_drafted=False,
@@ -142,8 +142,6 @@ class Agent:
                 agreement=agreement,
             ),
         )
-        if not agreements[-1].agreement:
-            current_draft = extract_draft(current_draft)
 
         memory = Memory(
             message_id=unique_id,
@@ -153,7 +151,7 @@ class Agent:
             contribution="improve",
             text=res,
             agreement=agreements[-1].agreement,
-            extracted_draft=current_draft,
+            extracted_draft=extracted_draft,
             memory_ids=memory_ids,
             additional_args=dataclasses.asdict(template_filling),
         )
@@ -170,7 +168,7 @@ class Agent:
         agreements: list[Agreement],
         is_moderator: bool = False,
     ) -> tuple[str, Memory, list[Agreement]]:
-        agreements, current_draft, res = self.answer(
+        agreements, extracted_draft, res = self.answer(
             agreements=agreements,
             template_filling=template_filling,
             self_drafted=True,
@@ -179,7 +177,6 @@ class Agent:
                 chain_of_thought=self.chain_of_thought,
             ),
         )
-        current_draft = extract_draft(current_draft)
 
         memory = Memory(
             message_id=unique_id,
@@ -189,7 +186,7 @@ class Agent:
             contribution="draft",
             text=res,
             agreement=agreements[-1].agreement,
-            extracted_draft=current_draft,
+            extracted_draft=extracted_draft,
             memory_ids=memory_ids,
             additional_args=dataclasses.asdict(template_filling),
         )
@@ -205,7 +202,7 @@ class Agent:
         template_filling: TemplateFilling,
         agreements: list[Agreement],
     ) -> tuple[str, Memory, list[Agreement]]:
-        agreements, current_draft, res = self.answer(
+        agreements, extracted_draft, res = self.answer(
             agreements=agreements,
             template_filling=template_filling,
             self_drafted=False,
