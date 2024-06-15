@@ -77,6 +77,7 @@ class Scheduler:
         self.config = config
         self.completed_samples = 0
         self.total_samples = len(self.data)
+        self.failed_example_ids: list[str] = []
         self.output_dicts: list[dict[str, Any]] = []
 
         logger.info(f"""Found {self.total_samples} samples to process.""")
@@ -121,6 +122,7 @@ class Scheduler:
         except Exception:
             # More extensive error logging to ease debugging during async execution
             logger.error(f"Failed discussion of sample {sample.example_id}.")
+            self.failed_example_ids.append(sample.example_id)
             exc_type, exc_obj, exc_tb = sys.exc_info()
             logger.error(exc_type)
             logger.error(exc_obj)
@@ -177,6 +179,7 @@ class Scheduler:
         except Exception as e:
             logger.error("Failed to write output to file.")
             logger.error(e)
+            self.failed_example_ids.append(sample.example_id)
 
         self.completed_samples += 1
         logger.info(
@@ -215,11 +218,12 @@ class Scheduler:
         pool.close()  # Done adding tasks.
         pool.join()  # Wait for all tasks to complete.
 
-        for i, result in enumerate(results):
-            if result.successful():
-                logger.info("Process %s was successful." % i)
-            else:
-                logger.error("Process %s failed!" % i)
+        if len(self.failed_example_ids) == 0:
+            logger.info("No samples failed.")
+        else:
+            logger.warning(
+                f"{len(self.failed_example_ids)} samples failed. Here is a list of their example_ids: \n{str(self.failed_example_ids)}"
+            )
 
     def run_baseline(
         self,
@@ -260,6 +264,7 @@ class Scheduler:
         except Exception as e:
             logger.error("Failed running baseline.")
             logger.error(e)
+            self.failed_example_ids.append(sample.example_id)
             return None
 
         logger.info(
@@ -299,6 +304,7 @@ class Scheduler:
         except Exception as e:
             logger.error("Failed to write output to file.")
             logger.error(e)
+            self.failed_example_ids.append(sample.example_id)
 
         self.completed_samples += 1
         logger.info(
@@ -335,6 +341,13 @@ class Scheduler:
                 logger.error(e)
         pool.close()  # Done adding tasks.
         pool.join()  # Wait for all tasks to complete.
+
+        if len(self.failed_example_ids) == 0:
+            logger.info("No samples failed.")
+        else:
+            logger.warning(
+                f"{len(self.failed_example_ids)} samples failed. Here is a list of their example_ids: \n{str(self.failed_example_ids)}"
+            )
 
     def clean_memory_bucket(self, memory_bucket_dir: Optional[str] = None) -> None:
         """
