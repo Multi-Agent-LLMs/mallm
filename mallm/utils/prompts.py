@@ -14,7 +14,7 @@ def generate_chat_prompt_baseline(
     prompts = [
         {
             "role": "system",
-            "content": f"Solve the following task: {task_instruction} \nInput: {input_str}",
+            "content": f"Solve the following task: {task_instruction} \nInput: {input_str} \nProvide your solution in the end after writing 'FINAL SOLUTION:'.",
         }
     ]
     if chain_of_thought:
