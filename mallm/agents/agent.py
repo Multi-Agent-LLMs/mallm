@@ -10,17 +10,18 @@ from typing import TYPE_CHECKING, Optional, Callable
 import httpx
 
 from mallm.models.Chat import Chat
+from mallm.utils.functions import extract_draft
 
 if TYPE_CHECKING:
     from mallm.agents.moderator import Moderator
     from mallm.coordinator import Coordinator
-from mallm.prompts.agent_prompts import (
+
+from mallm.utils.prompts import (
     generate_chat_prompt_draft,
     generate_chat_prompt_feedback,
     generate_chat_prompt_improve,
     generate_chat_prompt_agree,
 )
-from mallm.prompts.coordinator_prompts import generate_chat_prompt_extract_result
 from mallm.utils.types import Agreement, Memory, TemplateFilling
 
 logger = logging.getLogger("mallm")
@@ -56,7 +57,6 @@ class Agent:
     def answer(
         self,
         agreements: list[Agreement],
-        extract_all_drafts: bool,
         self_drafted: bool,
         template_filling: TemplateFilling,
         prompt_callback: Callable[[Optional[bool]], list[dict[str, str]]],
@@ -84,13 +84,10 @@ class Agent:
             agreements[-1].response = res
         else:
             res = agree_res
-        current_draft = None
-        if extract_all_drafts and not agreements[-1].agreement:
-            current_draft = self.llm.invoke(
-                generate_chat_prompt_extract_result(res),
-                client=self.client,
-            )
-        return agreements, current_draft, res
+        extracted_draft = None
+        if not agreements[-1].agreement:
+            extracted_draft = extract_draft(res)
+        return agreements, extracted_draft, res
 
     def agree(
         self, res: str, agreements: list[Agreement], self_drafted: bool = False
@@ -132,12 +129,10 @@ class Agent:
         turn: int,
         memory_ids: list[int],
         template_filling: TemplateFilling,
-        extract_all_drafts: bool,
         agreements: list[Agreement],
     ) -> tuple[str, Memory, list[Agreement]]:
-        agreements, current_draft, res = self.answer(
+        agreements, extracted_draft, res = self.answer(
             agreements=agreements,
-            extract_all_drafts=extract_all_drafts,
             template_filling=template_filling,
             self_drafted=False,
             prompt_callback=lambda agreement: generate_chat_prompt_improve(
@@ -147,6 +142,7 @@ class Agent:
                 agreement=agreement,
             ),
         )
+
         memory = Memory(
             message_id=unique_id,
             turn=turn,
@@ -155,7 +151,7 @@ class Agent:
             contribution="improve",
             text=res,
             agreement=agreements[-1].agreement,
-            extracted_draft=current_draft,
+            extracted_draft=extracted_draft,
             memory_ids=memory_ids,
             additional_args=dataclasses.asdict(template_filling),
         )
@@ -169,13 +165,11 @@ class Agent:
         turn: int,
         memory_ids: list[int],
         template_filling: TemplateFilling,
-        extract_all_drafts: bool,
         agreements: list[Agreement],
         is_moderator: bool = False,
     ) -> tuple[str, Memory, list[Agreement]]:
-        agreements, current_draft, res = self.answer(
+        agreements, extracted_draft, res = self.answer(
             agreements=agreements,
-            extract_all_drafts=extract_all_drafts,
             template_filling=template_filling,
             self_drafted=True,
             prompt_callback=lambda _: generate_chat_prompt_draft(
@@ -192,7 +186,7 @@ class Agent:
             contribution="draft",
             text=res,
             agreement=agreements[-1].agreement,
-            extracted_draft=current_draft,
+            extracted_draft=extracted_draft,
             memory_ids=memory_ids,
             additional_args=dataclasses.asdict(template_filling),
         )
@@ -208,9 +202,8 @@ class Agent:
         template_filling: TemplateFilling,
         agreements: list[Agreement],
     ) -> tuple[str, Memory, list[Agreement]]:
-        agreements, current_draft, res = self.answer(
+        agreements, extracted_draft, res = self.answer(
             agreements=agreements,
-            extract_all_drafts=False,
             template_filling=template_filling,
             self_drafted=False,
             prompt_callback=lambda agreement: generate_chat_prompt_feedback(
@@ -249,7 +242,6 @@ class Agent:
         context_length: Optional[int] = None,
         turn: Optional[int] = None,
         include_this_turn: bool = True,
-        extract_draft: bool = False,
     ) -> tuple[Optional[list[Memory]], list[int], Optional[str]]:
         """
         Retrieves memory from the agents memory bucket as a Memory
@@ -258,6 +250,7 @@ class Agent:
         memories: list[Memory] = []
         memory_ids = []
         current_draft = None
+        extraction_successful = True
 
         try:
             with dbm.open(self.memory_bucket, "r") as db:
@@ -266,7 +259,6 @@ class Agent:
                     memories.append(Memory(**json_object))
             memories = sorted(memories, key=lambda x: x.message_id, reverse=False)
             context_memory = []
-            extracted = False
             for memory in memories:
                 if context_length:
                     if turn and memory.turn >= turn - context_length:
@@ -279,10 +271,10 @@ class Agent:
                             ):
                                 if memory.extracted_draft:
                                     current_draft = memory.extracted_draft
-                                    extracted = True
+                                    extraction_successful = True
                                 else:
                                     current_draft = memory.text
-                                    extracted = False
+                                    extraction_successful = False
                 else:
                     context_memory.append(memory)
                     memory_ids.append(int(memory.message_id))
@@ -291,20 +283,18 @@ class Agent:
                     ):
                         if memory.extracted_draft:
                             current_draft = memory.extracted_draft
-                            extracted = True
+                            extraction_successful = True
                         else:
                             current_draft = memory.text
-                            extracted = False
+                            extraction_successful = False
         except dbm.error:
             context_memory = None
 
-        if (
-            current_draft != "" and extract_draft and not extracted
-        ):  # if not extracted already
-            current_draft = self.llm.invoke(
-                generate_chat_prompt_extract_result(current_draft),
-                client=self.client,
+        if not extraction_successful:
+            logger.debug(
+                f"Message {memory.message_id} of agent {memory.agent_id} could not be extracted. Using the full message as current draft."
             )
+
         return context_memory, memory_ids, current_draft
 
     def get_discussion_history(
@@ -312,7 +302,6 @@ class Agent:
         context_length: Optional[int] = None,
         turn: Optional[int] = None,
         include_this_turn: bool = True,
-        extract_draft: bool = False,
     ) -> tuple[Optional[list[dict[str, str]]], list[int], Optional[str]]:
         """
         Retrieves memory from the agents memory bucket as a string
@@ -323,7 +312,6 @@ class Agent:
             context_length=context_length,
             turn=turn,
             include_this_turn=include_this_turn,
-            extract_draft=extract_draft,
         )
         if memories:
             debate_history = []

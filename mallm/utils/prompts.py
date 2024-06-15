@@ -7,6 +7,26 @@ from mallm.utils.types import TemplateFilling
 logger = logging.getLogger("mallm")
 
 
+def generate_chat_prompt_baseline(
+    task_instruction: str, input_str: str, chain_of_thought: bool
+) -> list[dict[str, str]]:
+    # Use Zero-Shot-CoT: https://arxiv.org/pdf/2205.11916
+    prompts = [
+        {
+            "role": "system",
+            "content": f"Solve the following task: {task_instruction} \nInput: {input_str} \nProvide your solution in the end after writing 'FINAL SOLUTION:'.",
+        }
+    ]
+    if chain_of_thought:
+        prompts.append(
+            {
+                "role": "assistant",
+                "content": "Let's think step by step.",
+            }
+        )
+    return prompts
+
+
 def base_prompt(data: TemplateFilling) -> list[dict[str, str]]:
     appendix = ""
     if data.feedback_sentences is not None:
@@ -22,7 +42,7 @@ def base_prompt(data: TemplateFilling) -> list[dict[str, str]]:
     prompts = [
         {
             "role": "system",
-            "content": f"You are participating in a discussion to solve the following task: {data.task_instruction} \nInput: {data.input_str} \nYour role: {data.persona} ({data.persona_description}) {appendix}",
+            "content": f"You are participating in a discussion to solve the following task: {data.task_instruction} \nInput: {data.input_str} \nYour role: {data.persona} ({data.persona_description}) \nProvide your solution in the end after writing 'FINAL SOLUTION:'. {appendix}",
         }
     ]
     if data.agent_memory is not None:
@@ -36,7 +56,7 @@ def generate_chat_prompt_agree(data: TemplateFilling) -> list[dict[str, str]]:
     prompts.append(
         {
             "role": "user",
-            "content": "Do you agree with the conclusion, considering the arguments and evidence presented? Please provide your reasoning step-by-step. After that respond with [AGREE] or [DISAGREE].",
+            "content": "Do you agree with the solution, considering the arguments and evidence presented? Please provide your reasoning step-by-step. After that respond with [AGREE] or [DISAGREE].",
         }
     )
     return prompts
@@ -83,13 +103,13 @@ def generate_chat_prompt_improve(
     if data.agent_memory:
         prefix = {
             None: "",
-            True: "You agree with the current answer. ",
-            False: "You disagree with the current answer. ",
+            True: "You agree with the current solution. ",
+            False: "You disagree with the current solution. ",
         }[agreement]
         prompts.append(
             {
                 "role": "user",
-                "content": f"{prefix}Improve the current answer.{'' if split_agree_and_answer else ' If you agree with the current answer, answer with [AGREE], else answer with [DISAGREE] and explain why!'}",
+                "content": f"{prefix}Improve the current solution.{'' if split_agree_and_answer else ' If you agree with the current solution, answer with [AGREE], else answer with [DISAGREE] and explain why and provide an improved solution!'}",
             }
         )
         if chain_of_thought:
@@ -113,16 +133,23 @@ def generate_chat_prompt_draft(
         prompts.append(
             {
                 "role": "user",
-                "content": "Based on the provided feedback, carefully re-examine your previous solution. Provide a revised solution based on the feedback.",
+                "content": "Based on the provided feedback, carefully re-examine your previous solution. Provide a revised solution based on the feedback. Always declare a solution as 'FINAL SOLUTION:', even if it is just a starting point for further discussion.",
             }
         )
-        if chain_of_thought:
-            prompts.append(
-                {
-                    "role": "assistant",
-                    "content": "Let's think step by step.",
-                }
-            )
+    else:
+        prompts.append(
+            {
+                "role": "user",
+                "content": "Provide a first solution. Declare this solution as 'FINAL SOLUTION:', even if it is just a starting point for further discussion.",
+            }
+        )
+    if chain_of_thought:
+        prompts.append(
+            {
+                "role": "assistant",
+                "content": "Let's think step by step.",
+            }
+        )
 
     logger.debug(f"Sending prompt: {json.dumps(prompts, indent=2)}")
 
@@ -143,11 +170,11 @@ def generate_final_answer_prompt(
         },
         {
             "role": "user",
-            "content": f"You are tasked with creating a final answer based on the given question and your previous response.\nTask: {task}\nQuestion: {question}\nYour previous answer: {previous_answer}",
+            "content": f"You are tasked with creating a final solution based on the given question and your previous response.\nTask: {task}\nQuestion: {question}\nYour previous solution: {previous_answer}",
         },
         {
             "role": "user",
-            "content": "Based on the above information, provide your final answer. Ensure your answer is comprehensive and well-considered.",
+            "content": "Based on the above information, provide your final solution. Ensure your solution is comprehensive and well-considered.",
         },
     ]
 

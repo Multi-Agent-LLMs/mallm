@@ -36,7 +36,6 @@ class DiscourseRelay(DiscoursePolicy):
         agent_index: int,
         memory_ids: list[int],
         template_filling: TemplateFilling,
-        extract_all_drafts: bool,
     ) -> None:
         next_agent = (agent_index + 1) % len(coordinator.agents)
         self.agreements = agent.participate(
@@ -46,7 +45,6 @@ class DiscourseRelay(DiscoursePolicy):
             turn=self.turn,
             memory_ids=memory_ids,
             template_filling=template_filling,
-            extract_all_drafts=extract_all_drafts,
             agents_to_update=[agent, coordinator.agents[next_agent]],
             agreements=self.agreements,
         )
@@ -58,7 +56,6 @@ class DiscourseRelay(DiscoursePolicy):
         agent_index: int,
         memory_ids: list[int],
         template_filling: TemplateFilling,
-        extract_all_drafts: bool,
     ) -> None:
         next_agent = (agent_index + 1) % len(coordinator.agents)
         res, memory, self.agreements = moderator.draft(
@@ -66,7 +63,6 @@ class DiscourseRelay(DiscoursePolicy):
             turn=self.turn,
             memory_ids=memory_ids,
             template_filling=template_filling,
-            extract_all_drafts=extract_all_drafts,
             agreements=self.agreements,
             is_moderator=True,
         )

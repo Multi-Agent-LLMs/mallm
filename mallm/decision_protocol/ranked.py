@@ -2,7 +2,7 @@ import logging
 
 from mallm.agents.panelist import Panelist
 from mallm.decision_protocol.protocol import DecisionProtocol
-from mallm.prompts.agent_prompts import (
+from mallm.utils.prompts import (
     generate_final_answer_prompt,
     generate_ranking_prompt,
 )

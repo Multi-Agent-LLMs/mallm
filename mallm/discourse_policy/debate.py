@@ -22,7 +22,6 @@ class DiscourseDebate(DiscoursePolicy):
         agent_index: int,
         memory_ids: list[int],
         template_filling: TemplateFilling,
-        extract_all_drafts: bool,
     ) -> None:
         pass
 
@@ -33,7 +32,6 @@ class DiscourseDebate(DiscoursePolicy):
         agent_index: int,
         memory_ids: list[int],
         template_filling: TemplateFilling,
-        extract_all_drafts: bool,
     ) -> None:
         pass
 
@@ -52,7 +50,6 @@ class DiscourseDebate(DiscoursePolicy):
         force_all_turns: bool = False,
         context_length: int = 1,
         include_current_turn_in_memory: bool = False,
-        extract_all_drafts: bool = False,
         debate_rounds: int = 1,
     ) -> tuple[Optional[str], int, list[Agreement]]:
         turn = 0
@@ -102,7 +99,6 @@ class DiscourseDebate(DiscoursePolicy):
                     turn=self.turn,
                     memory_ids=memory_ids,
                     template_filling=template_filling,
-                    extract_all_drafts=extract_all_drafts,
                     agreements=agreements,
                     is_moderator=True,
                 )
@@ -131,7 +127,6 @@ class DiscourseDebate(DiscoursePolicy):
                     turn=self.turn,
                     memory_ids=memory_ids,
                     template_filling=template_filling,
-                    extract_all_drafts=extract_all_drafts,
                     agreements=agreements,
                     is_moderator=True,
                 )
@@ -186,7 +181,6 @@ class DiscourseDebate(DiscoursePolicy):
                         turn=self.turn,
                         memory_ids=memory_ids,
                         template_filling=template_filling,
-                        extract_all_drafts=extract_all_drafts,
                         agents_to_update=agents_to_update,
                         agreements=debate_agreements,
                     )

@@ -11,6 +11,7 @@ logger = logging.getLogger("mallm")
 
 @dataclass
 class Config:
+    # DO NOT overwrite these values once assigned.
     data: str
     out: str
     instruction: str

@@ -36,7 +36,6 @@ class DiscourseMemory(DiscoursePolicy):
         agent_index: int,
         memory_ids: list[int],
         template_filling: TemplateFilling,
-        extract_all_drafts: bool,
     ) -> None:
         self.agreements = agent.participate(
             use_moderator=coordinator.moderator is not None,
@@ -45,7 +44,6 @@ class DiscourseMemory(DiscoursePolicy):
             turn=self.turn,
             memory_ids=memory_ids,
             template_filling=template_filling,
-            extract_all_drafts=extract_all_drafts,
             agents_to_update=coordinator.agents,
             agreements=self.agreements,
         )
@@ -57,14 +55,12 @@ class DiscourseMemory(DiscoursePolicy):
         agent_index: int,
         memory_ids: list[int],
         template_filling: TemplateFilling,
-        extract_all_drafts: bool,
     ) -> None:
         res, memory, self.agreements = moderator.draft(
             unique_id=self.unique_id,
             turn=self.turn,
             memory_ids=memory_ids,
             template_filling=template_filling,
-            extract_all_drafts=extract_all_drafts,
             agreements=self.agreements,
             is_moderator=True,
         )

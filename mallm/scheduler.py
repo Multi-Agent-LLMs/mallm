@@ -16,14 +16,13 @@ from openai import OpenAI
 
 from mallm.coordinator import Coordinator
 from mallm.models.Chat import Chat
-from mallm.prompts.coordinator_prompts import (
-    generate_chat_prompt_baseline,
-    generate_chat_prompt_extract_result,
-)
+
 from mallm.utils.CustomFormatter import CustomFormatter
 from mallm.utils.config import Config
 from mallm.utils.types import InputExample
 from mallm.utils.utils import suppress_output, pretty_print_dict
+from mallm.utils.functions import extract_draft
+from mallm.utils.prompts import generate_chat_prompt_baseline
 
 just_fix_windows_console()
 
@@ -42,8 +41,6 @@ library_logger.addHandler(stream_handler)
 
 logging.basicConfig(filename="log.txt", filemode="w")
 logger = logging.getLogger("mallm")
-
-output_dicts: list[dict[str, Any]] = []
 
 os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
 
@@ -80,6 +77,7 @@ class Scheduler:
         self.config = config
         self.completed_samples = 0
         self.total_samples = len(self.data)
+        self.output_dicts: list[dict[str, Any]] = []
 
         logger.info(f"""Found {self.total_samples} samples to process.""")
 
@@ -122,7 +120,7 @@ class Scheduler:
             )
         except Exception:
             # More extensive error logging to ease debugging during async execution
-            logger.error("Failed discussion.")
+            logger.error(f"Failed discussion of sample {sample.example_id}.")
             exc_type, exc_obj, exc_tb = sys.exc_info()
             logger.error(exc_type)
             logger.error(exc_obj)
@@ -137,11 +135,13 @@ class Scheduler:
 
         logger.info(
             f"""--> Agents discussed for {turn} turns, {'%.2f' % discussion_time} seconds ({'%.2f' % (float(discussion_time) / 60.0)} minutes) to get the final answer: \n"""
+            + str(answer)
+            + "\nExtracted answer: "
             + str(extracted_answer)
         )
         logger.info(f"""Reference answer: {sample.references}""")
 
-        output_dicts.append(
+        self.output_dicts.append(
             {
                 "dataset": self.dataset_name,
                 "exampleId": sample.example_id,
@@ -152,7 +152,7 @@ class Scheduler:
                 "paradigm": self.config.paradigm,
                 "input": sample.inputs,
                 "context": sample.context,
-                "answer": answer,
+                "answer": None if answer == "" else answer,
                 "extracted_answer": extracted_answer,
                 "references": sample.references,
                 "agreements": [
@@ -171,7 +171,7 @@ class Scheduler:
         try:
             with open(self.config.out, "w") as file:
                 file.write(
-                    json.dumps(output_dicts)
+                    json.dumps(self.output_dicts)
                 )  # TODO: ensure correct json formatting (sometimes there is an invalid escape sequence warning)
                 file.truncate()
         except Exception as e:
@@ -256,12 +256,7 @@ class Scheduler:
                 seconds=time.perf_counter() - start_time
             ).total_seconds()
 
-            extracted_answer = None
-            if self.config.extract_all_drafts:
-                extracted_answer = llm.invoke(
-                    generate_chat_prompt_extract_result(answer),
-                    client=client,
-                )
+            extracted_answer = extract_draft(answer)
         except Exception as e:
             logger.error("Failed running baseline.")
             logger.error(e)
@@ -270,9 +265,11 @@ class Scheduler:
         logger.info(
             f"""--> Baseline LM generated the final answer within {'%.2f' % discussion_time} seconds: \n"""
             + str(answer)
+            + "\nExtracted answer: "
+            + str(extracted_answer)
         )
 
-        output_dicts.append(
+        self.output_dicts.append(
             {
                 "dataset": self.dataset_name,
                 "exampleId": sample.example_id,
@@ -283,7 +280,7 @@ class Scheduler:
                 "paradigm": None,
                 "input": sample.inputs,
                 "context": sample.context,
-                "answer": answer,
+                "answer": None if answer == "" else answer,
                 "extracted_answer": extracted_answer,
                 "references": sample.references,
                 "agreements": None,
@@ -296,7 +293,7 @@ class Scheduler:
         try:
             with open(self.config.out, "w") as file:
                 file.write(
-                    json.dumps(output_dicts)
+                    json.dumps(self.output_dicts)
                 )  # TODO: ensure correct json formatting (sometimes there is an invalid escape sequence warning)
                 file.truncate()
         except Exception as e:
@@ -358,7 +355,7 @@ class Scheduler:
         filelist = glob.glob(os.path.join(memory_bucket_dir, "*.json"))
         for f in filelist:
             os.remove(f)
-        logger.info("Cleaned the memory bucket.")
+        logger.info(f"Cleaned the memory bucket {str(memory_bucket_dir)}.")
 
     def run(self) -> None:
         """
