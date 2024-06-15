@@ -77,7 +77,7 @@ class Scheduler:
         self.config = config
         self.completed_samples = 0
         self.total_samples = len(self.data)
-        self.output_dicts = []
+        self.output_dicts: list[dict[str, Any]] = []
 
         logger.info(f"""Found {self.total_samples} samples to process.""")
 
