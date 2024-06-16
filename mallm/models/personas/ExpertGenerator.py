@@ -65,7 +65,12 @@ New Participant:
             )
             try:
                 new_agent = json.loads(response)
-                if new_agent["role"] == "" or new_agent["description"] == "":
+                if (
+                    "role" not in new_agent.keys()
+                    or "description" not in new_agent.keys()
+                    or new_agent["role"] == ""
+                    or new_agent["description"] == ""
+                ):
                     continue
                 agents.append(new_agent)
             except json.decoder.JSONDecodeError as e:
