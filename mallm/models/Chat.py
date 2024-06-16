@@ -97,7 +97,7 @@ class Chat(LLM):
                         collected_messages.append(message_str)
             except APIError as e:
                 # Handle API error here, e.g. retry or log
-                retry += 1
+                retries += 1
                 if retries < 5:
                     logger.warning(
                         f"API returned an Error: {e}. Retry number {retries}..."
