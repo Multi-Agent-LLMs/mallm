@@ -1,4 +1,7 @@
 from typing import Any, Iterator, Optional, Union, cast
+import logging
+
+logger = logging.getLogger("mallm")
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
@@ -6,7 +9,7 @@ from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import LLMResult
 from langchain_core.prompt_values import PromptValue
-from openai import OpenAI
+from openai import OpenAI, APIError, APIConnectionError, RateLimitError
 
 
 class Chat(LLM):
@@ -76,19 +79,33 @@ class Chat(LLM):
         Returns:
             The model output as a string. Actual completions SHOULD NOT include the prompt.
         """
-        chat_completion = self.client.chat.completions.create(
-            model=self.model,
-            messages=prompt,
-            stream=True,
-            stop=self.stop_tokens,
-            max_tokens=self.max_tokens,
-        )
-        # iterate and print stream
-        collected_messages = []
-        for message in chat_completion:
-            message_str = message.choices[0].delta.content
-            if message_str and message_str not in self.stop_tokens:
-                collected_messages.append(message_str)
+        retries = 0
+        while retries < 5:
+            try:
+                chat_completion = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=prompt,
+                    stream=True,
+                    stop=self.stop_tokens,
+                    max_tokens=self.max_tokens,
+                )
+                # iterate and print stream
+                collected_messages = []
+                for message in chat_completion:
+                    message_str = message.choices[0].delta.content
+                    if message_str and message_str not in self.stop_tokens:
+                        collected_messages.append(message_str)
+            except APIError as e:
+                # Handle API error here, e.g. retry or log
+                retry += 1
+                if retries < 5:
+                    logger.warning(
+                        f"API returned an Error: {e}. Retry number {retries}..."
+                    )
+                else:
+                    logger.error(f" {e}: Exceeded maximum retries. This sample failed.")
+                    raise Exception("Exceeded maximum API retries.")
+                continue
 
         return "".join(collected_messages)
 
