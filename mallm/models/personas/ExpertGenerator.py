@@ -65,6 +65,8 @@ New Participant:
             )
             try:
                 new_agent = json.loads(response)
+                if isinstance(new_agent, list):
+                    new_agent = new_agent[0]
                 if (
                     "role" not in new_agent.keys()
                     or "description" not in new_agent.keys()
