@@ -356,7 +356,7 @@ class Scheduler:
             logger.info(f"Processing {len(processing_data)} samples.")
             pool = ThreadPool(processes=self.config.max_concurrent_requests)
             results = []
-            for sample in self.data:
+            for sample in processing_data:
                 try:
                     results.append(
                         pool.apply_async(
