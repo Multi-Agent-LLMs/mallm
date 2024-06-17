@@ -202,8 +202,11 @@ class Scheduler:
             model=self.config.model,
         )
 
-        processing_data = self.data[: self.config.num_samples]
-        self.data = self.data[self.config.num_samples :]
+        if self.config.num_samples:
+            processing_data = self.data[: self.config.num_samples]
+            self.data = self.data[self.config.num_samples :]
+        else:
+            processing_data = self.data
 
         while True:
             logger.info(f"Processing {len(processing_data)} samples.")
@@ -342,8 +345,11 @@ class Scheduler:
             model=self.config.model,
         )
 
-        processing_data = self.data[: self.config.num_samples]
-        self.data = self.data[self.config.num_samples :]
+        if self.config.num_samples:
+            processing_data = self.data[: self.config.num_samples]
+            self.data = self.data[self.config.num_samples :]
+        else:
+            processing_data = self.data
 
         while True:
             logger.info(f"Processing {len(processing_data)} samples.")
