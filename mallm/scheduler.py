@@ -202,28 +202,44 @@ class Scheduler:
             model=self.config.model,
         )
 
-        pool = ThreadPool(processes=self.config.max_concurrent_requests)
-        results = []
-        for sample in self.data:
-            try:
-                results.append(
-                    pool.apply_async(
-                        self.run_discussion,
-                        (client, llm, sample),
-                    )
-                )
-            except Exception as e:
-                logger.error("Failed to run discussion.")
-                logger.error(e)
-        pool.close()  # Done adding tasks.
-        pool.join()  # Wait for all tasks to complete.
+        processing_data = self.data[: self.config.num_samples]
+        self.data = self.data[self.config.num_samples :]
 
-        if len(self.failed_example_ids) == 0:
-            logger.info("No samples failed.")
-        else:
-            logger.warning(
-                f"{len(self.failed_example_ids)} samples failed. Here is a list of their example_ids: \n{str(self.failed_example_ids)}"
-            )
+        while True:
+            logger.info(f"Processing {len(processing_data)} samples.")
+            pool = ThreadPool(processes=self.config.max_concurrent_requests)
+            results = []
+            for sample in processing_data:
+                try:
+                    results.append(
+                        pool.apply_async(
+                            self.run_discussion,
+                            (client, llm, sample),
+                        )
+                    )
+                except Exception as e:
+                    logger.error("Failed to run discussion.")
+                    logger.error(e)
+            pool.close()  # Done adding tasks.
+            pool.join()  # Wait for all tasks to complete.
+
+            if len(self.failed_example_ids) == 0:
+                logger.info("No samples failed.")
+                break
+            else:
+                logger.warning(
+                    f"{len(self.failed_example_ids)} samples failed. Here is a list of their example_ids: \n{str(self.failed_example_ids)}"
+                )
+                if len(self.data) < len(self.failed_example_ids):
+                    logger.error(
+                        "No more samples in the datasets to substitute failed samples."
+                    )
+                    raise Exception(
+                        "No more samples in the datasets to substitute failed samples."
+                    )
+                logger.warning("Resampling from the dataset as a substitute...")
+                processing_data = self.data[: len(self.failed_example_ids)]
+                self.data = self.data[len(self.failed_example_ids) :]
 
     def run_baseline(
         self,
@@ -326,28 +342,44 @@ class Scheduler:
             model=self.config.model,
         )
 
-        pool = ThreadPool(processes=self.config.max_concurrent_requests)
-        results = []
-        for sample in self.data:
-            try:
-                results.append(
-                    pool.apply_async(
-                        self.run_baseline,
-                        (client, llm, sample),
-                    )
-                )
-            except Exception as e:
-                logger.error("Failed running baseline.")
-                logger.error(e)
-        pool.close()  # Done adding tasks.
-        pool.join()  # Wait for all tasks to complete.
+        processing_data = self.data[: self.config.num_samples]
+        self.data = self.data[self.config.num_samples :]
 
-        if len(self.failed_example_ids) == 0:
-            logger.info("No samples failed.")
-        else:
-            logger.warning(
-                f"{len(self.failed_example_ids)} samples failed. Here is a list of their example_ids: \n{str(self.failed_example_ids)}"
-            )
+        while True:
+            logger.info(f"Processing {len(processing_data)} samples.")
+            pool = ThreadPool(processes=self.config.max_concurrent_requests)
+            results = []
+            for sample in self.data:
+                try:
+                    results.append(
+                        pool.apply_async(
+                            self.run_baseline,
+                            (client, llm, sample),
+                        )
+                    )
+                except Exception as e:
+                    logger.error("Failed running baseline.")
+                    logger.error(e)
+            pool.close()  # Done adding tasks.
+            pool.join()  # Wait for all tasks to complete.
+
+            if len(self.failed_example_ids) == 0:
+                logger.info("No samples failed.")
+                break
+            else:
+                logger.warning(
+                    f"{len(self.failed_example_ids)} samples failed. Here is a list of their example_ids: \n{str(self.failed_example_ids)}"
+                )
+                if len(self.data) < len(self.failed_example_ids):
+                    logger.error(
+                        "No more samples in the datasets to substitute failed samples."
+                    )
+                    raise Exception(
+                        "No more samples in the datasets to substitute failed samples."
+                    )
+                logger.warning("Resampling from the dataset as a substitute...")
+                processing_data = self.data[: len(self.failed_example_ids)]
+                self.data = self.data[len(self.failed_example_ids) :]
 
     def clean_memory_bucket(self, memory_bucket_dir: Optional[str] = None) -> None:
         """
