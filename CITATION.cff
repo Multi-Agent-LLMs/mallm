@@ -3,7 +3,11 @@ message: "If you use this software, please cite it as below."
 authors:
 - family-names: "Becker"
   given-names: "Jonas"
+  orcid: "https://orcid.org/0009-0006-6438-1211"
+- family-names: "Kaesberg"
+  given-names: "Lars"
+  orcid: "https://orcid.org/0009-0002-1686-3743"
 title: "mallm"
-version: 1.0.0
-date-released: 2024-04-06
-url: "https://github.com/jonas-becker/mallm"
+version: 0.1.0
+date-released: 2024-06-17
+url: "https://github.com/Multi-Agent-LLMs/mallm"
