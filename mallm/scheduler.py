@@ -243,6 +243,7 @@ class Scheduler:
                 logger.warning("Resampling from the dataset as a substitute...")
                 processing_data = self.data[: len(self.failed_example_ids)]
                 self.data = self.data[len(self.failed_example_ids) :]
+                self.failed_example_ids = []
 
     def run_baseline(
         self,
@@ -386,6 +387,7 @@ class Scheduler:
                 logger.warning("Resampling from the dataset as a substitute...")
                 processing_data = self.data[: len(self.failed_example_ids)]
                 self.data = self.data[len(self.failed_example_ids) :]
+                self.failed_example_ids = []
 
     def clean_memory_bucket(self, memory_bucket_dir: Optional[str] = None) -> None:
         """

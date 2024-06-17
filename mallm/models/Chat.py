@@ -95,6 +95,7 @@ class Chat(LLM):
                     message_str = message.choices[0].delta.content
                     if message_str and message_str not in self.stop_tokens:
                         collected_messages.append(message_str)
+                break
             except APIError as e:
                 # Handle API error here, e.g. retry or log
                 retries += 1
