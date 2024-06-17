@@ -7,6 +7,8 @@ authors:
 - family-names: "Kaesberg"
   given-names: "Lars"
   orcid: "https://orcid.org/0009-0002-1686-3743"
+- family-names: "Bauer"
+  given-names: "Niklas"
 title: "mallm"
 version: 0.1.0
 date-released: 2024-06-17
