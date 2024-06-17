@@ -23,7 +23,7 @@
 ## Install
 
 Create an environment with:
-`conda env create -f environment.yml`
+`conda create --name mallm python=3.12`
 
 ### Package
 Install as a package:
@@ -51,13 +51,16 @@ Or with OpenAI:
 If installed, you can use MALLM from anywhere on your system:
 ```py
 from mallm import scheduler
+from mallm.utils.config import Config
 
 mallm_scheduler = scheduler.Scheduler(
+  Config(
     data="data/datasets/etpc_debugging.json",
     out="test_out.json",
     instruction="Paraphrase the input text.",
     endpoint_url="http://127.0.0.1:8080",
     model="tgi"
+  )
 )
 mallm_scheduler.run()
 ```
@@ -65,12 +68,14 @@ mallm_scheduler.run()
 You can also call the API from OpenAI:
 ```py
 mallm_scheduler = scheduler.Scheduler(
+  Config(
     data="data/datasets/etpc_debugging.json",
     out="test_out.json",
     instruction="Paraphrase the input text.",
     endpoint_url="https://api.openai.com",
     model="gpt-3.5-turbo", # or another model from this list: https://platform.openai.com/docs/models
     api_key="<your-key>"
+  )
 )
 ```
 
@@ -94,21 +99,25 @@ instruction: str,
 endpoint_url: str = "https://api.openai.com",
 model: str = "gpt-3.5-turbo", # use "tgi" for Text Generation Inference by HuggingFace or one of these: https://platform.openai.com/docs/models
 api_key: str = "-",
-use_moderator: bool = False,
-max_turns: int = 10,
-force_all_turns: bool = False,
-feedback_sentences: tuple[int, int] = (3, 4),
-paradigm: str = "memory",
-decision_protocol: str = "majority_consensus",
-context_length: int = 3,
-include_current_turn_in_memory: bool = True,
-extract_all_drafts: bool = True,
-debate_rounds: Optional[int] = None,
-max_concurrent_requests: int = 100, # TGI can handle max 250 concurrent requests
-clear_memory_bucket: bool = True,
-memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
-baseline: bool = False,
-chain_of_thought: bool = True,
+use_moderator: bool = False
+max_turns: int = 10
+force_all_turns: bool = False
+feedback_sentences: Optional[tuple[int, int]] = None
+paradigm: str = "memory"
+decision_protocol: str = "hybrid_consensus"
+context_length: int = 3
+include_current_turn_in_memory: bool = True
+extract_all_drafts: bool = True
+debate_rounds: Optional[int] = None
+max_concurrent_requests: int = 100
+clear_memory_bucket: bool = True
+memory_bucket_dir: str = "./mallm/utils/memory_bucket/"
+baseline: bool = False
+chain_of_thought: bool = True
+split_agree_and_answer: bool = True
+num_agents: int = 3
+agent_generator: str = "expert"
+num_samples: Optional[int] = None  # if a sample fails, supplementary samples will be taken until num_samles succeeded
 ```
 
 ## Evaluation
