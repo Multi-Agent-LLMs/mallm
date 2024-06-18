@@ -155,9 +155,9 @@ jobs:
   
       - name: Replace Text in README
         run: |
-          poetry run python -c "
-import re
+          poetry run python - <<EOF
 from mallm.utils.config import Config
+import re
 config = Config(data=None, out=None, instruction=None)
 attributes = {attr: getattr(config, attr) for attr in dir(config) if not callable(getattr(config, attr)) and not attr.startswith('__')}
 with open('README.md', 'r+') as readme_file:
@@ -171,7 +171,7 @@ with open('README.md', 'r+') as readme_file:
     readme_file.seek(0)
     readme_file.writelines(updated_lines)
     readme_file.truncate()
-"
+EOF
   
       - name: Commit Changes
         run: |
