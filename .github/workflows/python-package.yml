@@ -172,6 +172,7 @@ with open('README.md', 'r+') as readme_file:
     readme_file.writelines(updated_lines)
     readme_file.truncate()
 "
+        shell: python
   
       - name: Commit Changes
         run: |
