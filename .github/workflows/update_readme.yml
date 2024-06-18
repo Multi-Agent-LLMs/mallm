@@ -5,7 +5,7 @@ push:
       - main
 
 jobs:
-  replace-text:
+  update_readme:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
