@@ -154,8 +154,7 @@ jobs:
         run: poetry install --with dev
   
       - name: Replace Text in README
-        run: |
-          poetry run python update_readme.py
+        run: poetry run python update_readme.py
   
       - name: Commit Changes
         run: |
