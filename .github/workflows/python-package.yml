@@ -155,7 +155,6 @@ jobs:
   
       - name: Replace Text in README
         run: |
-          python -c "
           from mallm.utils.config import Config
           import re
           config = Config(data=None, out=None, instruction=None)
@@ -171,7 +170,6 @@ jobs:
               readme_file.seek(0)
               readme_file.writelines(updated_lines)
               readme_file.truncate()
-          "
         shell: python
   
       - name: Commit Changes
