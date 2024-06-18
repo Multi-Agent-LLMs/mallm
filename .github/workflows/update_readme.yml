@@ -1,7 +1,8 @@
 name: Replace Text in README
 
-push:
-    branches: [ "main" ]
+on:
+    push:
+        branches: [ "main" ]
 
 jobs:
     update-readme:
