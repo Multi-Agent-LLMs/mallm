@@ -1,11 +1,10 @@
 name: Replace Text in README
 
 push:
-    branches:
-      - main
+    branches: [ "main" ]
 
 jobs:
-    update_readme:
+    update-readme:
         runs-on: ubuntu-latest
         steps:
         - name: Checkout repository
