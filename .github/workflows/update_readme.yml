@@ -17,10 +17,6 @@ jobs:
       with:
         python-version: '3.x'
 
-    - name: Install dependencies
-      run: |
-        pip install mallm  # if mallm is an external package, or install other dependencies as needed
-
     - name: Replace Text in README
       run: |
         python -c "
