@@ -5,42 +5,42 @@ push:
       - main
 
 jobs:
-  update_readme:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@main
-
-    - name: Replace Text in README
-      run: |
-        from mallm.utils.config import Config
-        
-        import re
-        
-        config = Config(data=None, out=None, instruction=None)
-        attributes = {attr: getattr(config, attr) for attr in dir(config) if not callable(getattr(config, attr)) and not attr.startswith('__')}
-        
-        with open('README.md', 'r+') as readme_file:
-            content = readme_file.read()
-        
-            attributes_content = ""
+    update_readme:
+        runs-on: ubuntu-latest
+        steps:
+        - name: Checkout repository
+          uses: actions/checkout@main
+    
+        - name: Replace Text in README
+          run: |
+            from mallm.utils.config import Config
+            
+            import re
+            
+            config = Config(data=None, out=None, instruction=None)
             attributes = {attr: getattr(config, attr) for attr in dir(config) if not callable(getattr(config, attr)) and not attr.startswith('__')}
-            for attr, value in attributes.items():
-                attributes_content += f"{attr}: {value}\n"
-        
-            replacement_str = "### Config Arguments:\n```py\n" + attributes_content + "```"
-            print(replacement_str)
-        
-            updated_lines = re.sub(r"### Config Arguments:\n```py\n(.*?)```", replacement_str, content, flags=re.DOTALL)
-            readme_file.seek(0)
-            readme_file.writelines(updated_lines)
-            readme_file.truncate()
-    shell: python
-
-    - name: Update README.md
-      run: |
-        git config --global user.name 'github-actions[bot]'
-        git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
-        git add README.md
-        git commit -am 'Update README'
-        git push
+            
+            with open('README.md', 'r+') as readme_file:
+                content = readme_file.read()
+            
+                attributes_content = ""
+                attributes = {attr: getattr(config, attr) for attr in dir(config) if not callable(getattr(config, attr)) and not attr.startswith('__')}
+                for attr, value in attributes.items():
+                    attributes_content += f"{attr}: {value}\n"
+            
+                replacement_str = "### Config Arguments:\n```py\n" + attributes_content + "```"
+                print(replacement_str)
+            
+                updated_lines = re.sub(r"### Config Arguments:\n```py\n(.*?)```", replacement_str, content, flags=re.DOTALL)
+                readme_file.seek(0)
+                readme_file.writelines(updated_lines)
+                readme_file.truncate()
+        shell: python
+    
+        - name: Update README.md
+          run: |
+            git config --global user.name 'github-actions[bot]'
+            git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add README.md
+            git commit -am 'Update README'
+            git push
