@@ -172,7 +172,7 @@ jobs:
               readme_file.writelines(updated_lines)
               readme_file.truncate()
           "
-        shell: bash
+        shell: python
   
       - name: Commit Changes
         run: |
