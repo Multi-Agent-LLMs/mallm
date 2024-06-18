@@ -97,10 +97,10 @@ Use "tgi" as a model for Text Generation Inference by HuggingFace or one of thes
 
 ### Config Arguments:
 ```py
-instruction: str,
-endpoint_url: str = "https://api.openai.com",
-model: str = "gpt-3.5-turbo",
-api_key: str = "-",
+instruction: str
+endpoint_url: str = "https://api.openai.com"
+model: str = "gpt-3.5-turbo"
+api_key: str = "-"
 use_moderator: bool = False
 max_turns: int = 10
 force_all_turns: bool = False
