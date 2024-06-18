@@ -154,7 +154,7 @@ jobs:
         run: poetry install --with dev
   
       - name: Replace Text in README
-        run: >
+        run: |
           poetry run python -c '
 import re
 from mallm.utils.config import Config
