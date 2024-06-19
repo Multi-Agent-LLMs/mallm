@@ -1,28 +1,33 @@
 import json
+import logging
 from typing import Any, Optional
 
 import fire
 from tqdm import tqdm
 
+import mallm.scheduler  # noqa
 from mallm.evaluation.metrics.bertscore import BERTScore
 from mallm.evaluation.metrics.bleu import BLEU
 from mallm.evaluation.metrics.meteor import METEOR
+from mallm.evaluation.metrics.qa import QA
 from mallm.evaluation.metrics.rouge import ROUGE
 
-# ANSWER_PATTERN_MULTICHOICE = re.compile(r"(?i)Answer\s*:\s*([A-D])")
+ALL_METRICS = [BLEU(), ROUGE(), BERTScore(), METEOR(), QA()]
 
-ALL_METRICS = [BLEU(), ROUGE(), BERTScore(), METEOR()]
+logger = logging.getLogger("mallm")
 
 
 class Evaluator:
     def __init__(
         self,
         input_file_path: str,
-        output_file_path: str,
+        output_file_path: Optional[str] = None,
         metrics: Optional[list[str]] = None,
     ) -> None:
         if metrics is None:
-            metrics = ["bleu"]
+            metrics = ["qa"]
+        if output_file_path is None:
+            output_file_path = input_file_path.replace(".json", "_eval.json")
         self.output_file_path = output_file_path
         with open(input_file_path) as file:
             self.data = json.load(file)
@@ -34,6 +39,9 @@ class Evaluator:
             for metric_class in ALL_METRICS
             if metric_class.name.lower() in metrics
         ]
+
+        if len(self.metrics) != len(metrics):
+            logger.warning(f"Some metrics not found in {metrics}")
 
         print("Metrics to calculate: " + str([m.name for m in self.metrics]))
 
@@ -55,19 +63,50 @@ class Evaluator:
                 score = self.calculate_scores(answer, references)
                 item["scores"] = score
 
+    def evaluate(self) -> None:
+        # For each metric, statistics
+        reported_metrics = self.data[0]["scores"].keys()
+
+        for metric in reported_metrics:
+            logger.info(f"Statistics for: {metric.upper()}")
+            scores = [item.get("scores", {}).get(metric, None) for item in self.data]
+            scores = [score for score in scores if score is not None]
+            if not scores:
+                logger.warning(f"No scores found for {metric}")
+                continue
+
+            if not all(isinstance(score, (int, float)) for score in scores):
+                logger.info(f"Scores for {metric} are not numeric")
+                continue
+
+            average_score = sum(scores) / len(scores)
+            std_dev_score = (
+                sum([(score - average_score) ** 2 for score in scores]) / len(scores)
+            ) ** 0.5
+
+            logger.info(f"Data size: {len(self.data)}")
+            logger.info(f"Sample size: {len(scores)}")
+            logger.info(f"Average score: {average_score:.2%}")
+            logger.info(f"Standard deviation: {std_dev_score:.3f}")
+
     def save_json(self) -> None:
         with open(self.output_file_path, "w") as file:
             json.dump(self.data, file, indent=4)
 
     def process(self) -> None:
         self.add_scores()
+        self.evaluate()
         self.save_json()
+        logger.info(f"Scores saved to {self.output_file_path}")
 
 
-def main(input_file_path: str, output_file_path: str, metrics: list[str]) -> None:
+def main(
+    input_file_path: str,
+    output_file_path: Optional[str] = None,
+    metrics: Optional[list[str]] = None,
+) -> None:
     evaluator = Evaluator(input_file_path, output_file_path, metrics)
     evaluator.process()
-    print(f"Scores added and saved to {output_file_path}")
 
 
 if __name__ == "__main__":
