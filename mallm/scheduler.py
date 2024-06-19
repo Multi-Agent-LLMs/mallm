@@ -153,7 +153,7 @@ class Scheduler:
                 "paradigm": self.config.paradigm,
                 "input": sample.inputs,
                 "context": sample.context,
-                "answer": None if answer == "" else answer,
+                "answer": answer or None,
                 "extracted_answer": extracted_answer,
                 "references": sample.references,
                 "agreements": [
@@ -303,7 +303,7 @@ class Scheduler:
                 "paradigm": None,
                 "input": sample.inputs,
                 "context": sample.context,
-                "answer": None if answer == "" else answer,
+                "answer": answer or None,
                 "extracted_answer": extracted_answer,
                 "references": sample.references,
                 "agreements": None,

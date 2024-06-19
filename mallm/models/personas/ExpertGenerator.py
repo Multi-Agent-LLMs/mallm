@@ -70,8 +70,8 @@ New Participant:
                 if (
                     "role" not in new_agent.keys()
                     or "description" not in new_agent.keys()
-                    or new_agent["role"] == ""
-                    or new_agent["description"] == ""
+                    or not new_agent["role"]
+                    or not new_agent["description"]
                 ):
                     continue
                 agents.append(new_agent)

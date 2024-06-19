@@ -84,8 +84,8 @@ class RankedVoting(DecisionProtocol):
         # Calculate the score for each answer based on the rankings
         scores = [0] * len(final_answers)
         for ranking_list in rankings:
-            for rank, agent_index in enumerate(ranking_list):
-                scores[agent_index] += (
+            for rank, idx in enumerate(ranking_list):
+                scores[idx] += (
                     min(5, self.total_agents) - rank
                 )  # Score 5 for the 1st rank, 4 for the 2nd, etc.
 

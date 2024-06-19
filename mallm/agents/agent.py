@@ -260,21 +260,23 @@ class Agent:
             memories = sorted(memories, key=lambda x: x.message_id, reverse=False)
             context_memory = []
             for memory in memories:
-                if context_length:
-                    if turn and memory.turn >= turn - context_length:
-                        if turn > memory.turn or include_this_turn:
-                            context_memory.append(memory)
-                            memory_ids.append(int(memory.message_id))
-                            if memory.contribution == "draft" or (
-                                memory.contribution == "improve"
-                                and memory.agreement is False
-                            ):
-                                if memory.extracted_draft:
-                                    current_draft = memory.extracted_draft
-                                    extraction_successful = True
-                                else:
-                                    current_draft = memory.text
-                                    extraction_successful = False
+                if (
+                    context_length
+                    and turn
+                    and memory.turn >= turn - context_length
+                    and (turn > memory.turn or include_this_turn)
+                ):
+                    context_memory.append(memory)
+                    memory_ids.append(int(memory.message_id))
+                    if memory.contribution == "draft" or (
+                        memory.contribution == "improve" and memory.agreement is False
+                    ):
+                        if memory.extracted_draft:
+                            current_draft = memory.extracted_draft
+                            extraction_successful = True
+                        else:
+                            current_draft = memory.text
+                            extraction_successful = False
                 else:
                     context_memory.append(memory)
                     memory_ids.append(int(memory.message_id))

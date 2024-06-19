@@ -141,17 +141,15 @@ class Coordinator:
             self.agents = self.panelists
 
     def get_agents(self) -> list[dict[str, str]]:
-        agent_dicts = []
-        for a in self.agents:
-            agent_dicts.append(
-                {
-                    "agentId": a.id,
-                    "model": a.llm.model,
-                    "persona": a.persona,
-                    "personaDescription": a.persona_description,
-                }
-            )
-        return agent_dicts
+        return [
+            {
+                "agentId": a.id,
+                "model": a.llm.model,
+                "persona": a.persona,
+                "personaDescription": a.persona_description,
+            }
+            for a in self.agents
+        ]
 
     def update_global_memory(self, memory: Memory) -> None:
         """
@@ -189,8 +187,9 @@ class Coordinator:
             logger.error(f"Failed to save agent memory to {self.memory_bucket}: {e}")
             logger.error(self.get_global_memory())
 
+    @staticmethod
     def update_memories(
-        self, memories: list[Memory], agents_to_update: Sequence[Agent]
+        memories: list[Memory], agents_to_update: Sequence[Agent]
     ) -> None:
         """
         Updates the memories of all declared agents.
@@ -295,9 +294,7 @@ Decision-protocol: {self.decision_protocol.__class__.__name__}
         ).total_seconds()
 
         global_mem = self.get_global_memory()
-        agent_mems = []
-        for a in self.agents:
-            agent_mems.append(a.get_memories()[0])
+        agent_mems = [a.get_memories()[0] for a in self.agents]
 
         extracted_draft = None
         if current_draft:
