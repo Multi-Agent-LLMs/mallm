@@ -144,6 +144,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   update-readme:
+    if: github.event.pull_request.merged
     runs-on: 
       - self-hosted
 
@@ -165,6 +166,5 @@ jobs:
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add README.md
-          git commit -m 'Update README'
+          git diff --quiet || (git add README.md && git commit -m "Updated README")
           git push
