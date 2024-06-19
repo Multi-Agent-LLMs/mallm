@@ -33,7 +33,9 @@ jobs:
           poetry run flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
   type-check:
-    runs-on: ubuntu-latest
+    runs-on: 
+      - ubuntu-latest
+      - self-hosted
 
     steps:
       - uses: actions/checkout@v4
@@ -49,7 +51,9 @@ jobs:
         run: poetry run mypy mallm/
 
   test:
-    runs-on: ubuntu-latest
+    runs-on: 
+      - ubuntu-latest
+      - self-hosted
     strategy:
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12"]
@@ -68,7 +72,9 @@ jobs:
         run: poetry run pytest
 
   coverage:
-    runs-on: ubuntu-latest
+    runs-on: 
+      - ubuntu-latest
+      - self-hosted
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python 3.12
@@ -142,7 +148,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   update-readme:
-    runs-on: ubuntu-latest
+    runs-on: 
+      - ubuntu-latest
+      - self-hosted
 
     steps:
       - uses: actions/checkout@v4
