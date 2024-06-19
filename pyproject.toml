@@ -81,22 +81,23 @@ preview = true
 target-version = "py39"
 exclude = ["mallm/models/Chat.py"]
 lint.select = [
-    "E",
-    "F",
-    "I",
-    "N",
-    "PL",
-    "RUF",
-    "W",
+    "A",    # builtins
+    "B",    # bugbear
+    "C4",   # comprehensions
+    "E",    # pycodestyle
+    "F",    # Pyflakes
+    "FURB", # refurb
+    "I",    # isort
+    "INP",  # no-pep420
+    "N",    # pep8-naming
+    "PERF", # Perflint
+    "PIE",  # pie
+    "PL",   # Pylint
+    "RET",  # return
+    "RUF",  # Ruff
+    "SIM",  # simplify
+    "UP",   # pyupgrade
+    "W",    # pycodestyle
 ]
 lint.pyupgrade.keep-runtime-typing = true
-lint.ignore = [
-    "E203",
-    "E501",
-    "N806",
-    "N999",
-    "PLR09",
-    "PLR2004",
-    "PLW15",
-]
-
+lint.ignore = ["E203", "E501", "N806", "N999", "PLR09", "PLR2004", "PLW15", "PERF203", "SIM115"]

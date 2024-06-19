@@ -68,8 +68,8 @@ New Participant:
                 if isinstance(new_agent, list):
                     new_agent = new_agent[0]
                 if (
-                    "role" not in new_agent.keys()
-                    or "description" not in new_agent.keys()
+                    "role" not in new_agent
+                    or "description" not in new_agent
                     or not new_agent["role"]
                     or not new_agent["description"]
                 ):
