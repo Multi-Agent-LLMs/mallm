@@ -39,6 +39,7 @@ requests = "^2.32.2"
 nltk = "^3.8.1"
 rouge-score = "^0.1.2"
 bert-score = "^0.3.13"
+evaluate = "^0.4.2"
 
 [tool.poetry.group.dev.dependencies]
 tqdm = "^4.66.2"
