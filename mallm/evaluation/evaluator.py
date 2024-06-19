@@ -9,10 +9,10 @@ import mallm.scheduler  # noqa
 from mallm.evaluation.metrics.bertscore import BERTScore
 from mallm.evaluation.metrics.bleu import BLEU
 from mallm.evaluation.metrics.meteor import METEOR
-from mallm.evaluation.metrics.qa import QA
+from mallm.evaluation.metrics.qa import MultiChoiceBoolean
 from mallm.evaluation.metrics.rouge import ROUGE
 
-ALL_METRICS = [BLEU(), ROUGE(), BERTScore(), METEOR(), QA()]
+ALL_METRICS = [BLEU(), ROUGE(), BERTScore(), METEOR(), MultiChoiceBoolean()]
 
 logger = logging.getLogger("mallm")
 
@@ -25,7 +25,7 @@ class Evaluator:
         metrics: Optional[list[str]] = None,
     ) -> None:
         if metrics is None:
-            metrics = ["qa"]
+            metrics = ["multichoice"]
         if output_file_path is None:
             output_file_path = input_file_path.replace(".json", "_eval.json")
         self.output_file_path = output_file_path
@@ -63,8 +63,8 @@ class Evaluator:
                 score = self.calculate_scores(answer, references)
                 item["scores"] = score
 
-    def evaluate(self) -> None:
-        # For each metric, statistics
+    def calculate_statistics(self) -> None:
+        # For each numeric metric, calculate the average and standard deviation
         reported_metrics = self.data[0]["scores"].keys()
 
         for metric in reported_metrics:
@@ -95,7 +95,7 @@ class Evaluator:
 
     def process(self) -> None:
         self.add_scores()
-        self.evaluate()
+        self.calculate_statistics()
         self.save_json()
         logger.info(f"Scores saved to {self.output_file_path}")
 
