@@ -52,12 +52,11 @@ class ThresholdConsensus(DecisionProtocol):
                 current_agreement.response,
                 num_agreements + 1 == self.total_agents,
             )
-        else:
-            # more than <threshold_percent> of the agents need to agree
-            return (
-                current_agreement.response,
-                num_agreements + 1 > self.total_agents * self.threshold_percent,
-            )
+        # more than <threshold_percent> of the agents need to agree
+        return (
+            current_agreement.response,
+            num_agreements + 1 > self.total_agents * self.threshold_percent,
+        )
 
 
 class MajorityConsensus(ThresholdConsensus):

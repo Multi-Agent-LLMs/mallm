@@ -5,8 +5,9 @@ import logging
 import os
 import time
 import uuid
+from collections.abc import Sequence
 from datetime import timedelta
-from typing import Optional, Sequence, Type
+from typing import Optional, Type
 
 import httpx
 
@@ -226,7 +227,7 @@ class Coordinator:
         if context:
             sample_instruction += "\nHere is some context you need to consider:"
             for i, c in enumerate(context):
-                sample_instruction += f"\n" + c
+                sample_instruction += "\n" + c
         input_str = ""
         for num, input_line in enumerate(input_lines):
             if len(input_lines) > 1:

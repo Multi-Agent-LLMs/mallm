@@ -34,10 +34,10 @@ def base_prompt(data: TemplateFilling) -> list[dict[str, str]]:
     if data.current_draft is not None:
         appendix += f"\nHere is the current solution to the task: {data.current_draft}"
     else:
-        appendix += f"\nNobody proposed a solution yet. Please provide the first one."
+        appendix += "\nNobody proposed a solution yet. Please provide the first one."
 
     if data.agent_memory is not None and data.agent_memory != []:
-        appendix += f"\nThis is the discussion to the current point:"
+        appendix += "\nThis is the discussion to the current point:"
 
     prompts = [
         {

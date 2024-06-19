@@ -1,4 +1,4 @@
-from typing import Sequence
+from collections.abc import Sequence
 
 from mallm.agents.agent import Agent
 from mallm.utils.types import Agreement, Memory, TemplateFilling

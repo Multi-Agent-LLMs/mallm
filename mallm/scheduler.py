@@ -67,7 +67,7 @@ class Scheduler:
         try:
             for data in self.data:
                 data.confirm_types()
-        except AssertionError as e:
+        except AssertionError:
             logger.error(
                 "Input data has wrong format. Please delete and download the data again."
             )
@@ -228,21 +228,20 @@ class Scheduler:
             if len(self.failed_example_ids) == 0:
                 logger.info("No samples failed.")
                 break
-            else:
-                logger.warning(
-                    f"{len(self.failed_example_ids)} samples failed. Here is a list of their example_ids: \n{str(self.failed_example_ids)}"
+            logger.warning(
+                f"{len(self.failed_example_ids)} samples failed. Here is a list of their example_ids: \n{self.failed_example_ids!s}"
+            )
+            if len(self.data) < len(self.failed_example_ids):
+                logger.error(
+                    "No more samples in the datasets to substitute failed samples."
                 )
-                if len(self.data) < len(self.failed_example_ids):
-                    logger.error(
-                        "No more samples in the datasets to substitute failed samples."
-                    )
-                    raise Exception(
-                        "No more samples in the datasets to substitute failed samples."
-                    )
-                logger.warning("Resampling from the dataset as a substitute...")
-                processing_data = self.data[: len(self.failed_example_ids)]
-                self.data = self.data[len(self.failed_example_ids) :]
-                self.failed_example_ids = []
+                raise Exception(
+                    "No more samples in the datasets to substitute failed samples."
+                )
+            logger.warning("Resampling from the dataset as a substitute...")
+            processing_data = self.data[: len(self.failed_example_ids)]
+            self.data = self.data[len(self.failed_example_ids) :]
+            self.failed_example_ids = []
 
     def run_baseline(
         self,
@@ -372,21 +371,20 @@ class Scheduler:
             if len(self.failed_example_ids) == 0:
                 logger.info("No samples failed.")
                 break
-            else:
-                logger.warning(
-                    f"{len(self.failed_example_ids)} samples failed. Here is a list of their example_ids: \n{str(self.failed_example_ids)}"
+            logger.warning(
+                f"{len(self.failed_example_ids)} samples failed. Here is a list of their example_ids: \n{self.failed_example_ids!s}"
+            )
+            if len(self.data) < len(self.failed_example_ids):
+                logger.error(
+                    "No more samples in the datasets to substitute failed samples."
                 )
-                if len(self.data) < len(self.failed_example_ids):
-                    logger.error(
-                        "No more samples in the datasets to substitute failed samples."
-                    )
-                    raise Exception(
-                        "No more samples in the datasets to substitute failed samples."
-                    )
-                logger.warning("Resampling from the dataset as a substitute...")
-                processing_data = self.data[: len(self.failed_example_ids)]
-                self.data = self.data[len(self.failed_example_ids) :]
-                self.failed_example_ids = []
+                raise Exception(
+                    "No more samples in the datasets to substitute failed samples."
+                )
+            logger.warning("Resampling from the dataset as a substitute...")
+            processing_data = self.data[: len(self.failed_example_ids)]
+            self.data = self.data[len(self.failed_example_ids) :]
+            self.failed_example_ids = []
 
     def clean_memory_bucket(self, memory_bucket_dir: Optional[str] = None) -> None:
         """
@@ -407,7 +405,7 @@ class Scheduler:
         filelist = glob.glob(os.path.join(memory_bucket_dir, "*.json"))
         for f in filelist:
             os.remove(f)
-        logger.info(f"Cleaned the memory bucket {str(memory_bucket_dir)}.")
+        logger.info(f"Cleaned the memory bucket {memory_bucket_dir!s}.")
 
     def run(self) -> None:
         """

@@ -71,10 +71,9 @@ class Voting(DecisionProtocol):
                             f"{panelist.short_id} voted for answer from {self.panelists[vote_int].short_id}"
                         )
                         break
-                    else:
-                        logger.debug(
-                            f"{panelist.short_id} cast an invalid vote: {vote}. Asking to vote again."
-                        )
+                    logger.debug(
+                        f"{panelist.short_id} cast an invalid vote: {vote}. Asking to vote again."
+                    )
                 except ValueError:
                     logger.debug(
                         f"{panelist.short_id} cast an invalid vote: {vote}. Asking to vote again."

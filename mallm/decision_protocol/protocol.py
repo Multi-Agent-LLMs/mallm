@@ -34,4 +34,3 @@ class DecisionProtocol(ABC):
         Returns:
         str, bool: str is the result of the conversation and bool describes whether they agreed or not.
         """
-        pass

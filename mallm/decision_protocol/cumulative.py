@@ -5,7 +5,6 @@ import logging
 from mallm.agents.panelist import Panelist
 from mallm.decision_protocol.protocol import DecisionProtocol
 from mallm.utils.prompts import (
-    generate_approval_voting_prompt,
     generate_cumulative_voting_prompt,
     generate_final_answer_prompt,
 )
@@ -80,8 +79,7 @@ class CumulativeVoting(DecisionProtocol):
                             f"{panelist.short_id} allocated points: {points_dict}"
                         )
                         break
-                    else:
-                        raise ValueError
+                    raise ValueError
                 except (ValueError, json.JSONDecodeError):
                     logger.debug(
                         f"{panelist.short_id} provided an invalid points distribution: {point_distribution}. Asking to distribute points again."

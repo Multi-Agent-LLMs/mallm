@@ -1,6 +1,5 @@
 import json
 import logging
-import random
 
 from mallm.models.Chat import Chat
 from mallm.models.personas.PersonaGenerator import PersonaGenerator

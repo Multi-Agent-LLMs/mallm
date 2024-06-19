@@ -78,7 +78,7 @@ New Participant:
             except json.decoder.JSONDecodeError as e:
                 retry = retry + 1
                 logger.debug(
-                    f"Could not decode json (will attempt retry no. {str(retry)}): "
+                    f"Could not decode json (will attempt retry no. {retry!s}): "
                     + str(e)
                     + "\nResponse string: "
                     + str(response)

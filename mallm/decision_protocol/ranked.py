@@ -75,8 +75,7 @@ class RankedVoting(DecisionProtocol):
                             f"{panelist.short_id} ranked answers: {ranking_list}"
                         )
                         break
-                    else:
-                        raise ValueError
+                    raise ValueError
                 except ValueError:
                     logger.debug(
                         f"{panelist.short_id} cast an invalid ranking: {ranking}. Asking to rank again."
