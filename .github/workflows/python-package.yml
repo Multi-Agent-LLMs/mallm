@@ -12,7 +12,6 @@ on:
 jobs:
   lint:
     runs-on: 
-      - ubuntu-latest
       - self-hosted
 
     steps:
@@ -34,7 +33,6 @@ jobs:
 
   type-check:
     runs-on: 
-      - ubuntu-latest
       - self-hosted
 
     steps:
@@ -52,7 +50,6 @@ jobs:
 
   test:
     runs-on: 
-      - ubuntu-latest
       - self-hosted
     strategy:
       matrix:
@@ -73,7 +70,6 @@ jobs:
 
   coverage:
     runs-on: 
-      - ubuntu-latest
       - self-hosted
     steps:
       - uses: actions/checkout@v4
@@ -149,7 +145,6 @@ jobs:
 
   update-readme:
     runs-on: 
-      - ubuntu-latest
       - self-hosted
 
     steps:
