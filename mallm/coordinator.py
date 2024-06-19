@@ -16,9 +16,9 @@ from mallm.agents.panelist import Panelist
 from mallm.decision_protocol.approval import ApprovalVoting
 from mallm.decision_protocol.cumulative import CumulativeVoting
 from mallm.decision_protocol.majority import (
+    HybridMajorityConsensus,
     MajorityConsensus,
     SupermajorityConsensus,
-    HybridMajorityConsensus,
     UnanimityConsensus,
 )
 from mallm.decision_protocol.protocol import DecisionProtocol
@@ -35,8 +35,8 @@ from mallm.models.personas.IPIPPersonaGenerator import IPIPPersonaGenerator
 from mallm.models.personas.MockGenerator import MockGenerator
 from mallm.models.personas.PersonaGenerator import PersonaGenerator
 from mallm.utils.config import Config
-from mallm.utils.types import Agreement, Memory
 from mallm.utils.functions import extract_draft
+from mallm.utils.types import Agreement, Memory
 
 os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
 

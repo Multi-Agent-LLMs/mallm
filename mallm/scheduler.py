@@ -16,13 +16,12 @@ from openai import OpenAI
 
 from mallm.coordinator import Coordinator
 from mallm.models.Chat import Chat
-
-from mallm.utils.CustomFormatter import CustomFormatter
 from mallm.utils.config import Config
-from mallm.utils.types import InputExample
-from mallm.utils.utils import suppress_output, pretty_print_dict
+from mallm.utils.CustomFormatter import CustomFormatter
 from mallm.utils.functions import extract_draft
 from mallm.utils.prompts import generate_chat_prompt_baseline
+from mallm.utils.types import InputExample
+from mallm.utils.utils import pretty_print_dict, suppress_output
 
 just_fix_windows_console()
 

@@ -1,5 +1,5 @@
-from typing import Any, Iterator, Optional, Union, cast
 import logging
+from typing import Any, Iterator, Optional, Union, cast
 
 logger = logging.getLogger("mallm")
 
@@ -9,7 +9,7 @@ from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import LLMResult
 from langchain_core.prompt_values import PromptValue
-from openai import OpenAI, APIError, APIConnectionError, RateLimitError
+from openai import APIConnectionError, APIError, OpenAI, RateLimitError
 
 
 class Chat(LLM):

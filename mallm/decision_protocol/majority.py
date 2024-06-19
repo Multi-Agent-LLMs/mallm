@@ -1,9 +1,9 @@
+import logging
 from typing import Optional
 
 from mallm.agents.panelist import Panelist
 from mallm.decision_protocol.protocol import DecisionProtocol
 from mallm.utils.types import Agreement
-import logging
 
 logger = logging.getLogger("mallm")
 

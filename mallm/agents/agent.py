@@ -5,7 +5,7 @@ import dbm
 import json
 import logging
 import uuid
-from typing import TYPE_CHECKING, Optional, Callable
+from typing import TYPE_CHECKING, Callable, Optional
 
 import httpx
 
@@ -17,10 +17,10 @@ if TYPE_CHECKING:
     from mallm.coordinator import Coordinator
 
 from mallm.utils.prompts import (
+    generate_chat_prompt_agree,
     generate_chat_prompt_draft,
     generate_chat_prompt_feedback,
     generate_chat_prompt_improve,
-    generate_chat_prompt_agree,
 )
 from mallm.utils.types import Agreement, Memory, TemplateFilling
 
