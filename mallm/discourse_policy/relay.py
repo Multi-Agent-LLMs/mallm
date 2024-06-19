@@ -58,7 +58,7 @@ class DiscourseRelay(DiscoursePolicy):
         template_filling: TemplateFilling,
     ) -> None:
         next_agent = (agent_index + 1) % len(coordinator.agents)
-        res, memory, self.agreements = moderator.draft(
+        _res, memory, self.agreements = moderator.draft(
             unique_id=self.unique_id,
             turn=self.turn,
             memory_ids=memory_ids,

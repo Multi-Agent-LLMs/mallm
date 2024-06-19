@@ -7,7 +7,7 @@ import time
 import uuid
 from collections.abc import Sequence
 from datetime import timedelta
-from typing import Optional, Type
+from typing import Optional
 
 import httpx
 
@@ -43,7 +43,7 @@ os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
 
 logger = logging.getLogger("mallm")
 
-DECISION_PROTOCOLS: dict[str, Type[DecisionProtocol]] = {
+DECISION_PROTOCOLS: dict[str, type[DecisionProtocol]] = {
     "majority_consensus": MajorityConsensus,
     "supermajority_consensus": SupermajorityConsensus,
     "hybrid_consensus": HybridMajorityConsensus,
@@ -54,14 +54,14 @@ DECISION_PROTOCOLS: dict[str, Type[DecisionProtocol]] = {
     "ranked": RankedVoting,
 }
 
-PROTOCOLS: dict[str, Type[DiscoursePolicy]] = {
+PROTOCOLS: dict[str, type[DiscoursePolicy]] = {
     "memory": DiscourseMemory,
     "report": DiscourseReport,
     "relay": DiscourseRelay,
     "debate": DiscourseDebate,
 }
 
-PERSONA_GENERATORS: dict[str, Type[PersonaGenerator]] = {
+PERSONA_GENERATORS: dict[str, type[PersonaGenerator]] = {
     "expert": ExpertGenerator,
     "ipip": IPIPPersonaGenerator,
     "mock": MockGenerator,
@@ -226,7 +226,7 @@ class Coordinator:
         sample_instruction = config.instruction
         if context:
             sample_instruction += "\nHere is some context you need to consider:"
-            for i, c in enumerate(context):
+            for c in context:
                 sample_instruction += "\n" + c
         input_str = ""
         for num, input_line in enumerate(input_lines):

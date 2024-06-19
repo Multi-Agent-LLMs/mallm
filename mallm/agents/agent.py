@@ -202,7 +202,7 @@ class Agent:
         template_filling: TemplateFilling,
         agreements: list[Agreement],
     ) -> tuple[str, Memory, list[Agreement]]:
-        agreements, extracted_draft, res = self.answer(
+        agreements, _extracted_draft, res = self.answer(
             agreements=agreements,
             template_filling=template_filling,
             self_drafted=False,
@@ -267,7 +267,7 @@ class Agent:
                             memory_ids.append(int(memory.message_id))
                             if memory.contribution == "draft" or (
                                 memory.contribution == "improve"
-                                and memory.agreement == False
+                                and memory.agreement is False
                             ):
                                 if memory.extracted_draft:
                                     current_draft = memory.extracted_draft
@@ -279,7 +279,7 @@ class Agent:
                     context_memory.append(memory)
                     memory_ids.append(int(memory.message_id))
                     if memory.contribution == "draft" or (
-                        memory.contribution == "improve" and memory.agreement == False
+                        memory.contribution == "improve" and memory.agreement is False
                     ):
                         if memory.extracted_draft:
                             current_draft = memory.extracted_draft

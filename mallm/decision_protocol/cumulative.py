@@ -117,6 +117,4 @@ class CumulativeVoting(DecisionProtocol):
         for index in points_dict:
             if not isinstance(index, int) or not (0 <= index < num_solutions):
                 return False
-        if any(x < 0 for x in points_dict.values()):
-            return False
-        return True
+        return not any(x < 0 for x in points_dict.values())

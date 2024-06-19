@@ -56,7 +56,7 @@ class DiscourseMemory(DiscoursePolicy):
         memory_ids: list[int],
         template_filling: TemplateFilling,
     ) -> None:
-        res, memory, self.agreements = moderator.draft(
+        _res, memory, self.agreements = moderator.draft(
             unique_id=self.unique_id,
             turn=self.turn,
             memory_ids=memory_ids,

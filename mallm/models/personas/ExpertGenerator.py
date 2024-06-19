@@ -76,7 +76,7 @@ New Participant:
                     continue
                 agents.append(new_agent)
             except json.decoder.JSONDecodeError as e:
-                retry = retry + 1
+                retry += 1
                 logger.debug(
                     f"Could not decode json (will attempt retry no. {retry!s}): "
                     + str(e)

@@ -135,7 +135,7 @@ class Scheduler:
             return None
 
         logger.info(
-            f"""--> Agents discussed for {turn} turns, {'%.2f' % discussion_time} seconds ({'%.2f' % (float(discussion_time) / 60.0)} minutes) to get the final answer: \n"""
+            f"""--> Agents discussed for {turn} turns, {f'{discussion_time:.2f}'} seconds ({'%.2f' % (float(discussion_time) / 60.0)} minutes) to get the final answer: \n"""
             + str(answer)
             + "\nExtracted answer: "
             + str(extracted_answer)
@@ -160,7 +160,7 @@ class Scheduler:
                     dataclasses.asdict(agreement) for agreement in agreements
                 ],
                 "turns": turn,
-                "clockSeconds": float("%.2f" % discussion_time),
+                "clockSeconds": float(f"{discussion_time:.2f}"),
                 "globalMemory": [dataclasses.asdict(memory) for memory in global_mem],
                 "agentMemory": [
                     [dataclasses.asdict(memory) for memory in agent]
@@ -286,7 +286,7 @@ class Scheduler:
             return None
 
         logger.info(
-            f"""--> Baseline LM generated the final answer within {'%.2f' % discussion_time} seconds: \n"""
+            f"""--> Baseline LM generated the final answer within {f'{discussion_time:.2f}'} seconds: \n"""
             + str(answer)
             + "\nExtracted answer: "
             + str(extracted_answer)
@@ -308,7 +308,7 @@ class Scheduler:
                 "references": sample.references,
                 "agreements": None,
                 "turns": None,
-                "clockSeconds": float("%.2f" % discussion_time),
+                "clockSeconds": float(f"{discussion_time:.2f}"),
                 "globalMemory": None,
                 "agentMemory": None,
             }

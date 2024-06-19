@@ -20,7 +20,7 @@ class Panelist(Agent):
         Either calls feedback() or improve() depending on whether a moderator is present
         """
         if use_moderator:
-            res, memory, agreements = self.feedback(
+            _res, memory, agreements = self.feedback(
                 unique_id=unique_id,
                 turn=turn,
                 memory_ids=memory_ids,
@@ -28,7 +28,7 @@ class Panelist(Agent):
                 agreements=agreements,
             )
         else:
-            res, memory, agreements = self.improve(
+            _res, memory, agreements = self.improve(
                 unique_id=unique_id,
                 turn=turn,
                 memory_ids=memory_ids,

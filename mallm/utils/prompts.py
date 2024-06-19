@@ -163,7 +163,7 @@ def generate_final_answer_prompt(
     task: str,
     previous_answer: str,
 ) -> list[dict[str, str]]:
-    prompts = [
+    return [
         {
             "role": "system",
             "content": f"Your role: {persona} ({persona_description})",
@@ -177,8 +177,6 @@ def generate_final_answer_prompt(
             "content": "Based on the above information, provide your final solution. Ensure your solution is comprehensive and well-considered.",
         },
     ]
-
-    return prompts
 
 
 def generate_voting_prompt(
