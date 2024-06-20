@@ -161,9 +161,13 @@ jobs:
       - name: Install dependencies
         run: poetry install --with dev
       - name: Replace Text in README
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
         run: poetry run python update_readme.py
   
       - name: Commit Changes
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
