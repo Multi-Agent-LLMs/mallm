@@ -150,6 +150,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
       - name: Set up Python 3.12
         uses: actions/setup-python@v3
         with:
@@ -158,8 +160,6 @@ jobs:
         uses: abatilo/actions-poetry@v2
       - name: Install dependencies
         run: poetry install --with dev
-      - name: Checkout PR
-        run: git checkout ${{ github.event.pull_request.number }}
       - name: Replace Text in README
         run: poetry run python update_readme.py
   
