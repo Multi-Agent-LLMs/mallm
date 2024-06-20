@@ -32,7 +32,7 @@ just_fix_windows_console()
 
 # Configure logging for the library
 library_logger = logging.getLogger("mallm")
-library_logger.setLevel(logging.DEBUG)
+library_logger.setLevel(logging.INFO)
 
 # Add handlers to the logger
 stream_handler = logging.StreamHandler()
@@ -115,7 +115,7 @@ class Scheduler:
         self,
         client: httpx.Client,
         sample: InputExample,
-    ) -> Optional[str]:
+    ) -> Optional[list[str]]:
         """
         Runs a single discussion between agents on a sample.
         """
@@ -133,84 +133,96 @@ class Scheduler:
             logger.error("Failed intializing coordinator.")
             logger.error(e)
             return None
-        try:
-            (
-                answer,
-                global_mem,
-                agent_mems,
-                turn,
-                agreements,
-                discussion_time,
-                decision_success,
-            ) = coordinator.discuss(
-                config=self.config, input_lines=sample.inputs, context=sample.context
+
+        coordinator.setup_personas(
+            self.config, input_lines=sample.inputs, context=sample.context
+        )
+
+        answers = []
+
+        for _ in range(10):
+            coordinator.clear_global_memory()
+            try:
+                (
+                    answer,
+                    global_mem,
+                    agent_mems,
+                    turn,
+                    agreements,
+                    discussion_time,
+                    decision_success,
+            ) = coordinator.discuss(config=self.config)
+            except Exception:
+                # More extensive error logging to ease debugging during async execution
+                logger.error(f"Failed discussion of sample {sample.example_id}.")
+                self.failed_example_ids.append(sample.example_id)
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                logger.error(exc_type)
+                logger.error(exc_obj)
+                deep_tb = exc_tb
+                while deep_tb and deep_tb.tb_next:
+                    deep_tb = deep_tb.tb_next
+                    f_name = os.path.split(deep_tb.tb_frame.f_code.co_filename)[1]
+                    logger.error(
+                        f"""-> at {f_name}:{deep_tb.tb_lineno}, deeper function level error"""
+                    )
+                return None
+
+            logger.info(
+                f"""--> Agents discussed for {turn} turns, {f'{discussion_time:.2f}'} seconds ({'%.2f' % (float(discussion_time) / 60.0)} minutes) to get the final answer: \n"""
+                + str(answer)
             )
-        except Exception:
-            # More extensive error logging to ease debugging during async execution
-            logger.error(f"Failed discussion of sample {sample.example_id}.")
-            self.failed_example_ids.append(sample.example_id)
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            logger.error(exc_type)
-            logger.error(exc_obj)
-            deep_tb = exc_tb
-            while deep_tb and deep_tb.tb_next:
-                deep_tb = deep_tb.tb_next
-                f_name = os.path.split(deep_tb.tb_frame.f_code.co_filename)[1]
-                logger.error(
-                    f"""-> at {f_name}:{deep_tb.tb_lineno}, deeper function level error"""
-                )
-            return None
+            logger.info(f"""Reference answer: {sample.references}""")
+            logger.info(f"""Decision successful: {decision_success}""")
 
-        logger.info(
-            f"""--> Agents discussed for {turn} turns, {f'{discussion_time:.2f}'} seconds ({'%.2f' % (float(discussion_time) / 60.0)} minutes) to get the final answer: \n"""
-            + str(answer)
-        )
-        logger.info(f"""Reference answer: {sample.references}""")
-        logger.info(f"""Decision successful: {decision_success}""")
-
-        self.output_dicts.append(
-            {
-                "dataset": self.dataset_name,
-                "exampleId": sample.example_id,
-                "datasetId": sample.dataset_id,
-                "instruction": self.config.instruction,
-                "coordinatorId": coordinator.id,
-                "personas": coordinator.get_agents(),
-                "paradigm": self.config.paradigm,
-                "input": sample.inputs,
-                "context": sample.context,
-                "answer": answer or None,
-                "references": sample.references,
-                "decision_success": decision_success,
+            self.output_dicts.append(
+                {
+                    "dataset": self.dataset_name,
+                    "exampleId": sample.example_id,
+                    "datasetId": sample.dataset_id,
+                    "instruction": self.config.instruction,
+                    "coordinatorId": coordinator.id,
+                    "personas": coordinator.get_agents(),
+                    "paradigm": self.config.paradigm,
+                    "input": sample.inputs,
+                    "context": sample.context,
+                    "answer": answer or None,
+                        "references": sample.references,
+                    "decision_success": decision_success,
                 "agreements": [
-                    dataclasses.asdict(agreement) for agreement in agreements
-                ],
-                "turns": turn,
-                "clockSeconds": float(f"{discussion_time:.2f}"),
-                "globalMemory": [dataclasses.asdict(memory) for memory in global_mem],
-                "agentMemory": [
-                    [dataclasses.asdict(memory) for memory in agent]
-                    for agent in agent_mems
-                    if agent
-                ],
-            }
-        )
-        try:
-            with open(self.config.out, "w") as file:
-                file.write(
-                    json.dumps(self.output_dicts)
-                )  # TODO: ensure correct json formatting (sometimes there is an invalid escape sequence warning)
-                file.truncate()
-        except Exception as e:
-            logger.error("Failed to write output to file.")
-            logger.error(e)
-            self.failed_example_ids.append(sample.example_id)
+                        dataclasses.asdict(agreement) for agreement in agreements
+                    ],
+                    "turns": turn,
+                    "clockSeconds": float(f"{discussion_time:.2f}"),
+                    "globalMemory": [
+                        dataclasses.asdict(memory) for memory in global_mem
+                    ],
+                    "agentMemory": [
+                        [dataclasses.asdict(memory) for memory in agent]
+                        for agent in agent_mems
+                        if agent
+                    ],
+                }
+            )
+            try:
+                with open(self.config.out, "w") as file:
+                    file.write(
+                        json.dumps(self.output_dicts)
+                    )  # TODO: ensure correct json formatting (sometimes there is an invalid escape sequence warning)
+                    file.truncate()
+            except Exception as e:
+                logger.error("Failed to write output to file.")
+                logger.error(e)
+                self.failed_example_ids.append(sample.example_id)
 
-        self.completed_samples += 1
-        logger.info(
-            f"""Completed samples: {self.completed_samples}. Samples left: {self.total_samples - self.completed_samples}."""
-        )
-        return answer
+            self.completed_samples += 1
+            logger.info(
+                f"""Completed samples: {self.completed_samples}. Samples left: {self.total_samples - self.completed_samples}."""
+            )
+
+            if answer:
+                answers.append(answer)
+        return answers
 
     def manage_discussions(self, client: httpx.Client) -> None:
         """

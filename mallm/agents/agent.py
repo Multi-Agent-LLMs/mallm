@@ -251,6 +251,14 @@ class Agent:
             debate_history = None
         return debate_history, memory_ids, current_draft
 
+    def clear_memory(self) -> None:
+        """
+        Forgets everything :(
+        """
+
+        with dbm.open(self.memory_bucket, "n") as _:
+            pass
+
     def save_memory_to_json(self, out: Optional[str] = None) -> None:
         """
         Converts the memory bucket dbm data to json format
