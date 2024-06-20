@@ -13,7 +13,9 @@ with open("README.md", "r+") as readme_file:
 
     attributes_content = ""
     for attr, value in attributes.items():
-        attributes_content += f"{attr}: {value}\n"
+        if isinstance(value, str):
+            value = '"' + value + '"'
+        attributes_content += f"{attr}: {type(value).__name__} = {value}\n"
 
     replacement_str = "### Config Arguments:\n```py\n" + attributes_content + "```"
     print(replacement_str)
