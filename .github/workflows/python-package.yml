@@ -163,7 +163,9 @@ jobs:
       - name: Replace Text in README
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-        run: poetry run python update_readme.py
+        run: |
+          git checkout -b ${{ github.event.pull_request.head.sha }}
+          poetry run python update_readme.py
   
       - name: Commit Changes
         with:
