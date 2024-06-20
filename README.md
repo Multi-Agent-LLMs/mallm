@@ -127,7 +127,7 @@ use_moderator: bool = False
 ## Evaluation
 
 We provide some basic evaluation metrics that can be directly applied to the output json of mallm.
-Implemented metrics: `bleu`, `rouge`, `meteor`, `bleu`, `bertscore`
+Supported metrics: `bleu`, `rouge`, `bertscore`, `meteor`, `multichoice`
 
 From terminal:
 
