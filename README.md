@@ -97,37 +97,37 @@ Use "tgi" as a model for Text Generation Inference by HuggingFace or one of thes
 
 ### Config Arguments:
 ```py
-agent_generator: expert
-api_key: -
-baseline: False
-chain_of_thought: True
-clear_memory_bucket: True
-context_length: 3
-data: None
-debate_rounds: None
-decision_protocol: hybrid_consensus
-endpoint_url: https://api.openai.com
-extract_all_drafts: True
-feedback_sentences: None
-force_all_turns: False
-include_current_turn_in_memory: True
-instruction: None
-max_concurrent_requests: 100
-max_turns: 10
-memory_bucket_dir: ./mallm/utils/memory_bucket/
-model: gpt-3.5-turbo
-num_agents: 3
-num_samples: None
-out: None
-paradigm: memory
-split_agree_and_answer: True
-use_moderator: False
+agent_generator: str = "expert"
+api_key: str = "-"
+baseline: bool = False
+chain_of_thought: bool = True
+clear_memory_bucket: bool = True
+context_length: int = 3
+data: NoneType = None
+debate_rounds: NoneType = None
+decision_protocol: str = "hybrid_consensus"
+endpoint_url: str = "https://api.openai.com"
+extract_all_drafts: bool = True
+feedback_sentences: NoneType = None
+force_all_turns: bool = False
+include_current_turn_in_memory: bool = True
+instruction: NoneType = None
+max_concurrent_requests: int = 100
+max_turns: int = 10
+memory_bucket_dir: str = "./mallm/utils/memory_bucket/"
+model: str = "gpt-3.5-turbo"
+num_agents: int = 3
+num_samples: NoneType = None
+out: NoneType = None
+paradigm: str = "memory"
+split_agree_and_answer: bool = True
+use_moderator: bool = False
 ```
 
 ## Evaluation
 
 We provide some basic evaluation metrics that can be directly applied to the output json of mallm.
-Implemented metrics: `bleu`, `rouge`, `meteor`, `bleu`, `bertscore`
+Supported metrics: `bleu`, `rouge`, `bertscore`, `meteor`, `multichoice`
 
 From terminal:
 

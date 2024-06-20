@@ -12,7 +12,7 @@ from mallm.evaluation.metrics.meteor import METEOR
 from mallm.evaluation.metrics.qa import MultiChoiceBoolean
 from mallm.evaluation.metrics.rouge import ROUGE
 
-ALL_METRICS = [BLEU(), ROUGE(), BERTScore(), METEOR(), MultiChoiceBoolean()]
+ALL_METRICS = [BERTScore(), BLEU(), METEOR(), MultiChoiceBoolean(), ROUGE()]
 
 logger = logging.getLogger("mallm")
 

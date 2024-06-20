@@ -150,6 +150,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
       - name: Set up Python 3.12
         uses: actions/setup-python@v3
         with:
@@ -158,14 +160,11 @@ jobs:
         uses: abatilo/actions-poetry@v2
       - name: Install dependencies
         run: poetry install --with dev
-      - name: Checkout PR
-        run: gh pr checkout ${{ github.event.pull_request.number }}
       - name: Replace Text in README
         run: poetry run python update_readme.py
-  
       - name: Commit Changes
         run: |
           git config --global user.name 'github-actions[bot]'
-          git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git diff --quiet || (git add README.md && git commit -m "Updated README")
           git push
