@@ -168,7 +168,7 @@ class Coordinator:
         """
         memory = []
         with dbm.open(self.memory_bucket, "r") as db:
-            for key in db:
+            for key in db.keys():
                 json_object = json.loads(db[key].decode())
                 memory.append(Memory(**json_object))
         return memory
