@@ -157,7 +157,8 @@ jobs:
         uses: abatilo/actions-poetry@v2
       - name: Install dependencies
         run: poetry install --with dev
-  
+      - name: Checkout PR
+        run: gh pr checkout ${{ github.event.pull_request.number }}
       - name: Replace Text in README
         run: poetry run python update_readme.py
   
