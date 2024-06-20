@@ -1,6 +1,5 @@
 from mallm.utils.config import Config
 import mallm.evaluation.evaluator as evaluator
-from mallm.evaluation.evaluator import Evaluator
 import re
 
 # SCHEDULER CONFIG
