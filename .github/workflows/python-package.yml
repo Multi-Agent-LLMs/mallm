@@ -144,7 +144,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   update-readme:
-    if: github.event.pull_request.merged
     runs-on: 
       - self-hosted
 
