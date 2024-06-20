@@ -1,5 +1,6 @@
 # https://stackoverflow.com/questions/384076/how-can-i-color-python-logging-output
 import logging
+from typing import ClassVar
 
 from colorama import Fore
 
@@ -13,8 +14,7 @@ class CustomFormatter(logging.Formatter):
     format_str = (
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s (%(filename)s:%(lineno)d)"
     )
-
-    FORMATS = {
+    FORMATS: ClassVar[dict[int, str]] = {
         logging.DEBUG: Fore.BLUE + format_str,
         logging.INFO: Fore.WHITE + format_str,
         logging.WARNING: Fore.YELLOW + format_str,

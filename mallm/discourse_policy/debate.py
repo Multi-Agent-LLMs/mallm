@@ -52,7 +52,6 @@ class DiscourseDebate(DiscoursePolicy):
         include_current_turn_in_memory: bool = False,
         debate_rounds: int = 1,
     ) -> tuple[Optional[str], int, list[Agreement]]:
-        turn = 0
         unique_id = 0
         memories = []
         agreements: list[Agreement] = []
@@ -74,7 +73,7 @@ class DiscourseDebate(DiscoursePolicy):
         logger.info("Debate rounds between agents A2, ..., An: " + str(debate_rounds))
 
         while (not self.decision or force_all_turns) and self.turn < max_turns:
-            self.turn = self.turn + 1
+            self.turn += 1
             logger.info("Ongoing. Current turn: " + str(self.turn))
 
             # ---- Agent A1
@@ -94,7 +93,7 @@ class DiscourseDebate(DiscoursePolicy):
                     persona_description=coordinator.moderator.persona_description,
                     agent_memory=debate_history,
                 )
-                res, memory, agreements = coordinator.moderator.draft(
+                _res, memory, agreements = coordinator.moderator.draft(
                     unique_id=unique_id,
                     turn=self.turn,
                     memory_ids=memory_ids,
@@ -105,7 +104,7 @@ class DiscourseDebate(DiscoursePolicy):
                 memories.append(memory)
                 coordinator.update_memories(memories, coordinator.agents)
                 memories = []
-                unique_id = unique_id + 1
+                unique_id += 1
             else:
                 debate_history, memory_ids, current_draft = coordinator.panelists[
                     0
@@ -122,7 +121,7 @@ class DiscourseDebate(DiscoursePolicy):
                     persona_description=coordinator.panelists[0].persona_description,
                     agent_memory=debate_history,
                 )
-                res, memory, agreements = coordinator.panelists[0].draft(
+                _res, memory, agreements = coordinator.panelists[0].draft(
                     unique_id=unique_id,
                     turn=self.turn,
                     memory_ids=memory_ids,
@@ -133,7 +132,7 @@ class DiscourseDebate(DiscoursePolicy):
                 memories.append(memory)
                 coordinator.update_memories(memories, coordinator.agents)
                 memories = []
-                unique_id = unique_id + 1
+                unique_id += 1
 
             for r in range(debate_rounds):  # ---- Agents A2, A3, ...
                 logger.debug("Debate round: " + str(r))
@@ -188,9 +187,9 @@ class DiscourseDebate(DiscoursePolicy):
                         debate_agreements = debate_agreements[
                             1 - len(coordinator.agents) :
                         ]
-                    unique_id = unique_id + 1
+                    unique_id += 1
 
-            self.agreements = self.agreements + debate_agreements
+            self.agreements += debate_agreements
             if len(agreements) > len(coordinator.panelists):
                 self.agreements = self.agreements[-len(coordinator.panelists) :]
 

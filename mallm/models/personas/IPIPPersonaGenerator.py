@@ -1,6 +1,5 @@
 import json
 import logging
-import random
 
 from mallm.models.Chat import Chat
 from mallm.models.personas.PersonaGenerator import PersonaGenerator
@@ -76,52 +75,52 @@ New Participant:
                     logger.debug("Role not in new_agent")
                     continue
 
-                if "extraversion" not in new_agent or new_agent["extraversion"] not in [
+                if "extraversion" not in new_agent or new_agent["extraversion"] not in {
                     "high",
                     "low",
-                ]:
+                }:
                     logger.debug("Extraversion not in new_agent")
                     continue
 
                 if "agreeableness" not in new_agent or new_agent[
                     "agreeableness"
-                ] not in ["high", "low"]:
+                ] not in {"high", "low"}:
                     logger.debug("Agreeableness not in new_agent")
                     continue
 
                 if "conscientiousness" not in new_agent or new_agent[
                     "conscientiousness"
-                ] not in ["high", "low"]:
+                ] not in {"high", "low"}:
                     logger.debug("Conscientiousness not in new_agent")
                     continue
 
-                if "neuroticism" not in new_agent or new_agent["neuroticism"] not in [
+                if "neuroticism" not in new_agent or new_agent["neuroticism"] not in {
                     "high",
                     "low",
-                ]:
+                }:
                     logger.debug("Neuroticism not in new_agent")
                     continue
 
-                if "openness" not in new_agent or new_agent["openness"] not in [
+                if "openness" not in new_agent or new_agent["openness"] not in {
                     "high",
                     "low",
-                ]:
+                }:
                     logger.debug("Openness not in new_agent")
                     continue
 
-                if "experience" not in new_agent or new_agent["experience"] not in [
+                if "experience" not in new_agent or new_agent["experience"] not in {
                     "Expert",
                     "Neutral",
                     "Non-Expert",
-                ]:
+                }:
                     logger.debug("Experience not in new_agent")
                     continue
 
-                if "gender" not in new_agent or new_agent["gender"] not in [
+                if "gender" not in new_agent or new_agent["gender"] not in {
                     "male",
                     "female",
                     "non-binary",
-                ]:
+                }:
                     logger.debug("Gender not in new_agent")
                     continue
 

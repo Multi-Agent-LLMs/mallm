@@ -5,8 +5,9 @@ import logging
 import os
 import time
 import uuid
+from collections.abc import Sequence
 from datetime import timedelta
-from typing import Optional, Sequence, Type
+from typing import Optional
 
 import httpx
 
@@ -16,9 +17,9 @@ from mallm.agents.panelist import Panelist
 from mallm.decision_protocol.approval import ApprovalVoting
 from mallm.decision_protocol.cumulative import CumulativeVoting
 from mallm.decision_protocol.majority import (
+    HybridMajorityConsensus,
     MajorityConsensus,
     SupermajorityConsensus,
-    HybridMajorityConsensus,
     UnanimityConsensus,
 )
 from mallm.decision_protocol.protocol import DecisionProtocol
@@ -35,14 +36,14 @@ from mallm.models.personas.IPIPPersonaGenerator import IPIPPersonaGenerator
 from mallm.models.personas.MockGenerator import MockGenerator
 from mallm.models.personas.PersonaGenerator import PersonaGenerator
 from mallm.utils.config import Config
-from mallm.utils.types import Agreement, Memory
 from mallm.utils.functions import extract_draft
+from mallm.utils.types import Agreement, Memory
 
 os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
 
 logger = logging.getLogger("mallm")
 
-DECISION_PROTOCOLS: dict[str, Type[DecisionProtocol]] = {
+DECISION_PROTOCOLS: dict[str, type[DecisionProtocol]] = {
     "majority_consensus": MajorityConsensus,
     "supermajority_consensus": SupermajorityConsensus,
     "hybrid_consensus": HybridMajorityConsensus,
@@ -53,14 +54,14 @@ DECISION_PROTOCOLS: dict[str, Type[DecisionProtocol]] = {
     "ranked": RankedVoting,
 }
 
-PROTOCOLS: dict[str, Type[DiscoursePolicy]] = {
+PROTOCOLS: dict[str, type[DiscoursePolicy]] = {
     "memory": DiscourseMemory,
     "report": DiscourseReport,
     "relay": DiscourseRelay,
     "debate": DiscourseDebate,
 }
 
-PERSONA_GENERATORS: dict[str, Type[PersonaGenerator]] = {
+PERSONA_GENERATORS: dict[str, type[PersonaGenerator]] = {
     "expert": ExpertGenerator,
     "ipip": IPIPPersonaGenerator,
     "mock": MockGenerator,
@@ -140,17 +141,15 @@ class Coordinator:
             self.agents = self.panelists
 
     def get_agents(self) -> list[dict[str, str]]:
-        agent_dicts = []
-        for a in self.agents:
-            agent_dicts.append(
-                {
-                    "agentId": a.id,
-                    "model": a.llm.model,
-                    "persona": a.persona,
-                    "personaDescription": a.persona_description,
-                }
-            )
-        return agent_dicts
+        return [
+            {
+                "agentId": a.id,
+                "model": a.llm.model,
+                "persona": a.persona,
+                "personaDescription": a.persona_description,
+            }
+            for a in self.agents
+        ]
 
     def update_global_memory(self, memory: Memory) -> None:
         """
@@ -188,8 +187,9 @@ class Coordinator:
             logger.error(f"Failed to save agent memory to {self.memory_bucket}: {e}")
             logger.error(self.get_global_memory())
 
+    @staticmethod
     def update_memories(
-        self, memories: list[Memory], agents_to_update: Sequence[Agent]
+        memories: list[Memory], agents_to_update: Sequence[Agent]
     ) -> None:
         """
         Updates the memories of all declared agents.
@@ -225,8 +225,8 @@ class Coordinator:
         sample_instruction = config.instruction
         if context:
             sample_instruction += "\nHere is some context you need to consider:"
-            for i, c in enumerate(context):
-                sample_instruction += f"\n" + c
+            for c in context:
+                sample_instruction += "\n" + c
         input_str = ""
         for num, input_line in enumerate(input_lines):
             if len(input_lines) > 1:
@@ -294,9 +294,7 @@ Decision-protocol: {self.decision_protocol.__class__.__name__}
         ).total_seconds()
 
         global_mem = self.get_global_memory()
-        agent_mems = []
-        for a in self.agents:
-            agent_mems.append(a.get_memories()[0])
+        agent_mems = [a.get_memories()[0] for a in self.agents]
 
         extracted_draft = None
         if current_draft:

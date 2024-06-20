@@ -1,7 +1,6 @@
 from typing import Any
 
 from evaluate import load
-from nltk import word_tokenize
 
 from mallm.evaluation.metrics.metric import Metric
 

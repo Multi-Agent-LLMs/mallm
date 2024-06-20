@@ -14,7 +14,8 @@ class METEOR(Metric):
     _name = "METEOR"
     _downloaded = False
 
-    def download_and_prepare(self) -> None:
+    @staticmethod
+    def download_and_prepare() -> None:
         download("wordnet")
         METEOR._downloaded = True
 

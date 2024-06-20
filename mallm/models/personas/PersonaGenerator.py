@@ -24,4 +24,3 @@ class PersonaGenerator(ABC):
                                with keys like 'role' and 'persona' (or other relevant descriptors),
                                each mapped to their respective string description.
         """
-        pass

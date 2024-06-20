@@ -68,17 +68,17 @@ New Participant:
                 if isinstance(new_agent, list):
                     new_agent = new_agent[0]
                 if (
-                    "role" not in new_agent.keys()
-                    or "description" not in new_agent.keys()
-                    or new_agent["role"] == ""
-                    or new_agent["description"] == ""
+                    "role" not in new_agent
+                    or "description" not in new_agent
+                    or not new_agent["role"]
+                    or not new_agent["description"]
                 ):
                     continue
                 agents.append(new_agent)
             except json.decoder.JSONDecodeError as e:
-                retry = retry + 1
+                retry += 1
                 logger.debug(
-                    f"Could not decode json (will attempt retry no. {str(retry)}): "
+                    f"Could not decode json (will attempt retry no. {retry!s}): "
                     + str(e)
                     + "\nResponse string: "
                     + str(response)

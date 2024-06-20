@@ -37,7 +37,7 @@ class DiscourseReport(DiscoursePolicy):
         memory_ids: list[int],
         template_filling: TemplateFilling,
     ) -> None:
-        res, memory, self.agreements = moderator.draft(
+        _res, memory, self.agreements = moderator.draft(
             unique_id=self.unique_id,
             turn=self.turn,
             memory_ids=memory_ids,
@@ -59,7 +59,7 @@ class DiscourseReport(DiscoursePolicy):
     ) -> None:
         if agent_index == 0:
             template_filling.feedback_sentences = None
-            res, memory, self.agreements = coordinator.panelists[0].draft(
+            _res, memory, self.agreements = coordinator.panelists[0].draft(
                 unique_id=self.unique_id,
                 turn=self.turn,
                 memory_ids=memory_ids,

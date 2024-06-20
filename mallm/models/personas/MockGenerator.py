@@ -6,12 +6,11 @@ class MockGenerator(PersonaGenerator):
     def __init__(self, llm: Chat):
         pass
 
+    @staticmethod
     def generate_personas(
-        self, task_description: str, num_agents: int
+        task_description: str, num_agents: int
     ) -> list[dict[str, str]]:
-        agents = [
+        return [
             {"role": f"Panelist {i}", "description": "generic"}
             for i in range(1, num_agents + 1)
         ]
-
-        return agents

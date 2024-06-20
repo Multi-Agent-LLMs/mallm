@@ -30,9 +30,8 @@ class Moderator(Agent):
         Determines whether a string given by an agent means an agreement or disagreement.
         Returns a list of bools
         """
-        agreements = [
+        return [
             Agreement(
                 agreement=None, agent_id=self.id, persona=self.persona, response=res
             )
         ]
-        return agreements

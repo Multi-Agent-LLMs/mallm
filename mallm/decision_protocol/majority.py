@@ -1,9 +1,9 @@
+import logging
 from typing import Optional
 
 from mallm.agents.panelist import Panelist
 from mallm.decision_protocol.protocol import DecisionProtocol
 from mallm.utils.types import Agreement
-import logging
 
 logger = logging.getLogger("mallm")
 
@@ -52,12 +52,11 @@ class ThresholdConsensus(DecisionProtocol):
                 current_agreement.response,
                 num_agreements + 1 == self.total_agents,
             )
-        else:
-            # more than <threshold_percent> of the agents need to agree
-            return (
-                current_agreement.response,
-                num_agreements + 1 > self.total_agents * self.threshold_percent,
-            )
+        # more than <threshold_percent> of the agents need to agree
+        return (
+            current_agreement.response,
+            num_agreements + 1 > self.total_agents * self.threshold_percent,
+        )
 
 
 class MajorityConsensus(ThresholdConsensus):
