@@ -79,7 +79,13 @@ target-version = "py39"
 [tool.ruff]
 preview = true
 target-version = "py39"
-exclude = ["mallm/models/Chat.py"]
+extend-exclude = [
+    "data/",
+    "mallm/models/Chat.py",
+    "notebooks/",
+    "test/",
+    "update_readme.py",
+]
 lint.select = [
     "A",    # builtins
     "B",    # bugbear
@@ -100,4 +106,15 @@ lint.select = [
     "W",    # pycodestyle
 ]
 lint.pyupgrade.keep-runtime-typing = true
-lint.ignore = ["E203", "E501", "N806", "N999", "PLR09", "PLR2004", "PLW15", "PERF203", "SIM115", "SIM118"]
+lint.ignore = [
+    "E203",
+    "E501",
+    "N806",
+    "N999",
+    "PERF203",
+    "PLR09",
+    "PLR2004",
+    "PLW15",
+    "SIM115",
+    "SIM118",
+]
