@@ -49,13 +49,13 @@ class ThresholdConsensus(DecisionProtocol):
             # all agents need to agree in the first <threshold_turn> turns
             # all agents need to agree if there are less than <threshold_agents> agents
             return (
-                current_agreement.response,
+                current_agreement.solution,
                 num_agreements + 1 == self.total_agents,
             )
         else:
             # more than <threshold_percent> of the agents need to agree
             return (
-                current_agreement.response,
+                current_agreement.solution,
                 num_agreements + 1 > self.total_agents * self.threshold_percent,
             )
 

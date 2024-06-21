@@ -44,10 +44,10 @@ class ApprovalVoting(DecisionProtocol):
                     panelist.persona_description,
                     question,
                     task,
-                    prev_answer.response,
+                    prev_answer.solution,
                 )
             )
-            prev_answer.response = response
+            prev_answer.solution = response
             final_answers.append(response)
 
         approvals = []

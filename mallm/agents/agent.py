@@ -10,18 +10,13 @@ from typing import TYPE_CHECKING, Optional, Callable
 import httpx
 
 from mallm.models.Chat import Chat
+from mallm.models.discussion.JSONResponseGenerator import JSONResponseGenerator
 from mallm.utils.functions import extract_draft
 
 if TYPE_CHECKING:
     from mallm.agents.moderator import Moderator
     from mallm.coordinator import Coordinator
 
-from mallm.utils.prompts import (
-    generate_chat_prompt_draft,
-    generate_chat_prompt_feedback,
-    generate_chat_prompt_improve,
-    generate_chat_prompt_agree,
-)
 from mallm.utils.types import Agreement, Memory, TemplateFilling
 
 logger = logging.getLogger("mallm")
@@ -36,7 +31,6 @@ class Agent:
         persona: str,
         persona_description: str,
         moderator: Optional[Moderator] = None,
-        split_agree_and_answer: bool = False,
         chain_of_thought: bool = False,
     ):
         self.id = str(uuid.uuid4())
@@ -47,81 +41,12 @@ class Agent:
         self.coordinator = coordinator
         self.moderator = moderator
         self.llm = llm
+        self.response_generator = JSONResponseGenerator(llm)
         self.client = client
-        self.split_agree_and_answer = split_agree_and_answer
         self.chain_of_thought = chain_of_thought
         logger.info(
             f"Creating agent {self.short_id} with personality {self.persona}: {self.persona_description}"
         )
-
-    def answer(
-        self,
-        agreements: list[Agreement],
-        self_drafted: bool,
-        template_filling: TemplateFilling,
-        prompt_callback: Callable[[Optional[bool]], list[dict[str, str]]],
-    ) -> tuple[list[Agreement], Optional[str], str]:
-        # Step 1: Check agreement
-        if self.split_agree_and_answer:
-            if template_filling.agent_memory:
-                agree_res = self.llm.invoke(
-                    generate_chat_prompt_agree(template_filling), client=self.client
-                )
-            else:
-                agree_res = "DISAGREE"
-        else:
-            agree_res = self.llm.invoke(
-                prompt_callback(None),
-                client=self.client,
-            )
-        agreements = self.agree(agree_res, agreements, self_drafted=self_drafted)
-        # Step 2: Handle response based on agreement
-        if self.split_agree_and_answer:
-            res = self.llm.invoke(
-                prompt_callback(agreements[-1].agreement),
-                client=self.client,
-            )
-            agreements[-1].response = res
-        else:
-            res = agree_res
-        extracted_draft = None
-        if not agreements[-1].agreement:
-            extracted_draft = extract_draft(res)
-        return agreements, extracted_draft, res
-
-    def agree(
-        self, res: str, agreements: list[Agreement], self_drafted: bool = False
-    ) -> list[Agreement]:
-        """
-        Determines whether a string given by an agent means an agreement or disagreement.
-        Returns a list of Agreements
-        """
-        if (
-            "agree" in res.lower()
-            and "disagree" not in res.lower()
-            and not self_drafted
-        ):
-            agreements.append(
-                Agreement(
-                    agreement=True, agent_id=self.id, persona=self.persona, response=res
-                )
-            )
-            logger.debug(f"Agent {self.short_id} agreed")
-        else:
-            agreements.append(
-                Agreement(
-                    agreement=False,
-                    agent_id=self.id,
-                    persona=self.persona,
-                    response=res,
-                )
-            )
-            logger.debug(f"Agent {self.short_id} disagreed")
-
-        # Only keep the most recent agreements
-        if len(agreements) > len(self.coordinator.agents):
-            agreements = agreements[-len(self.coordinator.agents) :]
-        return agreements
 
     def improve(
         self,
@@ -131,16 +56,19 @@ class Agent:
         template_filling: TemplateFilling,
         agreements: list[Agreement],
     ) -> tuple[str, Memory, list[Agreement]]:
-        agreements, extracted_draft, res = self.answer(
-            agreements=agreements,
-            template_filling=template_filling,
-            self_drafted=False,
-            prompt_callback=lambda agreement: generate_chat_prompt_improve(
-                data=template_filling,
-                chain_of_thought=self.chain_of_thought,
-                split_agree_and_answer=self.split_agree_and_answer,
-                agreement=agreement,
-            ),
+        logger.debug(f"Agent {self.short_id} is improving the solution.")
+        response_dict = self.response_generator.generate_improve(
+            template_filling, self.chain_of_thought
+        )
+        agreements.append(
+            Agreement(
+                agreement=response_dict["agreement"],
+                response=response_dict["message"],
+                solution=response_dict["solution"],
+                agent_id=self.id,
+                persona=self.persona,
+                message_id=unique_id,
+            )
         )
 
         memory = Memory(
@@ -149,15 +77,14 @@ class Agent:
             agent_id=self.id,
             persona=self.persona,
             contribution="improve",
-            text=res,
+            message=response_dict["message"],
             agreement=agreements[-1].agreement,
-            extracted_draft=extracted_draft,
+            solution=response_dict["solution"],
             memory_ids=memory_ids,
             additional_args=dataclasses.asdict(template_filling),
         )
-        logger.debug(f"Agent {self.short_id} is improving answer")
         self.coordinator.update_global_memory(memory)
-        return res, memory, agreements
+        return response_dict["message"], memory, agreements
 
     def draft(
         self,
@@ -168,14 +95,19 @@ class Agent:
         agreements: list[Agreement],
         is_moderator: bool = False,
     ) -> tuple[str, Memory, list[Agreement]]:
-        agreements, extracted_draft, res = self.answer(
-            agreements=agreements,
-            template_filling=template_filling,
-            self_drafted=True,
-            prompt_callback=lambda _: generate_chat_prompt_draft(
-                data=template_filling,
-                chain_of_thought=self.chain_of_thought,
-            ),
+        logger.debug(f"Agent {self.short_id} is drafting a solution.")
+        response_dict = self.response_generator.generate_draft(
+            template_filling, self.chain_of_thought
+        )
+        agreements.append(
+            Agreement(
+                agreement=response_dict["agreement"],
+                response=response_dict["message"],
+                solution=response_dict["solution"],
+                agent_id=self.id,
+                persona=self.persona,
+                message_id=unique_id,
+            )
         )
 
         memory = Memory(
@@ -184,15 +116,14 @@ class Agent:
             agent_id=self.id,
             persona=self.persona,
             contribution="draft",
-            text=res,
+            message=response_dict["message"],
             agreement=agreements[-1].agreement,
-            extracted_draft=extracted_draft,
+            solution=response_dict["solution"],
             memory_ids=memory_ids,
             additional_args=dataclasses.asdict(template_filling),
         )
-        logger.debug(f"Agent {self.short_id} is drafting")
         self.coordinator.update_global_memory(memory)
-        return res, memory, agreements
+        return response_dict["message"], memory, agreements
 
     def feedback(
         self,
@@ -202,32 +133,35 @@ class Agent:
         template_filling: TemplateFilling,
         agreements: list[Agreement],
     ) -> tuple[str, Memory, list[Agreement]]:
-        agreements, extracted_draft, res = self.answer(
-            agreements=agreements,
-            template_filling=template_filling,
-            self_drafted=False,
-            prompt_callback=lambda agreement: generate_chat_prompt_feedback(
-                data=template_filling,
-                chain_of_thought=self.chain_of_thought,
-                split_agree_and_answer=self.split_agree_and_answer,
-                agreement=agreement,
-            ),
+        logger.debug(f"Agent {self.short_id} provides feedback to a solution.")
+        response_dict = self.response_generator.generate_feedback(
+            template_filling, self.chain_of_thought
         )
+        agreements.append(
+            Agreement(
+                agreement=response_dict["agreement"],
+                response=response_dict["message"],
+                solution=response_dict["solution"],
+                agent_id=self.id,
+                persona=self.persona,
+                message_id=unique_id,
+            )
+        )
+
         memory = Memory(
             message_id=unique_id,
             turn=turn,
             agent_id=self.id,
             persona=self.persona,
             contribution="feedback",
-            text=res,
+            message=response_dict["message"],
             agreement=agreements[-1].agreement,
-            extracted_draft=None,
+            solution=None,
             memory_ids=memory_ids,
             additional_args=dataclasses.asdict(template_filling),
         )
-        logger.debug(f"Agent {self.short_id} provides feedback to another agent")
         self.coordinator.update_global_memory(memory)
-        return res, memory, agreements
+        return response_dict["message"], memory, agreements
 
     def update_memory(self, memory: Memory) -> None:
         """
@@ -269,11 +203,11 @@ class Agent:
                                 memory.contribution == "improve"
                                 and memory.agreement == False
                             ):
-                                if memory.extracted_draft:
-                                    current_draft = memory.extracted_draft
+                                if memory.solution:
+                                    current_draft = memory.solution
                                     extraction_successful = True
                                 else:
-                                    current_draft = memory.text
+                                    current_draft = memory.message
                                     extraction_successful = False
                 else:
                     context_memory.append(memory)
@@ -281,11 +215,11 @@ class Agent:
                     if memory.contribution == "draft" or (
                         memory.contribution == "improve" and memory.agreement == False
                     ):
-                        if memory.extracted_draft:
-                            current_draft = memory.extracted_draft
+                        if memory.solution:
+                            current_draft = memory.solution
                             extraction_successful = True
                         else:
-                            current_draft = memory.text
+                            current_draft = memory.message
                             extraction_successful = False
         except dbm.error:
             context_memory = None
@@ -317,12 +251,14 @@ class Agent:
             debate_history = []
             for memory in memories:
                 if memory.agent_id == self.id:
-                    debate_history.append({"role": "assistant", "content": memory.text})
+                    debate_history.append(
+                        {"role": "assistant", "content": memory.message}
+                    )
                 else:
                     debate_history.append(
                         {
                             "role": "user",
-                            "content": f"{memory.persona}: {memory.text}",
+                            "content": f"{memory.persona}: {memory.message}",
                         }
                     )
         else:

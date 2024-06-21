@@ -21,8 +21,7 @@ from mallm.utils.CustomFormatter import CustomFormatter
 from mallm.utils.config import Config
 from mallm.utils.types import InputExample
 from mallm.utils.utils import suppress_output, pretty_print_dict
-from mallm.utils.functions import extract_draft
-from mallm.utils.prompts import generate_chat_prompt_baseline
+from mallm.models.discussion.JSONResponseGenerator import JSONResponseGenerator
 
 just_fix_windows_console()
 
@@ -75,6 +74,13 @@ class Scheduler:
             sys.exit(1)
 
         self.config = config
+        self.llm = Chat(
+            client=OpenAI(
+                base_url=f"{self.config.endpoint_url}/v1", api_key=self.config.api_key
+            ),
+            model=self.config.model,
+        )
+        self.response_generator = JSONResponseGenerator(self.llm)
         self.completed_samples = 0
         self.total_samples = len(self.data)
         self.failed_example_ids: list[str] = []
@@ -87,7 +93,6 @@ class Scheduler:
     def run_discussion(
         self,
         client: httpx.Client,
-        llm: Chat,
         sample: InputExample,
     ) -> Optional[str]:
         """
@@ -98,7 +103,7 @@ class Scheduler:
         try:
             coordinator = Coordinator(
                 use_moderator=self.config.use_moderator,
-                model=llm,
+                model=self.llm,
                 agent_generator=self.config.agent_generator,
                 client=client,
                 memory_bucket_dir=self.config.memory_bucket_dir,
@@ -110,7 +115,6 @@ class Scheduler:
         try:
             (
                 answer,
-                extracted_answer,
                 global_mem,
                 agent_mems,
                 turn,
@@ -138,8 +142,6 @@ class Scheduler:
         logger.info(
             f"""--> Agents discussed for {turn} turns, {'%.2f' % discussion_time} seconds ({'%.2f' % (float(discussion_time) / 60.0)} minutes) to get the final answer: \n"""
             + str(answer)
-            + "\nExtracted answer: "
-            + str(extracted_answer)
         )
         logger.info(f"""Reference answer: {sample.references}""")
 
@@ -154,8 +156,7 @@ class Scheduler:
                 "paradigm": self.config.paradigm,
                 "input": sample.inputs,
                 "context": sample.context,
-                "answer": None if answer == "" else answer,
-                "extracted_answer": extracted_answer,
+                "answer": answer,
                 "references": sample.references,
                 "agreements": [
                     dataclasses.asdict(agreement) for agreement in agreements
@@ -195,12 +196,6 @@ class Scheduler:
         """
         logger.debug("Starting discussion manager...")
         # Creating HuggingFace endpoint
-        llm = Chat(
-            client=OpenAI(
-                base_url=f"{self.config.endpoint_url}/v1", api_key=self.config.api_key
-            ),
-            model=self.config.model,
-        )
 
         if self.config.num_samples:
             processing_data = self.data[: self.config.num_samples]
@@ -217,7 +212,7 @@ class Scheduler:
                     results.append(
                         pool.apply_async(
                             self.run_discussion,
-                            (client, llm, sample),
+                            (client, sample),
                         )
                     )
                 except Exception as e:
@@ -248,7 +243,6 @@ class Scheduler:
     def run_baseline(
         self,
         client: httpx.Client,
-        llm: Chat,
         sample: InputExample,
     ) -> Optional[str]:
         """
@@ -268,19 +262,14 @@ class Scheduler:
         logger.info(f"""Starting baseline processing of sample {sample.example_id}""")
         try:
             start_time = time.perf_counter()
-            answer = llm.invoke(
-                generate_chat_prompt_baseline(
-                    task_instruction=sample_instruction,
-                    input_str=input_str,
-                    chain_of_thought=self.config.chain_of_thought,
-                ),
-                client=client,
+            answer = self.response_generator.generate_baseline(
+                task_instruction=sample_instruction,
+                input_str=input_str,
+                chain_of_thought=self.config.chain_of_thought,
             )
             discussion_time = timedelta(
                 seconds=time.perf_counter() - start_time
             ).total_seconds()
-
-            extracted_answer = extract_draft(answer)
         except Exception as e:
             logger.error("Failed running baseline.")
             logger.error(e)
@@ -290,8 +279,6 @@ class Scheduler:
         logger.info(
             f"""--> Baseline LM generated the final answer within {'%.2f' % discussion_time} seconds: \n"""
             + str(answer)
-            + "\nExtracted answer: "
-            + str(extracted_answer)
         )
 
         self.output_dicts.append(
@@ -305,8 +292,7 @@ class Scheduler:
                 "paradigm": None,
                 "input": sample.inputs,
                 "context": sample.context,
-                "answer": None if answer == "" else answer,
-                "extracted_answer": extracted_answer,
+                "answer": answer,
                 "references": sample.references,
                 "agreements": None,
                 "turns": None,
@@ -330,7 +316,7 @@ class Scheduler:
         logger.info(
             f"""Completed samples: {self.completed_samples}. Samples left: {self.total_samples - self.completed_samples}."""
         )
-        return answer
+        return answer["solution"]
 
     def manage_baseline(self, client: httpx.Client) -> None:
         """
@@ -339,12 +325,6 @@ class Scheduler:
         """
         logger.debug("Starting baseline manager...")
         # Creating HuggingFace endpoint
-        llm = Chat(
-            client=OpenAI(
-                base_url=f"{self.config.endpoint_url}/v1", api_key=self.config.api_key
-            ),
-            model=self.config.model,
-        )
 
         if self.config.num_samples:
             processing_data = self.data[: self.config.num_samples]
@@ -361,7 +341,7 @@ class Scheduler:
                     results.append(
                         pool.apply_async(
                             self.run_baseline,
-                            (client, llm, sample),
+                            (client, self.llm, sample),
                         )
                     )
                 except Exception as e:

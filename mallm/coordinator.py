@@ -96,7 +96,6 @@ class Coordinator:
         input_str: str,
         use_moderator: bool,
         num_agents: int,
-        split_agree_and_answer: bool,
         chain_of_thought: bool,
     ) -> None:
         """
@@ -129,7 +128,6 @@ class Coordinator:
                     coordinator=self,
                     persona=persona["role"],
                     persona_description=persona["description"],
-                    split_agree_and_answer=split_agree_and_answer,
                     chain_of_thought=chain_of_thought,
                 )
             )
@@ -205,7 +203,6 @@ class Coordinator:
         context: Optional[list[str]],
     ) -> tuple[
         Optional[str],
-        Optional[str],
         list[Memory],
         list[Optional[list[Memory]]],
         int,
@@ -224,7 +221,7 @@ class Coordinator:
         """
         sample_instruction = config.instruction
         if context:
-            sample_instruction += "\nHere is some context you need to consider:"
+            sample_instruction += "\nContext:"
             for i, c in enumerate(context):
                 sample_instruction += f"\n" + c
         input_str = ""
@@ -242,7 +239,6 @@ class Coordinator:
             input_str,
             use_moderator=config.use_moderator,
             num_agents=sample_num_agents,
-            split_agree_and_answer=config.split_agree_and_answer,
             chain_of_thought=config.chain_of_thought,
         )
 
@@ -276,7 +272,7 @@ Decision-protocol: {self.decision_protocol.__class__.__name__}
 -------------"""
         )
 
-        current_draft, turn, agreements = policy.discuss(
+        answer, turn, agreements = policy.discuss(
             self,
             sample_instruction,
             input_str,
@@ -298,13 +294,8 @@ Decision-protocol: {self.decision_protocol.__class__.__name__}
         for a in self.agents:
             agent_mems.append(a.get_memories()[0])
 
-        extracted_draft = None
-        if current_draft:
-            extracted_draft = extract_draft(current_draft)
-
         return (
-            current_draft,
-            extracted_draft,
+            answer,
             global_mem,
             agent_mems,
             turn,
