@@ -30,16 +30,20 @@ class StrategyGADownloader(DatasetDownloader):
         input_examples = []
         for s in self.dataset[: self.sample_size]:
             ref = [k for k, v in s["target_scores"].items() if v == 1]
-            multiple_choice_str = " Answer Choices:"
+            multiple_choices = []
             for i, (k, v) in enumerate(s["target_scores"].items()):
-                multiple_choice_str += " " + f"{chr(ord('A') + i)}) " + k
+                multiple_choices.append(f"{chr(ord('A') + i)}) " + k)
             input_examples.append(
                 InputExample(
                     example_id=str(uuid.uuid4()),
                     dataset_id=None,
                     inputs=[s["input"]],
-                    context=None,
-                    references=[json.dumps(s["target"])],
+                    context=multiple_choices,
+                    references=[
+                        json.dumps(s["target"])
+                        .replace("Yes.", "A) Yes.")
+                        .replace("No.", "B) No.")
+                    ],
                     personas=None,
                 )
             )
