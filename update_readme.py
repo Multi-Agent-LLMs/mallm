@@ -1,4 +1,5 @@
 from mallm.utils.config import Config
+from pathlib import Path
 import mallm.evaluation.evaluator as evaluator
 import re
 
@@ -46,6 +47,32 @@ with open("README.md", "r+") as readme_file:
 
     updated_lines = re.sub(
         r"Supported metrics: (.*?)\n",
+        replacement_str,
+        content,
+        flags=re.DOTALL,
+    )
+    readme_file.seek(0)
+    readme_file.writelines(updated_lines)
+    readme_file.truncate()
+
+# DATASETS
+print("Updating Supported Datasets...")
+with open("README.md", "r+") as readme_file:
+    content = readme_file.read()
+
+    supported_datasets = ""
+    for file in Path("data/data_downloaders/").glob("*.py"):
+        if not file.name == "__init__.py":
+            supported_datasets += f"`{file.name.split(".")[0]}`, "
+    supported_datasets = supported_datasets[:-2]
+    replacement_str = (
+        "These datasets are supported by our automated formatting pipeline: "
+        + supported_datasets
+        + "\n"
+    )
+
+    updated_lines = re.sub(
+        r"These datasets are supported by our automated formatting pipeline: (.*?)\n",
         replacement_str,
         content,
         flags=re.DOTALL,
