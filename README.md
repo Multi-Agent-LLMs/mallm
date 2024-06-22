@@ -120,14 +120,13 @@ num_agents: int = 3
 num_samples: NoneType = None
 out: NoneType = None
 paradigm: str = "memory"
-split_agree_and_answer: bool = True
 use_moderator: bool = False
 ```
 
 ## Evaluation
 
 We provide some basic evaluation metrics that can be directly applied to the output json of mallm.
-Supported metrics: `bleu`, `rouge`, `bertscore`, `meteor`, `multichoice`
+Supported metrics: `bertscore`, `bleu`, `meteor`, `multichoice`, `rouge`
 
 From terminal:
 
