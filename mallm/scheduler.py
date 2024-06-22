@@ -119,6 +119,7 @@ class Scheduler:
                 turn,
                 agreements,
                 discussion_time,
+                decision_success,
             ) = coordinator.discuss(
                 config=self.config, input_lines=sample.inputs, context=sample.context
             )
@@ -143,6 +144,7 @@ class Scheduler:
             + str(answer)
         )
         logger.info(f"""Reference answer: {sample.references}""")
+        logger.info(f"""Decision successful: {decision_success}""")
 
         self.output_dicts.append(
             {
@@ -155,8 +157,9 @@ class Scheduler:
                 "paradigm": self.config.paradigm,
                 "input": sample.inputs,
                 "context": sample.context,
-                "answer": answer,
+                "answer": answer or None,
                 "references": sample.references,
+                "decision_success": decision_success,
                 "agreements": [
                     dataclasses.asdict(agreement) for agreement in agreements
                 ],
@@ -290,8 +293,9 @@ class Scheduler:
                 "paradigm": None,
                 "input": sample.inputs,
                 "context": sample.context,
-                "answer": answer,
+                "answer": answer or None,
                 "references": sample.references,
+                "decision_success": None,
                 "agreements": None,
                 "turns": None,
                 "clockSeconds": float(f"{discussion_time:.2f}"),

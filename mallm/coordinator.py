@@ -207,6 +207,7 @@ class Coordinator:
         int,
         list[Agreement],
         float,
+        bool,
     ]:
         """
         The routine responsible for the discussion between agents to solve a task.
@@ -271,7 +272,7 @@ Decision-protocol: {self.decision_protocol.__class__.__name__}
 -------------"""
         )
 
-        answer, turn, agreements = policy.discuss(
+        answer, turn, agreements, decision_success = policy.discuss(
             self,
             sample_instruction,
             input_str,
@@ -298,4 +299,5 @@ Decision-protocol: {self.decision_protocol.__class__.__name__}
             turn,
             agreements,
             discussion_time,
+            decision_success,
         )

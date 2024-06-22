@@ -112,7 +112,7 @@ Current Solution: {data.current_draft}
 
         appendix = ""
         if data.feedback_sentences is not None:
-            appendix += f"\nExplain your reasoning in {data.feedback_sentences[0]} to {data.feedback_sentences[1]} sentences!"
+            appendix += f"\nExplain your feedback and solution in {data.feedback_sentences[0]} to {data.feedback_sentences[1]} sentences!"
         if data.current_draft is None:
             appendix += (
                 "\nNobody proposed a solution yet. Please provide the first one."
@@ -206,7 +206,7 @@ Current Solution: {data.current_draft}
             *self.get_filled_template(data),
             {
                 "role": "user",
-                "content": "Based on the current solution, give constructive feedback. Be open to compromise.",
+                "content": "Based on the current solution, give constructive feedback.",
             },
         ]
         return self.generate_response(current_prompt, chain_of_thought, False, False)

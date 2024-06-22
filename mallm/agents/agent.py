@@ -100,7 +100,7 @@ class Agent:
         )
         agreements.append(
             Agreement(
-                agreement=response_dict["agreement"],
+                agreement=None,
                 response=response_dict["message"],
                 solution=response_dict["solution"],
                 agent_id=self.id,
@@ -116,7 +116,7 @@ class Agent:
             persona=self.persona,
             contribution="draft",
             message=response_dict["message"],
-            agreement=agreements[-1].agreement,
+            agreement=None,
             solution=response_dict["solution"],
             memory_ids=memory_ids,
             additional_args=dataclasses.asdict(template_filling),
@@ -140,7 +140,7 @@ class Agent:
             Agreement(
                 agreement=response_dict["agreement"],
                 response=response_dict["message"],
-                solution=response_dict["solution"],
+                solution="",
                 agent_id=self.id,
                 persona=self.persona,
                 message_id=unique_id,

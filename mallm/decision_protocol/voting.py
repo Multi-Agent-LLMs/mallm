@@ -30,9 +30,12 @@ class Voting(DecisionProtocol):
         agent_index: int,
         task: str,
         question: str,
-    ) -> tuple[str, bool]:
+    ) -> tuple[str, bool, list[Agreement]]:
+        if len(agreements) > self.total_agents:
+            agreements = agreements[-self.total_agents :]
+
         if turn < self.vote_turn or agent_index != self.total_agents - 1:
-            return "", False
+            return "", False, agreements
         final_answers = []
         for panelist in self.panelists:
             prev_answer: Agreement = next(
@@ -85,4 +88,4 @@ class Voting(DecisionProtocol):
         logger.info(
             f"Voted for answer from agent {self.panelists[most_voted].short_id}"
         )
-        return final_answers[most_voted], True
+        return final_answers[most_voted], True, agreements

@@ -29,9 +29,11 @@ class ThresholdConsensus(DecisionProtocol):
         agent_index: int,
         task: str,
         question: str,
-    ) -> tuple[str, bool]:
+    ) -> tuple[str, bool, list[Agreement]]:
+        if len(agreements) > self.total_agents:
+            agreements = agreements[-self.total_agents :]
         reversed_agreements = agreements[::-1]
-        # latest disagreement is the current draft
+
         num_agreements, current_agreement = next(
             (
                 (i, agreement)
@@ -40,8 +42,18 @@ class ThresholdConsensus(DecisionProtocol):
             ),
             (None, None),
         )
+
+        # so we have at least some output if the discussion does not converge
         if not current_agreement or not num_agreements:
-            return "", False
+            moderator_agreement = next(
+                (a for a in reversed_agreements if a.agreement is None), None
+            )
+            if moderator_agreement:
+                return moderator_agreement.solution, False, agreements
+            recent_panelist_agreement = next(
+                a for a in reversed_agreements if not a.agreement
+            )
+            return recent_panelist_agreement.solution, False, agreements
 
         if (self.threshold_agents and len(self.panelists) <= self.threshold_agents) or (
             self.threshold_turn and turn < self.threshold_turn
@@ -51,11 +63,13 @@ class ThresholdConsensus(DecisionProtocol):
             return (
                 current_agreement.solution,
                 num_agreements + 1 == self.total_agents,
+                agreements,
             )
         # more than <threshold_percent> of the agents need to agree
         return (
             current_agreement.solution,
             num_agreements + 1 > self.total_agents * self.threshold_percent,
+            agreements,
         )
 
 

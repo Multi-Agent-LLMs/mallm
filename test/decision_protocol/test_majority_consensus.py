@@ -34,7 +34,7 @@ def test_unanimous_decision_in_first_five_turns():
             for _ in range(2)
         ]
     )
-    decision, is_consensus = mc.make_decision(agreements, 4, 0, "", "")
+    decision, is_consensus, agreements = mc.make_decision(agreements, 4, 0, "", "")
     assert is_consensus
 
 
@@ -73,7 +73,7 @@ def test_unanimous_decision_in_first_five_turns_with_moderator():
             for _ in range(3)
         ]
     )
-    decision, is_consensus = mc.make_decision(agreements, 4, 0, "", "")
+    decision, is_consensus, agreements = mc.make_decision(agreements, 4, 0, "", "")
     assert is_consensus
 
 
@@ -105,7 +105,7 @@ def test_no_unanimous_decision_in_first_five_turns():
             message_id="",
         ),
     ]
-    decision, is_consensus = mc.make_decision(agreements, 4, 0, "", "")
+    decision, is_consensus, agreements = mc.make_decision(agreements, 4, 0, "", "")
     assert not is_consensus
 
 
@@ -137,7 +137,7 @@ def test_no_unanimous_decision_in_first_five_turns_with_moderator():
             message_id="",
         ),
     ]
-    decision, is_consensus = mc.make_decision(agreements, 4, 0, "", "")
+    decision, is_consensus, agreements = mc.make_decision(agreements, 4, 0, "", "")
     assert not is_consensus
 
 
@@ -167,7 +167,7 @@ def test_majority_decision_after_five_turns():
             for _ in range(3)
         ]
     )
-    decision, is_consensus = mc.make_decision(agreements, 6, 0, "", "")
+    decision, is_consensus, agreements = mc.make_decision(agreements, 6, 0, "", "")
     assert is_consensus
 
 
@@ -197,5 +197,5 @@ def test_no_majority_decision_after_five_turns():
             for _ in range(2)
         ]
     )
-    decision, is_consensus = mc.make_decision(agreements, 6, 0, "", "")
+    decision, is_consensus, agreements = mc.make_decision(agreements, 6, 0, "", "")
     assert not is_consensus
