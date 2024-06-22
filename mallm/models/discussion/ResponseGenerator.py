@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
+from typing import Any
 
 from mallm.models.Chat import Chat
-from mallm.utils.types import TemplateFilling
-from typing import Any
 
 
 class ResponseGenerator(ABC):
@@ -27,4 +26,3 @@ class ResponseGenerator(ABC):
         Returns:
         dict[str, str]: A dictionary, with the keys "agreement", "message", and "solution".
         """
-        pass

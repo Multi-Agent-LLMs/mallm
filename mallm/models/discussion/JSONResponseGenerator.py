@@ -1,6 +1,7 @@
 import json
 import logging
 from typing import Any
+
 from json_repair import repair_json
 
 from mallm.models.Chat import Chat
@@ -100,7 +101,8 @@ JSON Response:
         ]
         return self.generate_response(prompt, chain_of_thought, True, True)
 
-    def get_filled_template(self, data: TemplateFilling) -> list[dict[str, str]]:
+    @staticmethod
+    def get_filled_template(data: TemplateFilling) -> list[dict[str, str]]:
         prompt_str = f"""
 Task: {data.task_instruction}
 Input: {data.input_str}
@@ -113,10 +115,10 @@ Current Solution: {data.current_draft}
             appendix += f"\nExplain your reasoning in {data.feedback_sentences[0]} to {data.feedback_sentences[1]} sentences!"
         if data.current_draft is None:
             appendix += (
-                f"\nNobody proposed a solution yet. Please provide the first one."
+                "\nNobody proposed a solution yet. Please provide the first one."
             )
         if data.agent_memory is not None and data.agent_memory != []:
-            appendix += f"\nThis is the discussion to the current point: \n"
+            appendix += "\nThis is the discussion to the current point: \n"
         prompt = [
             {
                 "role": "user",
@@ -155,30 +157,35 @@ Current Solution: {data.current_draft}
                     response_dict = json_response[0]
                 else:
                     response_dict = json_response
-                if baseline and (  # ensure correct format for baseline dict
-                    "message" not in response_dict.keys()
-                    or "solution" not in response_dict.keys()
-                    or response_dict["message"] == ""
-                    or response_dict["solution"] == ""
-                ):
-                    continue
-                elif not baseline and (  # ensure correct format for discussion dict
-                    "agreement" not in response_dict.keys()
-                    or "message" not in response_dict.keys()
-                    or "solution" not in response_dict.keys()
-                    or (
-                        not isinstance(response_dict["agreement"], bool)
-                        and not drafting
+                if (
+                    baseline
+                    and (  # ensure correct format for baseline dict
+                        "message" not in response_dict.keys()
+                        or "solution" not in response_dict.keys()
+                        or not response_dict["message"]
+                        or not response_dict["solution"]
                     )
-                    or response_dict["message"] == ""
-                    or response_dict["solution"] == ""
+                ) or (
+                    not baseline
+                    and (  # ensure correct format for discussion dict
+                        "agreement" not in response_dict.keys()
+                        or "message" not in response_dict.keys()
+                        or "solution" not in response_dict.keys()
+                        or (
+                            not isinstance(response_dict["agreement"], bool)
+                            and not drafting
+                        )
+                        or not response_dict["message"]
+                        or not response_dict["solution"]
+                    )
                 ):
+                    retry += 1
                     continue
                 break  # success
             except json.decoder.JSONDecodeError as e:
-                retry = retry + 1
+                retry += 1
                 logger.debug(
-                    f"Could not decode json (will attempt retry no. {str(retry)}): "
+                    f"Could not decode json (will attempt retry no. {retry!s}): "
                     + str(e)
                     + "\nResponse string: "
                     + str(response)
@@ -194,44 +201,35 @@ Current Solution: {data.current_draft}
     def generate_feedback(
         self, data: TemplateFilling, chain_of_thought: bool
     ) -> dict[str, Any]:
-        current_prompt = (
-            [self.base_prompt]
-            + self.get_filled_template(data)
-            + [
-                {
-                    "role": "user",
-                    "content": f"Based on the current solution, give constructive feedback. Be open to compromise.",
-                }
-            ]
-        )
+        current_prompt = [
+            self.base_prompt,
+            *self.get_filled_template(data),
+            {
+                "role": "user",
+                "content": "Based on the current solution, give constructive feedback. Be open to compromise.",
+            },
+        ]
         return self.generate_response(current_prompt, chain_of_thought, False, False)
 
     def generate_improve(
         self, data: TemplateFilling, chain_of_thought: bool
     ) -> dict[str, Any]:
-        current_prompt = (
-            [self.base_prompt]
-            + self.get_filled_template(data)
-            + [
-                {
-                    "role": "user",
-                    "content": f"Improve the current solution. Agree or disagree and explain your choice.",
-                },
-            ]
-        )
+        current_prompt = [
+            self.base_prompt,
+            *self.get_filled_template(data),
+            {
+                "role": "user",
+                "content": "Improve the current solution. Agree or disagree and explain your choice.",
+            },
+        ]
         return self.generate_response(current_prompt, chain_of_thought, False, False)
 
     def generate_draft(
         self, data: TemplateFilling, chain_of_thought: bool
     ) -> dict[str, Any]:
-        current_prompt = (
-            [self.base_prompt]
-            + self.get_filled_template(data)
-            + [
-                {
-                    "role": "user",
-                    "content": f"Propose a solution to the task.",
-                },
-            ]
-        )
+        current_prompt = [
+            self.base_prompt,
+            *self.get_filled_template(data),
+            {"role": "user", "content": "Propose a solution to the task."},
+        ]
         return self.generate_response(current_prompt, chain_of_thought, False, True)

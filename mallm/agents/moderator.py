@@ -6,7 +6,6 @@ import httpx
 
 from mallm.agents.agent import Agent
 from mallm.models.Chat import Chat
-from mallm.utils.types import Agreement
 
 if TYPE_CHECKING:
     from mallm.coordinator import Coordinator

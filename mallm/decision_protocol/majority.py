@@ -58,6 +58,7 @@ class ThresholdConsensus(DecisionProtocol):
             num_agreements + 1 > self.total_agents * self.threshold_percent,
         )
 
+
 class MajorityConsensus(ThresholdConsensus):
     def __init__(
         self,

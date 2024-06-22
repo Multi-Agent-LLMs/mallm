@@ -16,10 +16,10 @@ from openai import OpenAI
 
 from mallm.coordinator import Coordinator
 from mallm.models.Chat import Chat
-from mallm.utils.config import Config
-from mallm.utils.types import InputExample
-from mallm.utils.utils import suppress_output, pretty_print_dict
 from mallm.models.discussion.JSONResponseGenerator import JSONResponseGenerator
+from mallm.utils.config import Config
+from mallm.utils.CustomFormatter import CustomFormatter
+from mallm.utils.types import InputExample
 from mallm.utils.utils import pretty_print_dict, suppress_output
 
 just_fix_windows_console()

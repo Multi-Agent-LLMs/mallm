@@ -36,7 +36,6 @@ from mallm.models.personas.IPIPPersonaGenerator import IPIPPersonaGenerator
 from mallm.models.personas.MockGenerator import MockGenerator
 from mallm.models.personas.PersonaGenerator import PersonaGenerator
 from mallm.utils.config import Config
-from mallm.utils.functions import extract_draft
 from mallm.utils.types import Agreement, Memory
 
 os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
@@ -222,8 +221,8 @@ class Coordinator:
         sample_instruction = config.instruction
         if context:
             sample_instruction += "\nContext:"
-            for i, c in enumerate(context):
-                sample_instruction += f"\n" + c
+            for c in context:
+                sample_instruction += "\n" + c
         input_str = ""
         for num, input_line in enumerate(input_lines):
             if len(input_lines) > 1:

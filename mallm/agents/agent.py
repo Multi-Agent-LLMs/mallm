@@ -5,13 +5,12 @@ import dbm
 import json
 import logging
 import uuid
-from typing import TYPE_CHECKING, Callable, Optional
+from typing import TYPE_CHECKING, Optional
 
 import httpx
 
 from mallm.models.Chat import Chat
 from mallm.models.discussion.JSONResponseGenerator import JSONResponseGenerator
-from mallm.utils.functions import extract_draft
 
 if TYPE_CHECKING:
     from mallm.agents.moderator import Moderator
@@ -184,7 +183,6 @@ class Agent:
         memories: list[Memory] = []
         memory_ids = []
         current_draft = None
-        extraction_successful = True
 
         try:
             with dbm.open(self.memory_bucket, "r") as db:
@@ -205,31 +203,16 @@ class Agent:
                     if memory.contribution == "draft" or (
                         memory.contribution == "improve" and memory.agreement is False
                     ):
-                        if memory.extracted_draft:
-                            current_draft = memory.solution
-                            extraction_successful = True
-                        else:
-                            current_draft = memory.message
-                            extraction_successful = False
+                        current_draft = memory.solution
                 else:
                     context_memory.append(memory)
                     memory_ids.append(int(memory.message_id))
                     if memory.contribution == "draft" or (
                         memory.contribution == "improve" and memory.agreement is False
                     ):
-                        if memory.solution:
-                            current_draft = memory.solution
-                            extraction_successful = True
-                        else:
-                            current_draft = memory.message
-                            extraction_successful = False
+                        current_draft = memory.solution
         except dbm.error:
             context_memory = None
-
-        if not extraction_successful:
-            logger.debug(
-                f"Message {memory.message_id} of agent {memory.agent_id} could not be extracted. Using the full message as current draft."
-            )
 
         return context_memory, memory_ids, current_draft
 
