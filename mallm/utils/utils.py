@@ -1,7 +1,8 @@
 import os
 import pprint
 import sys
-from typing import Any, ContextManager, TextIO
+from contextlib import AbstractContextManager
+from typing import Any, TextIO
 
 
 class SuppressOutput:
@@ -13,14 +14,14 @@ class SuppressOutput:
         sys.stdout = open(os.devnull, "w")
         sys.stderr = open(os.devnull, "w")
 
-    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+    def __exit__(self, exc_type: object, exc_val: object, exc_tb: object) -> None:
         sys.stdout.close()
         sys.stderr.close()
         sys.stdout = self._original_stdout
         sys.stderr = self._original_stderr
 
 
-def suppress_output() -> ContextManager[None]:
+def suppress_output() -> AbstractContextManager[None]:
     return SuppressOutput()
 
 

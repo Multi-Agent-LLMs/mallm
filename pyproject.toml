@@ -1,9 +1,7 @@
 [project]
 name = "mallm"
 version = "0.1.0"
-authors = [
-  { name="GippLab", email="projects@gipplab.org" },
-]
+authors = [{ name = "GippLab", email = "projects@gipplab.org" }]
 description = "Multi-Agent Large Language Models for Collaborative Task-Solving."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -77,3 +75,46 @@ omit = ["tests/*"]
 
 [tool.flake8]
 target-version = "py39"
+
+[tool.ruff]
+preview = true
+target-version = "py39"
+extend-exclude = [
+    "data/",
+    "mallm/models/Chat.py",
+    "notebooks/",
+    "test/",
+    "update_readme.py",
+]
+lint.select = [
+    "A",    # builtins
+    "B",    # bugbear
+    "C4",   # comprehensions
+    "E",    # pycodestyle
+    "F",    # Pyflakes
+    "FURB", # refurb
+    "I",    # isort
+    "INP",  # no-pep420
+    "N",    # pep8-naming
+    "PERF", # Perflint
+    "PIE",  # pie
+    "PL",   # Pylint
+    "RET",  # return
+    "RUF",  # Ruff
+    "SIM",  # simplify
+    "UP",   # pyupgrade
+    "W",    # pycodestyle
+]
+lint.pyupgrade.keep-runtime-typing = true
+lint.ignore = [
+    "E203",
+    "E501",
+    "N806",
+    "N999",
+    "PERF203",
+    "PLR09",
+    "PLR2004",
+    "PLW15",
+    "SIM115",
+    "SIM118",
+]

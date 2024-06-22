@@ -81,7 +81,7 @@ class Evaluator:
 
             average_score = sum(scores) / len(scores)
             std_dev_score = (
-                sum([(score - average_score) ** 2 for score in scores]) / len(scores)
+                sum((score - average_score) ** 2 for score in scores) / len(scores)
             ) ** 0.5
 
             logger.info(f"Data size: {len(self.data)}")

@@ -75,8 +75,7 @@ class ApprovalVoting(DecisionProtocol):
                             f"{panelist.short_id} approved answers from {[self.panelists[a].short_id for a in approval_list]}"
                         )
                         break
-                    else:
-                        raise ValueError
+                    raise ValueError
                 except ValueError:
                     logger.debug(
                         f"{panelist.short_id} cast an invalid approval: {approval}. Asking to approve again."

@@ -5,7 +5,7 @@ import dbm
 import json
 import logging
 import uuid
-from typing import TYPE_CHECKING, Optional, Callable
+from typing import TYPE_CHECKING, Callable, Optional
 
 import httpx
 
@@ -37,7 +37,7 @@ class Agent:
         self.short_id = self.id[:4]
         self.persona = persona
         self.persona_description = persona_description
-        self.memory_bucket = coordinator.memory_bucket_dir + "agent_{}".format(self.id)
+        self.memory_bucket = coordinator.memory_bucket_dir + f"agent_{self.id}"
         self.coordinator = coordinator
         self.moderator = moderator
         self.llm = llm
@@ -194,26 +194,28 @@ class Agent:
             memories = sorted(memories, key=lambda x: x.message_id, reverse=False)
             context_memory = []
             for memory in memories:
-                if context_length:
-                    if turn and memory.turn >= turn - context_length:
-                        if turn > memory.turn or include_this_turn:
-                            context_memory.append(memory)
-                            memory_ids.append(int(memory.message_id))
-                            if memory.contribution == "draft" or (
-                                memory.contribution == "improve"
-                                and memory.agreement == False
-                            ):
-                                if memory.solution:
-                                    current_draft = memory.solution
-                                    extraction_successful = True
-                                else:
-                                    current_draft = memory.message
-                                    extraction_successful = False
+                if (
+                    context_length
+                    and turn
+                    and memory.turn >= turn - context_length
+                    and (turn > memory.turn or include_this_turn)
+                ):
+                    context_memory.append(memory)
+                    memory_ids.append(int(memory.message_id))
+                    if memory.contribution == "draft" or (
+                        memory.contribution == "improve" and memory.agreement is False
+                    ):
+                        if memory.extracted_draft:
+                            current_draft = memory.solution
+                            extraction_successful = True
+                        else:
+                            current_draft = memory.message
+                            extraction_successful = False
                 else:
                     context_memory.append(memory)
                     memory_ids.append(int(memory.message_id))
                     if memory.contribution == "draft" or (
-                        memory.contribution == "improve" and memory.agreement == False
+                        memory.contribution == "improve" and memory.agreement is False
                     ):
                         if memory.solution:
                             current_draft = memory.solution
@@ -269,7 +271,7 @@ class Agent:
         """
         Converts the memory bucket dbm data to json format
         """
-        save_path = out if out else self.memory_bucket + ".json"
+        save_path = out or self.memory_bucket + ".json"
         try:
             memories, memory_ids, current_draft = self.get_memories()
             if memories:

@@ -34,10 +34,10 @@ def base_prompt(data: TemplateFilling) -> list[dict[str, str]]:
     if data.current_draft is not None:
         appendix += f"\nHere is the current solution to the task: {data.current_draft}"
     else:
-        appendix += f"\nNobody proposed a solution yet. Please provide the first one."
+        appendix += "\nNobody proposed a solution yet. Please provide the first one."
 
     if data.agent_memory is not None and data.agent_memory != []:
-        appendix += f"\nThis is the discussion to the current point:"
+        appendix += "\nThis is the discussion to the current point:"
 
     prompts = [
         {
@@ -163,7 +163,7 @@ def generate_final_answer_prompt(
     task: str,
     previous_answer: str,
 ) -> list[dict[str, str]]:
-    prompts = [
+    return [
         {
             "role": "system",
             "content": f"Your role: {persona} ({persona_description})",
@@ -177,8 +177,6 @@ def generate_final_answer_prompt(
             "content": "Based on the above information, provide your final solution. Ensure your solution is comprehensive and well-considered.",
         },
     ]
-
-    return prompts
 
 
 def generate_voting_prompt(
