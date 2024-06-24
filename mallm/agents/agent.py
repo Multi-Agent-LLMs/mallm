@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Optional
 import httpx
 
 from mallm.models.Chat import Chat
-from mallm.models.discussion.JSONResponseGenerator import JSONResponseGenerator
+from mallm.models.discussion.ResponseGenerator import ResponseGenerator
 
 if TYPE_CHECKING:
     from mallm.agents.moderator import Moderator
@@ -27,6 +27,7 @@ class Agent:
         llm: Chat,
         client: httpx.Client,
         coordinator: Coordinator,
+        response_generator: ResponseGenerator,
         persona: str,
         persona_description: str,
         moderator: Optional[Moderator] = None,
@@ -40,7 +41,7 @@ class Agent:
         self.coordinator = coordinator
         self.moderator = moderator
         self.llm = llm
-        self.response_generator = JSONResponseGenerator(llm)
+        self.response_generator = response_generator
         self.client = client
         self.chain_of_thought = chain_of_thought
         logger.info(

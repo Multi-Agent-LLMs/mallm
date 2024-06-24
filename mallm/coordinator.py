@@ -31,6 +31,9 @@ from mallm.discourse_policy.policy import DiscoursePolicy
 from mallm.discourse_policy.relay import DiscourseRelay
 from mallm.discourse_policy.report import DiscourseReport
 from mallm.models.Chat import Chat
+from mallm.models.discussion.FreeTextResponseGenerator import FreeTextResponseGenerator
+from mallm.models.discussion.JSONResponseGenerator import JSONResponseGenerator
+from mallm.models.discussion.ResponseGenerator import ResponseGenerator
 from mallm.models.personas.ExpertGenerator import ExpertGenerator
 from mallm.models.personas.IPIPPersonaGenerator import IPIPPersonaGenerator
 from mallm.models.personas.MockGenerator import MockGenerator
@@ -66,6 +69,11 @@ PERSONA_GENERATORS: dict[str, type[PersonaGenerator]] = {
     "mock": MockGenerator,
 }
 
+RESPONSE_GENERATORS: dict[str, type[ResponseGenerator]] = {
+    "json": JSONResponseGenerator,
+    "freetext": FreeTextResponseGenerator,
+}
+
 
 class Coordinator:
     def __init__(
@@ -87,6 +95,7 @@ class Coordinator:
         self.memory_bucket = self.memory_bucket_dir + "global_" + self.id
         self.decision_protocol: Optional[DecisionProtocol] = None
         self.llm = model
+        self.response_generator: ResponseGenerator = JSONResponseGenerator(self.llm)
         self.client = client
         self.agent_generator = agent_generator
 
@@ -119,13 +128,16 @@ class Coordinator:
         )
 
         if use_moderator:
-            self.moderator = Moderator(self.llm, self.client, self)
+            self.moderator = Moderator(
+                self.llm, self.client, self, response_generator=self.response_generator
+            )
         for persona in personas:
             self.panelists.append(
                 Panelist(
                     llm=self.llm,
                     client=self.client,
                     coordinator=self,
+                    response_generator=self.response_generator,
                     persona=persona["role"],
                     persona_description=persona["description"],
                     chain_of_thought=chain_of_thought,
@@ -231,6 +243,15 @@ class Coordinator:
             else:
                 input_str = input_line
 
+        if config.response_generator not in RESPONSE_GENERATORS:
+            logger.error(f"No valid response generator for {config.response_generator}")
+            raise Exception(
+                f"No valid response generator for {config.response_generator}"
+            )
+        self.response_generator = RESPONSE_GENERATORS[config.response_generator](
+            self.llm
+        )
+
         sample_num_agents = config.num_agents
         if config.use_moderator:
             sample_num_agents -= 1
@@ -247,7 +268,6 @@ class Coordinator:
             raise Exception(
                 f"No valid decision protocol for {config.decision_protocol}"
             )
-
         self.decision_protocol = DECISION_PROTOCOLS[config.decision_protocol](
             self.panelists, config.use_moderator
         )

@@ -11,6 +11,9 @@ logger = logging.getLogger("mallm")
 
 
 class JSONResponseGenerator(ResponseGenerator):
+
+    _name = "json"
+
     def __init__(self, llm: Chat):
         self.llm = llm
         self.base_prompt = {

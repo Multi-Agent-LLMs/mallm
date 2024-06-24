@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Optional
 
 from mallm.models.Chat import Chat
 from mallm.utils.types import Response, TemplateFilling
@@ -117,3 +118,13 @@ Current Solution: {data.current_draft}
         if data.agent_memory is not None and data.agent_memory != []:
             prompt += data.agent_memory
         return prompt
+
+    @staticmethod
+    def extract_agreement(res: str, drafting: bool) -> Optional[bool]:
+        """
+        Determines whether a string given by an agent means an agreement or disagreement.
+        Returns bool
+        """
+        if drafting:
+            return None
+        return "agree" in res.lower() and "disagree" not in res.lower()
