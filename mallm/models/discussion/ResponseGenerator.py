@@ -22,9 +22,72 @@ class ResponseGenerator(ABC):
 
         Parameters:
         data (TemplateFilling): The fields used for prompting the LM.
+        chain_of_thought (bool): Whether to use Zero-Shot CoT.
+        baseline (bool): Whether use the prompt for the baseline, without discussion.
+        drafting (bool): Whether the response should be drafting a new solution.
 
         Returns:
-        dict[str, str]: A dictionary, with the keys "agreement", "message", and "solution".
+        Response: An object with the attributes "agreement", "message", and "solution".
+        """
+
+    @abstractmethod
+    def generate_baseline(
+        self, task_instruction: str, input_str: str, chain_of_thought: bool
+    ) -> Response:
+        """
+        Abstract method to generate the response of a single LM as a baseline.
+
+        Parameters:
+        data (TemplateFilling): The fields used for prompting the LM.
+        task_instruction (str): The instruction for the task and appended context.
+        input_str (str): The input for the task.
+        chain_of_thought (bool): Whether to use Zero-Shot CoT.
+
+        Returns:
+        Response: An object with the attributes "agreement", "message", and "solution".
+        """
+
+    @abstractmethod
+    def generate_feedback(
+        self, data: TemplateFilling, chain_of_thought: bool
+    ) -> Response:
+        """
+        Abstract method to generate feedback to improve a draft for a discussion.
+
+        Parameters:
+        data (TemplateFilling): The fields used for prompting the LM.
+        chain_of_thought (bool): Whether to use Zero-Shot CoT.
+
+        Returns:
+        Response: An object with the attributes "agreement", "message", and "solution".
+        """
+
+    @abstractmethod
+    def generate_improve(
+        self, data: TemplateFilling, chain_of_thought: bool
+    ) -> Response:
+        """
+        Abstract method to generate feedback and an improved solution for a discussion.
+
+        Parameters:
+        data (TemplateFilling): The fields used for prompting the LM.
+        chain_of_thought (bool): Whether to use Zero-Shot CoT.
+
+        Returns:
+        Response: An object with the attributes "agreement", "message", and "solution".
+        """
+
+    @abstractmethod
+    def generate_draft(self, data: TemplateFilling, chain_of_thought: bool) -> Response:
+        """
+        Abstract method to generate a draft for a discussion.
+
+        Parameters:
+        data (TemplateFilling): The fields used for prompting the LM.
+        chain_of_thought (bool): Whether to use Zero-Shot CoT.
+
+        Returns:
+        Response: An object with the attributes "agreement", "message", and "solution".
         """
 
     @staticmethod
