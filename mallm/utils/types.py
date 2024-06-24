@@ -13,6 +13,13 @@ class Agreement:
 
 
 @dataclass
+class Response:
+    agreement: Optional[bool]
+    message: str
+    solution: str
+
+
+@dataclass
 class Memory:
     message_id: int
     turn: int

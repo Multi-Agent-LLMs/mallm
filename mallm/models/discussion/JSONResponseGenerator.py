@@ -1,12 +1,11 @@
 import json
 import logging
-from typing import Any
 
 from json_repair import repair_json
 
 from mallm.models.Chat import Chat
 from mallm.models.discussion.ResponseGenerator import ResponseGenerator
-from mallm.utils.types import TemplateFilling
+from mallm.utils.types import Response, TemplateFilling
 
 logger = logging.getLogger("mallm")
 
@@ -86,11 +85,10 @@ JSON Response:
 
     def generate_baseline(
         self, task_instruction: str, input_str: str, chain_of_thought: bool
-    ) -> dict[str, str]:
-
+    ) -> Response:
         prompt_content = f"""
-    Task: {task_instruction}
-    Input: {input_str}
+Task: {task_instruction}
+Input: {input_str}
         """  # input has context appended
         prompt = [
             self.base_prompt_baseline,
@@ -101,41 +99,13 @@ JSON Response:
         ]
         return self.generate_response(prompt, chain_of_thought, True, True)
 
-    @staticmethod
-    def get_filled_template(data: TemplateFilling) -> list[dict[str, str]]:
-        prompt_str = f"""
-Task: {data.task_instruction}
-Input: {data.input_str}
-Your role: {data.persona} ({data.persona_description})
-Current Solution: {data.current_draft}
-"""  # input has context appended
-
-        appendix = ""
-        if data.feedback_sentences is not None:
-            appendix += f"\nExplain your feedback and solution in {data.feedback_sentences[0]} to {data.feedback_sentences[1]} sentences!"
-        if data.current_draft is None:
-            appendix += (
-                "\nNobody proposed a solution yet. Please provide the first one."
-            )
-        if data.agent_memory is not None and data.agent_memory != []:
-            appendix += "\nThis is the discussion to the current point: \n"
-        prompt = [
-            {
-                "role": "user",
-                "content": prompt_str + appendix,
-            }
-        ]
-        if data.agent_memory is not None and data.agent_memory != []:
-            prompt += data.agent_memory
-        return prompt
-
     def generate_response(
         self,
         current_prompt: list[dict[str, str]],
         chain_of_thought: bool,
         baseline: bool,
         drafting: bool,
-    ) -> dict[str, Any]:
+    ) -> Response:
         if chain_of_thought:
             current_prompt.append(
                 {
@@ -143,42 +113,27 @@ Current Solution: {data.current_draft}
                     "content": "Let's think step by step.",
                 }
             )
-
         logger.debug(f"Sending prompt: {json.dumps(current_prompt, indent=2)}")
 
         retry = 0
         while retry < 10:
             try:
-                response = self.llm.invoke(current_prompt)
-                response = repair_json(response)
-                json_response = json.loads(response)
-                response_dict: dict[str, Any] = {}
+                res = self.llm.invoke(current_prompt)
+                res = repair_json(res)
+                json_response = json.loads(res)
                 if isinstance(json_response, list):
-                    response_dict = json_response[0]
+                    response = Response(
+                        agreement=None if baseline else json_response[0]["agreement"],
+                        message=json_response[0]["message"],
+                        solution=json_response[0]["solution"],
+                    )
                 else:
-                    response_dict = json_response
-                if (
-                    baseline
-                    and (  # ensure correct format for baseline dict
-                        "message" not in response_dict.keys()
-                        or "solution" not in response_dict.keys()
-                        or not response_dict["message"]
-                        or not response_dict["solution"]
+                    response = Response(
+                        agreement=None if baseline else json_response["agreement"],
+                        message=json_response["message"],
+                        solution=json_response["solution"],
                     )
-                ) or (
-                    not baseline
-                    and (  # ensure correct format for discussion dict
-                        "agreement" not in response_dict.keys()
-                        or "message" not in response_dict.keys()
-                        or "solution" not in response_dict.keys()
-                        or (
-                            not isinstance(response_dict["agreement"], bool)
-                            and not drafting
-                        )
-                        or not response_dict["message"]
-                        or not response_dict["solution"]
-                    )
-                ):
+                if response.agreement is None and not drafting and not baseline:
                     retry += 1
                     continue
                 break  # success
@@ -196,11 +151,11 @@ Current Solution: {data.current_draft}
                 f"After 10 retries the json response could not be decoded. \nPrompt: {current_prompt} \nResponse string: {response}"
             )
             raise Exception("Could not decode json.")
-        return response_dict
+        return response
 
     def generate_feedback(
         self, data: TemplateFilling, chain_of_thought: bool
-    ) -> dict[str, Any]:
+    ) -> Response:
         current_prompt = [
             self.base_prompt,
             *self.get_filled_template(data),
@@ -213,7 +168,7 @@ Current Solution: {data.current_draft}
 
     def generate_improve(
         self, data: TemplateFilling, chain_of_thought: bool
-    ) -> dict[str, Any]:
+    ) -> Response:
         current_prompt = [
             self.base_prompt,
             *self.get_filled_template(data),
@@ -224,9 +179,7 @@ Current Solution: {data.current_draft}
         ]
         return self.generate_response(current_prompt, chain_of_thought, False, False)
 
-    def generate_draft(
-        self, data: TemplateFilling, chain_of_thought: bool
-    ) -> dict[str, Any]:
+    def generate_draft(self, data: TemplateFilling, chain_of_thought: bool) -> Response:
         current_prompt = [
             self.base_prompt,
             *self.get_filled_template(data),

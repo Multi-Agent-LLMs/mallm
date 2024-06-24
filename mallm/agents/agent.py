@@ -56,14 +56,14 @@ class Agent:
         agreements: list[Agreement],
     ) -> tuple[str, Memory, list[Agreement]]:
         logger.debug(f"Agent {self.short_id} is improving the solution.")
-        response_dict = self.response_generator.generate_improve(
+        response = self.response_generator.generate_improve(
             template_filling, self.chain_of_thought
         )
         agreements.append(
             Agreement(
-                agreement=response_dict["agreement"],
-                response=response_dict["message"],
-                solution=response_dict["solution"],
+                agreement=response.agreement,
+                response=response.message,
+                solution=response.solution,
                 agent_id=self.id,
                 persona=self.persona,
                 message_id=unique_id,
@@ -76,14 +76,14 @@ class Agent:
             agent_id=self.id,
             persona=self.persona,
             contribution="improve",
-            message=response_dict["message"],
+            message=response.message,
             agreement=agreements[-1].agreement,
-            solution=response_dict["solution"],
+            solution=response.solution,
             memory_ids=memory_ids,
             additional_args=dataclasses.asdict(template_filling),
         )
         self.coordinator.update_global_memory(memory)
-        return response_dict["message"], memory, agreements
+        return response.message, memory, agreements
 
     def draft(
         self,
@@ -95,14 +95,14 @@ class Agent:
         is_moderator: bool = False,
     ) -> tuple[str, Memory, list[Agreement]]:
         logger.debug(f"Agent {self.short_id} is drafting a solution.")
-        response_dict = self.response_generator.generate_draft(
+        response = self.response_generator.generate_draft(
             template_filling, self.chain_of_thought
         )
         agreements.append(
             Agreement(
                 agreement=None,
-                response=response_dict["message"],
-                solution=response_dict["solution"],
+                response=response.message,
+                solution=response.solution,
                 agent_id=self.id,
                 persona=self.persona,
                 message_id=unique_id,
@@ -115,14 +115,14 @@ class Agent:
             agent_id=self.id,
             persona=self.persona,
             contribution="draft",
-            message=response_dict["message"],
+            message=response.message,
             agreement=None,
-            solution=response_dict["solution"],
+            solution=response.solution,
             memory_ids=memory_ids,
             additional_args=dataclasses.asdict(template_filling),
         )
         self.coordinator.update_global_memory(memory)
-        return response_dict["message"], memory, agreements
+        return response.message, memory, agreements
 
     def feedback(
         self,
@@ -133,13 +133,13 @@ class Agent:
         agreements: list[Agreement],
     ) -> tuple[str, Memory, list[Agreement]]:
         logger.debug(f"Agent {self.short_id} provides feedback to a solution.")
-        response_dict = self.response_generator.generate_feedback(
+        response = self.response_generator.generate_feedback(
             template_filling, self.chain_of_thought
         )
         agreements.append(
             Agreement(
-                agreement=response_dict["agreement"],
-                response=response_dict["message"],
+                agreement=response.agreement,
+                response=response.message,
                 solution="",
                 agent_id=self.id,
                 persona=self.persona,
@@ -153,14 +153,14 @@ class Agent:
             agent_id=self.id,
             persona=self.persona,
             contribution="feedback",
-            message=response_dict["message"],
+            message=response.message,
             agreement=agreements[-1].agreement,
             solution=None,
             memory_ids=memory_ids,
             additional_args=dataclasses.asdict(template_filling),
         )
         self.coordinator.update_global_memory(memory)
-        return response_dict["message"], memory, agreements
+        return response.message, memory, agreements
 
     def update_memory(self, memory: Memory) -> None:
         """

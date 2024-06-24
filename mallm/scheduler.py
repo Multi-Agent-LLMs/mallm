@@ -279,7 +279,7 @@ class Scheduler:
 
         logger.info(
             f"""--> Baseline LM generated the final answer within {f'{discussion_time:.2f}'} seconds: \n"""
-            + str(answer)
+            + str(answer.solution)
         )
 
         self.output_dicts.append(
@@ -293,7 +293,7 @@ class Scheduler:
                 "paradigm": None,
                 "input": sample.inputs,
                 "context": sample.context,
-                "answer": answer or None,
+                "answer": answer.solution or None,
                 "references": sample.references,
                 "decision_success": None,
                 "agreements": None,
@@ -318,7 +318,7 @@ class Scheduler:
         logger.info(
             f"""Completed samples: {self.completed_samples}. Samples left: {self.total_samples - self.completed_samples}."""
         )
-        return answer["solution"]
+        return answer.solution
 
     def manage_baseline(self, client: httpx.Client) -> None:
         """
@@ -343,7 +343,7 @@ class Scheduler:
                     results.append(
                         pool.apply_async(
                             self.run_baseline,
-                            (client, self.llm, sample),
+                            (client, sample),
                         )
                     )
                 except Exception as e:
