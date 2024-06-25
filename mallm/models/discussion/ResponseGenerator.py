@@ -15,6 +15,7 @@ class ResponseGenerator(ABC):
         self,
         current_prompt: list[dict[str, str]],
         chain_of_thought: bool,
+        agreement: Optional[bool],
         baseline: bool,
         drafting: bool,
     ) -> Response:
@@ -22,8 +23,9 @@ class ResponseGenerator(ABC):
         Abstract method to generate an agents response to a discussion.
 
         Parameters:
-        data (TemplateFilling): The fields used for prompting the LM.
+        current_prompt (list[dict[str, str]]): The prompt for the LM.
         chain_of_thought (bool): Whether to use Zero-Shot CoT.
+        agreement (Optional[bool]): the agreement if already computed.
         baseline (bool): Whether use the prompt for the baseline, without discussion.
         drafting (bool): Whether the response should be drafting a new solution.
 
@@ -103,6 +105,32 @@ Current Solution: {data.current_draft}
         appendix = ""
         if data.feedback_sentences is not None:
             appendix += f"\nExplain your feedback and solution in {data.feedback_sentences[0]} to {data.feedback_sentences[1]} sentences!"
+        if data.current_draft is None:
+            appendix += (
+                "\nNobody proposed a solution yet. Please provide the first one."
+            )
+        if data.agent_memory is not None and data.agent_memory != []:
+            appendix += "\nThis is the discussion to the current point: \n"
+        prompt = [
+            {
+                "role": "user",
+                "content": prompt_str + appendix,
+            }
+        ]
+        if data.agent_memory is not None and data.agent_memory != []:
+            prompt += data.agent_memory
+        return prompt
+
+    @staticmethod
+    def get_filled_template_slim(data: TemplateFilling) -> list[dict[str, str]]:
+        prompt_str = f"""
+Task: {data.task_instruction}
+Input: {data.input_str}
+Your role: {data.persona} ({data.persona_description})
+Current Solution: {data.current_draft}
+"""  # input has context appended
+
+        appendix = ""
         if data.current_draft is None:
             appendix += (
                 "\nNobody proposed a solution yet. Please provide the first one."

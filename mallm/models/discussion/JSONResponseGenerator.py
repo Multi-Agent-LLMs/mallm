@@ -1,5 +1,6 @@
 import json
 import logging
+from typing import Optional
 
 from json_repair import repair_json
 
@@ -100,12 +101,13 @@ Input: {input_str}
                 "content": prompt_content,
             },
         ]
-        return self.generate_response(prompt, chain_of_thought, True, True)
+        return self.generate_response(prompt, chain_of_thought, None, True, True)
 
     def generate_response(
         self,
         current_prompt: list[dict[str, str]],
         chain_of_thought: bool,
+        agreement: Optional[bool],
         baseline: bool,
         drafting: bool,
     ) -> Response:
@@ -167,7 +169,9 @@ Input: {input_str}
                 "content": "Based on the current solution, give constructive feedback.",
             },
         ]
-        return self.generate_response(current_prompt, chain_of_thought, False, False)
+        return self.generate_response(
+            current_prompt, chain_of_thought, None, False, False
+        )
 
     def generate_improve(
         self, data: TemplateFilling, chain_of_thought: bool
@@ -180,7 +184,9 @@ Input: {input_str}
                 "content": "Improve the current solution. Agree or disagree and explain your choice.",
             },
         ]
-        return self.generate_response(current_prompt, chain_of_thought, False, False)
+        return self.generate_response(
+            current_prompt, chain_of_thought, None, False, False
+        )
 
     def generate_draft(self, data: TemplateFilling, chain_of_thought: bool) -> Response:
         current_prompt = [
@@ -188,4 +194,6 @@ Input: {input_str}
             *self.get_filled_template(data),
             {"role": "user", "content": "Propose a solution to the task."},
         ]
-        return self.generate_response(current_prompt, chain_of_thought, False, True)
+        return self.generate_response(
+            current_prompt, chain_of_thought, None, False, True
+        )

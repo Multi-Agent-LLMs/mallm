@@ -34,6 +34,9 @@ from mallm.models.Chat import Chat
 from mallm.models.discussion.FreeTextResponseGenerator import FreeTextResponseGenerator
 from mallm.models.discussion.JSONResponseGenerator import JSONResponseGenerator
 from mallm.models.discussion.ResponseGenerator import ResponseGenerator
+from mallm.models.discussion.SplitFreeTextResponseGenerator import (
+    SplitFreeTextResponseGenerator,
+)
 from mallm.models.personas.ExpertGenerator import ExpertGenerator
 from mallm.models.personas.IPIPPersonaGenerator import IPIPPersonaGenerator
 from mallm.models.personas.MockGenerator import MockGenerator
@@ -72,6 +75,7 @@ PERSONA_GENERATORS: dict[str, type[PersonaGenerator]] = {
 RESPONSE_GENERATORS: dict[str, type[ResponseGenerator]] = {
     "json": JSONResponseGenerator,
     "freetext": FreeTextResponseGenerator,
+    "splitfreetext": SplitFreeTextResponseGenerator,
 }
 
 
