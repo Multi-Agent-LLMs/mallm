@@ -273,6 +273,7 @@ class Scheduler:
         """
         sample_instruction = self.config.instruction
         if sample.context:
+            sample_instruction += "\nContext:"
             for c in sample.context:
                 sample_instruction += "\n" + c
         input_str = ""
