@@ -16,7 +16,13 @@ from openai import OpenAI
 
 from mallm.coordinator import Coordinator
 from mallm.models.Chat import Chat
+from mallm.models.discussion.FreeTextResponseGenerator import FreeTextResponseGenerator
 from mallm.models.discussion.JSONResponseGenerator import JSONResponseGenerator
+from mallm.models.discussion.ResponseGenerator import ResponseGenerator
+from mallm.models.discussion.SimpleResponseGenerator import SimpleResponseGenerator
+from mallm.models.discussion.SplitFreeTextResponseGenerator import (
+    SplitFreeTextResponseGenerator,
+)
 from mallm.utils.config import Config
 from mallm.utils.CustomFormatter import CustomFormatter
 from mallm.utils.types import InputExample
@@ -41,6 +47,13 @@ logging.basicConfig(filename="log.txt", filemode="w")
 logger = logging.getLogger("mallm")
 
 os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
+
+RESPONSE_GENERATORS: dict[str, type[ResponseGenerator]] = {
+    "json": JSONResponseGenerator,
+    "freetext": FreeTextResponseGenerator,
+    "splitfreetext": SplitFreeTextResponseGenerator,
+    "simple": SimpleResponseGenerator,
+}
 
 
 class Scheduler:
@@ -79,7 +92,16 @@ class Scheduler:
             ),
             model=self.config.model,
         )
-        self.response_generator = JSONResponseGenerator(self.llm)
+
+        if config.response_generator not in RESPONSE_GENERATORS:
+            logger.error(f"No valid response generator for {config.response_generator}")
+            raise Exception(
+                f"No valid response generator for {config.response_generator}"
+            )
+        self.response_generator = RESPONSE_GENERATORS[config.response_generator](
+            self.llm
+        )
+
         self.completed_samples = 0
         self.total_samples = len(self.data)
         self.failed_example_ids: list[str] = []

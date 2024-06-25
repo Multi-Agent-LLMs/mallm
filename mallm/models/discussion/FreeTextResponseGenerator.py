@@ -60,37 +60,27 @@ Input: {input_str}
 
         retry = 0
         while retry < 10:
-            try:
-                res = self.llm.invoke(current_prompt)
+            res = self.llm.invoke(current_prompt)
 
-                response = Response(
-                    agreement=(
-                        agreement
-                        if agreement is not None
-                        else self.extract_agreement(res, drafting)
-                    ),
-                    message=res,
-                    solution=self.extract_result(res),
-                )
+            response = Response(
+                agreement=(
+                    agreement
+                    if agreement is not None
+                    else self.extract_agreement(res, drafting)
+                ),
+                message=res,
+                solution=self.extract_result(res),
+            )
 
-                if response.agreement is None and not drafting and not baseline:
-                    retry += 1
-                    continue
-                break  # success
-            except json.decoder.JSONDecodeError as e:
+            if response.agreement is None and not drafting and not baseline:
                 retry += 1
-                logger.debug(
-                    f"Could not decode json (will attempt retry no. {retry!s}): "
-                    + str(e)
-                    + "\nResponse string: "
-                    + str(response)
-                )
                 continue
+            break  # success
         if retry >= 10:
             logger.error(
-                f"After 10 retries the json response could not be decoded. \nPrompt: {current_prompt} \nResponse string: {response}"
+                f"After 10 retries the response could not be decoded. \nPrompt: {current_prompt} \nResponse string: {response}"
             )
-            raise Exception("Could not decode json.")
+            raise Exception("Could not decode response.")
         return response
 
     def generate_feedback(
