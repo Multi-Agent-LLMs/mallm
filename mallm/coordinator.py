@@ -34,6 +34,7 @@ from mallm.models.Chat import Chat
 from mallm.models.discussion.FreeTextResponseGenerator import FreeTextResponseGenerator
 from mallm.models.discussion.JSONResponseGenerator import JSONResponseGenerator
 from mallm.models.discussion.ResponseGenerator import ResponseGenerator
+from mallm.models.discussion.SimpleResponseGenerator import SimpleResponseGenerator
 from mallm.models.discussion.SplitFreeTextResponseGenerator import (
     SplitFreeTextResponseGenerator,
 )
@@ -76,6 +77,7 @@ RESPONSE_GENERATORS: dict[str, type[ResponseGenerator]] = {
     "json": JSONResponseGenerator,
     "freetext": FreeTextResponseGenerator,
     "splitfreetext": SplitFreeTextResponseGenerator,
+    "simple": SimpleResponseGenerator,
 }
 
 
