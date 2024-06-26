@@ -18,18 +18,17 @@
     "chain_of_thought": true,
     "split_agree_and_answer": true,
     "num_agents": 3,
-    "agent_generator": "expert"
+    "agent_generator": "expert",
+    "data": "data/datasets/etpc_debugging.json"
   },
   "runs": [
     {
-      "data": "path/to/data1.json",
-      "out": "path/to/output1.json",
+      "out": "test_output1.json",
       "instruction": "Instruction for run 1",
       "feedback_sentences": [1, 3]
     },
     {
-      "data": "path/to/data2.json",
-      "out": "path/to/output2.json",
+      "out": "test_output2.json",
       "instruction": "Instruction for run 2",
       "model": "gpt-4",
       "max_turns": 15,
