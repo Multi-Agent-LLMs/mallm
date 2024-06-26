@@ -1,0 +1,38 @@
+{
+  "common": {
+    "endpoint_url": "https://api.openai.com",
+    "model": "gpt-3.5-turbo",
+    "api_key": "your-api-key-here",
+    "use_moderator": false,
+    "max_turns": 10,
+    "force_all_turns": false,
+    "paradigm": "memory",
+    "decision_protocol": "hybrid_consensus",
+    "context_length": 3,
+    "include_current_turn_in_memory": true,
+    "extract_all_drafts": true,
+    "max_concurrent_requests": 100,
+    "clear_memory_bucket": true,
+    "memory_bucket_dir": "./mallm/utils/memory_bucket/",
+    "baseline": false,
+    "chain_of_thought": true,
+    "split_agree_and_answer": true,
+    "num_agents": 3,
+    "agent_generator": "expert",
+    "data": "data/datasets/etpc_debugging.json"
+  },
+  "runs": [
+    {
+      "out": "test_output1.json",
+      "instruction": "Instruction for run 1",
+      "feedback_sentences": [1, 3]
+    },
+    {
+      "out": "test_output2.json",
+      "instruction": "Instruction for run 2",
+      "model": "gpt-4",
+      "max_turns": 15,
+      "num_agents": 5
+    }
+  ]
+}
