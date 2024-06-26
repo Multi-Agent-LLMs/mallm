@@ -1,14 +1,14 @@
 import json
 import sys
-from typing import List, Dict, Any, Optional
+from typing import Any, Optional
 
 from mallm.scheduler import Scheduler
 from mallm.utils.config import Config
 
 
-def load_configs(config_path: str) -> List[Dict[str, Any]]:
+def load_configs(config_path: str) -> Any:
     try:
-        with open(config_path, "r") as f:
+        with open(config_path) as f:
             return json.load(f)
     except json.JSONDecodeError:
         print(f"Error: {config_path} is not a valid JSON file.")
@@ -18,7 +18,7 @@ def load_configs(config_path: str) -> List[Dict[str, Any]]:
         return []
 
 
-def create_config(config_dict: Dict[str, Any]) -> Optional[Config]:
+def create_config(config_dict: dict[str, Any]) -> Optional[Config]:
     try:
         return Config(**config_dict)
     except TypeError as e:
@@ -35,7 +35,7 @@ def validate_config(config: Config) -> bool:
     return True
 
 
-def run_batch(config_file: str):
+def run_batch(config_file: str) -> None:
     configs = load_configs(config_file)
     if not configs:
         print("No valid configurations found. Exiting.")
@@ -59,7 +59,7 @@ def run_batch(config_file: str):
             print(f"Completed configuration {i + 1}")
         except Exception as e:
             print(f"Error running configuration {i + 1}: {e}")
-            print(f"Skipping to next configuration.")
+            print("Skipping to next configuration.")
 
     print("\nBatch processing completed.")
 
