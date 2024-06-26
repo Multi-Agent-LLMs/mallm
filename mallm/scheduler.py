@@ -41,8 +41,6 @@ library_logger.addHandler(stream_handler)
 logging.basicConfig(filename="log.txt", filemode="w")
 logger = logging.getLogger("mallm")
 
-os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
-
 
 class Scheduler:
     def __init__(self, config: Config) -> None:
