@@ -164,6 +164,78 @@ stream_handler.setFormatter(formatter)
 library_logger.addHandler(stream_handler)
 ```
 
+## Using the Batch Executor
+
+The batch executor allows you to run multiple configurations of the MALLM (Multi-Agent Language Model) scheduler in sequence. This is useful for running experiments with different parameters or processing multiple datasets.
+
+### Location
+- The batch executor script is located in the `notebook` folder and is named `batch_mallm.py`.
+- A template for the batch configuration file is provided as `batch.json.template` in the same folder.
+
+### Setup
+
+1. **Prepare your configuration file:**
+   - Copy the `batch.json.template` file and rename it (e.g., `my_batch_config.json`).
+   - Edit the JSON file to define your configurations. Each object in the array represents a separate run with its own parameters.
+
+   Example:
+   ```json
+   [
+     {
+       "data": "path/to/data1.csv",
+       "out": "path/to/output1.csv",
+       "instruction": "Instruction for run 1",
+       "model": "gpt-3.5-turbo",
+       "max_turns": 10
+     },
+     {
+       "data": "path/to/data2.csv",
+       "out": "path/to/output2.csv",
+       "instruction": "Instruction for run 2",
+       "model": "gpt-4",
+       "max_turns": 15
+     }
+   ]
+   ```
+
+2. **Ensure all required dependencies are installed.**
+
+### Running the Batch Executor
+
+To run the batch executor, use the following command from the terminal:
+
+```
+python notebook/batch_mallm.py path/to/your/config_file.json
+```
+
+Replace `path/to/your/config_file.json` with the actual path to your JSON configuration file.
+
+### Behavior
+
+- The batch executor will process each configuration in the order they appear in the JSON file.
+- For each configuration:
+  - It will create a `Config` object with the specified parameters.
+  - It will then initialize a `Scheduler` with this configuration and run it.
+  - Progress and any errors will be printed to the console.
+- If a configuration is invalid or encounters an error during execution, the batch processor will skip to the next configuration.
+- The process continues until all configurations have been attempted.
+
+### Error Handling
+
+- The batch executor is designed to be robust against various types of errors:
+  - Invalid JSON configuration files
+  - Missing required fields in a configuration
+  - Errors during the execution of individual configurations
+- Any errors encountered will be reported in the console output, but will not stop the entire batch process.
+
+### Tips
+
+- Always test your configurations individually before running them in a batch to ensure they work as expected.
+- Use descriptive output file names to easily identify the results of each run.
+- Monitor the console output for any error messages or skipped configurations.
+
+By using the batch executor, you can easily run multiple experiments or process various datasets without manual intervention, saving time and reducing the chance of configuration errors.
+
 ## Contributing
 If you want to contribute, please use this pre-commit hook to ensure the same formatting for everyone.
 ```bash
