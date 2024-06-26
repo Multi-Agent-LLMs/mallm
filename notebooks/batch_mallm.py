@@ -6,19 +6,19 @@ from mallm.scheduler import Scheduler
 from mallm.utils.config import Config
 
 
-def load_configs(config_path: str) -> Any:
+def load_config(config_path: str) -> Any:
     try:
-        with open(config_path) as f:
+        with open(config_path, "r") as f:
             return json.load(f)
     except json.JSONDecodeError:
         print(f"Error: {config_path} is not a valid JSON file.")
-        return []
+        return {}
     except FileNotFoundError:
         print(f"Error: {config_path} not found.")
-        return []
+        return {}
 
 
-def create_config(config_dict: dict[str, Any]) -> Optional[Config]:
+def create_config(config_dict: Any) -> Optional[Config]:
     try:
         return Config(**config_dict)
     except TypeError as e:
@@ -35,38 +35,48 @@ def validate_config(config: Config) -> bool:
     return True
 
 
-def run_batch(config_file: str) -> None:
-    configs = load_configs(config_file)
-    if not configs:
-        print("No valid configurations found. Exiting.")
+def run_configuration(config: Config, run_name: str) -> None:
+    if not validate_config(config):
+        print(f"Skipping {run_name} due to validation error.")
         return
 
-    for i, config_dict in enumerate(configs):
-        print(f"\nProcessing configuration {i + 1}/{len(configs)}")
-        config = create_config(config_dict)
-        if config is None:
-            print(f"Skipping configuration {i + 1} due to error.")
-            continue
+    try:
+        print(f"Running {run_name}")
+        scheduler = Scheduler(config)
+        scheduler.run()
+        print(f"Completed {run_name}")
+    except Exception as e:
+        print(f"Error running {run_name}: {e}")
 
-        if not validate_config(config):
-            print(f"Skipping configuration {i + 1} due to validation error.")
-            continue
 
-        try:
-            print(f"Running configuration {i + 1}")
-            scheduler = Scheduler(config)
-            scheduler.run()
-            print(f"Completed configuration {i + 1}")
-        except Exception as e:
-            print(f"Error running configuration {i + 1}: {e}")
-            print("Skipping to next configuration.")
+def run_batch(config_path: str) -> None:
+    config_data = load_config(config_path)
+    if not config_data:
+        print("No valid configuration found. Exiting.")
+        return
+
+    common_config = config_data.get("common", {})
+    runs = config_data.get("runs", [])
+
+    if not common_config:
+        print("No common configuration found. Exiting.")
+        return
+
+    # Run specific configurations
+    for i, run_config in enumerate(runs, 1):
+        print(f"\nProcessing run {i}/{len(runs)}")
+        # Merge common config with run-specific config, prioritizing run-specific values
+        merged_config = {**common_config, **run_config}
+        config = create_config(merged_config)
+        if config:
+            run_configuration(config, f"Run {i}")
 
     print("\nBatch processing completed.")
 
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Usage: python batch_executor.py <config_file.json>")
+        print("Usage: python batch_mallm.py <config_file.json>")
         sys.exit(1)
 
     config_file = sys.argv[1]
