@@ -46,8 +46,6 @@ library_logger.addHandler(stream_handler)
 logging.basicConfig(filename="log.txt", filemode="w")
 logger = logging.getLogger("mallm")
 
-os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
-
 RESPONSE_GENERATORS: dict[str, type[ResponseGenerator]] = {
     "json": JSONResponseGenerator,
     "freetext": FreeTextResponseGenerator,

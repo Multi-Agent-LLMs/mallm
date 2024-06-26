@@ -2,7 +2,6 @@ import dataclasses
 import dbm
 import json
 import logging
-import os
 import random
 import time
 import uuid
@@ -45,8 +44,6 @@ from mallm.models.personas.MockGenerator import MockGenerator
 from mallm.models.personas.PersonaGenerator import PersonaGenerator
 from mallm.utils.config import Config
 from mallm.utils.types import Agreement, Memory
-
-os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
 
 logger = logging.getLogger("mallm")
 
