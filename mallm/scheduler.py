@@ -32,7 +32,7 @@ just_fix_windows_console()
 
 # Configure logging for the library
 library_logger = logging.getLogger("mallm")
-library_logger.setLevel(logging.INFO)
+library_logger.setLevel(logging.DEBUG)
 
 # Add handlers to the logger
 stream_handler = logging.StreamHandler()
@@ -149,7 +149,7 @@ class Scheduler:
                     agreements,
                     discussion_time,
                     decision_success,
-            ) = coordinator.discuss(config=self.config)
+                ) = coordinator.discuss(config=self.config)
             except Exception:
                 # More extensive error logging to ease debugging during async execution
                 logger.error(f"Failed discussion of sample {sample.example_id}.")
@@ -185,9 +185,9 @@ class Scheduler:
                     "input": sample.inputs,
                     "context": sample.context,
                     "answer": answer or None,
-                        "references": sample.references,
+                    "references": sample.references,
                     "decision_success": decision_success,
-                "agreements": [
+                    "agreements": [
                         dataclasses.asdict(agreement) for agreement in agreements
                     ],
                     "turns": turn,

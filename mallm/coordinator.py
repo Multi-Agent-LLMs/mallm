@@ -110,6 +110,7 @@ class Coordinator:
         use_moderator: bool,
         num_agents: int,
         chain_of_thought: bool,
+        response_generator: str = "json",
     ) -> None:
         """
         Instantiates the agents by
@@ -124,6 +125,11 @@ class Coordinator:
                 f"Invalid persona generator: {self.agent_generator}. Please choose one of: {', '.join(PERSONA_GENERATORS.keys())}"
             )
             raise Exception("Invalid persona generator.")
+
+        if response_generator not in RESPONSE_GENERATORS:
+            logger.error(f"No valid response generator for {response_generator}")
+            raise Exception(f"No valid response generator for {response_generator}")
+        self.response_generator = RESPONSE_GENERATORS[response_generator](self.llm)
 
         num_agents = 5
         logger.warn(f"Overriding agent generator to generate {num_agents} agents")
@@ -256,6 +262,7 @@ class Coordinator:
             use_moderator=config.use_moderator,
             num_agents=0,
             chain_of_thought=config.chain_of_thought,
+            response_generator=config.response_generator,
         )
 
     def discuss(self, config: Config) -> tuple[
@@ -279,15 +286,6 @@ class Coordinator:
         """
 
         mypanelists = random.sample(self.panelists, 3)
-
-        if config.response_generator not in RESPONSE_GENERATORS:
-            logger.error(f"No valid response generator for {config.response_generator}")
-            raise Exception(
-                f"No valid response generator for {config.response_generator}"
-            )
-        self.response_generator = RESPONSE_GENERATORS[config.response_generator](
-            self.llm
-        )
 
         if config.decision_protocol not in DECISION_PROTOCOLS:
             logger.error(f"No valid decision protocol for {config.decision_protocol}")
