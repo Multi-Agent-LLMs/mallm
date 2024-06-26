@@ -36,7 +36,6 @@ class SimpleEthicalQuestionsDownloader(DatasetDownloader):
             multiple_choices = []
             for i, (k, v) in enumerate(s["target_scores"].items()):
                 multiple_choices.append(f"{chr(ord('A') + i)}) " + k)
-            print(multiple_choices)
             input_examples.append(
                 InputExample(
                     example_id=str(uuid.uuid4()),
