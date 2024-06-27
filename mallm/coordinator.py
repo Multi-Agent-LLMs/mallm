@@ -294,6 +294,9 @@ Paradigm: {policy.__class__.__name__}
 Decision-protocol: {self.decision_protocol.__class__.__name__}
 -------------"""
         )
+        debate_rounds: int = 2
+        if config.debate_rounds:
+            debate_rounds = config.debate_rounds
 
         answer, turn, agreements, decision_success = policy.discuss(
             coordinator=self,
@@ -305,7 +308,7 @@ Decision-protocol: {self.decision_protocol.__class__.__name__}
             force_all_turns=config.force_all_turns,
             context_length=config.context_length,
             include_current_turn_in_memory=config.include_current_turn_in_memory,
-            debate_rounds=int(config.debate_rounds),
+            debate_rounds=debate_rounds,
         )
 
         discussion_time = timedelta(
