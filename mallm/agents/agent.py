@@ -62,7 +62,7 @@ class Agent:
         )
         agreements.append(
             Agreement(
-                agreement=response.agreement,
+                agreement=False if unique_id == 0 else response.agreement,
                 response=response.message,
                 solution=response.solution,
                 agent_id=self.id,
