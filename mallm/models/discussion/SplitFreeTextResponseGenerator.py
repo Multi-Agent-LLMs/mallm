@@ -16,6 +16,10 @@ class SplitFreeTextResponseGenerator(FreeTextResponseGenerator):
     ) -> Response:
         prefix = ""
         agreement: Optional[bool] = False
+        instr_prompt = {
+            "role": "user",
+            "content": "Give constructive feedback.",
+        }
         if data.current_draft:
             agreement = self.generate_agreement(data)
             prefix = {
@@ -23,14 +27,15 @@ class SplitFreeTextResponseGenerator(FreeTextResponseGenerator):
                 True: "You agree with the current solution. ",
                 False: "You disagree with the current solution. ",
             }[agreement]
+            instr_prompt = {
+                "role": "user",
+                "content": f"{prefix}Based on the current solution, give constructive feedback.",
+            }
 
         current_prompt = [
             self.base_prompt,
             *self.get_filled_template(data),
-            {
-                "role": "user",
-                "content": f"{prefix}Based on the current solution, give constructive feedback.",
-            },
+            instr_prompt,
         ]
         return self.generate_response(
             current_prompt, chain_of_thought, agreement, False, False
@@ -41,6 +46,10 @@ class SplitFreeTextResponseGenerator(FreeTextResponseGenerator):
     ) -> Response:
         prefix = ""
         agreement: Optional[bool] = False
+        instr_prompt = {
+            "role": "user",
+            "content": "Propose a solution.",
+        }
         if data.current_draft:
             agreement = self.generate_agreement(data)
             prefix = {
@@ -48,14 +57,15 @@ class SplitFreeTextResponseGenerator(FreeTextResponseGenerator):
                 True: "You agree with the current solution. ",
                 False: "You disagree with the current solution. ",
             }[agreement]
+            instr_prompt = {
+                "role": "user",
+                "content": f"{prefix}Improve the current solution.",
+            }
 
         current_prompt = [
             self.base_prompt,
             *self.get_filled_template(data),
-            {
-                "role": "user",
-                "content": f"{prefix}Improve the current solution.",
-            },
+            instr_prompt,
         ]
         return self.generate_response(
             current_prompt, chain_of_thought, agreement, False, False
