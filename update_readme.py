@@ -44,10 +44,10 @@ print("Updating Evaluator Metrics...")
 with open("README.md", "r+") as readme_file:
     content = readme_file.read()
 
-    metrics = [metric._name for metric in evaluator.ALL_METRICS]
+    metrics = sorted([metric._name.lower() for metric in evaluator.ALL_METRICS])
     metrics_str = ""
     for m in metrics:
-        metrics_str += "`" + m.lower() + "`, "
+        metrics_str += "`" + m + "`, "
     metrics_str = metrics_str[:-2]
     replacement_str = "Supported metrics: " + metrics_str + "\n"
 
@@ -67,7 +67,7 @@ with open("README.md", "r+") as readme_file:
     content = readme_file.read()
 
     supported_datasets = ""
-    for file in Path("data/data_downloaders/").glob("*.py"):
+    for file in sorted(Path("data/data_downloaders/").glob("*.py")):
         if not file.name == "__init__.py":
             supported_datasets += f"`{file.name.split(".")[0]}`, "
     supported_datasets = supported_datasets[:-2]
@@ -94,19 +94,19 @@ with open("README.md", "r+") as readme_file:
     content = readme_file.read()
 
     extra_content = "\nResponse Generators: "
-    for key in RESPONSE_GENERATORS.keys():
+    for key in sorted(RESPONSE_GENERATORS.keys()):
         extra_content += "`" + key + "`, "
     extra_content = extra_content[:-2]
     extra_content += "\nDecision Protocols: "
-    for key in DECISION_PROTOCOLS.keys():
+    for key in sorted(DECISION_PROTOCOLS.keys()):
         extra_content += "`" + key + "`, "
     extra_content = extra_content[:-2]
     extra_content += "\nPersona Generators: "
-    for key in PERSONA_GENERATORS.keys():
+    for key in sorted(PERSONA_GENERATORS.keys()):
         extra_content += "`" + key + "`, "
     extra_content = extra_content[:-2]
     extra_content += "\nDiscussion Paradigms: "
-    for key in DISCUSSION_PARADIGMS.keys():
+    for key in sorted(DISCUSSION_PARADIGMS.keys()):
         extra_content += "`" + key + "`, "
     extra_content = extra_content[:-2]
 
