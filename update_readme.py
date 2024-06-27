@@ -1,6 +1,12 @@
 from mallm.utils.config import Config
 from pathlib import Path
 import mallm.evaluation.evaluator as evaluator
+from mallm.utils.dicts import (
+    DECISION_PROTOCOLS,
+    DISCUSSION_PARADIGMS,
+    PERSONA_GENERATORS,
+    RESPONSE_GENERATORS,
+)
 import re
 
 # SCHEDULER CONFIG
@@ -73,6 +79,41 @@ with open("README.md", "r+") as readme_file:
 
     updated_lines = re.sub(
         r"These datasets are supported by our automated formatting pipeline: (.*?)\n",
+        replacement_str,
+        content,
+        flags=re.DOTALL,
+    )
+    readme_file.seek(0)
+    readme_file.writelines(updated_lines)
+    readme_file.truncate()
+
+# DISCUSSION PARAMETERS:
+print("Updating Discussion Parameters...")
+with open("README.md", "r+") as readme_file:
+    config = Config(data=None, out=None, instruction=None)
+    content = readme_file.read()
+
+    extra_content = "\nResponse Generators: "
+    for key in RESPONSE_GENERATORS.keys():
+        extra_content += "`" + key + "`, "
+    extra_content = extra_content[:-2]
+    extra_content += "\nDecision Protocols: "
+    for key in DECISION_PROTOCOLS.keys():
+        extra_content += "`" + key + "`, "
+    extra_content = extra_content[:-2]
+    extra_content += "\nPersona Generators: "
+    for key in PERSONA_GENERATORS.keys():
+        extra_content += "`" + key + "`, "
+    extra_content = extra_content[:-2]
+    extra_content += "\nDiscussion Paradigms: "
+    for key in DISCUSSION_PARADIGMS.keys():
+        extra_content += "`" + key + "`, "
+    extra_content = extra_content[:-2]
+
+    replacement_str = "### Discussion Parameters:" + extra_content + "\n\n## Evaluation"
+
+    updated_lines = re.sub(
+        r"### Discussion Parameters:(.*?)\n\n## Evaluation",
         replacement_str,
         content,
         flags=re.DOTALL,

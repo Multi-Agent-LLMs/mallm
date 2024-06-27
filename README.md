@@ -32,7 +32,7 @@ Install as a package:
 ### Test Data
 Download and create the test data: `python data/data_downloader.py --datasets=[SQuAD2,ETPC] --sample_size=100`
 
-You can use any dataset for this project as long as it follows [this basic format](https://github.com/Multi-Agent-LLMs/mallm/blob/main/data/datasets/etpc_debugging.json). These datasets are supported by our automated formatting pipeline: `Multi-News`, `ETPC`, `WMT19_de_en`, `XSum`, `Europarl`, `BTVote`, `StrategyQA`, `SQuAD2`, `GSM8K`, `GPQA`, `SimpleEthicalQuestions`
+You can use any dataset for this project as long as it follows [this basic format](https://github.com/Multi-Agent-LLMs/mallm/blob/main/data/datasets/etpc_debugging.json). These datasets are supported by our automated formatting pipeline: `BTVote`, `ETPC`, `Europarl`, `GPQA`, `GSM8K`, `Multi-News`, `SimpleEthicalQuestions`, `SQuAD2`, `StrategyQA`, `WMT19_de_en`, `XSum`
 
 ### Run from Terminal
 MALLM relies on an external API like OpenAI or Text Generation Inference by Huggingface.
@@ -123,6 +123,12 @@ paradigm: str = "memory"
 response_generator: str = "simple"
 use_moderator: bool = False
 ```
+
+### Discussion Parameters:
+Response Generators: `json`, `freetext`, `splitfreetext`, `simple`
+Decision Protocols: `majority_consensus`, `supermajority_consensus`, `hybrid_consensus`, `unanimity_consensus`, `voting`, `approval`, `cumulative`, `ranked`
+Persona Generators: `expert`, `ipip`, `mock`
+Discussion Paradigms: `memory`, `report`, `relay`, `debate`
 
 ## Evaluation
 
