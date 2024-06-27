@@ -37,7 +37,7 @@ class MultiChoiceBoolean(Metric):
             ).strip()
             match = re.search(reference, generated_text)
             logger.debug(
-                f"No answer pattern detected. Trying to match against freetext reference: {generated_text}"
+                "No answer pattern detected. Trying to match against freetext reference."
             )
         else:
             extracted_answer = match.group(1)
