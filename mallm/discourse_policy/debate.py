@@ -184,7 +184,7 @@ class DiscourseDebate(DiscoursePolicy):
                     )
                     if len(debate_agreements) > len(coordinator.agents) - 1:
                         debate_agreements = debate_agreements[
-                            -(len(coordinator.agents) - 1) :
+                            1 - len(coordinator.agents) :
                         ]
                     unique_id += 1
 
