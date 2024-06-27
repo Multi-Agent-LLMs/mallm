@@ -50,7 +50,7 @@ class DiscourseDebate(DiscoursePolicy):
         force_all_turns: bool = False,
         context_length: int = 1,
         include_current_turn_in_memory: bool = False,
-        debate_rounds: int = 1,
+        debate_rounds: int = 2,
     ) -> tuple[Optional[str], int, list[Agreement], bool]:
         unique_id = 0
         memories = []

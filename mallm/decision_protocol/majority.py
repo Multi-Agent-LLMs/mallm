@@ -50,16 +50,15 @@ class ThresholdConsensus(DecisionProtocol):
             )
             if moderator_agreement:
                 return moderator_agreement.solution, False, agreements
-            try:
-                recent_panelist_agreement = next(
-                    a for a in reversed_agreements if not a.agreement
-                )
-            except StopIteration:
-                logger.warning(
-                    "Failed gathering the most recent disagreement. Returning None as current solution."
-                )
-                return "None", False, agreements
-            return recent_panelist_agreement.solution, False, agreements
+            recent_panelist_agreement = next(
+                (a for a in reversed_agreements if not a.agreement), None
+            )
+            if recent_panelist_agreement:
+                return recent_panelist_agreement.solution, False, agreements
+            logger.warning(
+                "Failed gathering the most recent disagreement. Returning None as current solution."
+            )
+            return "None", False, agreements
 
         if (self.threshold_agents and len(self.panelists) <= self.threshold_agents) or (
             self.threshold_turn and turn < self.threshold_turn

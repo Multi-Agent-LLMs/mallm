@@ -120,7 +120,7 @@ num_agents: int = 3
 num_samples: NoneType = None
 out: NoneType = None
 paradigm: str = "memory"
-response_generator: str = "json"
+response_generator: str = "simple"
 use_moderator: bool = False
 ```
 

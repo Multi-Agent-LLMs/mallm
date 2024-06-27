@@ -128,18 +128,27 @@ Input: {input_str}
                 res = self.llm.invoke(current_prompt)
                 res = repair_json(res)
                 json_response = json.loads(res)
+                logger.debug(json_response)
                 if isinstance(json_response, list):
-                    response = Response(
-                        agreement=None if baseline else json_response[0]["agreement"],
-                        message=json_response[0]["message"],
-                        solution=json_response[0]["solution"],
+                    json_response = json_response[0]
+
+                if (
+                    not isinstance(json_response, dict)
+                    or "agreement" not in json_response.keys()
+                    or "message" not in json_response.keys()
+                    or "solution" not in json_response.keys()
+                ):
+                    retry += 1
+                    logger.debug(
+                        f"Json missing some keys (will attempt retry no. {retry!s})."
                     )
-                else:
-                    response = Response(
-                        agreement=None if baseline else json_response["agreement"],
-                        message=json_response["message"],
-                        solution=json_response["solution"],
-                    )
+                    continue
+
+                response = Response(
+                    agreement=None if baseline else json_response["agreement"],
+                    message=json_response["message"],
+                    solution=json_response["solution"],
+                )
                 if response.agreement is None and not drafting and not baseline:
                     retry += 1
                     continue
@@ -150,7 +159,7 @@ Input: {input_str}
                     f"Could not decode json (will attempt retry no. {retry!s}): "
                     + str(e)
                     + "\nResponse string: "
-                    + str(response)
+                    + str(res)
                 )
                 continue
         if retry >= 10:
