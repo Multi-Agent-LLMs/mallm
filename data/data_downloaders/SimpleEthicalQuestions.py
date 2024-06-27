@@ -44,7 +44,9 @@ class SimpleEthicalQuestionsDownloader(DatasetDownloader):
                     dataset_id=None,
                     inputs=[s["input"]],
                     context=multiple_choices,
-                    references=[ref],
+                    references=[
+                        choice for choice in multiple_choices if ref[0] in choice
+                    ],
                     personas=None,
                 )
             )
