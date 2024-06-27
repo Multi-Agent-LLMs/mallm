@@ -294,6 +294,7 @@ Paradigm: {policy.__class__.__name__}
 Decision-protocol: {self.decision_protocol.__class__.__name__}
 -------------"""
         )
+
         debate_rounds: int = 2
         if config.debate_rounds:
             debate_rounds = config.debate_rounds

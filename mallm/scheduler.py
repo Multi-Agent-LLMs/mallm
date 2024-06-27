@@ -53,6 +53,7 @@ RESPONSE_GENERATORS: dict[str, type[ResponseGenerator]] = {
     "simple": SimpleResponseGenerator,
 }
 
+
 class Scheduler:
     def __init__(self, config: Config) -> None:
         config.check_config()
