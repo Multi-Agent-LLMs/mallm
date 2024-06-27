@@ -299,16 +299,16 @@ Decision-protocol: {self.decision_protocol.__class__.__name__}
         )
 
         answer, turn, agreements, decision_success = policy.discuss(
-            self,
-            sample_instruction,
-            input_str,
-            config.use_moderator,
-            config.feedback_sentences,
-            config.max_turns,
-            config.force_all_turns,
-            config.context_length,
-            config.include_current_turn_in_memory,
-            config.chain_of_thought,
+            coordinator=self,
+            task_instruction=sample_instruction,
+            input_str=input_str,
+            use_moderator=config.use_moderator,
+            feedback_sentences=config.feedback_sentences,
+            max_turns=config.max_turns,
+            force_all_turns=config.force_all_turns,
+            context_length=config.context_length,
+            include_current_turn_in_memory=config.include_current_turn_in_memory,
+            debate_rounds=int(config.debate_rounds),
         )
 
         discussion_time = timedelta(

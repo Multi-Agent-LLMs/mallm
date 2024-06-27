@@ -34,7 +34,7 @@ class DiscoursePolicy(ABC):
         force_all_turns: bool = False,
         context_length: int = 1,
         include_current_turn_in_memory: bool = False,
-        debate_rounds: int = 1,
+        debate_rounds: int = 2,
     ) -> tuple[Optional[str], int, list[Agreement], bool]:
         logger.debug(self.paradigm_str)
         while (not self.decision or force_all_turns) and self.turn < max_turns:
