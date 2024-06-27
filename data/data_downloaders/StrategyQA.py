@@ -43,6 +43,11 @@ class StrategyGADownloader(DatasetDownloader):
                         json.dumps(s["target"])
                         .replace("Yes.", "A) Yes.")
                         .replace("No.", "B) No.")
+                        .split(".")[0]
+                        .strip('"'),  # yes/no
+                        ".".join(json.dumps(s["target"]).split(".")[1:])  # explanation
+                        .strip()
+                        .strip('"'),
                     ],
                     personas=None,
                 )
