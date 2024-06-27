@@ -16,15 +16,9 @@ from openai import OpenAI
 
 from mallm.coordinator import Coordinator
 from mallm.models.Chat import Chat
-from mallm.models.discussion.FreeTextResponseGenerator import FreeTextResponseGenerator
-from mallm.models.discussion.JSONResponseGenerator import JSONResponseGenerator
-from mallm.models.discussion.ResponseGenerator import ResponseGenerator
-from mallm.models.discussion.SimpleResponseGenerator import SimpleResponseGenerator
-from mallm.models.discussion.SplitFreeTextResponseGenerator import (
-    SplitFreeTextResponseGenerator,
-)
 from mallm.utils.config import Config
 from mallm.utils.CustomFormatter import CustomFormatter
+from mallm.utils.dicts import RESPONSE_GENERATORS
 from mallm.utils.types import InputExample
 from mallm.utils.utils import pretty_print_dict, suppress_output
 
@@ -45,13 +39,6 @@ library_logger.addHandler(stream_handler)
 
 logging.basicConfig(filename="log.txt", filemode="w")
 logger = logging.getLogger("mallm")
-
-RESPONSE_GENERATORS: dict[str, type[ResponseGenerator]] = {
-    "json": JSONResponseGenerator,
-    "freetext": FreeTextResponseGenerator,
-    "splitfreetext": SplitFreeTextResponseGenerator,
-    "simple": SimpleResponseGenerator,
-}
 
 
 class Scheduler:
