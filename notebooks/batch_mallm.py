@@ -1,3 +1,4 @@
+import gc
 import json
 import sys
 from typing import Any, Optional
@@ -44,6 +45,8 @@ def run_configuration(config: Config, run_name: str) -> None:
         print(f"Running {run_name}")
         scheduler = Scheduler(config)
         scheduler.run()
+        del scheduler
+        gc.collect()
         print(f"Completed {run_name}")
     except Exception as e:
         print(f"Error running {run_name}: {e}")

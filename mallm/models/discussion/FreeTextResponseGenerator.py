@@ -148,7 +148,7 @@ Input: {input_str}
         current_prompt = [
             {
                 "role": "system",
-                "content": "Extract the final solution to the task from the provided text. Remove statements of agreement, disagreement, and explanations. Do not modify the text. Do not output any text besides the solution.",
+                "content": "Extract the final solution to the task from the provided text. Remove statements of agreement, disagreement, and explanations. Do not modify the text. Make absolutely sure to include the letter option A-D first.",
             },
             {
                 "role": "user",

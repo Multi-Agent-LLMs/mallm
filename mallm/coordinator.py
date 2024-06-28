@@ -83,7 +83,7 @@ class Coordinator:
             raise Exception(f"No valid response generator for {response_generator}")
         self.response_generator = RESPONSE_GENERATORS[response_generator](self.llm)
 
-        num_agents = 5
+        num_agents = 20
         logger.warn(f"Overriding agent generator to generate {num_agents} agents")
 
         personas = PERSONA_GENERATORS[self.agent_generator](
@@ -237,7 +237,7 @@ class Coordinator:
         Returns the final response agreed on, the global memory, agent specific memory, turns needed, last agreements of agents
         """
 
-        mypanelists = random.sample(self.panelists, 3)
+        mypanelists = random.sample(self.panelists, config.num_agents)
 
         if config.decision_protocol not in DECISION_PROTOCOLS:
             logger.error(f"No valid decision protocol for {config.decision_protocol}")

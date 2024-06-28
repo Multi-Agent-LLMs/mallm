@@ -1,4 +1,5 @@
 import dataclasses
+import gc
 import glob
 import json
 import logging
@@ -26,7 +27,7 @@ just_fix_windows_console()
 
 # Configure logging for the library
 library_logger = logging.getLogger("mallm")
-library_logger.setLevel(logging.DEBUG)
+library_logger.setLevel(logging.INFO)
 
 # Add handlers to the logger
 stream_handler = logging.StreamHandler()
@@ -125,7 +126,7 @@ class Scheduler:
 
         answers = []
 
-        for _ in range(10):
+        for _ in range(5):
             coordinator.clear_global_memory()
             try:
                 (
@@ -174,19 +175,19 @@ class Scheduler:
                     "answer": answer or None,
                     "references": sample.references,
                     "decision_success": decision_success,
-                    "agreements": [
-                        dataclasses.asdict(agreement) for agreement in agreements
-                    ],
+                    # "agreements": [
+                    #     dataclasses.asdict(agreement) for agreement in agreements
+                    # ],
                     "turns": turn,
                     "clockSeconds": float(f"{discussion_time:.2f}"),
-                    "globalMemory": [
-                        dataclasses.asdict(memory) for memory in global_mem
-                    ],
-                    "agentMemory": [
-                        [dataclasses.asdict(memory) for memory in agent]
-                        for agent in agent_mems
-                        if agent
-                    ],
+                    # "globalMemory": [
+                    #     dataclasses.asdict(memory) for memory in global_mem
+                    # ],
+                    # "agentMemory": [
+                    #     [dataclasses.asdict(memory) for memory in agent]
+                    #     for agent in agent_mems
+                    #     if agent
+                    # ],
                 }
             )
             try:
@@ -207,6 +208,9 @@ class Scheduler:
 
             if answer:
                 answers.append(answer)
+        
+        del coordinator
+        gc.collect()
         return answers
 
     def manage_discussions(self, client: httpx.Client) -> None:
