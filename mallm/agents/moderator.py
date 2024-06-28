@@ -21,7 +21,14 @@ class Moderator(Agent):
         response_generator: ResponseGenerator,
         persona: str = "Moderator",
         persona_description: str = "A super-intelligent individual with critical thinking who has a neutral position at all times. He acts as a mediator between other discussion participants.",
+        persona_attributes: dict[str, str] = {},
     ) -> None:
         super().__init__(
-            llm, client, coordinator, response_generator, persona, persona_description
+            llm,
+            client,
+            coordinator,
+            response_generator,
+            persona,
+            persona_description,
+            persona_attributes,
         )

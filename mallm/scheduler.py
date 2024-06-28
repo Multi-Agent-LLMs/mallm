@@ -1,4 +1,3 @@
-import dataclasses
 import gc
 import glob
 import json
@@ -27,7 +26,7 @@ just_fix_windows_console()
 
 # Configure logging for the library
 library_logger = logging.getLogger("mallm")
-library_logger.setLevel(logging.INFO)
+library_logger.setLevel(logging.DEBUG)
 
 # Add handlers to the logger
 stream_handler = logging.StreamHandler()
@@ -126,7 +125,8 @@ class Scheduler:
 
         answers = []
 
-        for _ in range(5):
+        logger.debug(f"Starting discussion loop for sample {sample.example_id}")
+        for _ in range(3):
             coordinator.clear_global_memory()
             try:
                 (
@@ -137,6 +137,7 @@ class Scheduler:
                     agreements,
                     discussion_time,
                     decision_success,
+                    mypanelists,
                 ) = coordinator.discuss(config=self.config)
             except Exception:
                 # More extensive error logging to ease debugging during async execution
@@ -161,6 +162,16 @@ class Scheduler:
             logger.info(f"""Reference answer: {sample.references}""")
             logger.info(f"""Decision successful: {decision_success}""")
 
+            personas = [
+                {
+                    "agentId": a.id,
+                    "persona": a.persona,
+                    "personaDescription": a.persona_description,
+                    "personaAttributes": a.persona_attributes,
+                }
+                for a in mypanelists
+            ]
+
             self.output_dicts.append(
                 {
                     "dataset": self.dataset_name,
@@ -168,7 +179,7 @@ class Scheduler:
                     "datasetId": sample.dataset_id,
                     "instruction": self.config.instruction,
                     "coordinatorId": coordinator.id,
-                    "personas": coordinator.get_agents(),
+                    "personas": personas,
                     "paradigm": self.config.paradigm,
                     "input": sample.inputs,
                     "context": sample.context,
@@ -208,7 +219,7 @@ class Scheduler:
 
             if answer:
                 answers.append(answer)
-        
+
         del coordinator
         gc.collect()
         return answers

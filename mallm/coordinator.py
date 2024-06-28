@@ -83,7 +83,7 @@ class Coordinator:
             raise Exception(f"No valid response generator for {response_generator}")
         self.response_generator = RESPONSE_GENERATORS[response_generator](self.llm)
 
-        num_agents = 20
+        num_agents = 10
         logger.warn(f"Overriding agent generator to generate {num_agents} agents")
 
         personas = PERSONA_GENERATORS[self.agent_generator](
@@ -96,6 +96,15 @@ class Coordinator:
             {
                 "role": "Neutral",
                 "description": "Neutral",
+                "attributes": {
+                    "extraversion": "neutral",
+                    "agreeableness": "neutral",
+                    "conscientiousness": "neutral",
+                    "neuroticism": "neutral",
+                    "openness": "neutral",
+                    "experience": "Neutral",
+                    "gender": "neutral",
+                },
             }
         )
 
@@ -112,9 +121,12 @@ class Coordinator:
                     response_generator=self.response_generator,
                     persona=persona["role"],
                     persona_description=persona["description"],
+                    persona_attributes=persona["attributes"],
                     chain_of_thought=chain_of_thought,
                 )
             )
+
+        logger.debug(f"Created {len(self.panelists)} panelists")
 
         if use_moderator and self.moderator is not None:
             self.agents = [self.moderator, *self.panelists]
@@ -225,6 +237,7 @@ class Coordinator:
         list[Agreement],
         float,
         bool,
+        list[Panelist],
     ]:
         """
         The routine responsible for the discussion between agents to solve a task.
@@ -296,4 +309,5 @@ Decision-protocol: {self.decision_protocol.__class__.__name__}
             agreements,
             discussion_time,
             decision_success,
+            mypanelists,
         )

@@ -30,6 +30,7 @@ class Agent:
         response_generator: ResponseGenerator,
         persona: str,
         persona_description: str,
+        persona_attributes: dict[str, str],
         moderator: Optional[Moderator] = None,
         chain_of_thought: bool = False,
     ):
@@ -37,6 +38,7 @@ class Agent:
         self.short_id = self.id[:4]
         self.persona = persona
         self.persona_description = persona_description
+        self.persona_attributes = persona_attributes
         self.memory_bucket = coordinator.memory_bucket_dir + f"agent_{self.id}"
         self.coordinator = coordinator
         self.moderator = moderator

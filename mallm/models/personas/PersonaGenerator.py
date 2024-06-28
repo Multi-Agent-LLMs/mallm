@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Any
 
 from mallm.models.Chat import Chat
 
@@ -11,7 +12,7 @@ class PersonaGenerator(ABC):
     @abstractmethod
     def generate_personas(
         self, task_description: str, num_agents: int
-    ) -> list[dict[str, str]]:
+    ) -> list[dict[str, Any]]:
         """
         Abstract method to generate a list of persona descriptions based on the given task.
 

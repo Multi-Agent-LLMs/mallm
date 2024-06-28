@@ -1,5 +1,6 @@
 import json
 import logging
+from typing import Any
 
 from mallm.models.Chat import Chat
 from mallm.models.personas.PersonaGenerator import PersonaGenerator
@@ -18,7 +19,7 @@ Generate one participant at a time, complementing the existing participants to f
 
 You must choose the following characteristics for the participant, in JSON format:
 - "extraversion": "high" or "low"
-- "egreeableness": "high" or "low"
+- "agreeableness": "high" or "low"
 - "conscientiousness": "high" or "low"
 - "neuroticism": "high" or "low"
 - "openness": "high" or "low"
@@ -30,7 +31,7 @@ You absolutely must stick to the JSON format and the characteristics and options
 Example 1:
 Task: Explain the basics of machine learning to high school students.
 New Participant:
-{"role": "Educator", "extraversion": "high", "egreeableness": "high", "conscientiousness": "high", "neuroticism": "low", "openness": "low", "experience": "Expert", "gender": "male"}
+{"role": "Educator", "extraversion": "high", "agreeableness": "high", "conscientiousness": "high", "neuroticism": "low", "openness": "low", "experience": "Expert", "gender": "male"}
 
 Example 2:
 Task: Develop a new mobile app for tracking daily exercise.
@@ -43,7 +44,7 @@ New Participant:
 
     def generate_personas(
         self, task_description: str, num_agents: int
-    ) -> list[dict[str, str]]:
+    ) -> list[dict[str, Any]]:
         current_prompt = [
             self.base_prompt,
             {
@@ -298,7 +299,11 @@ New Participant:
 
                 desc += f" You are a {new_agent['experience']} in the field and identify as {new_agent['gender']}."
 
-                my_agent = {"role": new_agent["role"], "description": desc}
+                my_agent = {
+                    "role": new_agent["role"],
+                    "description": desc,
+                    "attributes": new_agent,
+                }
                 agents.append(my_agent)
             except json.decoder.JSONDecodeError as e:
                 logger.debug(

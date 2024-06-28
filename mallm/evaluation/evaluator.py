@@ -73,6 +73,7 @@ class Evaluator:
             raise Exception("No elements with scores found in the data.")
 
         reported_metrics = self.data[first_scored_index]["scores"].keys()
+        reported_metrics = ["correct"]
 
         for metric in reported_metrics:
             logger.info(f"Statistics for: {metric.upper()}")
