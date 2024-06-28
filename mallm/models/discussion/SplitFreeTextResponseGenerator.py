@@ -38,7 +38,7 @@ class SplitFreeTextResponseGenerator(FreeTextResponseGenerator):
             instr_prompt,
         ]
         return self.generate_response(
-            current_prompt, chain_of_thought, agreement, False, False
+            current_prompt, chain_of_thought, agreement, False, False, data.input_str
         )
 
     def generate_improve(
@@ -68,7 +68,7 @@ class SplitFreeTextResponseGenerator(FreeTextResponseGenerator):
             instr_prompt,
         ]
         return self.generate_response(
-            current_prompt, chain_of_thought, agreement, False, False
+            current_prompt, chain_of_thought, agreement, False, False, data.input_str
         )
 
     def generate_agreement(self, data: TemplateFilling) -> Optional[bool]:

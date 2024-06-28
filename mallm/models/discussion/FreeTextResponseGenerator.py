@@ -39,7 +39,9 @@ Input: {input_str}
                 "content": prompt_content,
             },
         ]
-        return self.generate_response(prompt, chain_of_thought, None, True, True)
+        return self.generate_response(
+            prompt, chain_of_thought, None, True, True, input_str
+        )
 
     def generate_response(
         self,
@@ -48,6 +50,7 @@ Input: {input_str}
         agreement: Optional[bool],
         baseline: bool,
         drafting: bool,
+        input_str: str,
     ) -> Response:
         if chain_of_thought:
             current_prompt.append(
@@ -69,7 +72,7 @@ Input: {input_str}
                     else self.extract_agreement(res, drafting)
                 ),
                 message=res,
-                solution=self.extract_result(res),
+                solution=self.extract_result(res, input_str),
             )
 
             if response.agreement is None and not drafting and not baseline:
@@ -101,7 +104,7 @@ Input: {input_str}
             instr_prompt,
         ]
         return self.generate_response(
-            current_prompt, chain_of_thought, None, False, False
+            current_prompt, chain_of_thought, None, False, False, data.input_str
         )
 
     def generate_improve(
@@ -122,7 +125,7 @@ Input: {input_str}
             instr_prompt,
         ]
         return self.generate_response(
-            current_prompt, chain_of_thought, None, False, False
+            current_prompt, chain_of_thought, None, False, False, data.input_str
         )
 
     def generate_draft(self, data: TemplateFilling, chain_of_thought: bool) -> Response:
@@ -141,18 +144,18 @@ Input: {input_str}
             instr_prompt,
         ]
         return self.generate_response(
-            current_prompt, chain_of_thought, None, False, True
+            current_prompt, chain_of_thought, None, False, True, data.input_str
         )
 
-    def extract_result(self, result: Optional[str]) -> str:
+    def extract_result(self, result: Optional[str], input_str: str) -> str:
         current_prompt = [
             {
                 "role": "system",
-                "content": "Extract the final solution to the task from the provided text. Remove statements of agreement, disagreement, and explanations. Do not modify the text. Make absolutely sure to include the letter option A-D first.",
+                "content": "Extract the final solution to the task from the provided text. Remove statements of agreement, disagreement, and explanations. Do not modify the text. Make absolutely sure to mention the respective letter option A-D from the Original Task.",
             },
             {
                 "role": "user",
-                "content": f"Text: {result}",
+                "content": f"Text: {result}, Original Task: {input_str}",
             },
             {
                 "role": "assistant",

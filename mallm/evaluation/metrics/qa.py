@@ -48,7 +48,8 @@ class MultiChoiceBoolean(Metric):
             return {"correct": False}
 
         score = (
-            extracted_answer == reference or reference.lower() in generated_text.lower()
+            extracted_answer
+            == reference  # or reference.lower() in generated_text.lower()
         )
 
         return {"correct": score}

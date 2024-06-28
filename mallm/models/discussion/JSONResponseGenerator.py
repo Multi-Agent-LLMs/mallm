@@ -103,7 +103,9 @@ Input: {input_str}
                 "content": prompt_content,
             },
         ]
-        return self.generate_response(prompt, chain_of_thought, None, True, True)
+        return self.generate_response(
+            prompt, chain_of_thought, None, True, True, input_str
+        )
 
     def generate_response(
         self,
@@ -112,6 +114,7 @@ Input: {input_str}
         agreement: Optional[bool],
         baseline: bool,
         drafting: bool,
+        input_str: str,
     ) -> Response:
         if chain_of_thought:
             current_prompt.append(
@@ -187,7 +190,7 @@ Input: {input_str}
             instr_prompt,
         ]
         return self.generate_response(
-            current_prompt, chain_of_thought, None, False, False
+            current_prompt, chain_of_thought, None, False, False, data.input_str
         )
 
     def generate_improve(
@@ -208,7 +211,7 @@ Input: {input_str}
             instr_prompt,
         ]
         return self.generate_response(
-            current_prompt, chain_of_thought, None, False, False
+            current_prompt, chain_of_thought, None, False, False, data.input_str
         )
 
     def generate_draft(self, data: TemplateFilling, chain_of_thought: bool) -> Response:
@@ -227,5 +230,5 @@ Input: {input_str}
             instr_prompt,
         ]
         return self.generate_response(
-            current_prompt, chain_of_thought, None, False, True
+            current_prompt, chain_of_thought, None, False, True, data.input_str
         )
