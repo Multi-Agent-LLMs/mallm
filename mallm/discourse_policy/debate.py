@@ -184,13 +184,11 @@ class DiscourseDebate(DiscoursePolicy):
                     )
                     if len(debate_agreements) > len(coordinator.agents) - 1:
                         debate_agreements = debate_agreements[
-                            -(len(coordinator.agents) - 1) :
+                            1 - len(coordinator.agents) :
                         ]
                     unique_id += 1
 
             self.agreements += debate_agreements
-            # if len(agreements) > len(coordinator.panelists):
-            #    self.agreements = self.agreements[-len(coordinator.panelists) :]
 
             if coordinator.decision_protocol is None:
                 logger.error("No decision protocol module found.")

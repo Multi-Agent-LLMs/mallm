@@ -28,7 +28,7 @@ class Config:
     context_length: int = 3
     include_current_turn_in_memory: bool = True
     extract_all_drafts: bool = True
-    debate_rounds: Optional[int] = None
+    debate_rounds: int = 2
     max_concurrent_requests: int = 100
     clear_memory_bucket: bool = True
     memory_bucket_dir: str = "./mallm/utils/memory_bucket/"

@@ -86,13 +86,19 @@ Input: {input_str}
     def generate_feedback(
         self, data: TemplateFilling, chain_of_thought: bool
     ) -> Response:
+        instr_prompt = {
+            "role": "user",
+            "content": "Based on the current solution, give constructive feedback. If you agree, answer with [AGREE], else answer with [DISAGREE] and explain why.",
+        }
+        if not data.current_draft:
+            instr_prompt = {
+                "role": "user",
+                "content": "Give constructive feedback.",
+            }
         current_prompt = [
             self.base_prompt,
             *self.get_filled_template(data),
-            {
-                "role": "user",
-                "content": "Based on the current solution, give constructive feedback. If you agree, answer with [AGREE], else answer with [DISAGREE] and explain why.",
-            },
+            instr_prompt,
         ]
         return self.generate_response(
             current_prompt, chain_of_thought, None, False, False
@@ -101,26 +107,38 @@ Input: {input_str}
     def generate_improve(
         self, data: TemplateFilling, chain_of_thought: bool
     ) -> Response:
+        instr_prompt = {
+            "role": "user",
+            "content": "Improve the current solution. If you agree with the current solution, answer with [AGREE], else answer with [DISAGREE] and explain why and provide an improved solution.",
+        }
+        if not data.current_draft:
+            instr_prompt = {
+                "role": "user",
+                "content": "Propose a solution.",
+            }
         current_prompt = [
             self.base_prompt,
             *self.get_filled_template(data),
-            {
-                "role": "user",
-                "content": "Improve the current solution. If you agree with the current solution, answer with [AGREE], else answer with [DISAGREE] and explain why and provide an improved solution.",
-            },
+            instr_prompt,
         ]
         return self.generate_response(
             current_prompt, chain_of_thought, None, False, False
         )
 
     def generate_draft(self, data: TemplateFilling, chain_of_thought: bool) -> Response:
+        instr_prompt = {
+            "role": "user",
+            "content": "Based on the provided feedback, carefully re-examine your previous solution. Provide a revised solution.",
+        }
+        if not data.current_draft:
+            instr_prompt = {
+                "role": "user",
+                "content": "Propose a solution.",
+            }
         current_prompt = [
             self.base_prompt,
             *self.get_filled_template(data),
-            {
-                "role": "user",
-                "content": "Based on the provided feedback, carefully re-examine your previous solution. Provide a revised solution based on the feedback.",
-            },
+            instr_prompt,
         ]
         return self.generate_response(
             current_prompt, chain_of_thought, None, False, True
