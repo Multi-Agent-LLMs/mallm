@@ -32,7 +32,7 @@ Install as a package:
 ### Test Data
 Download and create the test data: `python data/data_downloader.py --datasets=[SQuAD2,ETPC] --sample_size=100`
 
-You can use any dataset for this project as long as it follows [this basic format](https://github.com/Multi-Agent-LLMs/mallm/blob/main/data/datasets/etpc_debugging.json). These datasets are supported by our automated formatting pipeline: `BTVote`, `ETPC`, `Europarl`, `GPQA`, `GSM8K`, `Multi-News`, `SQuAD2`, `SimpleEthicalQuestions`, `StrategyQA`, `WMT19_de_en`, `XSum`
+You can use any dataset for this project as long as it follows [this basic format](https://github.com/Multi-Agent-LLMs/mallm/blob/main/data/datasets/etpc_debugging.json). These datasets are supported by our automated formatting pipeline: `BTVote`, `ETPC`, `Europarl`, `GPQA`, `GSM8K`, `Multi-News`, `SimpleEthicalQuestions`, `SQuAD2`, `StrategyQA`, `WMT19_de_en`, `XSum`
 
 ### Run from Terminal
 MALLM relies on an external API like OpenAI or Text Generation Inference by Huggingface.
@@ -97,31 +97,31 @@ Use "tgi" as a model for Text Generation Inference by HuggingFace or one of thes
 
 ### Config Arguments:
 ```py
-agent_generator: str = "expert"
-api_key: str = "-"
-baseline: bool = False
-chain_of_thought: bool = True
-clear_memory_bucket: bool = True
-context_length: int = 3
-data: NoneType = None
-debate_rounds: int = 2
-decision_protocol: str = "hybrid_consensus"
+data: str = None
+out: str = None
+instruction: str = None
 endpoint_url: str = "https://api.openai.com"
-extract_all_drafts: bool = True
-feedback_sentences: NoneType = None
-force_all_turns: bool = False
-include_current_turn_in_memory: bool = True
-instruction: NoneType = None
-max_concurrent_requests: int = 100
-max_turns: int = 10
-memory_bucket_dir: str = "./mallm/utils/memory_bucket/"
 model: str = "gpt-3.5-turbo"
-num_agents: int = 3
-num_samples: NoneType = None
-out: NoneType = None
+api_key: str = "-"
+use_moderator: bool = False
+max_turns: int = 10
+force_all_turns: bool = False
+feedback_sentences: Optional = None
 paradigm: str = "memory"
 response_generator: str = "simple"
-use_moderator: bool = False
+decision_protocol: str = "hybrid_consensus"
+context_length: int = 3
+include_current_turn_in_memory: bool = True
+extract_all_drafts: bool = True
+debate_rounds: int = 2
+max_concurrent_requests: int = 100
+clear_memory_bucket: bool = True
+memory_bucket_dir: str = "./mallm/utils/memory_bucket/"
+baseline: bool = False
+chain_of_thought: bool = True
+num_agents: int = 3
+agent_generator: str = "expert"
+num_samples: Optional = None
 ```
 
 ### Discussion Parameters:

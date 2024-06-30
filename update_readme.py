@@ -1,6 +1,7 @@
 from mallm.utils.config import Config
 from pathlib import Path
 import mallm.evaluation.evaluator as evaluator
+import typing
 from mallm.utils.dicts import (
     DECISION_PROTOCOLS,
     DISCUSSION_PARADIGMS,
@@ -21,11 +22,13 @@ with open("README.md", "r+") as readme_file:
 
     content = readme_file.read()
 
+    types = typing.get_type_hints(Config)
     attributes_content = ""
-    for attr, value in attributes.items():
+    for attr, type in types.items():
+        value = attributes[attr]
         if isinstance(value, str):
             value = '"' + value + '"'
-        attributes_content += f"{attr}: {type(value).__name__} = {value}\n"
+        attributes_content += f"{attr}: {type.__name__} = {value}\n"
 
     replacement_str = "### Config Arguments:\n```py\n" + attributes_content + "```"
 
