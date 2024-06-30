@@ -52,7 +52,7 @@ Input: {input_str}
         if chain_of_thought:
             current_prompt.append(
                 {
-                    "role": "assistant",
+                    "role": "user",
                     "content": "Let's think step by step.",
                 }
             )
@@ -152,11 +152,7 @@ Input: {input_str}
             },
             {
                 "role": "user",
-                "content": f"Text: {result}",
-            },
-            {
-                "role": "assistant",
-                "content": "Final solution:",
+                "content": f"Text: {result}\nFinal solution:",
             },
         ]
         return self.llm.invoke(current_prompt)
