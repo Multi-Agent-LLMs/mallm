@@ -36,15 +36,15 @@ class SimpleEthicalQuestionsDownloader(DatasetDownloader):
             multiple_choices = []
             for i, (k, v) in enumerate(s["target_scores"].items()):
                 multiple_choices.append(f"{chr(ord('A') + i)}) " + k)
+                if k == ref[0]:
+                    ref = multiple_choices[-1]
             input_examples.append(
                 InputExample(
                     example_id=str(uuid.uuid4()),
                     dataset_id=None,
                     inputs=[s["input"]],
                     context=multiple_choices,
-                    references=[
-                        choice for choice in multiple_choices if ref[0] in choice
-                    ],
+                    references=[ref],
                     personas=None,
                 )
             )
