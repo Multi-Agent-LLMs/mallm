@@ -1,10 +1,12 @@
 import dataclasses
+import gc
 import glob
 import json
 import logging
 import os
 import sys
 import time
+import traceback
 from datetime import timedelta
 from multiprocessing.pool import ThreadPool
 from typing import Any, Optional
@@ -134,16 +136,8 @@ class Scheduler:
             # More extensive error logging to ease debugging during async execution
             logger.error(f"Failed discussion of sample {sample.example_id}.")
             self.failed_example_ids.append(sample.example_id)
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            logger.error(exc_type)
-            logger.error(exc_obj)
-            deep_tb = exc_tb
-            while deep_tb and deep_tb.tb_next:
-                deep_tb = deep_tb.tb_next
-                f_name = os.path.split(deep_tb.tb_frame.f_code.co_filename)[1]
-                logger.error(
-                    f"""-> at {f_name}:{deep_tb.tb_lineno}, deeper function level error"""
-                )
+            logger.error("Exception occurred", exc_info=True)
+            logger.error(traceback.format_exc())
             return None
 
         logger.info(
@@ -195,6 +189,8 @@ class Scheduler:
         logger.info(
             f"""Completed samples: {self.completed_samples}. Samples left: {self.total_samples - self.completed_samples}."""
         )
+        del coordinator
+        gc.collect()
         return answer
 
     def manage_discussions(self, client: httpx.Client) -> None:
@@ -229,6 +225,7 @@ class Scheduler:
                     logger.error(e)
             pool.close()  # Done adding tasks.
             pool.join()  # Wait for all tasks to complete.
+            del pool
 
             if len(self.failed_example_ids) == 0:
                 logger.info("No samples failed.")
@@ -359,6 +356,7 @@ class Scheduler:
                     logger.error(e)
             pool.close()  # Done adding tasks.
             pool.join()  # Wait for all tasks to complete.
+            del pool
 
             if len(self.failed_example_ids) == 0:
                 logger.info("No samples failed.")
