@@ -24,9 +24,5 @@ class BERTScore(Metric):
             num_layers=9,
         )
         return {
-            "bertscore": {
-                "precision": P.mean().item(),
-                "recall": R.mean().item(),
-                "fmeasure": F1.mean().item(),
-            }
+            "bertscore": F1.mean().item()
         }
