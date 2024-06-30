@@ -52,3 +52,18 @@ class MultiChoiceBoolean(Metric):
         )
 
         return {"correct": score}
+
+
+class AnswerabilityBoolean(Metric):
+    """
+    A class to evaluate the answerability accuracy on QA tasks that include non-answerable questions (i.e., no reference).
+    """
+
+    _name = "answerability"
+
+    @staticmethod
+    def evaluate(generated_text: str, reference_texts: list[str], answer_pattern: str = "unknown") -> dict[str, Any]:
+
+        if reference_texts == []:
+            return {"answerability_correct": answer_pattern in generated_text.lower()}
+        return {"answerability_correct": answer_pattern not in generated_text.lower()}
