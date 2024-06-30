@@ -62,9 +62,7 @@ class AnswerabilityBoolean(Metric):
     _name = "answerability"
 
     @staticmethod
-    def evaluate(
-        generated_text: str, reference_texts: list[str], answer_pattern: str = "unknown"
-    ) -> dict[str, Any]:
+    def evaluate(generated_text: str, reference_texts: list[str], answer_pattern: str = "unknown") -> dict[str, Any]:
 
         if reference_texts == []:
             return {"answerability_correct": answer_pattern in generated_text.lower()}
