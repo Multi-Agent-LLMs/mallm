@@ -35,16 +35,16 @@ class MultiChoiceBoolean(Metric):
             reference = re.sub(
                 MultiChoiceBoolean.ANSWER_PATTERN_MULTICHOICE_BACKUP, "", reference
             ).strip()
-            match = re.search(reference, generated_text, flags=re.IGNORECASE)
             logger.debug(
                 "No answer pattern detected. Trying to match against freetext reference."
             )
+            match = re.search(reference.lower(), generated_text.lower(), flags=re.IGNORECASE)
         else:
             extracted_answer = match.group(1)
             logger.debug(f"Extracted answer: {match.group(1)} from {generated_text}")
 
         if not match:
-            logger.warning(f"No match found in answer: {generated_text}, reference: {reference}")
+            logger.warning(f"No pattern match or text identity found in answer: {generated_text}, reference: {reference}")
             return {"correct": False}
 
         score = (
