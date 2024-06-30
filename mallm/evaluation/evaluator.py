@@ -93,6 +93,8 @@ class Evaluator:
 
         stats = {}
 
+        stats = {}
+
         for metric in reported_metrics:
             logger.info(f"-> Statistics for: {metric.upper()}, {self.output_file_path}")
             scores = [item.get("scores", {}).get(metric, None) for item in self.data]
@@ -110,10 +112,18 @@ class Evaluator:
                 sum((score - average_score) ** 2 for score in scores) / len(scores)
             ) ** 0.5
 
-            logger.info(f"Data size: {len(self.data)}")
-            logger.info(f"Sample size: {len(scores)}")
-            logger.info(f"Average score: {average_score:.2f}")
-            logger.info(f"Standard deviation: {std_dev_score:.3f}")
+            stats[metric] = {
+                "data_size": len(self.data),
+                "sample_size": len(scores),
+                "average_score": round(average_score, 2),
+                "std_dev_score": round(std_dev_score, 2),
+            }
+            logger.info(f"Stats: {stats[metric]}")
+
+        stats_output_file_path = self.output_file_path.replace(".json", "_stats.json")
+        with open(stats_output_file_path, "w") as file:
+            json.dump(stats, file, indent=4)
+        logger.info(f"Statistics saved to {stats_output_file_path}")
 
     def save_json(self) -> None:
         with open(self.output_file_path, "w") as file:
