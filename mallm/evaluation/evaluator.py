@@ -13,7 +13,14 @@ from mallm.evaluation.metrics.metric import Metric
 from mallm.evaluation.metrics.qa import AnswerabilityBoolean, MultiChoiceBoolean
 from mallm.evaluation.metrics.rouge import ROUGE
 
-ALL_METRICS = [AnswerabilityBoolean(), BERTScore(), BLEU(), METEOR(), MultiChoiceBoolean(), ROUGE()]
+ALL_METRICS = [
+    AnswerabilityBoolean(),
+    BERTScore(),
+    BLEU(),
+    METEOR(),
+    MultiChoiceBoolean(),
+    ROUGE(),
+]
 
 logger = logging.getLogger("mallm")
 
@@ -49,7 +56,9 @@ class Evaluator:
         if not self.metrics:
             raise ValueError(f"No metrics found for {metrics}")
 
-    def calculate_scores(self, answer: str, references: list[str], metrics: Optional[list[Metric]] = None) -> dict[str, Any]:
+    def calculate_scores(
+        self, answer: str, references: list[str], metrics: Optional[list[Metric]] = None
+    ) -> dict[str, Any]:
         if not metrics:
             metrics = self.metrics
         scores: dict[str, Any] = {}
@@ -65,7 +74,9 @@ class Evaluator:
                 score = self.calculate_scores(answer, references)
                 item["scores"] = score
             elif answer and "answerability" in [metric.name for metric in self.metrics]:
-                score = self.calculate_scores(answer, references, metrics=[AnswerabilityBoolean()])
+                score = self.calculate_scores(
+                    answer, references, metrics=[AnswerabilityBoolean()]
+                )
                 item["scores"] = score
 
     def calculate_statistics(self) -> None:
@@ -80,7 +91,7 @@ class Evaluator:
         reported_metrics = self.data[first_scored_index]["scores"].keys()
 
         for metric in reported_metrics:
-            logger.info(f"Statistics for: {metric.upper()}, {self.output_file_path}")
+            logger.info(f"-> Statistics for: {metric.upper()}, {self.output_file_path}")
             scores = [item.get("scores", {}).get(metric, None) for item in self.data]
             scores = [score for score in scores if score is not None]
             if not scores:
@@ -98,7 +109,7 @@ class Evaluator:
 
             logger.info(f"Data size: {len(self.data)}")
             logger.info(f"Sample size: {len(scores)}")
-            logger.info(f"Average score: {average_score:.2%}")
+            logger.info(f"Average score: {average_score:.2f}")
             logger.info(f"Standard deviation: {std_dev_score:.3f}")
 
     def save_json(self) -> None:
