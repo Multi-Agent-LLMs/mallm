@@ -44,7 +44,7 @@ class MultiChoiceBoolean(Metric):
             logger.debug(f"Extracted answer: {match.group(1)} from {generated_text}")
 
         if not match:
-            logger.warning(f"No match found in answer: {generated_text}")
+            logger.warning(f"No match found in answer: {generated_text}, reference: {reference}")
             return {"correct": False}
 
         score = (
