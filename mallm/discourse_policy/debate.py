@@ -50,11 +50,10 @@ class DiscourseDebate(DiscoursePolicy):
         force_all_turns: bool = False,
         context_length: int = 1,
         include_current_turn_in_memory: bool = False,
-        debate_rounds: int = 1,
-    ) -> tuple[Optional[str], int, list[Agreement]]:
+        debate_rounds: int = 2,
+    ) -> tuple[Optional[str], int, list[Agreement], bool]:
         unique_id = 0
         memories = []
-        agreements: list[Agreement] = []
 
         logger.debug(
             f"""Paradigm: Debate (rounds: {debate_rounds})
@@ -93,12 +92,12 @@ class DiscourseDebate(DiscoursePolicy):
                     persona_description=coordinator.moderator.persona_description,
                     agent_memory=debate_history,
                 )
-                _res, memory, agreements = coordinator.moderator.draft(
+                _res, memory, self.agreements = coordinator.moderator.draft(
                     unique_id=unique_id,
                     turn=self.turn,
                     memory_ids=memory_ids,
                     template_filling=template_filling,
-                    agreements=agreements,
+                    agreements=self.agreements,
                     is_moderator=True,
                 )
                 memories.append(memory)
@@ -121,12 +120,12 @@ class DiscourseDebate(DiscoursePolicy):
                     persona_description=coordinator.panelists[0].persona_description,
                     agent_memory=debate_history,
                 )
-                _res, memory, agreements = coordinator.panelists[0].draft(
+                _res, memory, self.agreements = coordinator.panelists[0].draft(
                     unique_id=unique_id,
                     turn=self.turn,
                     memory_ids=memory_ids,
                     template_filling=template_filling,
-                    agreements=agreements,
+                    agreements=self.agreements,
                     is_moderator=True,
                 )
                 memories.append(memory)
@@ -174,7 +173,7 @@ class DiscourseDebate(DiscoursePolicy):
                     else:
                         agents_to_update = [a, coordinator.agents[next_a]]
                     debate_agreements = a.participate(
-                        use_moderator=use_moderator,
+                        use_moderator=True,  # only feedback makes sense with the debate paradigm
                         memories=memories,
                         unique_id=unique_id,
                         turn=self.turn,
@@ -190,21 +189,21 @@ class DiscourseDebate(DiscoursePolicy):
                     unique_id += 1
 
             self.agreements += debate_agreements
-            if len(agreements) > len(coordinator.panelists):
-                self.agreements = self.agreements[-len(coordinator.panelists) :]
 
             if coordinator.decision_protocol is None:
                 logger.error("No decision protocol module found.")
                 raise Exception("No decision protocol module found.")
 
-            self.draft, self.decision = coordinator.decision_protocol.make_decision(
-                self.agreements,
-                self.turn,
-                len(coordinator.agents),
-                task_instruction,
-                input_str,
+            self.draft, self.decision, self.agreements = (
+                coordinator.decision_protocol.make_decision(
+                    self.agreements,
+                    self.turn,
+                    len(coordinator.agents),
+                    task_instruction,
+                    input_str,
+                )
             )
             if self.decision:
                 break
 
-        return self.draft, self.turn, self.agreements
+        return self.draft, self.turn, self.agreements, self.decision

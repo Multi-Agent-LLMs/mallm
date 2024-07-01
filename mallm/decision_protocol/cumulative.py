@@ -32,9 +32,12 @@ class CumulativeVoting(DecisionProtocol):
         agent_index: int,
         task: str,
         question: str,
-    ) -> tuple[str, bool]:
+    ) -> tuple[str, bool, list[Agreement]]:
+        if len(agreements) > self.total_agents:
+            agreements = agreements[-self.total_agents :]
+
         if turn < self.vote_turn or agent_index != self.total_agents - 1:
-            return "", False
+            return "", False, agreements
         final_answers = []
         for panelist in self.panelists:
             prev_answer: Agreement = next(
@@ -46,10 +49,10 @@ class CumulativeVoting(DecisionProtocol):
                     panelist.persona_description,
                     question,
                     task,
-                    prev_answer.response,
+                    prev_answer.solution,
                 )
             )
-            prev_answer.response = response
+            prev_answer.solution = response
             final_answers.append(response)
 
         # Collect points distribution from each panelist
@@ -105,7 +108,7 @@ class CumulativeVoting(DecisionProtocol):
             f"Selected answer from agent {self.panelists[best_solution_index].short_id} with {max_points} points"
         )
 
-        return final_answers[best_solution_index], agreed
+        return final_answers[best_solution_index], agreed, agreements
 
     @staticmethod
     def validate_points_distribution(

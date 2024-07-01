@@ -65,7 +65,14 @@ class Evaluator:
 
     def calculate_statistics(self) -> None:
         # For each numeric metric, calculate the average and standard deviation
-        reported_metrics = self.data[0]["scores"].keys()
+        first_scored_index = next(
+            (index for index, item in enumerate(self.data) if "scores" in item), None
+        )
+        if first_scored_index is None:
+            logger.error("No elements with scores found in the data.")
+            raise Exception("No elements with scores found in the data.")
+
+        reported_metrics = self.data[first_scored_index]["scores"].keys()
 
         for metric in reported_metrics:
             logger.info(f"Statistics for: {metric.upper()}")

@@ -34,8 +34,8 @@ class DiscoursePolicy(ABC):
         force_all_turns: bool = False,
         context_length: int = 1,
         include_current_turn_in_memory: bool = False,
-        debate_rounds: int = 1,
-    ) -> tuple[Optional[str], int, list[Agreement]]:
+        debate_rounds: int = 2,
+    ) -> tuple[Optional[str], int, list[Agreement], bool]:
         logger.debug(self.paradigm_str)
         while (not self.decision or force_all_turns) and self.turn < max_turns:
             self.turn += 1
@@ -87,13 +87,15 @@ class DiscoursePolicy(ABC):
                     logger.error("No decision protocol module found.")
                     raise Exception("No decision protocol module found.")
 
-                self.draft, self.decision = coordinator.decision_protocol.make_decision(
-                    self.agreements, self.turn, i, task_instruction, input_str
+                self.draft, self.decision, self.agreements = (
+                    coordinator.decision_protocol.make_decision(
+                        self.agreements, self.turn, i, task_instruction, input_str
+                    )
                 )
                 if self.decision:
                     break
 
-        return self.draft, self.turn, self.agreements
+        return self.draft, self.turn, self.agreements, self.decision
 
     @abstractmethod
     def moderator_call(

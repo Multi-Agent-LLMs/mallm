@@ -36,7 +36,6 @@ def test_init_agents_with_persona_generator():
         "input_str",
         use_moderator=False,
         num_agents=3,
-        split_agree_and_answer=False,
         chain_of_thought=False,
     )
     assert len(coordinator.agents) == 3  # TODO This hardcoded value is not good
@@ -56,7 +55,6 @@ def test_init_agents_with_wrong_persona_generator():
             "input_str",
             use_moderator=False,
             num_agents=3,
-            split_agree_and_answer=False,
             chain_of_thought=False,
         )
 
@@ -70,10 +68,10 @@ def test_update_global_memory():
     )
     memory = Memory(
         message_id=1,
-        text="content",
+        message="content",
         agent_id="agent1",
         agreement=True,
-        extracted_draft="draft",
+        solution="draft",
         memory_ids=[1],
         additional_args={},
         turn=1,
@@ -84,7 +82,7 @@ def test_update_global_memory():
     retrieved_memory = coordinator.get_global_memory()
     assert len(retrieved_memory) == 1
     assert retrieved_memory[0].message_id == 1
-    assert retrieved_memory[0].text == "content"
+    assert retrieved_memory[0].message == "content"
     assert retrieved_memory[0].agent_id == "agent1"
 
 
@@ -96,10 +94,10 @@ def test_update_global_memory_fail():
     )
     memory = Memory(
         message_id=1,
-        text="content",
+        message="content",
         agent_id="agent1",
         agreement=True,
-        extracted_draft="draft",
+        solution="draft",
         memory_ids=[1],
         additional_args={},
         turn=1,
@@ -122,16 +120,15 @@ def test_update_memories():
         input_str="input_str",
         use_moderator=False,
         num_agents=3,
-        split_agree_and_answer=False,
         chain_of_thought=False,
     )
     memories = [
         Memory(
             message_id=1,
-            text="content",
+            message="content",
             agent_id="agent1",
             agreement=True,
-            extracted_draft="draft",
+            solution="draft",
             memory_ids=[1],
             additional_args={},
             turn=1,
@@ -143,7 +140,7 @@ def test_update_memories():
     for agent in coordinator.agents:
         assert len(agent.get_memories()[0]) == 1
         assert agent.get_memories()[0][0].message_id == 1
-        assert agent.get_memories()[0][0].text == "content"
+        assert agent.get_memories()[0][0].message == "content"
         assert agent.get_memories()[0][0].agent_id == "agent1"
 
 

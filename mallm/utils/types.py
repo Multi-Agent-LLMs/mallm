@@ -6,8 +6,17 @@ from typing import Any, Optional
 class Agreement:
     agreement: Optional[bool]
     response: str
+    solution: str
     agent_id: str
     persona: str
+    message_id: int
+
+
+@dataclass
+class Response:
+    agreement: Optional[bool]
+    message: str
+    solution: str
 
 
 @dataclass
@@ -17,9 +26,9 @@ class Memory:
     agent_id: str
     persona: str
     contribution: str
-    text: str
+    message: str
     agreement: Optional[bool]
-    extracted_draft: Optional[str]
+    solution: Optional[str]
     memory_ids: list[int]
     additional_args: dict[str, Any]
 

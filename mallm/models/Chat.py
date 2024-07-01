@@ -1,3 +1,4 @@
+from typing import Any, Iterator, Optional, Union, cast
 import logging
 from collections.abc import Iterator
 from typing import Any, Optional, Union, cast
@@ -137,6 +138,7 @@ class Chat(LLM):
         Returns:
             An iterator of GenerationChunks.
         """
+
         chat_completion = self.client.chat.completions.create(
             model=self.model,
             messages=prompt,

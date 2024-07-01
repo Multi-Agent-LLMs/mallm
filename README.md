@@ -30,14 +30,14 @@ Install as a package:
 `pip install -e .`
 
 ### Test Data
-Create the test data
-`python data/data_downloader.py`
+Download and create the test data: `python data/data_downloader.py --datasets=[SQuAD2,ETPC] --sample_size=100`
 
-You also need the checkpoints for the LLM you want to use. Use instruction-tuned models for the best performance.
+You can use any dataset for this project as long as it follows [this basic format](https://github.com/Multi-Agent-LLMs/mallm/blob/main/data/datasets/etpc_debugging.json). These datasets are supported by our automated formatting pipeline: `BTVote`, `ETPC`, `Europarl`, `GPQA`, `GSM8K`, `Multi-News`, `SQuAD2`, `SimpleEthicalQuestions`, `StrategyQA`, `WMT19_de_en`, `XSum`
 
 ### Run from Terminal
 MALLM relies on an external API like OpenAI or Text Generation Inference by Huggingface.
 Check the information [here (tg-hpc)](https://github.com/Multi-Agent-LLMs/tgi-hpc) or [here (tgi-scc)](https://github.com/Multi-Agent-LLMs/tgi-scc) about how to host a model yourself.
+For self-hosting you need the checkpoints for the instruction-tuned model you want to use.
 
 Once the endpoint is available, you can initiate all discussions by a single script. Example with TGI:
 
@@ -97,32 +97,38 @@ Use "tgi" as a model for Text Generation Inference by HuggingFace or one of thes
 
 ### Config Arguments:
 ```py
-agent_generator: str = "expert"
+data: str = None
+out: str = None
+instruction: str = None
+endpoint_url: str = "https://api.openai.com"
+model: str = "gpt-3.5-turbo"
 api_key: str = "-"
+use_moderator: bool = False
+max_turns: int = 10
+force_all_turns: bool = False
+feedback_sentences: Optional[tuple[int, int]] = None
+paradigm: str = "memory"
+response_generator: str = "simple"
+decision_protocol: str = "hybrid_consensus"
+context_length: int = 3
+include_current_turn_in_memory: bool = True
+extract_all_drafts: bool = True
+debate_rounds: int = 2
+max_concurrent_requests: int = 100
+clear_memory_bucket: bool = True
+memory_bucket_dir: str = "./mallm/utils/memory_bucket/"
 baseline: bool = False
 chain_of_thought: bool = True
-clear_memory_bucket: bool = True
-context_length: int = 3
-data: NoneType = None
-debate_rounds: NoneType = None
-decision_protocol: str = "hybrid_consensus"
-endpoint_url: str = "https://api.openai.com"
-extract_all_drafts: bool = True
-feedback_sentences: NoneType = None
-force_all_turns: bool = False
-include_current_turn_in_memory: bool = True
-instruction: NoneType = None
-max_concurrent_requests: int = 100
-max_turns: int = 10
-memory_bucket_dir: str = "./mallm/utils/memory_bucket/"
-model: str = "gpt-3.5-turbo"
 num_agents: int = 3
-num_samples: NoneType = None
-out: NoneType = None
-paradigm: str = "memory"
-split_agree_and_answer: bool = True
-use_moderator: bool = False
+agent_generator: str = "expert"
+num_samples: Optional[int] = None
 ```
+
+### Discussion Parameters:
+Response Generators: `freetext`, `json`, `simple`, `splitfreetext`
+Decision Protocols: `approval`, `cumulative`, `hybrid_consensus`, `majority_consensus`, `ranked`, `supermajority_consensus`, `unanimity_consensus`, `voting`
+Persona Generators: `expert`, `ipip`, `mock`
+Discussion Paradigms: `debate`, `memory`, `relay`, `report`
 
 ## Evaluation
 

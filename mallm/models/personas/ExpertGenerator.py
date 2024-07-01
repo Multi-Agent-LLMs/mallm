@@ -1,6 +1,8 @@
 import json
 import logging
 
+from json_repair import repair_json
+
 from mallm.models.Chat import Chat
 from mallm.models.personas.PersonaGenerator import PersonaGenerator
 
@@ -64,7 +66,7 @@ New Participant:
                 ]
             )
             try:
-                new_agent = json.loads(response)
+                new_agent = json.loads(repair_json(response))
                 if isinstance(new_agent, list):
                     new_agent = new_agent[0]
                 if (

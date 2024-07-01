@@ -13,56 +13,21 @@ import httpx
 from mallm.agents.agent import Agent
 from mallm.agents.moderator import Moderator
 from mallm.agents.panelist import Panelist
-from mallm.decision_protocol.approval import ApprovalVoting
-from mallm.decision_protocol.cumulative import CumulativeVoting
-from mallm.decision_protocol.majority import (
-    HybridMajorityConsensus,
-    MajorityConsensus,
-    SupermajorityConsensus,
-    UnanimityConsensus,
-)
 from mallm.decision_protocol.protocol import DecisionProtocol
-from mallm.decision_protocol.ranked import RankedVoting
-from mallm.decision_protocol.voting import Voting
-from mallm.discourse_policy.debate import DiscourseDebate
-from mallm.discourse_policy.memory import DiscourseMemory
 from mallm.discourse_policy.policy import DiscoursePolicy
-from mallm.discourse_policy.relay import DiscourseRelay
-from mallm.discourse_policy.report import DiscourseReport
 from mallm.models.Chat import Chat
-from mallm.models.personas.ExpertGenerator import ExpertGenerator
-from mallm.models.personas.IPIPPersonaGenerator import IPIPPersonaGenerator
-from mallm.models.personas.MockGenerator import MockGenerator
-from mallm.models.personas.PersonaGenerator import PersonaGenerator
+from mallm.models.discussion.ResponseGenerator import ResponseGenerator
+from mallm.models.discussion.SimpleResponseGenerator import SimpleResponseGenerator
 from mallm.utils.config import Config
-from mallm.utils.functions import extract_draft
+from mallm.utils.dicts import (
+    DECISION_PROTOCOLS,
+    DISCUSSION_PARADIGMS,
+    PERSONA_GENERATORS,
+    RESPONSE_GENERATORS,
+)
 from mallm.utils.types import Agreement, Memory
 
 logger = logging.getLogger("mallm")
-
-DECISION_PROTOCOLS: dict[str, type[DecisionProtocol]] = {
-    "majority_consensus": MajorityConsensus,
-    "supermajority_consensus": SupermajorityConsensus,
-    "hybrid_consensus": HybridMajorityConsensus,
-    "unanimity_consensus": UnanimityConsensus,
-    "voting": Voting,
-    "approval": ApprovalVoting,
-    "cumulative": CumulativeVoting,
-    "ranked": RankedVoting,
-}
-
-PROTOCOLS: dict[str, type[DiscoursePolicy]] = {
-    "memory": DiscourseMemory,
-    "report": DiscourseReport,
-    "relay": DiscourseRelay,
-    "debate": DiscourseDebate,
-}
-
-PERSONA_GENERATORS: dict[str, type[PersonaGenerator]] = {
-    "expert": ExpertGenerator,
-    "ipip": IPIPPersonaGenerator,
-    "mock": MockGenerator,
-}
 
 
 class Coordinator:
@@ -85,6 +50,7 @@ class Coordinator:
         self.memory_bucket = self.memory_bucket_dir + "global_" + self.id
         self.decision_protocol: Optional[DecisionProtocol] = None
         self.llm = model
+        self.response_generator: ResponseGenerator = SimpleResponseGenerator(self.llm)
         self.client = client
         self.agent_generator = agent_generator
 
@@ -94,7 +60,6 @@ class Coordinator:
         input_str: str,
         use_moderator: bool,
         num_agents: int,
-        split_agree_and_answer: bool,
         chain_of_thought: bool,
     ) -> None:
         """
@@ -118,16 +83,18 @@ class Coordinator:
         )
 
         if use_moderator:
-            self.moderator = Moderator(self.llm, self.client, self)
+            self.moderator = Moderator(
+                self.llm, self.client, self, response_generator=self.response_generator
+            )
         for persona in personas:
             self.panelists.append(
                 Panelist(
                     llm=self.llm,
                     client=self.client,
                     coordinator=self,
+                    response_generator=self.response_generator,
                     persona=persona["role"],
                     persona_description=persona["description"],
-                    split_agree_and_answer=split_agree_and_answer,
                     chain_of_thought=chain_of_thought,
                 )
             )
@@ -202,12 +169,12 @@ class Coordinator:
         context: Optional[list[str]],
     ) -> tuple[
         Optional[str],
-        Optional[str],
         list[Memory],
         list[Optional[list[Memory]]],
         int,
         list[Agreement],
         float,
+        bool,
     ]:
         """
         The routine responsible for the discussion between agents to solve a task.
@@ -221,7 +188,7 @@ class Coordinator:
         """
         sample_instruction = config.instruction
         if context:
-            sample_instruction += "\nHere is some context you need to consider:"
+            sample_instruction += "\nContext:"
             for c in context:
                 sample_instruction += "\n" + c
         input_str = ""
@@ -231,6 +198,15 @@ class Coordinator:
             else:
                 input_str = input_line
 
+        if config.response_generator not in RESPONSE_GENERATORS:
+            logger.error(f"No valid response generator for {config.response_generator}")
+            raise Exception(
+                f"No valid response generator for {config.response_generator}"
+            )
+        self.response_generator = RESPONSE_GENERATORS[config.response_generator](
+            self.llm
+        )
+
         sample_num_agents = config.num_agents
         if config.use_moderator:
             sample_num_agents -= 1
@@ -239,7 +215,6 @@ class Coordinator:
             input_str,
             use_moderator=config.use_moderator,
             num_agents=sample_num_agents,
-            split_agree_and_answer=config.split_agree_and_answer,
             chain_of_thought=config.chain_of_thought,
         )
 
@@ -248,17 +223,16 @@ class Coordinator:
             raise Exception(
                 f"No valid decision protocol for {config.decision_protocol}"
             )
-
         self.decision_protocol = DECISION_PROTOCOLS[config.decision_protocol](
             self.panelists, config.use_moderator
         )
 
         start_time = time.perf_counter()
 
-        if config.paradigm not in PROTOCOLS:
+        if config.paradigm not in DISCUSSION_PARADIGMS:
             logger.error(f"No valid discourse policy for paradigm {config.paradigm}")
             raise Exception(f"No valid discourse policy for paradigm {config.paradigm}")
-        policy: DiscoursePolicy = PROTOCOLS[config.paradigm]()
+        policy: DiscoursePolicy = DISCUSSION_PARADIGMS[config.paradigm]()
 
         logger.info(
             f"""Starting discussion with coordinator {self.id}...
@@ -273,17 +247,17 @@ Decision-protocol: {self.decision_protocol.__class__.__name__}
 -------------"""
         )
 
-        current_draft, turn, agreements = policy.discuss(
-            self,
-            sample_instruction,
-            input_str,
-            config.use_moderator,
-            config.feedback_sentences,
-            config.max_turns,
-            config.force_all_turns,
-            config.context_length,
-            config.include_current_turn_in_memory,
-            config.chain_of_thought,
+        answer, turn, agreements, decision_success = policy.discuss(
+            coordinator=self,
+            task_instruction=sample_instruction,
+            input_str=input_str,
+            use_moderator=config.use_moderator,
+            feedback_sentences=config.feedback_sentences,
+            max_turns=config.max_turns,
+            force_all_turns=config.force_all_turns,
+            context_length=config.context_length,
+            include_current_turn_in_memory=config.include_current_turn_in_memory,
+            debate_rounds=config.debate_rounds,
         )
 
         discussion_time = timedelta(
@@ -293,16 +267,12 @@ Decision-protocol: {self.decision_protocol.__class__.__name__}
         global_mem = self.get_global_memory()
         agent_mems = [a.get_memories()[0] for a in self.agents]
 
-        extracted_draft = None
-        if current_draft:
-            extracted_draft = extract_draft(current_draft)
-
         return (
-            current_draft,
-            extracted_draft,
+            answer,
             global_mem,
             agent_mems,
             turn,
             agreements,
             discussion_time,
+            decision_success,
         )

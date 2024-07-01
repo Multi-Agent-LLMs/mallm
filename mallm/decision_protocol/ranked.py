@@ -29,9 +29,12 @@ class RankedVoting(DecisionProtocol):
         agent_index: int,
         task: str,
         question: str,
-    ) -> tuple[str, bool]:
+    ) -> tuple[str, bool, list[Agreement]]:
+        if len(agreements) > self.total_agents:
+            agreements = agreements[-self.total_agents :]
+
         if turn < self.vote_turn or agent_index != self.total_agents - 1:
-            return "", False
+            return "", False, agreements
 
         final_answers = []
         for panelist in self.panelists:
@@ -44,10 +47,10 @@ class RankedVoting(DecisionProtocol):
                     panelist.persona_description,
                     question,
                     task,
-                    prev_answer.response,
+                    prev_answer.solution,
                 )
             )
-            prev_answer.response = response
+            prev_answer.solution = response
             final_answers.append(response)
 
         rankings = []
@@ -104,4 +107,4 @@ class RankedVoting(DecisionProtocol):
             f"Selected answer from agent {self.panelists[index].short_id} with {highest_score} points"
         )
 
-        return result, agreed
+        return result, agreed, agreements
