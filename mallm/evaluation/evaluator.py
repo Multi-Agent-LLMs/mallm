@@ -9,7 +9,6 @@ import mallm.scheduler  # noqa
 from mallm.evaluation.metrics.bertscore import BERTScore
 from mallm.evaluation.metrics.bleu import BLEU
 from mallm.evaluation.metrics.meteor import METEOR
-from mallm.evaluation.metrics.metric import Metric
 from mallm.evaluation.metrics.qa import AnswerabilityBoolean, MultiChoiceBoolean
 from mallm.evaluation.metrics.rouge import ROUGE
 
@@ -56,11 +55,15 @@ class Evaluator:
         if not self.metrics:
             raise ValueError(f"No metrics found for {metrics}")
 
-    def calculate_scores(
-        self, answer: str, references: list[str], metrics: Optional[list[Metric]] = None
-    ) -> dict[str, Any]:
-        if not metrics:
+    def calculate_scores(self, answer: str, references: list[str]) -> dict[str, Any]:
+        if references:
             metrics = self.metrics
+        elif "answerability" in [metric.name for metric in self.metrics]:
+            metrics = [AnswerabilityBoolean()]
+        else:
+            logger.warning("No metrics to evaluate.")
+            return None
+
         scores: dict[str, Any] = {}
         for metric in metrics:
             scores = {**scores, **metric.evaluate(answer, references)}
@@ -70,13 +73,8 @@ class Evaluator:
         for item in tqdm(self.data):
             answer = item.get("answer", "")
             references = item.get("references", [])
-            if answer and references != []:
+            if answer:
                 score = self.calculate_scores(answer, references)
-                item["scores"] = score
-            elif answer and "answerability" in [metric.name for metric in self.metrics]:
-                score = self.calculate_scores(
-                    answer, references, metrics=[AnswerabilityBoolean()]
-                )
                 item["scores"] = score
 
     def calculate_statistics(self) -> None:
