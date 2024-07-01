@@ -22,13 +22,18 @@ with open("README.md", "r+") as readme_file:
 
     content = readme_file.read()
 
-    types = typing.get_type_hints(Config)
+    types = typing.get_type_hints(Config, include_extras=True)
     attributes_content = ""
     for attr, type in types.items():
         value = attributes[attr]
         if isinstance(value, str):
             value = '"' + value + '"'
-        attributes_content += f"{attr}: {type.__name__} = {value}\n"
+        type_str = str(type).replace("typing.", "")
+        if "Optional" in type_str:
+            type_str = type_str.replace("Optional[", "", 1).rsplit("]", 1)[0]
+            attributes_content += f"{attr}: Optional[{type_str}] = {value}\n"
+        else:
+            attributes_content += f"{attr}: {type.__name__} = {value}\n"
 
     replacement_str = "### Config Arguments:\n```py\n" + attributes_content + "```"
 

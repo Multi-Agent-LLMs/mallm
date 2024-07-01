@@ -106,7 +106,7 @@ api_key: str = "-"
 use_moderator: bool = False
 max_turns: int = 10
 force_all_turns: bool = False
-feedback_sentences: Optional = None
+feedback_sentences: Optional[tuple[int, int]] = None
 paradigm: str = "memory"
 response_generator: str = "simple"
 decision_protocol: str = "hybrid_consensus"
@@ -121,7 +121,7 @@ baseline: bool = False
 chain_of_thought: bool = True
 num_agents: int = 3
 agent_generator: str = "expert"
-num_samples: Optional = None
+num_samples: Optional[int] = None
 ```
 
 ### Discussion Parameters:
