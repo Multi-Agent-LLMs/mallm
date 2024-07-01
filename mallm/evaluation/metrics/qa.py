@@ -30,7 +30,7 @@ class MultiChoiceBoolean(Metric):
 
         if not match:
             logger.warn(
-                "No answer pattern detected. Trying to match against freetext reference."
+                f"No answer pattern detected. {generated_text}"
             )
             return {"correct": None}
         else:
