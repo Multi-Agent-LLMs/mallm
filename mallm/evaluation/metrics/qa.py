@@ -14,7 +14,7 @@ class MultiChoiceBoolean(Metric):
 
     _name = "multichoice"
     ANSWER_PATTERN_MULTICHOICE = r"(?i)Final Solution\s*:\s*([A-E])"
-    ANSWER_PATTERN_MULTICHOICE_BACKUP = r"([A-E])([)\]:]|$)"
+    ANSWER_PATTERN_MULTICHOICE_BACKUP = r"(^|\s)([A-E])(\W\s|$)"
 
     @staticmethod
     def evaluate(generated_text: str, reference_texts: list[str]) -> dict[str, Any]:
@@ -35,23 +35,26 @@ class MultiChoiceBoolean(Metric):
             reference = re.sub(
                 MultiChoiceBoolean.ANSWER_PATTERN_MULTICHOICE_BACKUP, "", reference
             ).strip()
-            logger.debug(
-                "No answer pattern detected. Trying to match against freetext reference."
+            match = re.search(
+                reference.lower(), generated_text.lower(), flags=re.IGNORECASE
             )
-            match = re.search(reference.lower(), generated_text.lower(), flags=re.IGNORECASE)
         else:
             extracted_answer = match.group(1)
-            logger.debug(f"Extracted answer: {match.group(1)} from {generated_text}")
 
         if not match:
-            logger.warning(f"No pattern match or text identity found in answer: {generated_text}, reference: {reference}")
+            logger.debug(
+                f"No pattern match or text identity found in answer: {generated_text}, reference: {reference}"
+            )
             return {"correct": False}
-
-        score = (
-            extracted_answer == reference or reference.lower() in generated_text.lower()
+        if extracted_answer:
+            logger.debug(
+                f"Pattern match tested in answer: {generated_text}, reference: {reference}"
+            )
+            return {"correct": extracted_answer == reference}
+        logger.debug(
+            f"Freetext identity tested in answer: {generated_text}, reference: {reference}"
         )
-
-        return {"correct": score}
+        return {"correct": reference.lower() in generated_text.lower()}
 
 
 class AnswerabilityBoolean(Metric):
@@ -62,7 +65,9 @@ class AnswerabilityBoolean(Metric):
     _name = "answerability"
 
     @staticmethod
-    def evaluate(generated_text: str, reference_texts: list[str], answer_pattern: str = "unknown") -> dict[str, Any]:
+    def evaluate(
+        generated_text: str, reference_texts: list[str], answer_pattern: str = "unknown"
+    ) -> dict[str, Any]:
 
         if reference_texts == []:
             return {"answerability_correct": answer_pattern in generated_text.lower()}
