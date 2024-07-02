@@ -55,16 +55,14 @@ class Evaluator:
         if not self.metrics:
             raise ValueError(f"No metrics found for {metrics}")
 
-    def calculate_scores(
-        self, answer: str, references: list[str]
-    ) -> Optional[dict[str, Any]]:
+    def calculate_scores(self, answer: str, references: list[str]) -> dict[str, Any]:
         if references:
             metrics = self.metrics
         elif "answerability" in [metric.name for metric in self.metrics]:
             metrics = [AnswerabilityBoolean()]
         else:
             logger.warning("No metrics to evaluate.")
-            return None
+            return {}
 
         scores: dict[str, Any] = {}
         for metric in metrics:
