@@ -29,7 +29,7 @@ class GPQADownloader(DatasetDownloader):
         for sample in data.iter(batch_size=1):
             answers, correct_answer = self._format_answers(sample)
             correct_answer_index = answers.index(json.dumps(correct_answer))
-            correct_answer_label = f"{chr(65 + correct_answer_index)}. {correct_answer}"
+            correct_answer_label = f"{chr(65 + correct_answer_index)}) {correct_answer}"
 
             question_text = self._clean_text(sample["Question"][0])
             formatted_answers = self._format_answer_choices(answers)
@@ -56,7 +56,7 @@ class GPQADownloader(DatasetDownloader):
         return answers, correct_answer
 
     def _format_answer_choices(self, answers):
-        return [f" {chr(65 + i)}. {self._clean_text(answers[i])}" for i in range(4)]
+        return [f" {chr(65 + i)}) {self._clean_text(answers[i])}" for i in range(4)]
 
     def _clean_text(self, text):
         return (
