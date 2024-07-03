@@ -91,8 +91,6 @@ class Evaluator:
 
         stats = {}
 
-        stats = {}
-
         for metric in reported_metrics:
             logger.info(f"-> Statistics for: {metric.upper()}, {self.output_file_path}")
             scores = [item.get("scores", {}).get(metric, None) for item in self.data]
