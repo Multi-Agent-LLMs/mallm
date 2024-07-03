@@ -11,8 +11,8 @@ def load_config(config_path: str) -> Any:
     try:
         with open(config_path, "r") as f:
             return json.load(f)
-    except json.JSONDecodeError:
-        print(f"Error: {config_path} is not a valid JSON file.")
+    except json.JSONDecodeError as e:
+        print(f"Error: {config_path} is not a valid JSON file.\n{e}")
         return {}
     except FileNotFoundError:
         print(f"Error: {config_path} not found.")
@@ -36,10 +36,10 @@ def validate_config(config: Config) -> bool:
     return True
 
 
-def run_configuration(config: Config, run_name: str, repeat: int) -> None:
+def run_configuration(config: Config, run_name: str, name: str, repeat: int) -> None:
     # Adjust the output name for each repeat
     original_out = config.out.split(".")
-    config.out = f"{original_out[0]}_repeat{repeat}.{original_out[1]}"
+    config.out = f"{original_out[0]}_{name}_repeat{repeat}.{original_out[1]}"
 
     try:
         print(f"Running {run_name} (Repeat {repeat})")
@@ -88,6 +88,7 @@ def run_batch(config_path: str) -> None:
     common_config = config_data.get("common", {})
     runs = config_data.get("runs", [])
     repeats = config_data.get("repeats", 1)
+    name = config_data.get("name", "mallm")
 
     if not common_config:
         print("No common configuration found. Exiting.")
@@ -115,7 +116,7 @@ def run_batch(config_path: str) -> None:
     for i, config in enumerate(valid_configs, 1):
         print(f"\nProcessing run {i}/{len(valid_configs)}")
         for repeat in range(1, repeats + 1):
-            run_configuration(deepcopy(config), f"Run {i}", repeat)
+            run_configuration(deepcopy(config), f"Run {i}", name, repeat)
 
     print("\nBatch processing completed.")
 
