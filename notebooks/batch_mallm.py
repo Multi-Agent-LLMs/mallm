@@ -38,8 +38,8 @@ def validate_config(config: Config) -> bool:
 
 def run_configuration(config: Config, run_name: str, repeat: int) -> None:
     # Adjust the output name for each repeat
-    original_out = config.out
-    config.out = f"{original_out[:-4]}_repeat{repeat}{original_out[-4:]}"
+    original_out = config.out.split(".")
+    config.out = f"{original_out[0]}_repeat{repeat}.{original_out[1]}"
 
     try:
         print(f"Running {run_name} (Repeat {repeat})")
