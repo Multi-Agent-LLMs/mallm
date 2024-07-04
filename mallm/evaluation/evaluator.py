@@ -111,8 +111,8 @@ class Evaluator:
             stats[metric] = {
                 "data_size": len(self.data),
                 "sample_size": len(scores),
-                "average_score": round(average_score, 2),
-                "std_dev_score": round(std_dev_score, 2),
+                "average_score": round(average_score, 4),
+                "std_dev_score": round(std_dev_score, 4),
             }
             logger.info(f"Stats: {stats[metric]}")
 
