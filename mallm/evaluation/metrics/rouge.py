@@ -21,24 +21,8 @@ class ROUGE(Metric):
             target=reference_texts[0], prediction=generated_text
         )  # rouge only takes one reference
         return {
-            "rouge1": {
-                "precision": scores["rouge1"].precision,
-                "recall": scores["rouge1"].recall,
-                "fmeasure": scores["rouge1"].fmeasure,
-            },
-            "rouge2": {
-                "precision": scores["rouge2"].precision,
-                "recall": scores["rouge2"].recall,
-                "fmeasure": scores["rouge2"].fmeasure,
-            },
-            "rouge3": {
-                "precision": scores["rouge3"].precision,
-                "recall": scores["rouge3"].recall,
-                "fmeasure": scores["rouge3"].fmeasure,
-            },
-            "rougeL": {
-                "precision": scores["rougeL"].precision,
-                "recall": scores["rougeL"].recall,
-                "fmeasure": scores["rougeL"].fmeasure,
-            },
+            "rouge1": scores["rouge1"].fmeasure,
+            "rouge2": scores["rouge2"].fmeasure,
+            "rouge3": scores["rouge3"].fmeasure,
+            "rougeL": scores["rougeL"].fmeasure,
         }

@@ -9,10 +9,17 @@ import mallm.scheduler  # noqa
 from mallm.evaluation.metrics.bertscore import BERTScore
 from mallm.evaluation.metrics.bleu import BLEU
 from mallm.evaluation.metrics.meteor import METEOR
-from mallm.evaluation.metrics.qa import MultiChoiceBoolean
+from mallm.evaluation.metrics.qa import AnswerabilityBoolean, MultiChoiceBoolean
 from mallm.evaluation.metrics.rouge import ROUGE
 
-ALL_METRICS = [BERTScore(), BLEU(), METEOR(), MultiChoiceBoolean(), ROUGE()]
+ALL_METRICS = [
+    AnswerabilityBoolean(),
+    BERTScore(),
+    BLEU(),
+    METEOR(),
+    MultiChoiceBoolean(),
+    ROUGE(),
+]
 
 logger = logging.getLogger("mallm")
 
@@ -49,9 +56,16 @@ class Evaluator:
             raise ValueError(f"No metrics found for {metrics}")
 
     def calculate_scores(self, answer: str, references: list[str]) -> dict[str, Any]:
-        # Tokenize the answer and references
+        if references:
+            metrics = self.metrics
+        elif "answerability" in [metric.name for metric in self.metrics]:
+            metrics = [AnswerabilityBoolean()]
+        else:
+            logger.warning("No metrics to evaluate.")
+            return {}
+
         scores: dict[str, Any] = {}
-        for metric in self.metrics:
+        for metric in metrics:
             scores = {**scores, **metric.evaluate(answer, references)}
         return scores
 
@@ -59,23 +73,26 @@ class Evaluator:
         for item in tqdm(self.data):
             answer = item.get("answer", "")
             references = item.get("references", [])
-            if answer and references:
+            if answer:
                 score = self.calculate_scores(answer, references)
                 item["scores"] = score
 
     def calculate_statistics(self) -> None:
         # For each numeric metric, calculate the average and standard deviation
-        first_scored_index = next(
-            (index for index, item in enumerate(self.data) if "scores" in item), None
-        )
-        if first_scored_index is None:
+
+        reported_metrics = set()
+        for item in self.data:
+            if "scores" in item:
+                reported_metrics.update(item["scores"].keys())
+        if not reported_metrics:
             logger.error("No elements with scores found in the data.")
             raise Exception("No elements with scores found in the data.")
+        logger.info(f"Reported metrics: {reported_metrics}")
 
-        reported_metrics = self.data[first_scored_index]["scores"].keys()
+        stats = {}
 
         for metric in reported_metrics:
-            logger.info(f"Statistics for: {metric.upper()}")
+            logger.info(f"-> Statistics for: {metric.upper()}, {self.output_file_path}")
             scores = [item.get("scores", {}).get(metric, None) for item in self.data]
             scores = [score for score in scores if score is not None]
             if not scores:
@@ -91,10 +108,19 @@ class Evaluator:
                 sum((score - average_score) ** 2 for score in scores) / len(scores)
             ) ** 0.5
 
-            logger.info(f"Data size: {len(self.data)}")
-            logger.info(f"Sample size: {len(scores)}")
-            logger.info(f"Average score: {average_score:.2%}")
-            logger.info(f"Standard deviation: {std_dev_score:.3f}")
+            stats[metric] = {
+                "data_size": len(self.data),
+                "sample_size": len(scores),
+                "scores": scores,
+                "average_score": round(average_score, 4),
+                "std_dev_score": round(std_dev_score, 4),
+            }
+            logger.info(f"Stats: {stats[metric]}")
+
+        stats_output_file_path = self.output_file_path.replace(".json", "_stats.json")
+        with open(stats_output_file_path, "w") as file:
+            json.dump(stats, file, indent=4)
+        logger.info(f"Statistics saved to {stats_output_file_path}")
 
     def save_json(self) -> None:
         with open(self.output_file_path, "w") as file:
