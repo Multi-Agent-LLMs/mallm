@@ -37,6 +37,7 @@ class Config:
     num_agents: int = 3
     agent_generator: str = "expert"
     num_samples: Optional[int] = None
+    feedback_only: bool = False
 
     def check_config(self) -> None:
         # TODO: make this more robust and conclusive. All arguments should be checked for validity, making the use of MALLM as fool-proof as possible.

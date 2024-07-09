@@ -32,6 +32,7 @@ class Agent:
         persona_description: str,
         moderator: Optional[Moderator] = None,
         chain_of_thought: bool = False,
+        feedback_only: bool = False,
     ):
         self.id = str(uuid.uuid4())
         self.short_id = self.id[:4]
@@ -44,6 +45,7 @@ class Agent:
         self.response_generator = response_generator
         self.client = client
         self.chain_of_thought = chain_of_thought
+        self.feedback_only = feedback_only
         logger.info(
             f"Creating agent {self.short_id} with personality {self.persona}: {self.persona_description}"
         )

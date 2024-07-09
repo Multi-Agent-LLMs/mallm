@@ -61,6 +61,7 @@ class Coordinator:
         use_moderator: bool,
         num_agents: int,
         chain_of_thought: bool,
+        feedback_only: bool,
     ) -> None:
         """
         Instantiates the agents by
@@ -96,6 +97,7 @@ class Coordinator:
                     persona=persona["role"],
                     persona_description=persona["description"],
                     chain_of_thought=chain_of_thought,
+                    feedback_only=feedback_only,
                 )
             )
 
@@ -216,6 +218,7 @@ class Coordinator:
             use_moderator=config.use_moderator,
             num_agents=sample_num_agents,
             chain_of_thought=config.chain_of_thought,
+            feedback_only=config.feedback_only,
         )
 
         if config.decision_protocol not in DECISION_PROTOCOLS:
