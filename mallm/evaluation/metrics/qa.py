@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Any
+from typing import Any, cast
 
 from evaluate import load
 
@@ -80,6 +80,9 @@ class SquadScore(Metric):
             {"answers": {"answer_start": [], "text": reference_texts}, "id": ""}
         ]
 
-        return SquadScore.squad_v2_metric.compute(
-            predictions=predictions, references=references
+        return cast(
+            dict[str, Any],
+            SquadScore.squad_v2_metric.compute(
+                predictions=predictions, references=references
+            ),
         )
