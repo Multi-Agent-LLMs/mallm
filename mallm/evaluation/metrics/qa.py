@@ -2,6 +2,8 @@ import logging
 import re
 from typing import Any
 
+from evaluate import load
+
 from mallm.evaluation.metrics.metric import Metric
 
 logger = logging.getLogger("mallm")
@@ -52,7 +54,32 @@ class AnswerabilityBoolean(Metric):
     def evaluate(
         generated_text: str, reference_texts: list[str], answer_pattern: str = "unknown"
     ) -> dict[str, Any]:
-
         if reference_texts == []:
             return {"answerability_correct": answer_pattern in generated_text.lower()}
         return {"answerability_correct": answer_pattern not in generated_text.lower()}
+
+
+class SquadScore(Metric):
+    """
+    A class to evaluate the accuracy on squad like tasks that include non-answerable questions (i.e., no reference).
+    """
+
+    _name = "squad"
+    squad_v2_metric = load("squad_v2")
+
+    @staticmethod
+    def evaluate(
+        generated_text: str, reference_texts: list[str], answer_pattern: str = "unknown"
+    ) -> dict[str, Any]:
+        if answer_pattern in generated_text.lower():
+            generated_text = ""
+        predictions = [
+            {"prediction_text": generated_text, "id": "", "no_answer_probability": 0.0}
+        ]
+        references = [
+            {"answers": {"answer_start": [], "text": reference_texts}, "id": ""}
+        ]
+
+        return SquadScore.squad_v2_metric.compute(
+            predictions=predictions, references=references
+        )
