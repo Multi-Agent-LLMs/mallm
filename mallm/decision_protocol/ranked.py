@@ -55,7 +55,8 @@ class RankedVoting(DecisionProtocol):
 
         rankings = []
         for panelist in self.panelists:
-            while True:
+            retries = 0
+            while retries < 10:
                 # Creates a prompt with all the answers and asks the agent to rank them
                 ranking = panelist.llm.invoke(
                     generate_ranking_prompt(
@@ -80,9 +81,14 @@ class RankedVoting(DecisionProtocol):
                         break
                     raise ValueError
                 except ValueError:
+                    retries += 1
                     logger.debug(
                         f"{panelist.short_id} cast an invalid ranking: {ranking}. Asking to rank again."
                     )
+            if retries >= 10:
+                logger.warning(
+                    f"{panelist.short_id} reached maximum retries. Counting as invalid vote."
+                )
 
         # Calculate the score for each answer based on the rankings
         scores = [0] * len(final_answers)

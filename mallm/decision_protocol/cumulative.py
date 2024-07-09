@@ -58,7 +58,8 @@ class CumulativeVoting(DecisionProtocol):
         # Collect points distribution from each panelist
         point_distributions = []
         for panelist in self.panelists:
-            while True:
+            retries = 0
+            while retries < 10:
                 point_distribution = panelist.llm.invoke(
                     generate_cumulative_voting_prompt(
                         panelist.persona,
@@ -84,9 +85,14 @@ class CumulativeVoting(DecisionProtocol):
                         break
                     raise ValueError
                 except (ValueError, json.JSONDecodeError):
+                    retries += 1
                     logger.debug(
                         f"{panelist.short_id} provided an invalid points distribution: {point_distribution}. Asking to distribute points again."
                     )
+            if retries >= 10:
+                logger.warning(
+                    f"{panelist.short_id} reached maximum retries. Counting as invalid vote."
+                )
 
         # Aggregate points for each solution
         total_points = [0] * len(final_answers)
