@@ -122,6 +122,7 @@ chain_of_thought: bool = True
 num_agents: int = 3
 agent_generator: str = "expert"
 num_samples: Optional[int] = None
+feedback_only: bool = False
 ```
 
 ### Discussion Parameters:
