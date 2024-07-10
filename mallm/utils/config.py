@@ -64,6 +64,10 @@ class Config:
         if self.endpoint_url.endswith("/"):
             logger.warning("Removing trailing / from the endpoint url.")
             self.endpoint_url = self.endpoint_url[:-1]
+        if not self.use_moderator and self.feedback_only:
+            logger.warning(
+                "Setting feedback_only=True without a moderator does not make sense with the current implementation. No solutions will be drafted."
+            )
         try:
             logger.info("Testing availability of the endpoint...")
             page = requests.get(self.endpoint_url)
