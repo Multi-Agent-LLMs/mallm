@@ -2,8 +2,6 @@ import logging
 from collections.abc import Iterator
 from typing import Any, Optional, Union, cast
 
-from openai.types.chat import ChatCompletionChunk
-
 logger = logging.getLogger("mallm")
 
 from langchain_core.callbacks import Callbacks
@@ -59,34 +57,6 @@ class Chat(LLM):
         # this is a wrong cast, but we need it because we use a custom call function which can handle this
         return self.generate(prompts, stop=stop, callbacks=callbacks, **kwargs)  # type: ignore
 
-    @staticmethod
-    def merge_consecutive_messages(
-        messages: list[dict[str, str]]
-    ) -> list[dict[str, str]]:
-        if not messages:
-            return []
-
-        merged_messages = []
-        current_role = messages[0]["role"]
-        current_content = ""
-
-        for msg in messages:
-            if msg["role"] == current_role:
-                current_content += msg["content"] + "\n\n"
-            else:
-                merged_messages.append(
-                    {"role": current_role, "content": current_content.strip()}
-                )
-                current_role = msg["role"]
-                current_content = msg["content"] + "\n\n"
-
-        if current_content:
-            merged_messages.append(
-                {"role": current_role, "content": current_content.strip()}
-            )
-
-        return merged_messages
-
     def _call(  # type: ignore
         self,
         prompt,
@@ -110,13 +80,12 @@ class Chat(LLM):
         Returns:
             The model output as a string. Actual completions SHOULD NOT include the prompt.
         """
-        merged_messages = self.merge_consecutive_messages(prompt)
         retries = 0
         while retries < 5:
             try:
                 chat_completion = self.client.chat.completions.create(
                     model=self.model,
-                    messages=merged_messages,  # type: ignore
+                    messages=prompt,
                     stream=True,
                     stop=self.stop_tokens,
                     max_tokens=self.max_tokens,
@@ -124,9 +93,7 @@ class Chat(LLM):
                 # iterate and print stream
                 collected_messages = []
                 for message in chat_completion:
-                    message_str = (
-                        cast(ChatCompletionChunk, message).choices[0].delta.content
-                    )
+                    message_str = message.choices[0].delta.content
                     if message_str and message_str not in self.stop_tokens:
                         collected_messages.append(message_str)
                 break
