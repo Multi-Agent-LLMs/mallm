@@ -152,8 +152,12 @@ Input: {input_str}
                 "content": "Extract the final solution to the task from the provided text. Remove statements of agreement, disagreement, and explanations. Do not modify the text. Do not output any text besides the solution. Include the letter (A, B, C, D) in the solution if it exists. If there is no solution provided, just copy the text.",
             },
             {
+                "role": "user",
+                "content": f"Text: {result}",
+            },
+            {
                 "role": "assistant",
-                "content": f"Text: {result}\nFinal solution:",
+                "content": "Final solution:",
             },
         ]
         return self.llm.invoke(current_prompt)
