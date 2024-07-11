@@ -116,10 +116,11 @@ Input: {input_str}
         if chain_of_thought:
             current_prompt.append(
                 {
-                    "role": "assistant",
+                    "role": "user",
                     "content": "Let's think step by step.",
                 }
             )
+        current_prompt = ResponseGenerator.merge_consecutive_messages(current_prompt)
         logger.debug(f"Sending prompt: {json.dumps(current_prompt, indent=2)}")
 
         retry = 0

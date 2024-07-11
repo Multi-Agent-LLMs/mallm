@@ -174,7 +174,7 @@ def generate_final_answer_prompt(
         },
         {
             "role": "user",
-            "content": "Based on the above information, provide your final solution. Ensure your solution is comprehensive and well-considered.",
+            "content": "Extract the final solution to the task from the provided text. Remove statements of agreement, disagreement, and explanations. Do not modify the text. Do not output any text besides the solution.",
         },
     ]
 
