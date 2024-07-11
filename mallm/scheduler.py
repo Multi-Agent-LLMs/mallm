@@ -160,7 +160,7 @@ class Scheduler:
                 "context": sample.context,
                 "answer": answer or None,
                 "references": sample.references,
-                "decision_success": decision_success,
+                "decisionSuccess": decision_success,
                 "agreements": [
                     dataclasses.asdict(agreement) for agreement in agreements
                 ],
@@ -300,7 +300,7 @@ class Scheduler:
                 "context": sample.context,
                 "answer": answer.solution or None,
                 "references": sample.references,
-                "decision_success": None,
+                "decisionSuccess": None,
                 "agreements": None,
                 "turns": None,
                 "clockSeconds": float(f"{discussion_time:.2f}"),
