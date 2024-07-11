@@ -141,6 +141,7 @@ class Evaluator:
                         for mem in item.get("globalMemory", [])
                         if mem.get("turn") == turn and metric in mem.get("scores", {})
                     )
+                    avg_scores_per_turn[turn] = round(avg_scores_per_turn[turn], 4)
 
             stats[metric] = {
                 "data_size": len(self.data),
@@ -148,9 +149,9 @@ class Evaluator:
                 "scores": scores,
                 "average_score": round(average_score, 4),
                 "std_dev_score": round(std_dev_score, 4),
-                "average_scores_per_turn": round(avg_scores_per_turn, 4),
+                "average_scores_per_turn": avg_scores_per_turn,
             }
-            logger.info(f"Stats: {stats[metric]}")
+            logger.debug(f"Stats: {stats[metric]}")
 
         stats_output_file_path = self.output_file_path.replace(".json", "_stats.json")
         with open(stats_output_file_path, "w") as file:
