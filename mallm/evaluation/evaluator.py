@@ -9,7 +9,11 @@ import mallm.scheduler  # noqa
 from mallm.evaluation.metrics.bertscore import BERTScore
 from mallm.evaluation.metrics.bleu import BLEU
 from mallm.evaluation.metrics.meteor import METEOR
-from mallm.evaluation.metrics.qa import AnswerabilityBoolean, MultiChoiceBoolean
+from mallm.evaluation.metrics.qa import (
+    AnswerabilityBoolean,
+    MultiChoiceBoolean,
+    SquadScore,
+)
 from mallm.evaluation.metrics.rouge import ROUGE
 
 ALL_METRICS = [
@@ -19,6 +23,7 @@ ALL_METRICS = [
     METEOR(),
     MultiChoiceBoolean(),
     ROUGE(),
+    SquadScore(),
 ]
 
 logger = logging.getLogger("mallm")
@@ -60,6 +65,8 @@ class Evaluator:
             metrics = self.metrics
         elif "answerability" in [metric.name for metric in self.metrics]:
             metrics = [AnswerabilityBoolean()]
+        elif "squad" in [metric.name for metric in self.metrics]:
+            metrics = [SquadScore()]
         else:
             logger.warning("No metrics to evaluate.")
             return {}
