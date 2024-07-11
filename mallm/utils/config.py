@@ -37,6 +37,7 @@ class Config:
     num_agents: int = 3
     agent_generator: str = "expert"
     num_samples: Optional[int] = None
+    feedback_only: bool = False
 
     def check_config(self) -> None:
         # TODO: make this more robust and conclusive. All arguments should be checked for validity, making the use of MALLM as fool-proof as possible.
@@ -63,6 +64,10 @@ class Config:
         if self.endpoint_url.endswith("/"):
             logger.warning("Removing trailing / from the endpoint url.")
             self.endpoint_url = self.endpoint_url[:-1]
+        if not self.use_moderator and self.feedback_only:
+            logger.warning(
+                "Setting feedback_only=True without a moderator does not make sense with the current implementation. No solutions will be drafted."
+            )
         try:
             logger.info("Testing availability of the endpoint...")
             page = requests.get(self.endpoint_url)
