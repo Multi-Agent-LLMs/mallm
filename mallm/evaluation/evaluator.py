@@ -122,12 +122,33 @@ class Evaluator:
                 sum((score - average_score) ** 2 for score in scores) / len(scores)
             ) ** 0.5
 
+            avg_scores_per_turn = {}
+            if self.extensive:
+                max_turns = max(item.get("turns", 0) for item in self.data)
+                for item in self.data:
+                    for mem in item.get("globalMemory", []):
+                        turn = mem.get("turn", 0)
+                        if turn not in avg_scores_per_turn:
+                            avg_scores_per_turn[turn] = float(0)
+                        avg_scores_per_turn[turn] += mem.get("scores", {}).get(
+                            metric, 0
+                        )
+
+                for turn in range(max_turns + 1)[1:]:
+                    avg_scores_per_turn[turn] /= sum(
+                        1
+                        for item in self.data
+                        for mem in item.get("globalMemory", [])
+                        if mem.get("turn") == turn and metric in mem.get("scores", {})
+                    )
+
             stats[metric] = {
                 "data_size": len(self.data),
                 "sample_size": len(scores),
                 "scores": scores,
                 "average_score": round(average_score, 4),
                 "std_dev_score": round(std_dev_score, 4),
+                "average_scores_per_turn": round(avg_scores_per_turn, 4),
             }
             logger.info(f"Stats: {stats[metric]}")
 
