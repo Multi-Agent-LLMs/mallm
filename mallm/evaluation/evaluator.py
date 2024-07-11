@@ -35,6 +35,7 @@ class Evaluator:
         input_file_path: str,
         output_file_path: Optional[str] = None,
         metrics: Optional[list[str]] = None,
+        extensive: bool = False,
     ) -> None:
         if metrics is None:
             metrics = ["multichoice"]
@@ -45,20 +46,18 @@ class Evaluator:
             self.data = json.load(file)
 
         metrics = [m.lower() for m in metrics]
-
         self.metrics = [
             metric_class
             for metric_class in ALL_METRICS
             if metric_class.name.lower() in metrics
         ]
-
         if len(self.metrics) != len(metrics):
             logger.warning(f"Some metrics not found in {metrics}")
-
         print("Metrics to calculate: " + str([m.name for m in self.metrics]))
-
         if not self.metrics:
             raise ValueError(f"No metrics found for {metrics}")
+
+        self.extensive = extensive
 
     def calculate_scores(self, answer: str, references: list[str]) -> dict[str, Any]:
         if references:
@@ -84,9 +83,17 @@ class Evaluator:
                 score = self.calculate_scores(answer, references)
                 item["scores"] = score
 
+    def add_scores_extensive(self) -> None:
+        for item in tqdm(self.data):
+            for mem in item.get("globalMemory"):
+                solution = mem.get("solution", "")
+                references = item.get("references", [])
+                if solution:
+                    score = self.calculate_scores(solution, references)
+                    mem["scores"] = score
+
     def calculate_statistics(self) -> None:
         # For each numeric metric, calculate the average and standard deviation
-
         reported_metrics = set()
         for item in self.data:
             if "scores" in item:
@@ -135,6 +142,8 @@ class Evaluator:
 
     def process(self) -> None:
         self.add_scores()
+        if self.extensive:
+            self.add_scores_extensive()
         self.calculate_statistics()
         self.save_json()
         logger.info(f"Scores saved to {self.output_file_path}")
@@ -144,8 +153,9 @@ def main(
     input_file_path: str,
     output_file_path: Optional[str] = None,
     metrics: Optional[list[str]] = None,
+    extensive: bool = False,
 ) -> None:
-    evaluator = Evaluator(input_file_path, output_file_path, metrics)
+    evaluator = Evaluator(input_file_path, output_file_path, metrics, extensive)
     evaluator.process()
 
 
