@@ -326,7 +326,7 @@ class Scheduler:
                 "context": sample.context,
                 "answer": answer.solution or None,
                 "references": sample.references,
-                "decision_success": None,
+                "decisionSuccess": None,
                 "agreements": None,
                 "turns": exchanged_messages,
                 "clockSeconds": float(f"{discussion_time:.2f}"),
