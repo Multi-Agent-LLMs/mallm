@@ -157,3 +157,30 @@ Input: {input_str}
             },
         ]
         return self.llm.invoke(current_prompt)
+
+    def generate_ablation(
+        self,
+        task_instruction: str,
+        input_str: str,
+        current_solution: str,
+        chain_of_thought: bool,
+    ) -> Response:
+        prompt_content = f"""
+When, faced with a task, improve the current solution.
+Task: {task_instruction}
+Input: {input_str}
+Current solution: {current_solution}
+"""  # input has context appended
+        prompt = [
+            {
+                "role": "user",
+                "content": prompt_content,
+            },
+        ]
+        return self.generate_response(
+            current_prompt=prompt,
+            chain_of_thought=chain_of_thought,
+            agreement=None,
+            baseline=True,
+            drafting=True,
+        )

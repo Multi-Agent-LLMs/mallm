@@ -21,7 +21,7 @@ from mallm.models.Chat import Chat
 from mallm.utils.config import Config
 from mallm.utils.CustomFormatter import CustomFormatter
 from mallm.utils.dicts import RESPONSE_GENERATORS
-from mallm.utils.types import InputExample
+from mallm.utils.types import InputExample, Response
 from mallm.utils.utils import pretty_print_dict, suppress_output
 
 just_fix_windows_console()
@@ -93,6 +93,7 @@ class Scheduler:
         self.total_samples = len(self.data)
         self.failed_example_ids: list[str] = []
         self.output_dicts: list[dict[str, Any]] = []
+        self.ablation_output_dicts: list[dict[str, Any]] = []
 
         logger.info(f"""Found {self.total_samples} samples to process.""")
 
@@ -191,6 +192,12 @@ class Scheduler:
         )
         del coordinator
         gc.collect()
+
+        if self.config.ablation:
+            self.run_ablation(
+                client, sample, len(self.output_dicts[-1]["globalMemory"])
+            )
+
         return answer
 
     def manage_discussions(self, client: httpx.Client) -> None:
@@ -244,6 +251,100 @@ class Scheduler:
             processing_data = self.data[: len(self.failed_example_ids)]
             self.data = self.data[len(self.failed_example_ids) :]
             self.failed_example_ids = []
+
+    def run_ablation(
+        self, client: httpx.Client, sample: InputExample, exchanged_messages: int
+    ) -> Optional[str]:
+        """
+        Run an ablation where a single LM iteratively improves the solution the same number of times as the multi-agent system.
+        """
+        logger.info(
+            f"""Starting ablation processing of sample {sample.example_id} with {exchanged_messages} iterative improvements."""
+        )
+        start_time = time.perf_counter()
+
+        sample_instruction = self.config.instruction
+        if sample.context:
+            sample_instruction += "\nContext:"
+            for c in sample.context:
+                sample_instruction += "\n" + c
+        input_str = ""
+        for num, input_line in enumerate(sample.inputs):
+            if len(sample.inputs) > 1:
+                input_str += str(num + 1) + ") " + input_line + "\n"
+            else:
+                input_str = input_line
+
+        start_time = time.perf_counter()
+
+        globalMemory = []
+        answer = Response(
+            message="None. Please provide a first solution.",
+            solution="None. Please provide a first solution.",
+            agreement=None,
+        )
+        for i in range(exchanged_messages):
+            try:
+                answer = self.response_generator.generate_ablation(
+                    task_instruction=sample_instruction,
+                    input_str=input_str,
+                    current_solution=answer.solution,
+                    chain_of_thought=self.config.chain_of_thought,
+                )
+                globalMemory.append(
+                    {
+                        "message_id": i,
+                        "turn": i,
+                        "message": answer.message,
+                        "solution": answer.solution,
+                    }
+                )
+            except Exception as e:
+                logger.error("Failed running baseline.")
+                logger.error(e)
+                self.failed_example_ids.append(sample.example_id)
+                return None
+
+        discussion_time = timedelta(
+            seconds=time.perf_counter() - start_time
+        ).total_seconds()
+        logger.info(
+            f"""--> Baseline LM generated the final answer within {f'{discussion_time:.2f}'} seconds: \n"""
+            + str(answer.solution)
+        )
+
+        self.ablation_output_dicts.append(
+            {
+                "dataset": self.dataset_name,
+                "exampleId": sample.example_id,
+                "datasetId": sample.dataset_id,
+                "instruction": self.config.instruction,
+                "coordinatorId": None,
+                "personas": None,
+                "paradigm": None,
+                "input": sample.inputs,
+                "context": sample.context,
+                "answer": answer.solution or None,
+                "references": sample.references,
+                "decision_success": None,
+                "agreements": None,
+                "turns": exchanged_messages,
+                "clockSeconds": float(f"{discussion_time:.2f}"),
+                "globalMemory": globalMemory,
+                "agentMemory": None,
+            }
+        )
+        try:
+            with open(self.config.out.replace(".json", "_ablation.json"), "w") as file:
+                file.write(
+                    json.dumps(self.ablation_output_dicts)
+                )  # TODO: ensure correct json formatting (sometimes there is an invalid escape sequence warning)
+                file.truncate()
+        except Exception as e:
+            logger.error("Failed to write ablation output to file.")
+            logger.error(e)
+
+        return answer.solution
 
     def run_baseline(
         self,
