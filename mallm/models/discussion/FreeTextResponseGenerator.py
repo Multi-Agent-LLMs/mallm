@@ -153,11 +153,7 @@ Input: {input_str}
             },
             {
                 "role": "user",
-                "content": f"Text: {result}",
-            },
-            {
-                "role": "assistant",
-                "content": "Final solution:",
-            },
+                "content": f"Text: {result}. Final solution:",
+            }
         ]
         return self.llm.invoke(current_prompt)
