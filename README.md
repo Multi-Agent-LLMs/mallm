@@ -45,7 +45,7 @@ Once the endpoint is available, you can initiate all discussions by a single scr
 
 Or with OpenAI:
 
-`python mallm/scheduler.py --data=data/datasets/etpc_debugging.json --out=test_out.json --instruction="Paraphrase the input text." --endpoint_url="https://api.openai.com" --model="gpt-3.5-turbo" --api_key="<your-key>"`
+`python mallm/scheduler.py --data=data/datasets/etpc_debugging.json --out=test_out.json --instruction="Paraphrase the input text." --endpoint_url="https://api.openai.com/v1" --model="gpt-3.5-turbo" --api_key="<your-key>"`
 
 ## Run as Module
 If installed, you can use MALLM from anywhere on your system:
@@ -100,7 +100,7 @@ Use "tgi" as a model for Text Generation Inference by HuggingFace or one of thes
 data: str = None
 out: str = None
 instruction: str = None
-endpoint_url: str = "https://api.openai.com"
+endpoint_url: str = "https://api.openai.com/v1"
 model: str = "gpt-3.5-turbo"
 api_key: str = "-"
 use_moderator: bool = False
