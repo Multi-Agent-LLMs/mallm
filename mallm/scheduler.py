@@ -66,9 +66,9 @@ class Scheduler:
         try:
             for data in self.data:
                 data.confirm_types()
-        except AssertionError:
+        except AssertionError as e:
             logger.error(
-                "Input data has wrong format. Please delete and download the data again."
+                f"Input data has wrong format. Please delete and download the data again:\n{e}"
             )
             sys.exit(1)
 
