@@ -100,7 +100,7 @@ Use "tgi" as a model for Text Generation Inference by HuggingFace or one of thes
 data: str = None
 out: str = None
 instruction: str = None
-endpoint_url: str = "https://api.openai.com/v1"
+endpoint_url: str = "https://api.openai.com"
 model: str = "gpt-3.5-turbo"
 api_key: str = "-"
 use_moderator: bool = False
