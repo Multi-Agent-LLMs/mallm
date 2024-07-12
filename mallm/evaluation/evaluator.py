@@ -42,6 +42,7 @@ class Evaluator:
         if output_file_path is None:
             output_file_path = input_file_path.replace(".json", "_eval.json")
         self.output_file_path = output_file_path
+
         with open(input_file_path) as file:
             self.data = json.load(file)
 
@@ -85,7 +86,7 @@ class Evaluator:
 
     def add_scores_extensive(self) -> None:
         for item in tqdm(self.data):
-            for mem in item.get("globalMemory"):
+            for mem in item.get("globalMemory", []):
                 solution = mem.get("solution", "")
                 references = item.get("references", [])
                 if solution:
@@ -118,13 +119,16 @@ class Evaluator:
                 continue
 
             average_score = sum(scores) / len(scores)
-            std_dev_score = (
-                sum((score - average_score) ** 2 for score in scores) / len(scores)
-            ) ** 0.5
+            if len(scores) > 1:
+                std_dev_score = (
+                    sum((score - average_score) ** 2 for score in scores)
+                    / (len(scores) - 1)
+                ) ** 0.5
+            else:
+                std_dev_score = 0
 
             avg_scores_per_turn = {}
             if self.extensive:
-                max_turns = max(item.get("turns", 0) for item in self.data)
                 for item in self.data:
                     for mem in item.get("globalMemory", []):
                         turn = mem.get("turn", 0)
@@ -134,12 +138,14 @@ class Evaluator:
                             metric, 0
                         )
 
+                max_turns = max(item.get("turns", 0) for item in self.data)
                 for turn in range(max_turns + 1)[1:]:
                     avg_scores_per_turn[turn] /= sum(
                         1
                         for item in self.data
                         for mem in item.get("globalMemory", [])
-                        if mem.get("turn") == turn and metric in mem.get("scores", {})
+                        if mem.get("turn", 0) == turn
+                        and metric in mem.get("scores", {})
                     )
                     avg_scores_per_turn[turn] = round(avg_scores_per_turn[turn], 4)
 
