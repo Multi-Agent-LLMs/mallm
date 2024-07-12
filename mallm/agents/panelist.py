@@ -19,7 +19,7 @@ class Panelist(Agent):
         """
         Either calls feedback() or improve() depending on whether a moderator is present
         """
-        if use_moderator:
+        if self.feedback_only:
             _res, memory, agreements = self.feedback(
                 unique_id=unique_id,
                 turn=turn,
