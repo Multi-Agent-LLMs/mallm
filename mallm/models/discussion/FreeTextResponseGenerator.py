@@ -56,6 +56,7 @@ Input: {input_str}
                     "content": "Let's think step by step.",
                 }
             )
+        current_prompt = ResponseGenerator.merge_consecutive_messages(current_prompt)
         logger.debug(f"Sending prompt: {json.dumps(current_prompt, indent=2)}")
 
         retry = 0
@@ -148,7 +149,7 @@ Input: {input_str}
         current_prompt = [
             {
                 "role": "system",
-                "content": "Extract the final solution to the task from the provided text. Remove statements of agreement, disagreement, and explanations. Do not modify the text. Do not output any text besides the solution.",
+                "content": "Extract the final solution to the task from the provided text. Remove statements of agreement, disagreement, and explanations. Do not modify the text. Do not output any text besides the solution. Include the letter (A, B, C, D) in the solution if it exists. If there is no solution provided, just copy the text.",
             },
             {
                 "role": "user",

@@ -120,6 +120,7 @@ Input: {input_str}
                     "content": "Let's think step by step.",
                 }
             )
+        current_prompt = ResponseGenerator.merge_consecutive_messages(current_prompt)
         logger.debug(f"Sending prompt: {json.dumps(current_prompt, indent=2)}")
 
         retry = 0

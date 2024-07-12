@@ -36,6 +36,7 @@ class Evaluator:
         input_file_path: str,
         output_file_path: Optional[str] = None,
         metrics: Optional[list[str]] = None,
+        extensive: bool = False,
     ) -> None:
         self.input_file_path = Path(input_file_path)
         self.output_file_path = (
@@ -45,6 +46,7 @@ class Evaluator:
         )
         self.data = self._load_data()
         self.metrics = self._initialize_metrics(metrics)
+        self.extensive = extensive
 
     def _load_data(self) -> list[dict[str, Any]]:
         with open(self.input_file_path) as file:
@@ -55,6 +57,7 @@ class Evaluator:
     def _initialize_metrics(metrics: Optional[list[str]]) -> list[Any]:
         if metrics is None:
             metrics = ["multichoice"]
+
         metrics = [m.lower() for m in metrics]
         selected_metrics = [
             metric_class
@@ -92,6 +95,15 @@ class Evaluator:
             if answer:
                 item["scores"] = self.calculate_scores(answer, references)
 
+    def add_scores_extensive(self) -> None:
+        for item in tqdm(self.data):
+            for mem in item.get("globalMemory", []):
+                solution = mem.get("solution", "")
+                references = item.get("references", [])
+                if solution:
+                    score = self.calculate_scores(solution, references)
+                    mem["scores"] = score
+
     def calculate_statistics(self) -> dict[str, Any]:
         reported_metrics = set()
         for item in self.data:
@@ -115,9 +127,35 @@ class Evaluator:
                 continue
 
             average_score = sum(scores) / len(scores)
-            std_dev_score = (
-                sum((score - average_score) ** 2 for score in scores) / len(scores)
-            ) ** 0.5
+            if len(scores) > 1:
+                std_dev_score = (
+                    sum((score - average_score) ** 2 for score in scores)
+                    / (len(scores) - 1)
+                ) ** 0.5
+            else:
+                std_dev_score = 0
+
+            avg_scores_per_turn = {}
+            if self.extensive:
+                for item in self.data:
+                    for mem in item.get("globalMemory", []):
+                        turn = mem.get("turn", 0)
+                        if turn not in avg_scores_per_turn:
+                            avg_scores_per_turn[turn] = float(0)
+                        avg_scores_per_turn[turn] += mem.get("scores", {}).get(
+                            metric, 0
+                        )
+
+                max_turns = max(item.get("turns", 0) for item in self.data)
+                for turn in range(max_turns + 1)[1:]:
+                    avg_scores_per_turn[turn] /= sum(
+                        1
+                        for item in self.data
+                        for mem in item.get("globalMemory", [])
+                        if mem.get("turn", 0) == turn
+                        and metric in mem.get("scores", {})
+                    )
+                    avg_scores_per_turn[turn] = round(avg_scores_per_turn[turn], 4)
 
             stats[metric] = {
                 "data_size": len(self.data),
@@ -125,8 +163,9 @@ class Evaluator:
                 "scores": scores,
                 "average_score": round(average_score, 4),
                 "std_dev_score": round(std_dev_score, 4),
+                "average_scores_per_turn": avg_scores_per_turn,
             }
-            logger.info(f"Stats: {stats[metric]}")
+            logger.debug(f"Stats: {stats[metric]}")
 
         return stats
 
@@ -137,14 +176,19 @@ class Evaluator:
 
     def process(self) -> None:
         self.add_scores()
+        if self.extensive:
+            self.add_scores_extensive()
         stats = self.calculate_statistics()
         self.save_results(stats)
+
+        logger.info(f"Scores saved to {self.output_file_path}")
 
 
 def batch_process_folder(
     input_folder: str,
     output_folder: Optional[str] = None,
     metrics: Optional[list[str]] = None,
+    extensive: bool = False,
 ) -> None:
     input_path = Path(input_folder)
     output_path = Path(output_folder) if output_folder else input_path
@@ -159,7 +203,7 @@ def batch_process_folder(
         output_file = output_path / file.name.replace(".json", "_eval.json")
         logger.info(f"Processing {file}")
 
-        evaluator = Evaluator(str(file), str(output_file), metrics)
+        evaluator = Evaluator(str(file), str(output_file), metrics, extensive)
         evaluator.process()
 
     logger.info("Batch processing completed.")
@@ -170,11 +214,12 @@ def main(
     output_path: Optional[str] = None,
     metrics: Optional[list[str]] = None,
     batch: bool = False,
+    extensive: bool = False,
 ) -> None:
     if batch:
-        batch_process_folder(input_path, output_path, metrics)
+        batch_process_folder(input_path, output_path, metrics, extensive)
     else:
-        evaluator = Evaluator(input_path, output_path, metrics)
+        evaluator = Evaluator(input_path, output_path, metrics, extensive)
         evaluator.process()
 
 
