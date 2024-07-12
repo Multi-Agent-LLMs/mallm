@@ -121,7 +121,14 @@ baseline: bool = False
 chain_of_thought: bool = True
 num_agents: int = 3
 agent_generator: str = "expert"
+trust_remote_code: bool = False
 num_samples: Optional[int] = None
+hf_dataset_split: Optional[str] = "test"
+hf_token: Optional[str] = None
+hf_dataset_version: Optional[str] = None
+hf_dataset_input_column: Optional[str] = None
+hf_dataset_reference_column: Optional[str] = None
+hf_dataset_context_column: Optional[str] = None
 feedback_only: bool = False
 ```
 
