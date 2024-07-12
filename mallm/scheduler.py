@@ -21,6 +21,7 @@ from mallm.models.Chat import Chat
 from mallm.utils.config import Config
 from mallm.utils.CustomFormatter import CustomFormatter
 from mallm.utils.dicts import RESPONSE_GENERATORS
+from mallm.utils.functions import sort_output_file
 from mallm.utils.types import InputExample, Response
 from mallm.utils.utils import pretty_print_dict, suppress_output
 
@@ -498,39 +499,22 @@ class Scheduler:
             os.remove(f)
         logger.info(f"Cleaned the memory bucket {memory_bucket_dir!s}.")
 
-    def sort_output_file(self) -> None:
-        """
-        Sorts the output file to match the input file.
-        """
-        print("Sorting output file to match the input file...")
-        with open(self.config.out) as file:
-            data_out = json.load(file)
-        with open(self.config.data) as file:
-            data_in = json.load(file)
-
-        # Create a dictionary to map example_ids to their corresponding data_out entries
-        data_out_dict = {entry["exampleId"]: entry for entry in data_out}
-
-        # Reorder data_out to match the order of example_ids in data_in
-        sorted_data_out = [
-            data_out_dict[entry["example_id"]]
-            for entry in data_in
-            if entry["example_id"] in data_out_dict
-        ]
-
-        with open(self.config.out, "w") as file:
-            json.dump(sorted_data_out, file, indent=4)
-
     def run(self) -> None:
         """
-        The routine that starts the discussions between LLM agents iteratively on the provided data.
+        The routine that runs the discussions between LLM agents on the provided data.
         """
         with httpx.Client() as client:
             if self.config.baseline:
                 self.manage_baseline(client)  # baseline (single LM)
             else:
                 self.manage_discussions(client)  # multi-agent discussion
-        self.sort_output_file()
+
+        sort_output_file(input_file=self.config.data, output_file=self.config.out)
+        if self.config.ablation:
+            sort_output_file(
+                input_file=self.config.data,
+                output_file=self.config.out.replace(".json", "_ablation.json"),
+            )
 
 
 def main() -> None:
