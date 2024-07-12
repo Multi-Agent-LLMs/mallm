@@ -61,8 +61,12 @@ class InputExample:
             assert isinstance(self.dataset_id, str), "Dataset_id is not a string"
         # Confirm type of input
         assert isinstance(self.inputs, list), "Inputs is not a list"
+        for i in self.inputs:
+            assert isinstance(i, str), "Inputs is not a list of only strings"
         # Confirm type of references
         assert isinstance(self.references, list), "References is not a list"
+        for r in self.references:
+            assert isinstance(r, str), "References is not a list of only strings"
         # Confirm type of personas
         if self.personas is not None:
             assert isinstance(self.personas, list), "Personas is not a list"
