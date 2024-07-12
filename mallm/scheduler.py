@@ -7,6 +7,7 @@ import os
 import sys
 import time
 import traceback
+import uuid
 from datetime import timedelta
 from multiprocessing.pool import ThreadPool
 from typing import Any, Optional
@@ -14,6 +15,7 @@ from typing import Any, Optional
 import fire
 import httpx
 from colorama import just_fix_windows_console
+from datasets import load_dataset
 from openai import OpenAI
 
 from mallm.coordinator import Coordinator
@@ -57,12 +59,64 @@ class Scheduler:
             self.clean_memory_bucket(config.memory_bucket_dir)
 
         # Read input data (format: json lines)
-        logger.info(f"""Reading {config.data}...""")
-        with open(config.data) as f:
-            self.dataset_name = f.name
-            json_data = json.loads(f.readline())
+        try:
+            logger.info(f"""Trying to read {config.data} from file...""")
+            with open(config.data) as f:
+                self.dataset_name = f.name
+                json_data = json.loads(f.readline())
+                self.data = [InputExample(**data) for data in json_data]
+        except Exception as e:
+            logger.warning(
+                f"""Could not read {config.data} from file: {e}. Trying Hugging Face"""
+            )
 
-        self.data = [InputExample(**data) for data in json_data]
+        try:
+            # Read input data (format: huggingface dataset)
+            logger.info(f"""Trying to read {config.data} from Hugging Face...""")
+            self.dataset_name = config.data
+            # Load from Hugging Face
+            dataset = load_dataset(
+                self.dataset_name,
+                config.hf_dataset_version,
+                split=config.hf_dataset_split,
+                trust_remote_code=config.trust_remote_code,
+                token=config.hf_token,
+            )
+            # Put in native mallm format
+            self.data = [
+                {
+                    "example_id": str(uuid.uuid4()),
+                    "dataset_id": None,
+                    "inputs": (
+                        [x.pop(config.hf_dataset_input_column, None)]
+                        if x.get(config.hf_dataset_input_column) is not None
+                        else None
+                    ),
+                    "context": (
+                        [x.pop(config.hf_dataset_context_column, None)]
+                        if x.get(config.hf_dataset_context_column) is not None
+                        else None
+                    ),
+                    "references": (
+                        [x.pop(config.hf_dataset_reference_column, None)]
+                        if x.get(config.hf_dataset_reference_column) is not None
+                        else None
+                    ),
+                    "personas": None,
+                }
+                for x in dataset
+            ]
+            # Filter empty inputs and empty references
+            self.data = [
+                InputExample(**x) for x in self.data if x["inputs"] and x["references"]
+            ]
+
+            print(self.data[0])
+
+        except Exception as e:
+            logger.error(f"""Error reading {config.data} from Hugging Face: {e}""")
+            sys.exit(1)
+
         try:
             for data in self.data:
                 data.confirm_types()

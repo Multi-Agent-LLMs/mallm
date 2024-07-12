@@ -1,5 +1,4 @@
 import logging
-import os
 import sys
 from dataclasses import dataclass
 from typing import Optional
@@ -36,20 +35,17 @@ class Config:
     chain_of_thought: bool = True
     num_agents: int = 3
     agent_generator: str = "expert"
+    trust_remote_code: bool = False
     num_samples: Optional[int] = None
+    hf_dataset_split: Optional[str] = "test"
+    hf_token: Optional[str] = None
+    hf_dataset_version: Optional[str] = None
+    hf_dataset_input_column: Optional[str] = None
+    hf_dataset_reference_column: Optional[str] = None
+    hf_dataset_context_column: Optional[str] = None
 
     def check_config(self) -> None:
         # TODO: make this more robust and conclusive. All arguments should be checked for validity, making the use of MALLM as fool-proof as possible.
-        if not os.path.exists(self.data):
-            logger.error(
-                "The input file you provided does not exist. Please specify a json lines file using --data."
-            )
-            sys.exit(1)
-        if not self.data.endswith(".json"):
-            logger.error(
-                "The input file you provided is not a json file. Please specify a json lines file using --data."
-            )
-            sys.exit(1)
         if not self.out.endswith(".json"):
             logger.error(
                 "The output file does not seem to be a json file. Please specify a file path using --out."
