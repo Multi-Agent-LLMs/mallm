@@ -214,7 +214,7 @@ class Scheduler:
                 "context": sample.context,
                 "answer": answer or None,
                 "references": sample.references,
-                "decision_success": decision_success,
+                "decisionSuccess": decision_success,
                 "agreements": [
                     dataclasses.asdict(agreement) for agreement in agreements
                 ],
@@ -354,7 +354,7 @@ class Scheduler:
                 "context": sample.context,
                 "answer": answer.solution or None,
                 "references": sample.references,
-                "decision_success": None,
+                "decisionSuccess": None,
                 "agreements": None,
                 "turns": None,
                 "clockSeconds": float(f"{discussion_time:.2f}"),
@@ -451,6 +451,29 @@ class Scheduler:
             os.remove(f)
         logger.info(f"Cleaned the memory bucket {memory_bucket_dir!s}.")
 
+    def sort_output_file(self) -> None:
+        """
+        Sorts the output file to match the input file.
+        """
+        print("Sorting output file to match the input file...")
+        with open(self.config.out) as file:
+            data_out = json.load(file)
+        with open(self.config.data) as file:
+            data_in = json.load(file)
+
+        # Create a dictionary to map example_ids to their corresponding data_out entries
+        data_out_dict = {entry["exampleId"]: entry for entry in data_out}
+
+        # Reorder data_out to match the order of example_ids in data_in
+        sorted_data_out = [
+            data_out_dict[entry["example_id"]]
+            for entry in data_in
+            if entry["example_id"] in data_out_dict
+        ]
+
+        with open(self.config.out, "w") as file:
+            json.dump(sorted_data_out, file, indent=4)
+
     def run(self) -> None:
         """
         The routine that starts the discussions between LLM agents iteratively on the provided data.
@@ -460,6 +483,7 @@ class Scheduler:
                 self.manage_baseline(client)  # baseline (single LM)
             else:
                 self.manage_discussions(client)  # multi-agent discussion
+        self.sort_output_file()
 
 
 def main() -> None:
@@ -468,6 +492,7 @@ def main() -> None:
     pretty_print_dict(config)
     scheduler = Scheduler(config)
     scheduler.run()
+    print("Done.")
 
 
 if __name__ == "__main__":
