@@ -129,7 +129,7 @@ class Scheduler:
         self.config = config
         self.llm = Chat(
             client=OpenAI(
-                base_url=f"{self.config.endpoint_url}/v1", api_key=self.config.api_key
+                base_url=self.config.endpoint_url, api_key=self.config.api_key
             ),
             model=self.config.model,
         )
