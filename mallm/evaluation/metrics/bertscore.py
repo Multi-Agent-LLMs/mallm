@@ -23,6 +23,4 @@ class BERTScore(Metric):
             model_type="bert-base-uncased",
             num_layers=9,
         )
-        return {
-            "bertscore": F1.mean().item()
-        }
+        return {"bertscore": F1.mean().item()}
