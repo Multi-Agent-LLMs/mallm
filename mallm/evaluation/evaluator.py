@@ -184,7 +184,7 @@ class Evaluator:
         logger.info(f"Scores saved to {self.output_file_path}")
 
 
-def batch_process_folder(
+def batch_process_dir_path(
     input_folder: str,
     output_folder: Optional[str] = None,
     metrics: Optional[list[str]] = None,
@@ -211,15 +211,19 @@ def batch_process_folder(
 
 def main(
     input_json_file_path: str,
-    output_path: Optional[str] = None,
+    output_json_file_path: Optional[str] = None,
     metrics: Optional[list[str]] = None,
     batch: bool = False,
     extensive: bool = False,
 ) -> None:
     if batch:
-        batch_process_folder(input_path, output_path, metrics, extensive)
+        batch_process_dir_path(
+            input_json_file_path, output_json_file_path, metrics, extensive
+        )
     else:
-        evaluator = Evaluator(input_path, output_path, metrics, extensive)
+        evaluator = Evaluator(
+            input_json_file_path, output_json_file_path, metrics, extensive
+        )
         evaluator.process()
 
 
