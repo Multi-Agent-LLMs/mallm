@@ -210,7 +210,7 @@ def batch_process_folder(
 
 
 def main(
-    input_path: str,
+    input_json_file_path: str,
     output_path: Optional[str] = None,
     metrics: Optional[list[str]] = None,
     batch: bool = False,
