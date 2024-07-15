@@ -558,17 +558,16 @@ class Scheduler:
         print("Sorting output file to match the input file...")
         with open(self.config.out) as file:
             data_out = json.load(file)
-        with open(self.config.data) as file:
-            data_in = json.load(file)
+        data_in = self.data
 
         # Create a dictionary to map example_ids to their corresponding data_out entries
         data_out_dict = {entry["exampleId"]: entry for entry in data_out}
 
         # Reorder data_out to match the order of example_ids in data_in
         sorted_data_out = [
-            data_out_dict[entry["example_id"]]
+            data_out_dict[entry.example_id]
             for entry in data_in
-            if entry["example_id"] in data_out_dict
+            if entry.example_id in data_out_dict
         ]
 
         with open(self.config.out, "w") as file:
