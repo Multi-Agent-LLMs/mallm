@@ -156,7 +156,8 @@ From script:
 ```py
 from mallm.evaluation.evaluator import Evaluator
 
-evaluator = Evaluator(input_file_path= "test_out.json", output_file_path ="test_out_evaluated.json", metrics = ["bleu","rouge"])
+evaluator = Evaluator(input_file_path="test_out.json", output_dir_path="test_out_evaluated.json",
+                      metrics=["bleu", "rouge"])
 evaluator.process()
 ```
 
