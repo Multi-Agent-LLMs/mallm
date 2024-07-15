@@ -45,7 +45,7 @@ Once the endpoint is available, you can initiate all discussions by a single scr
 
 Or with OpenAI:
 
-`python mallm/scheduler.py --data=data/datasets/etpc_debugging.json --out=test_out.json --instruction="Paraphrase the input text." --endpoint_url="https://api.openai.com" --model="gpt-3.5-turbo" --api_key="<your-key>"`
+`python mallm/scheduler.py --data=data/datasets/etpc_debugging.json --out=test_out.json --instruction="Paraphrase the input text." --endpoint_url="https://api.openai.com/v1" --model="gpt-3.5-turbo" --api_key="<your-key>"`
 
 ## Run as Module
 If installed, you can use MALLM from anywhere on your system:
@@ -121,7 +121,14 @@ baseline: bool = False
 chain_of_thought: bool = True
 num_agents: int = 3
 agent_generator: str = "expert"
+trust_remote_code: bool = False
 num_samples: Optional[int] = None
+hf_dataset_split: Optional[str] = "test"
+hf_token: Optional[str] = None
+hf_dataset_version: Optional[str] = None
+hf_dataset_input_column: Optional[str] = None
+hf_dataset_reference_column: Optional[str] = None
+hf_dataset_context_column: Optional[str] = None
 feedback_only: bool = False
 ```
 

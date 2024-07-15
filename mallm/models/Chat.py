@@ -1,4 +1,5 @@
 import logging
+import time
 from collections.abc import Iterator
 from typing import Any, Optional, Union, cast
 
@@ -12,7 +13,7 @@ from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import LLMResult
 from langchain_core.prompt_values import PromptValue
-from openai import APIError, OpenAI
+from openai import APIError, RateLimitError, OpenAI
 
 
 class Chat(LLM):
@@ -137,9 +138,18 @@ class Chat(LLM):
                     logger.warning(
                         f"API returned an Error: {e}. Retry number {retries}..."
                     )
+                    time.sleep(3)
                 else:
                     logger.error(f" {e}: Exceeded maximum retries. This sample failed.")
                     raise Exception("Exceeded maximum API retries.")
+            except RateLimitError as e:
+                # Handle rate limit error (we recommend using exponential backoff)
+                print(f"OpenAI API request exceeded rate limit: {e}")
+                # Check if we got a 429 error and wait for the retry-after time
+                if e.status_code == 429:
+                    retry_after = e.response.headers.get("Retry-After")
+                    if retry_after:
+                        time.sleep(int(retry_after))
                 continue
 
         return "".join(collected_messages)
