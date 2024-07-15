@@ -39,10 +39,15 @@ class Evaluator:
         extensive: bool = False,
     ) -> None:
         self.input_file_path = Path(input_file_path)
-        self.output_file_path = (
-            Path(output_file_path)
+        self.stats_file_path = (
+            Path(output_file_path).with_suffix(".stats.json")
             if output_file_path
             else self.input_file_path.with_suffix(".stats.json")
+        )
+        self.eval_file_path = (
+            Path(output_file_path).with_suffix(".eval.json")
+            if output_file_path
+            else self.input_file_path.with_suffix(".eval.json")
         )
         self.data = self._load_data()
         self.metrics = self._initialize_metrics(metrics)
@@ -118,7 +123,7 @@ class Evaluator:
 
         stats = {}
         for metric in reported_metrics:
-            logger.info(f"-> Statistics for: {metric.upper()}, {self.output_file_path}")
+            logger.info(f"-> Statistics for: {metric.upper()}, {self.stats_file_path}")
             scores = [item.get("scores", {}).get(metric) for item in self.data]
             scores = [score for score in scores if isinstance(score, (int, float))]
 
@@ -170,9 +175,12 @@ class Evaluator:
         return stats
 
     def save_results(self, stats: dict[str, Any]) -> None:
-        with open(self.output_file_path, "w") as file:
+        with open(self.stats_file_path, "w") as file:
             json.dump(stats, file, indent=4)
-        logger.info(f"Statistics saved to {self.output_file_path}")
+        with open(self.eval_file_path, "w") as file:
+            json.dump(self.data, file, indent=4)
+        logger.info(f"Statistics saved to {self.stats_file_path}")
+        logger.info(f"Eval saved to {self.eval_file_path}")
 
     def process(self) -> None:
         self.add_scores()
@@ -181,26 +189,24 @@ class Evaluator:
         stats = self.calculate_statistics()
         self.save_results(stats)
 
-        logger.info(f"Scores saved to {self.output_file_path}")
-
 
 def batch_process_dir_path(
-    input_folder: str,
-    output_folder: Optional[str] = None,
+    input_dir_path: str,
+    output_dir_path: Optional[str] = None,
     metrics: Optional[list[str]] = None,
     extensive: bool = False,
 ) -> None:
-    input_path = Path(input_folder)
-    output_path = Path(output_folder) if output_folder else input_path
+    input_path = Path(input_dir_path)
+    output_path = Path(output_dir_path) if output_dir_path else input_path
     print(f"Processing files in {input_path} and saving results to {output_path}")
     print(f"Metrics to calculate: {metrics}")
     print(f"Files to process: {len(list(input_path.glob('*.json')))}")
     files = list(input_path.glob("*.json"))
     for file in files:
-        if file.stem.endswith(("_eval", "_stats")):
+        if file.stem.endswith((".eval", ".stats")):
             continue
 
-        output_file = output_path / file.name.replace(".json", "_eval.json")
+        output_file = output_path / file.name
         logger.info(f"Processing {file}")
 
         evaluator = Evaluator(str(file), str(output_file), metrics, extensive)
