@@ -9,6 +9,7 @@ import time
 import traceback
 from datetime import timedelta
 from multiprocessing.pool import ThreadPool
+from pathlib import Path
 from typing import Any, Optional
 
 import fire
@@ -336,7 +337,7 @@ class Scheduler:
             }
         )
         try:
-            with open(self.config.out.replace(".json", "_ablation.json"), "w") as file:
+            with open(Path(self.config.out).with_suffix("-ablation.json"), "w") as file:
                 file.write(
                     json.dumps(self.ablation_output_dicts)
                 )  # TODO: ensure correct json formatting (sometimes there is an invalid escape sequence warning)
@@ -513,7 +514,7 @@ class Scheduler:
         if self.config.ablation:
             sort_output_file(
                 input_file=self.config.data,
-                output_file=self.config.out.replace(".json", "_ablation.json"),
+                output_file=str(Path(self.config.out).with_suffix("-ablation.json")),
             )
 
 
