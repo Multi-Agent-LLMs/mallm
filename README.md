@@ -128,8 +128,11 @@ ablation: bool = False
 
 ### Discussion Parameters:
 Response Generators: `freetext`, `json`, `simple`, `splitfreetext`
+
 Decision Protocols: `approval`, `cumulative`, `hybrid_consensus`, `majority_consensus`, `ranked`, `supermajority_consensus`, `unanimity_consensus`, `voting`
+
 Persona Generators: `expert`, `ipip`, `mock`
+
 Discussion Paradigms: `debate`, `memory`, `relay`, `report`
 
 ## Evaluation
