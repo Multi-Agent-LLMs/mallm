@@ -84,34 +84,31 @@ class Scheduler:
             )
             # Put in native mallm format
             self.data = [
-                {
-                    "example_id": str(uuid.uuid4()),
-                    "dataset_id": None,
-                    "inputs": (
+                InputExample(
+                    example_id=str(uuid.uuid4()),
+                    dataset_id=None,
+                    inputs=(
                         [x.pop(config.hf_dataset_input_column, None)]
                         if x.get(config.hf_dataset_input_column) is not None
-                        else None
+                        else []
                     ),
-                    "context": (
+                    context=(
                         [x.pop(config.hf_dataset_context_column, None)]
                         if x.get(config.hf_dataset_context_column) is not None
                         else None
                     ),
-                    "references": (
+                    references=(
                         [x.pop(config.hf_dataset_reference_column, None)]
                         if x.get(config.hf_dataset_reference_column) is not None
-                        else None
+                        else []
                     ),
-                    "personas": None,
-                }
+                    personas=None,
+                )
                 for x in dataset
             ]
-            # Filter empty inputs and empty references
-            self.data = [
-                InputExample(**x) for x in self.data if x["inputs"] and x["references"]
-            ]
 
-            print(self.data[0])
+            # Filter if there are no inputs or references or they are empty
+            self.data = [x for x in self.data if x.inputs and x.references]
 
         except Exception as e:
             logger.error(f"""Error reading {config.data} from Hugging Face: {e}""")

@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 from dataclasses import dataclass
 from typing import Optional
@@ -47,11 +48,26 @@ class Config:
 
     def check_config(self) -> None:
         # TODO: make this more robust and conclusive. All arguments should be checked for validity, making the use of MALLM as fool-proof as possible.
+        if os.path.isfile(self.data):
+            if not self.data.endswith(".json"):
+                logger.error("The dataset path does not seem to be a json file.")
+                sys.exit(1)
+        else:
+            headers = {"Authorization": f"Bearer {self.hf_token}"}
+            response = requests.get(
+                f"https://datasets-server.huggingface.co/is-valid?dataset={self.data}",
+                headers=headers,
+            )
+            if not response.json()["preview"]:
+                logger.error("The huggingface dataset cannot be loaded.")
+                sys.exit(1)
+
         if not self.out.endswith(".json"):
             logger.error(
                 "The output file does not seem to be a json file. Please specify a file path using --out."
             )
             sys.exit(1)
+
         if "api.openai.com" in self.endpoint_url and self.api_key == "-":
             logger.error(
                 "When using the OpenAI API, you need to provide a key with the argument: --api_key=<your key>"
