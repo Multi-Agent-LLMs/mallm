@@ -35,30 +35,30 @@ class Evaluator:
         input_file_path: str,
         output_file_path: Optional[str] = None,
         metrics: Optional[list[str]] = None,
+        extensive: bool = False,
     ) -> None:
         if metrics is None:
             metrics = ["multichoice"]
         if output_file_path is None:
             output_file_path = input_file_path.replace(".json", "_eval.json")
         self.output_file_path = output_file_path
+
         with open(input_file_path) as file:
             self.data = json.load(file)
 
         metrics = [m.lower() for m in metrics]
-
         self.metrics = [
             metric_class
             for metric_class in ALL_METRICS
             if metric_class.name.lower() in metrics
         ]
-
         if len(self.metrics) != len(metrics):
             logger.warning(f"Some metrics not found in {metrics}")
-
         print("Metrics to calculate: " + str([m.name for m in self.metrics]))
-
         if not self.metrics:
             raise ValueError(f"No metrics found for {metrics}")
+
+        self.extensive = extensive
 
     def calculate_scores(self, answer: str, references: list[str]) -> dict[str, Any]:
         if references:
@@ -84,9 +84,17 @@ class Evaluator:
                 score = self.calculate_scores(answer, references)
                 item["scores"] = score
 
+    def add_scores_extensive(self) -> None:
+        for item in tqdm(self.data):
+            for mem in item.get("globalMemory", []):
+                solution = mem.get("solution", "")
+                references = item.get("references", [])
+                if solution:
+                    score = self.calculate_scores(solution, references)
+                    mem["scores"] = score
+
     def calculate_statistics(self) -> None:
         # For each numeric metric, calculate the average and standard deviation
-
         reported_metrics = set()
         for item in self.data:
             if "scores" in item:
@@ -111,9 +119,35 @@ class Evaluator:
                 continue
 
             average_score = sum(scores) / len(scores)
-            std_dev_score = (
-                sum((score - average_score) ** 2 for score in scores) / len(scores)
-            ) ** 0.5
+            if len(scores) > 1:
+                std_dev_score = (
+                    sum((score - average_score) ** 2 for score in scores)
+                    / (len(scores) - 1)
+                ) ** 0.5
+            else:
+                std_dev_score = 0
+
+            avg_scores_per_turn = {}
+            if self.extensive:
+                for item in self.data:
+                    for mem in item.get("globalMemory", []):
+                        turn = mem.get("turn", 0)
+                        if turn not in avg_scores_per_turn:
+                            avg_scores_per_turn[turn] = float(0)
+                        avg_scores_per_turn[turn] += mem.get("scores", {}).get(
+                            metric, 0
+                        )
+
+                max_turns = max(item.get("turns", 0) for item in self.data)
+                for turn in range(max_turns + 1)[1:]:
+                    avg_scores_per_turn[turn] /= sum(
+                        1
+                        for item in self.data
+                        for mem in item.get("globalMemory", [])
+                        if mem.get("turn", 0) == turn
+                        and metric in mem.get("scores", {})
+                    )
+                    avg_scores_per_turn[turn] = round(avg_scores_per_turn[turn], 4)
 
             stats[metric] = {
                 "data_size": len(self.data),
@@ -121,8 +155,9 @@ class Evaluator:
                 "scores": scores,
                 "average_score": round(average_score, 4),
                 "std_dev_score": round(std_dev_score, 4),
+                "average_scores_per_turn": avg_scores_per_turn,
             }
-            logger.info(f"Stats: {stats[metric]}")
+            logger.debug(f"Stats: {stats[metric]}")
 
         stats_output_file_path = self.output_file_path.replace(".json", "_stats.json")
         with open(stats_output_file_path, "w") as file:
@@ -135,6 +170,8 @@ class Evaluator:
 
     def process(self) -> None:
         self.add_scores()
+        if self.extensive:
+            self.add_scores_extensive()
         self.calculate_statistics()
         self.save_json()
         logger.info(f"Scores saved to {self.output_file_path}")
@@ -144,8 +181,9 @@ def main(
     input_file_path: str,
     output_file_path: Optional[str] = None,
     metrics: Optional[list[str]] = None,
+    extensive: bool = False,
 ) -> None:
-    evaluator = Evaluator(input_file_path, output_file_path, metrics)
+    evaluator = Evaluator(input_file_path, output_file_path, metrics, extensive)
     evaluator.process()
 
 

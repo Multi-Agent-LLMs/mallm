@@ -55,8 +55,9 @@ class ApprovalVoting(DecisionProtocol):
 
         approvals = []
         for panelist in self.panelists:
-            while True:
-                # Creates a prompt with all the answers and asks the agent to vote for all acceptable ones, 0 indexed inorder
+            retries = 0
+            while retries < 10:
+                # Creates a prompt with all the answers and asks the agent to vote for all acceptable ones, 0 indexed in order
                 approval = panelist.llm.invoke(
                     generate_approval_voting_prompt(
                         panelist.persona,
@@ -80,9 +81,14 @@ class ApprovalVoting(DecisionProtocol):
                         break
                     raise ValueError
                 except ValueError:
+                    retries += 1
                     logger.debug(
-                        f"{panelist.short_id} cast an invalid approval: {approval}. Asking to approve again."
+                        f"{panelist.short_id} cast an invalid approval: {approval}. Asking to approve again. Retry {retries}/10."
                     )
+            if retries >= 10:
+                logger.warning(
+                    f"{panelist.short_id} reached maximum retries. Counting as invalid vote."
+                )
 
         # Count approvals for each answer
         approval_counts = Counter(approvals)

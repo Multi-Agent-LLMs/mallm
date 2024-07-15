@@ -55,7 +55,8 @@ class Voting(DecisionProtocol):
 
         votes = []
         for panelist in self.panelists:
-            while True:
+            retries = 0
+            while retries < 10:
                 # Creates a prompt with all the answers and asks the agent to vote for the best one, 0 indexed inorder
                 vote = panelist.llm.invoke(
                     generate_voting_prompt(
@@ -78,9 +79,14 @@ class Voting(DecisionProtocol):
                         f"{panelist.short_id} cast an invalid vote: {vote}. Asking to vote again."
                     )
                 except ValueError:
+                    retries += 1
                     logger.debug(
                         f"{panelist.short_id} cast an invalid vote: {vote}. Asking to vote again."
                     )
+            if retries >= 10:
+                logger.warning(
+                    f"{panelist.short_id} reached maximum retries. Counting as invalid vote."
+                )
 
         # Search for the answer with the most votes from the agents
         vote_counts = Counter(votes)

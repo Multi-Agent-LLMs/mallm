@@ -55,24 +55,28 @@ class InputExample:
 
     def confirm_types(self) -> None:
         # Confirm type of example_id
-        assert isinstance(self.example_id, str)
+        assert isinstance(self.example_id, str), "Example_id is not a string"
         # Confirm type of dataset_id
         if self.dataset_id is not None:
-            assert isinstance(self.dataset_id, str)
+            assert isinstance(self.dataset_id, str), "Dataset_id is not a string"
         # Confirm type of input
-        assert isinstance(self.inputs, list)
+        assert isinstance(self.inputs, list), "Inputs is not a list"
+        for i in self.inputs:
+            assert isinstance(i, str), "Inputs is not a list of only strings"
         # Confirm type of references
-        assert isinstance(self.references, list)
+        assert isinstance(self.references, list), "References is not a list"
+        for r in self.references:
+            assert isinstance(r, str), "References is not a list of only strings"
         # Confirm type of personas
         if self.personas is not None:
-            assert isinstance(self.personas, list)
+            assert isinstance(self.personas, list), "Personas is not a list"
             for p in self.personas:
-                assert isinstance(p, str)
+                assert isinstance(p, str), "Personas is not a list of only strings"
         # Confirm type of context
         if self.context is not None:
-            assert isinstance(self.context, list)
+            assert isinstance(self.context, list), "Context is not a list"
             for c in self.context:
-                assert isinstance(c, str)
+                assert isinstance(c, str), "Context is not a list of only strings"
         # Confirm type of references
         for r in self.references:
-            assert isinstance(r, str)
+            assert isinstance(r, str), "References is not a list of only strings"
