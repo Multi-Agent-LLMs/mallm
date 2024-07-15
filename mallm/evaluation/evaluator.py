@@ -34,21 +34,20 @@ class Evaluator:
     def __init__(
         self,
         input_file_path: str,
-        output_file_path: Optional[str] = None,
+        output_dir_path: Optional[str] = None,
         metrics: Optional[list[str]] = None,
         extensive: bool = False,
     ) -> None:
         self.input_file_path = Path(input_file_path)
-        self.stats_file_path = (
-            Path(output_file_path).with_suffix(".stats.json")
-            if output_file_path
-            else self.input_file_path.with_suffix(".stats.json")
+        if not self.input_file_path.exists() or not self.input_file_path.is_file():
+            raise FileNotFoundError(f"Input file not found: {self.input_file_path}")
+        output_file_path = (
+            Path(output_dir_path) / self.input_file_path.name
+            if output_dir_path
+            else self.input_file_path
         )
-        self.eval_file_path = (
-            Path(output_file_path).with_suffix(".eval.json")
-            if output_file_path
-            else self.input_file_path.with_suffix(".eval.json")
-        )
+        self.stats_file_path = output_file_path.with_suffix(".stats.json")
+        self.eval_file_path = output_file_path.with_suffix(".eval.json")
         self.data = self._load_data()
         self.metrics = self._initialize_metrics(metrics)
         self.extensive = extensive
@@ -198,6 +197,11 @@ def batch_process_dir_path(
 ) -> None:
     input_path = Path(input_dir_path)
     output_path = Path(output_dir_path) if output_dir_path else input_path
+    if not output_path.exists() or not output_path.is_dir():
+        print(f"Creating output directory: {output_path}")
+        output_path.mkdir(parents=True, exist_ok=True)
+    if not input_path.exists() or not input_path.is_dir():
+        raise FileNotFoundError(f"Input directory not found: {input_path}")
     print(f"Processing files in {input_path} and saving results to {output_path}")
     print(f"Metrics to calculate: {metrics}")
     print(f"Files to process: {len(list(input_path.glob('*.json')))}")
@@ -217,19 +221,17 @@ def batch_process_dir_path(
 
 def main(
     input_json_file_path: str,
-    output_json_file_path: Optional[str] = None,
+    output_dir_path: Optional[str] = None,
     metrics: Optional[list[str]] = None,
     batch: bool = False,
     extensive: bool = False,
 ) -> None:
     if batch:
         batch_process_dir_path(
-            input_json_file_path, output_json_file_path, metrics, extensive
+            input_json_file_path, output_dir_path, metrics, extensive
         )
     else:
-        evaluator = Evaluator(
-            input_json_file_path, output_json_file_path, metrics, extensive
-        )
+        evaluator = Evaluator(input_json_file_path, output_dir_path, metrics, extensive)
         evaluator.process()
 
 
