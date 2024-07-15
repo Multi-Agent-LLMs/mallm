@@ -25,7 +25,6 @@ class GSM8KDownloader(DatasetDownloader):
                     inputs=[s["question"][0]],
                     context=None,
                     references=[s["answer"][0]],
-                    personas=None,
                 )
             )
         return input_examples

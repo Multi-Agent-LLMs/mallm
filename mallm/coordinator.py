@@ -25,7 +25,7 @@ from mallm.utils.dicts import (
     PERSONA_GENERATORS,
     RESPONSE_GENERATORS,
 )
-from mallm.utils.types import Agreement, Memory
+from mallm.utils.types import Agreement, InputExample, Memory
 
 logger = logging.getLogger("mallm")
 
@@ -62,6 +62,7 @@ class Coordinator:
         num_agents: int,
         chain_of_thought: bool,
         feedback_only: bool,
+        sample: InputExample,
     ) -> None:
         """
         Instantiates the agents by
@@ -80,7 +81,9 @@ class Coordinator:
         personas = PERSONA_GENERATORS[self.agent_generator](
             llm=self.llm
         ).generate_personas(
-            task_description=f"{task_instruction} {input_str}", num_agents=num_agents
+            task_description=f"{task_instruction} {input_str}",
+            num_agents=num_agents,
+            sample=sample,
         )
 
         if use_moderator:
@@ -167,8 +170,7 @@ class Coordinator:
     def discuss(
         self,
         config: Config,
-        input_lines: list[str],
-        context: Optional[list[str]],
+        sample: InputExample,
     ) -> tuple[
         Optional[str],
         list[Memory],
@@ -189,13 +191,13 @@ class Coordinator:
         Returns the final response agreed on, the global memory, agent specific memory, turns needed, last agreements of agents
         """
         sample_instruction = config.instruction
-        if context:
+        if sample.context:
             sample_instruction += "\nContext:"
-            for c in context:
+            for c in sample.context:
                 sample_instruction += "\n" + c
         input_str = ""
-        for num, input_line in enumerate(input_lines):
-            if len(input_lines) > 1:
+        for num, input_line in enumerate(sample.inputs):
+            if len(sample.inputs) > 1:
                 input_str += str(num + 1) + ") " + input_line + "\n"
             else:
                 input_str = input_line
@@ -219,6 +221,7 @@ class Coordinator:
             num_agents=sample_num_agents,
             chain_of_thought=config.chain_of_thought,
             feedback_only=config.feedback_only,
+            sample=sample,
         )
 
         if config.decision_protocol not in DECISION_PROTOCOLS:

@@ -3,6 +3,7 @@ import logging
 
 from mallm.models.Chat import Chat
 from mallm.models.personas.PersonaGenerator import PersonaGenerator
+from mallm.utils.types import InputExample
 
 logger = logging.getLogger("mallm")
 
@@ -42,7 +43,7 @@ New Participant:
         }
 
     def generate_personas(
-        self, task_description: str, num_agents: int
+        self, task_description: str, num_agents: int, sample: InputExample
     ) -> list[dict[str, str]]:
         current_prompt = [
             self.base_prompt,
