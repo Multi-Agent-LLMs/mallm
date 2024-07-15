@@ -2,6 +2,7 @@ import dataclasses
 import dbm
 import json
 import logging
+import os
 import time
 import uuid
 from collections.abc import Sequence
@@ -47,7 +48,7 @@ class Coordinator:
         self.use_moderator = use_moderator
         self.moderator: Optional[Moderator] = None
         self.memory_bucket_dir = memory_bucket_dir
-        self.memory_bucket = self.memory_bucket_dir + "global_" + self.id
+        self.memory_bucket = os.path.join(self.memory_bucket_dir, "global_" + self.id)
         self.decision_protocol: Optional[DecisionProtocol] = None
         self.llm = model
         self.response_generator: ResponseGenerator = SimpleResponseGenerator(self.llm)

@@ -76,9 +76,11 @@ class Config:
             logger.error("HTTP Error: Could not connect to the provided endpoint url.")
             logger.error(e)
             sys.exit(1)
-
         if self.max_concurrent_requests > 500:
             logger.error(
                 "max_concurrent_requests is too large. TGI can only handle about 500 requests. Please make sure to leave computing for other poeple too. Recommended: ~250."
             )
             sys.exit(1)
+        if not os.path.exists(self.memory_bucket_dir):
+            os.makedirs(self.memory_bucket_dir)
+            logger.info(f"Created memory bucket directory: {self.memory_bucket_dir}")
