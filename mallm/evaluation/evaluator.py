@@ -46,8 +46,8 @@ class Evaluator:
             if output_dir_path
             else self.input_file_path
         )
-        self.stats_file_path = output_file_path.with_suffix(".stats.json")
-        self.eval_file_path = output_file_path.with_suffix(".eval.json")
+        self.stats_file_path = output_file_path.with_suffix("-stats.json")
+        self.eval_file_path = output_file_path.with_suffix("-eval.json")
         self.data = self._load_data()
         self.metrics = self._initialize_metrics(metrics)
         self.extensive = extensive
@@ -207,7 +207,7 @@ def batch_process_dir_path(
     print(f"Files to process: {len(list(input_path.glob('*.json')))}")
     files = list(input_path.glob("*.json"))
     for file in files:
-        if file.stem.endswith((".eval", ".stats")):
+        if file.stem.endswith(("-eval", "-stats")):
             continue
 
         output_file = output_path / file.name
