@@ -4,6 +4,7 @@ import dataclasses
 import dbm
 import json
 import logging
+import os
 import uuid
 from typing import TYPE_CHECKING, Optional
 
@@ -38,7 +39,9 @@ class Agent:
         self.short_id = self.id[:4]
         self.persona = persona
         self.persona_description = persona_description
-        self.memory_bucket = coordinator.memory_bucket_dir + f"agent_{self.id}"
+        self.memory_bucket = os.path.join(
+            coordinator.memory_bucket_dir, f"agent_{self.id}"
+        )
         self.coordinator = coordinator
         self.moderator = moderator
         self.llm = llm
