@@ -45,6 +45,7 @@ class Config:
     hf_dataset_reference_column: Optional[str] = None
     hf_dataset_context_column: Optional[str] = None
     feedback_only: bool = False
+    ablation: bool = False
 
     def check_config(self) -> None:
         # TODO: make this more robust and conclusive. All arguments should be checked for validity, making the use of MALLM as fool-proof as possible.

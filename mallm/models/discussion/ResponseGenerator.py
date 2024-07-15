@@ -41,9 +41,29 @@ class ResponseGenerator(ABC):
         Abstract method to generate the response of a single LM as a baseline.
 
         Parameters:
-        data (TemplateFilling): The fields used for prompting the LM.
         task_instruction (str): The instruction for the task and appended context.
         input_str (str): The input for the task.
+        chain_of_thought (bool): Whether to use Zero-Shot CoT.
+
+        Returns:
+        Response: An object with the attributes "agreement", "message", and "solution".
+        """
+
+    @abstractmethod
+    def generate_ablation(
+        self,
+        task_instruction: str,
+        input_str: str,
+        current_solution: str,
+        chain_of_thought: bool,
+    ) -> Response:
+        """
+        Abstract method to generate the response of a single LM that iteratively improves on the current solution.
+
+        Parameters:
+        task_instruction (str): The instruction for the task and appended context.
+        input_str (str): The input for the task.
+        current_solution: (str): The current solution to improve.
         chain_of_thought (bool): Whether to use Zero-Shot CoT.
 
         Returns:

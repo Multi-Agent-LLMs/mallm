@@ -105,15 +105,15 @@ with open("README.md", "r+") as readme_file:
     for key in sorted(RESPONSE_GENERATORS.keys()):
         extra_content += "`" + key + "`, "
     extra_content = extra_content[:-2]
-    extra_content += "\nDecision Protocols: "
+    extra_content += "\n\nDecision Protocols: "
     for key in sorted(DECISION_PROTOCOLS.keys()):
         extra_content += "`" + key + "`, "
     extra_content = extra_content[:-2]
-    extra_content += "\nPersona Generators: "
+    extra_content += "\n\nPersona Generators: "
     for key in sorted(PERSONA_GENERATORS.keys()):
         extra_content += "`" + key + "`, "
     extra_content = extra_content[:-2]
-    extra_content += "\nDiscussion Paradigms: "
+    extra_content += "\n\nDiscussion Paradigms: "
     for key in sorted(DISCUSSION_PARADIGMS.keys()):
         extra_content += "`" + key + "`, "
     extra_content = extra_content[:-2]
