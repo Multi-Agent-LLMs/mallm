@@ -104,7 +104,6 @@ class Scheduler:
                         if x.get(config.hf_dataset_reference_column) is not None
                         else []
                     ),
-                    personas=None,
                 )
                 for x in dataset
             ]
