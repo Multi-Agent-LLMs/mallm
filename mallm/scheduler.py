@@ -72,48 +72,49 @@ class Scheduler:
                 f"""Could not read {config.data} from file: {e}. Trying Hugging Face"""
             )
 
-        try:
-            # Read input data (format: huggingface dataset)
-            logger.info(f"""Trying to read {config.data} from Hugging Face...""")
-            self.dataset_name = config.data
-            # Load from Hugging Face
-            dataset = load_dataset(
-                self.dataset_name,
-                config.hf_dataset_version,
-                split=config.hf_dataset_split,
-                trust_remote_code=config.trust_remote_code,
-                token=config.hf_token,
-            )
-            # Put in native mallm format
-            self.data = [
-                InputExample(
-                    example_id=str(uuid.uuid4()),
-                    dataset_id=None,
-                    inputs=(
-                        [x.pop(config.hf_dataset_input_column, None)]
-                        if x.get(config.hf_dataset_input_column) is not None
-                        else []
-                    ),
-                    context=(
-                        [x.pop(config.hf_dataset_context_column, None)]
-                        if x.get(config.hf_dataset_context_column) is not None
-                        else None
-                    ),
-                    references=(
-                        [x.pop(config.hf_dataset_reference_column, None)]
-                        if x.get(config.hf_dataset_reference_column) is not None
-                        else []
-                    ),
+        if not self.data:
+            try:
+                # Read input data (format: huggingface dataset)
+                logger.info(f"""Trying to read {config.data} from Hugging Face...""")
+                self.dataset_name = config.data
+                # Load from Hugging Face
+                dataset = load_dataset(
+                    self.dataset_name,
+                    config.hf_dataset_version,
+                    split=config.hf_dataset_split,
+                    trust_remote_code=config.trust_remote_code,
+                    token=config.hf_token,
                 )
-                for x in dataset
-            ]
+                # Put in native mallm format
+                self.data = [
+                    InputExample(
+                        example_id=str(uuid.uuid4()),
+                        dataset_id=None,
+                        inputs=(
+                            [x.pop(config.hf_dataset_input_column, None)]
+                            if x.get(config.hf_dataset_input_column) is not None
+                            else []
+                        ),
+                        context=(
+                            [x.pop(config.hf_dataset_context_column, None)]
+                            if x.get(config.hf_dataset_context_column) is not None
+                            else None
+                        ),
+                        references=(
+                            [x.pop(config.hf_dataset_reference_column, None)]
+                            if x.get(config.hf_dataset_reference_column) is not None
+                            else []
+                        ),
+                    )
+                    for x in dataset
+                ]
 
-            # Filter if there are no inputs or references or they are empty
-            self.data = [x for x in self.data if x.inputs and x.references]
+                # Filter if there are no inputs or references or they are empty
+                self.data = [x for x in self.data if x.inputs and x.references]
 
-        except Exception as e:
-            logger.error(f"""Error reading {config.data} from Hugging Face: {e}""")
-            sys.exit(1)
+            except Exception as e:
+                logger.error(f"""Error reading {config.data} from Hugging Face: {e}""")
+                sys.exit(1)
 
         try:
             for data in self.data:
