@@ -52,7 +52,6 @@ New Participant:
             },
         ]
 
-        logger.debug("Creating " + str(num_agents) + " personas...")
         agents: list[dict[str, str]] = []
         retry = 0
         while len(agents) < num_agents:
@@ -95,6 +94,5 @@ New Participant:
                     "content": f"Already Generated Participants:\n{response}",
                 }
             )
-        logger.debug("Found agents: \n" + str(agents))
 
         return agents

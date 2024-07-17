@@ -70,8 +70,12 @@ class Coordinator:
         1) identify helpful personas
         2) create agents with the personas
         """
+        logger.debug(f"Coordinator {self.id} creates the agents ({self.agent_generator})...")
         self.panelists = []
         self.agents = []
+
+        if use_moderator:
+            num_agents -= 1
 
         if self.agent_generator not in PERSONA_GENERATORS:
             logger.error(
@@ -86,6 +90,7 @@ class Coordinator:
             num_agents=num_agents,
             sample=sample,
         )
+        logger.debug(f"Created {len(personas)} personas: \n" + str(personas))
 
         if use_moderator:
             self.moderator = Moderator(
@@ -212,14 +217,11 @@ class Coordinator:
             self.llm
         )
 
-        sample_num_agents = config.num_agents
-        if config.use_moderator:
-            sample_num_agents -= 1
         self.init_agents(
             sample_instruction,
             input_str,
             use_moderator=config.use_moderator,
-            num_agents=sample_num_agents,
+            num_agents=config.num_agents,
             chain_of_thought=config.chain_of_thought,
             feedback_only=config.feedback_only,
             sample=sample,
