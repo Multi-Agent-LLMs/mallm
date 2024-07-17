@@ -566,7 +566,7 @@ class Scheduler:
         if self.config.ablation:
             sort_output_file(
                 input_file=self.config.data,
-                output_file=str(Path(self.config.out).with_suffix("-ablation.json")),
+                output_file=str(Path(self.config.out).stem + "-ablation.json"),
             )
 
 
