@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 from typing import Optional
 
 
@@ -37,5 +38,4 @@ def sort_output_file(input_file: str, output_file: str) -> None:
         if entry["example_id"] in data_out_dict
     ]
 
-    with open(output_file, "w") as file:
-        json.dump(sorted_data_out, file, indent=4)
+    Path(output_file).write_text(json.dumps(sorted_data_out, indent=4))
