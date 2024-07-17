@@ -389,7 +389,7 @@ class Scheduler:
             }
         )
         try:
-            with open(Path(self.config.out).with_suffix("-ablation.json"), "w") as file:
+            with open(Path(self.config.out).stem + "-ablation.json", "w") as file:
                 file.write(
                     json.dumps(self.ablation_output_dicts)
                 )  # TODO: ensure correct json formatting (sometimes there is an invalid escape sequence warning)
