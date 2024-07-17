@@ -26,9 +26,7 @@ from mallm.utils.CustomFormatter import CustomFormatter
 from mallm.utils.dicts import RESPONSE_GENERATORS
 from mallm.utils.functions import sort_output_file
 from mallm.utils.types import InputExample, Response
-from mallm.utils.utils import pretty_print_dict, suppress_output
-
-just_fix_windows_console()
+from mallm.utils.utils import pretty_print_dict
 
 # Configure logging for the library
 library_logger = logging.getLogger("mallm")
@@ -42,6 +40,8 @@ stream_handler.setFormatter(CustomFormatter())
 
 # Attach the handler to the logger
 library_logger.addHandler(stream_handler)
+
+just_fix_windows_console()
 
 logging.basicConfig(filename="log.txt", filemode="w")
 logger = logging.getLogger("mallm")
@@ -386,7 +386,7 @@ class Scheduler:
             }
         )
         try:
-            with open(Path(self.config.out).with_suffix("-ablation.json"), "w") as file:
+            with open(Path(self.config.out).stem + "-ablation.json", "w") as file:
                 file.write(
                     json.dumps(self.ablation_output_dicts)
                 )  # TODO: ensure correct json formatting (sometimes there is an invalid escape sequence warning)
@@ -549,28 +549,6 @@ class Scheduler:
             os.remove(f)
         logger.info(f"Cleaned the memory bucket {memory_bucket_dir!s}.")
 
-    def sort_output_file(self) -> None:
-        """
-        Sorts the output file to match the input file.
-        """
-        print("Sorting output file to match the input file...")
-        with open(self.config.out) as file:
-            data_out = json.load(file)
-        data_in = self.data
-
-        # Create a dictionary to map example_ids to their corresponding data_out entries
-        data_out_dict = {entry["exampleId"]: entry for entry in data_out}
-
-        # Reorder data_out to match the order of example_ids in data_in
-        sorted_data_out = [
-            data_out_dict[entry.example_id]
-            for entry in data_in
-            if entry.example_id in data_out_dict
-        ]
-
-        with open(self.config.out, "w") as file:
-            json.dump(sorted_data_out, file, indent=4)
-
     def run(self) -> None:
         """
         The routine that runs the discussions between LLM agents on the provided data.
@@ -580,19 +558,17 @@ class Scheduler:
                 self.manage_baseline(client)  # baseline (single LM)
             else:
                 self.manage_discussions(client)  # multi-agent discussion
-        self.sort_output_file()
 
         sort_output_file(input_file=self.config.data, output_file=self.config.out)
         if self.config.ablation:
             sort_output_file(
                 input_file=self.config.data,
-                output_file=str(Path(self.config.out).with_suffix("-ablation.json")),
+                output_file=str(Path(self.config.out).stem + "-ablation.json"),
             )
 
 
 def main() -> None:
-    with suppress_output():
-        config = fire.Fire(Config, serialize=print)
+    config = fire.Fire(Config, serialize=print)
     pretty_print_dict(config)
     scheduler = Scheduler(config)
     scheduler.run()

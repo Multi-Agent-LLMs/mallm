@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 from typing import Optional
 
 
@@ -22,10 +23,8 @@ def sort_output_file(input_file: str, output_file: str) -> None:
     Sorts the output file to match the input file.
     """
     print(f"Sorting output file {output_file} to match the input file {input_file}...")
-    with open(output_file) as file:
-        data_out = json.load(file)
-    with open(input_file) as file:
-        data_in = json.load(file)
+    data_out = json.loads(Path(output_file).read_text())
+    data_in = json.loads(Path(input_file).read_text())
 
     # Create a dictionary to map example_ids to their corresponding data_out entries
     data_out_dict = {entry["exampleId"]: entry for entry in data_out}
@@ -37,5 +36,4 @@ def sort_output_file(input_file: str, output_file: str) -> None:
         if entry["example_id"] in data_out_dict
     ]
 
-    with open(output_file, "w") as file:
-        json.dump(sorted_data_out, file, indent=4)
+    Path(output_file).write_text(json.dumps(sorted_data_out, indent=4))
