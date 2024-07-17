@@ -54,7 +54,7 @@ class ParaphraseTypesGenerator(PersonaGenerator):
         print(paraphrase_types_list)
         logger.debug("Creating " + str(len(paraphrase_types_list)) + " personas...")
         agents = [
-            {"role": "You are a n expert in " + p + ". Make sure your paraphrase type is properly incorporated into the solution.", "description": self.paraphrase_types[p]}
+            {"role": "You are an expert in " + p + ". Make sure your paraphrase type is properly incorporated into the solution.", "description": self.paraphrase_types[p]}
             for p in paraphrase_types_list
         ]
         logger.debug("Found agents: \n" + str(agents))
