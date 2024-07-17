@@ -52,7 +52,7 @@ class ParaphraseTypesGenerator(PersonaGenerator):
         context = sample.context[0].replace("Paraphrase Types: ", "")
         paraphrase_types_list = [ptype.strip().lower() for ptype in context.split(",") if ptype.strip().lower() in self.paraphrase_types.keys()]   # excludes extremes identity, non-paraphrase, and entailment
         agents = [
-            {"role": "You are an expert in " + p + ". Make sure your paraphrase type is properly incorporated into the solution.", "description": self.paraphrase_types[p]}
+            {"role": "Expert in " + p , "description": self.paraphrase_types[p] + " Make sure your paraphrase type is properly used for the solution."}
             for p in paraphrase_types_list
         ]
 
