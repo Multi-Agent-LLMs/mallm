@@ -66,7 +66,7 @@ class Agent:
             template_filling, self.chain_of_thought
         )
         logger.debug(
-            f"Agent {self.short_id} {"agreed" if response.agreement else "disagreed"} with the solution."
+            f"Agent {self.short_id} {'agreed' if response.agreement else 'disagreed'} with the solution."
         )
         logger.debug(f"Agent {self.short_id}: {response.message}")
         agreements.append(
@@ -147,7 +147,7 @@ class Agent:
             template_filling, self.chain_of_thought
         )
         logger.debug(
-            f"Agent {self.short_id} {"agreed" if response.agreement else "disagreed"} with the solution."
+            f"Agent {self.short_id} {'agreed' if response.agreement else 'disagreed'} with the solution."
         )
         logger.debug(f"Agent {self.short_id}: {response.message}")
         agreements.append(
