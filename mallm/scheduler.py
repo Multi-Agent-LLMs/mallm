@@ -26,9 +26,7 @@ from mallm.utils.CustomFormatter import CustomFormatter
 from mallm.utils.dicts import RESPONSE_GENERATORS
 from mallm.utils.functions import sort_output_file
 from mallm.utils.types import InputExample, Response
-from mallm.utils.utils import pretty_print_dict, suppress_output
-
-just_fix_windows_console()
+from mallm.utils.utils import pretty_print_dict
 
 # Configure logging for the library
 library_logger = logging.getLogger("mallm")
@@ -42,6 +40,8 @@ stream_handler.setFormatter(CustomFormatter())
 
 # Attach the handler to the logger
 library_logger.addHandler(stream_handler)
+
+just_fix_windows_console()
 
 logging.basicConfig(filename="log.txt", filemode="w")
 logger = logging.getLogger("mallm")
@@ -72,49 +72,50 @@ class Scheduler:
                 f"""Could not read {config.data} from file: {e}. Trying Hugging Face"""
             )
 
-        try:
-            # Read input data (format: huggingface dataset)
-            logger.info(f"""Trying to read {config.data} from Hugging Face...""")
-            self.dataset_name = config.data
-            # Load from Hugging Face
-            dataset = load_dataset(
-                self.dataset_name,
-                config.hf_dataset_version,
-                split=config.hf_dataset_split,
-                trust_remote_code=config.trust_remote_code,
-                token=config.hf_token,
-            )
-            # Put in native mallm format
-            self.data = [
-                InputExample(
-                    example_id=str(uuid.uuid4()),
-                    dataset_id=None,
-                    inputs=(
-                        [x.pop(config.hf_dataset_input_column, None)]
-                        if x.get(config.hf_dataset_input_column) is not None
-                        else []
-                    ),
-                    context=(
-                        [x.pop(config.hf_dataset_context_column, None)]
-                        if x.get(config.hf_dataset_context_column) is not None
-                        else None
-                    ),
-                    references=(
-                        [x.pop(config.hf_dataset_reference_column, None)]
-                        if x.get(config.hf_dataset_reference_column) is not None
-                        else []
-                    ),
-                    personas=None,
+        if not self.data:
+            try:
+                # Read input data (format: huggingface dataset)
+                logger.info(f"""Trying to read {config.data} from Hugging Face...""")
+                self.dataset_name = config.data
+                # Load from Hugging Face
+                dataset = load_dataset(
+                    self.dataset_name,
+                    config.hf_dataset_version,
+                    split=config.hf_dataset_split,
+                    trust_remote_code=config.trust_remote_code,
+                    token=config.hf_token,
                 )
-                for x in dataset
-            ]
+                # Put in native mallm format
+                self.data = [
+                    InputExample(
+                        example_id=str(uuid.uuid4()),
+                        dataset_id=None,
+                        inputs=(
+                            [x.pop(config.hf_dataset_input_column, None)]
+                            if x.get(config.hf_dataset_input_column) is not None
+                            else []
+                        ),
+                        context=(
+                            [x.pop(config.hf_dataset_context_column, None)]
+                            if x.get(config.hf_dataset_context_column) is not None
+                            else None
+                        ),
+                        references=(
+                            [x.pop(config.hf_dataset_reference_column, None)]
+                            if x.get(config.hf_dataset_reference_column) is not None
+                            else []
+                        ),
+                        personas=None,
+                    )
+                    for x in dataset
+                ]
 
-            # Filter if there are no inputs or references or they are empty
-            self.data = [x for x in self.data if x.inputs and x.references]
+                # Filter if there are no inputs or references or they are empty
+                self.data = [x for x in self.data if x.inputs and x.references]
 
-        except Exception as e:
-            logger.error(f"""Error reading {config.data} from Hugging Face: {e}""")
-            sys.exit(1)
+            except Exception as e:
+                logger.error(f"""Error reading {config.data} from Hugging Face: {e}""")
+                sys.exit(1)
 
         try:
             for data in self.data:
@@ -551,28 +552,6 @@ class Scheduler:
             os.remove(f)
         logger.info(f"Cleaned the memory bucket {memory_bucket_dir!s}.")
 
-    def sort_output_file(self) -> None:
-        """
-        Sorts the output file to match the input file.
-        """
-        print("Sorting output file to match the input file...")
-        with open(self.config.out) as file:
-            data_out = json.load(file)
-        data_in = self.data
-
-        # Create a dictionary to map example_ids to their corresponding data_out entries
-        data_out_dict = {entry["exampleId"]: entry for entry in data_out}
-
-        # Reorder data_out to match the order of example_ids in data_in
-        sorted_data_out = [
-            data_out_dict[entry.example_id]
-            for entry in data_in
-            if entry.example_id in data_out_dict
-        ]
-
-        with open(self.config.out, "w") as file:
-            json.dump(sorted_data_out, file, indent=4)
-
     def run(self) -> None:
         """
         The routine that runs the discussions between LLM agents on the provided data.
@@ -582,7 +561,6 @@ class Scheduler:
                 self.manage_baseline(client)  # baseline (single LM)
             else:
                 self.manage_discussions(client)  # multi-agent discussion
-        self.sort_output_file()
 
         sort_output_file(input_file=self.config.data, output_file=self.config.out)
         if self.config.ablation:
@@ -593,8 +571,7 @@ class Scheduler:
 
 
 def main() -> None:
-    with suppress_output():
-        config = fire.Fire(Config, serialize=print)
+    config = fire.Fire(Config, serialize=print)
     pretty_print_dict(config)
     scheduler = Scheduler(config)
     scheduler.run()
