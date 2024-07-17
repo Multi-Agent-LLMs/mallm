@@ -65,6 +65,10 @@ class Agent:
         response = self.response_generator.generate_improve(
             template_filling, self.chain_of_thought
         )
+        logger.debug(
+            f"Agent {self.short_id} {"agreed" if response.agreement else "disagreed"} with the solution."
+        )
+        logger.debug(f"Agent {self.short_id}: {response.message}")
         agreements.append(
             Agreement(
                 agreement=False if unique_id == 0 else response.agreement,
@@ -142,6 +146,10 @@ class Agent:
         response = self.response_generator.generate_feedback(
             template_filling, self.chain_of_thought
         )
+        logger.debug(
+            f"Agent {self.short_id} {"agreed" if response.agreement else "disagreed"} with the solution."
+        )
+        logger.debug(f"Agent {self.short_id}: {response.message}")
         agreements.append(
             Agreement(
                 agreement=response.agreement,

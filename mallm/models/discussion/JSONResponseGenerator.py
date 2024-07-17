@@ -121,7 +121,7 @@ Input: {input_str}
                 }
             )
         current_prompt = ResponseGenerator.merge_consecutive_messages(current_prompt)
-        logger.debug(f"Sending prompt: {json.dumps(current_prompt, indent=2)}")
+        # logger.debug(f"Sending prompt: {json.dumps(current_prompt, indent=2)}")
 
         retry = 0
         while retry < 10:
