@@ -73,7 +73,7 @@ class ThresholdConsensus(DecisionProtocol):
         # more than <threshold_percent> of the agents need to agree
         return (
             current_agreement.solution,
-            num_agreements + 1 > self.total_agents * self.threshold_percent,
+            num_agreements + 1 >= self.total_agents * self.threshold_percent,
             agreements,
         )
 
