@@ -28,7 +28,7 @@ def process_stats_file(file_path):
     return df
 
 
-def aggregate_data(files):
+def aggregate_data(files, input_path: str):
     eval_data = []
     stats_data = []
 
@@ -39,13 +39,13 @@ def aggregate_data(files):
         file_type = repeat_info.split("-")[1].split(".")[0]
 
         if file_type == "eval":
-            df = process_eval_file(file)
+            df = process_eval_file(f"{input_path}/{file}")
             df["option"] = option
             df["dataset"] = dataset
             df["repeat"] = repeat
             eval_data.append(df)
         elif file_type == "stats":
-            df = process_stats_file(file)
+            df = process_stats_file(f"{input_path}/{file}")
             df["option"] = option
             df["dataset"] = dataset
             df["repeat"] = repeat
@@ -57,7 +57,7 @@ def aggregate_data(files):
     return eval_df, stats_df
 
 
-def plot_turns_with_std(df):
+def plot_turns_with_std(df, input_path: str):
     grouped = (
         df.groupby(["option", "dataset"])["turns"].agg(["mean", "std"]).reset_index()
     )
@@ -86,11 +86,11 @@ def plot_turns_with_std(df):
     )
     plt.legend()
     plt.tight_layout()
-    plt.savefig("turns_with_std_dev.png")
+    plt.savefig(f"{input_path}/turns_with_std_dev.png")
     plt.close()
 
 
-def plot_clock_seconds_with_std(df):
+def plot_clock_seconds_with_std(df, input_path: str):
     grouped = (
         df.groupby(["option", "dataset"])["clockSeconds"]
         .agg(["mean", "std"])
@@ -121,11 +121,11 @@ def plot_clock_seconds_with_std(df):
     )
     plt.legend()
     plt.tight_layout()
-    plt.savefig("clock_seconds_with_std_dev.png")
+    plt.savefig(f"{input_path}/clock_seconds_with_std_dev.png")
     plt.close()
 
 
-def plot_decision_success_with_std(df):
+def plot_decision_success_with_std(df, input_path: str):
     if "decisionSuccess" not in df.columns:
         print(
             "Warning: 'decisionSuccess' column not found. Skipping decision success plot."
@@ -166,11 +166,11 @@ def plot_decision_success_with_std(df):
     plt.legend()
     plt.ylim(0, 1)  # Set y-axis limits for percentage
     plt.tight_layout()
-    plt.savefig("decision_success_with_std_dev.png")
+    plt.savefig(f"{input_path}/decision_success_with_std_dev.png")
     plt.close()
 
 
-def plot_score_distributions_with_std(df):
+def plot_score_distributions_with_std(df, input_path: str):
     print("Shape of stats_df:", df.shape)
     print("Columns in stats_df:", df.columns)
     print("First few rows of stats_df:")
@@ -234,7 +234,7 @@ def plot_score_distributions_with_std(df):
             )
 
         plt.tight_layout()
-        plt.savefig(f'{score_type.replace(" ", "_").lower()}_score.png')
+        plt.savefig(f'{input_path}/{score_type.replace(" ", "_").lower()}_score.png')
         plt.close()
 
 
@@ -246,9 +246,10 @@ def main():
         "input_folder", type=str, help="Path to the folder containing JSON files"
     )
     args = parser.parse_args()
+    input_folder: str = args.input_folder.removesuffix("/")
 
-    files = [f for f in os.listdir(args.input_folder) if f.endswith((".json"))]
-    eval_df, stats_df = aggregate_data(files)
+    files = [f for f in os.listdir(input_folder) if f.endswith(".json")]
+    eval_df, stats_df = aggregate_data(files, input_folder)
 
     print("Shape of eval_df:", eval_df.shape)
     print("Columns in eval_df:", eval_df.columns)
@@ -258,19 +259,19 @@ def main():
     available_columns = eval_df.columns
 
     if "turns" in available_columns:
-        plot_turns_with_std(eval_df)
+        plot_turns_with_std(eval_df, input_folder)
     else:
         print("Warning: 'turns' column not found. Skipping turns plot.")
 
     if "clockSeconds" in available_columns:
-        plot_clock_seconds_with_std(eval_df)
+        plot_clock_seconds_with_std(eval_df, input_folder)
     else:
         print("Warning: 'clockSeconds' column not found. Skipping clock seconds plot.")
 
-    plot_decision_success_with_std(eval_df)
+    plot_decision_success_with_std(eval_df, input_folder)
 
     if not stats_df.empty:
-        plot_score_distributions_with_std(stats_df)
+        plot_score_distributions_with_std(stats_df, input_folder)
     else:
         print("Warning: No stats data available. Skipping score distributions plot.")
 

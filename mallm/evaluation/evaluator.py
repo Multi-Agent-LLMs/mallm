@@ -41,13 +41,19 @@ class Evaluator:
         self.input_file_path = Path(input_file_path)
         if not self.input_file_path.exists() or not self.input_file_path.is_file():
             raise FileNotFoundError(f"Input file not found: {self.input_file_path}")
-        output_file_path = (
-            Path(output_dir_path) / self.input_file_path.name
-            if output_dir_path
-            else self.input_file_path
+
+        if output_dir_path:
+            output_dir = Path(output_dir_path)
+            output_file_path = output_dir
+        else:
+            output_file_path = self.input_file_path.parent
+
+        self.stats_file_path = output_file_path.with_name(
+            output_file_path.stem + "-stats.json"
         )
-        self.stats_file_path = output_file_path.stem + "-stats.json"
-        self.eval_file_path = output_file_path.stem + "-eval.json"
+        self.eval_file_path = output_file_path.with_name(
+            output_file_path.stem + "-eval.json"
+        )
         self.data = self._load_data()
         self.metrics = self._initialize_metrics(metrics)
         self.extensive = extensive
@@ -174,10 +180,8 @@ class Evaluator:
         return stats
 
     def save_results(self, stats: dict[str, Any]) -> None:
-        with open(self.stats_file_path, "w") as file:
-            json.dump(stats, file, indent=4)
-        with open(self.eval_file_path, "w") as file:
-            json.dump(self.data, file, indent=4)
+        self.stats_file_path.write_text(json.dumps(stats, indent=4))
+        self.eval_file_path.write_text(json.dumps(self.data, indent=4))
         logger.info(f"Statistics saved to {self.stats_file_path}")
         logger.info(f"Eval saved to {self.eval_file_path}")
 
