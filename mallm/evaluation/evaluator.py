@@ -16,6 +16,7 @@ from mallm.evaluation.metrics.qa import (
     SquadScore,
 )
 from mallm.evaluation.metrics.rouge import ROUGE
+from mallm.evaluation.plotting.plots import create_plots_for_path
 
 ALL_METRICS = [
     AnswerabilityBoolean(),
@@ -221,16 +222,19 @@ def batch_process_dir_path(
         evaluator.process()
 
     logger.info("Batch processing completed.")
+    logger.info("Creating plots...")
+    plot_path = str(output_path).removesuffix("/")
+    create_plots_for_path(plot_path, plot_path)
+    logger.info("Plots created.")
 
 
 def main(
     input_json_file_path: str,
     output_dir_path: Optional[str] = None,
     metrics: Optional[list[str]] = None,
-    batch: bool = False,
     extensive: bool = False,
 ) -> None:
-    if batch:
+    if Path(input_json_file_path).is_dir():
         batch_process_dir_path(
             input_json_file_path, output_dir_path, metrics, extensive
         )

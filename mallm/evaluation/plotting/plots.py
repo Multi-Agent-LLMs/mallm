@@ -1,42 +1,41 @@
 import argparse
 import json
 import os
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pandas as pd
 from tqdm import tqdm
 
 
-def load_data(file_path):
-    with open(file_path, "r") as f:
-        return json.load(f)
+def process_eval_file(file_path: str) -> pd.DataFrame:
+    data = json.loads(Path(file_path).read_text())
+    return pd.DataFrame(data)
 
 
-def process_eval_file(file_path):
-    data = load_data(file_path)
-    df = pd.DataFrame(data)
-    return df
-
-
-def process_stats_file(file_path):
-    data = load_data(file_path)
+def process_stats_file(file_path: str) -> pd.DataFrame:
+    data = json.loads(Path(file_path).read_text())
     # Extract only the average scores
-    df = pd.DataFrame(
+    return pd.DataFrame(
         {k: v["average_score"] for k, v in data.items() if "average_score" in v},
         index=[0],
     )
-    return df
 
 
-def aggregate_data(files, input_path: str):
+def aggregate_data(
+    files: list[str], input_path: str
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     eval_data = []
     stats_data = []
 
     for file in tqdm(files):
-        option, *dataset, repeat_info = file.split("_")
-        dataset = "_".join(dataset)
-        repeat = repeat_info.split("-")[0]
-        file_type = repeat_info.split("-")[1].split(".")[0]
+        try:
+            option, *dataset, repeat_info = file.split("_")
+            dataset = "_".join(dataset)
+            repeat = repeat_info.split("-")[0]
+            file_type = repeat_info.split("-")[1].split(".")[0]
+        except IndexError:
+            continue
 
         if file_type == "eval":
             df = process_eval_file(f"{input_path}/{file}")
@@ -57,7 +56,7 @@ def aggregate_data(files, input_path: str):
     return eval_df, stats_df
 
 
-def plot_turns_with_std(df, input_path: str):
+def plot_turns_with_std(df: pd.DataFrame, input_path: str) -> None:
     grouped = (
         df.groupby(["option", "dataset"])["turns"].agg(["mean", "std"]).reset_index()
     )
@@ -90,7 +89,7 @@ def plot_turns_with_std(df, input_path: str):
     plt.close()
 
 
-def plot_clock_seconds_with_std(df, input_path: str):
+def plot_clock_seconds_with_std(df: pd.DataFrame, input_path: str) -> None:
     grouped = (
         df.groupby(["option", "dataset"])["clockSeconds"]
         .agg(["mean", "std"])
@@ -125,7 +124,7 @@ def plot_clock_seconds_with_std(df, input_path: str):
     plt.close()
 
 
-def plot_decision_success_with_std(df, input_path: str):
+def plot_decision_success_with_std(df: pd.DataFrame, input_path: str) -> None:
     if "decisionSuccess" not in df.columns:
         print(
             "Warning: 'decisionSuccess' column not found. Skipping decision success plot."
@@ -170,7 +169,7 @@ def plot_decision_success_with_std(df, input_path: str):
     plt.close()
 
 
-def plot_score_distributions_with_std(df, input_path: str):
+def plot_score_distributions_with_std(df: pd.DataFrame, input_path: str) -> None:
     print("Shape of stats_df:", df.shape)
     print("Columns in stats_df:", df.columns)
     print("First few rows of stats_df:")
@@ -214,7 +213,7 @@ def plot_score_distributions_with_std(df, input_path: str):
             score_data["mean"],
             yerr=score_data["std"],
             capsize=5,
-            color=plt.cm.Set3(range(len(score_data))),
+            color=plt.cm.Set3(range(len(score_data))),  # type: ignore
         )  # Use a color cycle
 
         plt.xlabel("Experiment Condition")
@@ -238,18 +237,9 @@ def plot_score_distributions_with_std(df, input_path: str):
         plt.close()
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Analyze LLM discussion data and create plots."
-    )
-    parser.add_argument(
-        "input_folder", type=str, help="Path to the folder containing JSON files"
-    )
-    args = parser.parse_args()
-    input_folder: str = args.input_folder.removesuffix("/")
-
-    files = [f for f in os.listdir(input_folder) if f.endswith(".json")]
-    eval_df, stats_df = aggregate_data(files, input_folder)
+def create_plots_for_path(input_dir_path: str, output_dir_path: str) -> None:
+    files = [f for f in os.listdir(input_dir_path) if f.endswith(".json")]
+    eval_df, stats_df = aggregate_data(files, input_dir_path)
 
     print("Shape of eval_df:", eval_df.shape)
     print("Columns in eval_df:", eval_df.columns)
@@ -259,21 +249,34 @@ def main():
     available_columns = eval_df.columns
 
     if "turns" in available_columns:
-        plot_turns_with_std(eval_df, input_folder)
+        plot_turns_with_std(eval_df, output_dir_path)
     else:
         print("Warning: 'turns' column not found. Skipping turns plot.")
 
     if "clockSeconds" in available_columns:
-        plot_clock_seconds_with_std(eval_df, input_folder)
+        plot_clock_seconds_with_std(eval_df, output_dir_path)
     else:
         print("Warning: 'clockSeconds' column not found. Skipping clock seconds plot.")
 
-    plot_decision_success_with_std(eval_df, input_folder)
+    plot_decision_success_with_std(eval_df, output_dir_path)
 
     if not stats_df.empty:
-        plot_score_distributions_with_std(stats_df, input_folder)
+        plot_score_distributions_with_std(stats_df, output_dir_path)
     else:
         print("Warning: No stats data available. Skipping score distributions plot.")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Analyze LLM discussion data and create plots."
+    )
+    parser.add_argument(
+        "input_folder", type=str, help="Path to the folder containing JSON files"
+    )
+    args = parser.parse_args()
+    input_folder: str = args.input_folder.removesuffix("/")
+
+    create_plots_for_path(input_folder, input_folder)
 
 
 if __name__ == "__main__":
