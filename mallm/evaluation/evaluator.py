@@ -76,14 +76,13 @@ class Evaluator:
         return selected_metrics
 
     def calculate_scores(self, answer: str, references: list[str]) -> dict[str, Any]:
+        metrics = []
         if references:
-            metrics = self.metrics
+            metrics.extend(self.metrics)
         elif any(metric.name == "answerability" for metric in self.metrics):
-            metrics = [AnswerabilityBoolean()]
-        elif any(metric.name == "squad" for metric in self.metrics):
-            metrics = [SquadScore()]
-        else:
-            logger.warning("No metrics to evaluate.")
+            metrics.append(AnswerabilityBoolean())
+        if not metrics:
+            logger.warning(f"No metrics to evaluate against references {references}.")
             return {}
 
         return {
@@ -169,7 +168,7 @@ class Evaluator:
                 "std_dev_score": round(std_dev_score, 4),
                 "average_scores_per_turn": avg_scores_per_turn,
             }
-            logger.debug(f"Stats: {stats[metric]}")
+            #logger.debug(f"Stats: {stats[metric]}")
 
         return stats
 
