@@ -1,7 +1,7 @@
 from mallm.agents.moderator import Moderator
 from mallm.agents.panelist import Panelist
 from mallm.coordinator import Coordinator
-from mallm.decision_protocol.majority import HybridMajorityConsensus
+from mallm.decision_protocol.majority import HybridMajorityConsensus, UnanimityConsensus
 from mallm.models.discussion.FreeTextResponseGenerator import FreeTextResponseGenerator
 from mallm.utils.types import Agreement
 
@@ -12,6 +12,35 @@ panelists = [
     for i in range(5)
 ]
 moderator = Moderator(None, None, coordinator, response_generator)
+
+
+def test_unanimous_decision():
+    mc = UnanimityConsensus(panelists[:3], use_moderator=False)
+    agreements = [
+        Agreement(
+            agreement=False,
+            solution="",
+            agent_id="",
+            persona="",
+            response="",
+            message_id="",
+        )
+    ]
+    agreements.extend(
+        [
+            Agreement(
+                agreement=True,
+                solution="",
+                agent_id="",
+                persona="",
+                response="",
+                message_id="",
+            )
+            for _ in range(2)
+        ]
+    )
+    decision, is_consensus, agreements = mc.make_decision(agreements, 4, 0, "", "")
+    assert is_consensus
 
 
 def test_unanimous_decision_in_first_five_turns():
@@ -53,9 +82,7 @@ def test_unanimous_decision_in_first_five_turns_with_moderator():
             persona="",
             response="",
             message_id="",
-        )
-    ]
-    agreements.append(
+        ),
         Agreement(
             agreement=None,
             solution="",
@@ -63,8 +90,8 @@ def test_unanimous_decision_in_first_five_turns_with_moderator():
             persona="",
             response="",
             message_id="",
-        )
-    )
+        ),
+    ]
     agreements.extend(
         [
             Agreement(

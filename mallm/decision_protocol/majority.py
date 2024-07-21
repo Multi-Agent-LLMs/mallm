@@ -37,7 +37,7 @@ class ThresholdConsensus(DecisionProtocol):
         num_agreements, current_agreement = next(
             (
                 (i, agreement)
-                for i, agreement in enumerate(reversed_agreements)
+                for i, agreement in enumerate(reversed_agreements, 1)
                 if not agreement.agreement
             ),
             (None, None),
@@ -67,13 +67,13 @@ class ThresholdConsensus(DecisionProtocol):
             # all agents need to agree if there are less than <threshold_agents> agents
             return (
                 current_agreement.solution,
-                num_agreements + 1 == self.total_agents,
+                num_agreements / self.total_agents >= 1,
                 agreements,
             )
         # more than <threshold_percent> of the agents need to agree
         return (
             current_agreement.solution,
-            num_agreements + 1 >= self.total_agents * self.threshold_percent,
+            num_agreements / self.total_agents >= self.threshold_percent,
             agreements,
         )
 
