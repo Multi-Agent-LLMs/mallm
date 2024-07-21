@@ -15,36 +15,48 @@ from typing import Any, Optional
 
 import fire
 import httpx
-from colorama import just_fix_windows_console
+import langchain
+import langchain_core
+import openai
 from datasets import load_dataset
 from openai import OpenAI
+from rich import print
+from rich.logging import RichHandler
+from rich.panel import Panel
+from rich.progress import Console, Progress, TaskID
 
 from mallm.coordinator import Coordinator
 from mallm.models.Chat import Chat
 from mallm.utils.config import Config
-from mallm.utils.CustomFormatter import CustomFormatter
 from mallm.utils.dicts import RESPONSE_GENERATORS
 from mallm.utils.functions import sort_output_file
 from mallm.utils.types import InputExample, Response
-from mallm.utils.utils import pretty_print_dict
 
-# Configure logging for the library
-library_logger = logging.getLogger("mallm")
-library_logger.setLevel(logging.DEBUG)
+FORMAT = "%(message)s"
 
-# Add handlers to the logger
-stream_handler = logging.StreamHandler()
-
-# Optionally set a formatter
-stream_handler.setFormatter(CustomFormatter())
-
-# Attach the handler to the logger
-library_logger.addHandler(stream_handler)
-
-just_fix_windows_console()
-
-logging.basicConfig(filename="log.txt", filemode="w")
 logger = logging.getLogger("mallm")
+logger.setLevel(logging.DEBUG)
+handler = RichHandler(
+    rich_tracebacks=True,
+    tracebacks_suppress=[openai, httpx, langchain, langchain_core],
+    markup=True,
+)
+formatter = logging.Formatter(fmt=FORMAT, datefmt="[%X]")
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+console = Console()
+max_width = min(console.width, 100)
+panel = Panel(
+    "Test",
+    title=f"Discussion {1}",
+    subtitle=f"BertScore: {1}, \
+        ROUGE-L: {1}",
+    expand=False,
+    width=max_width,
+)
+
+
+console.log(panel)
 
 
 class Scheduler:
@@ -157,6 +169,8 @@ class Scheduler:
         self,
         client: httpx.Client,
         sample: InputExample,
+        progress: Progress,
+        task: TaskID,
     ) -> Optional[str]:
         """
         Runs a single discussion between agents on a sample.
@@ -244,6 +258,7 @@ class Scheduler:
         logger.info(
             f"""Completed samples: {self.completed_samples}. Samples left: {self.total_samples - self.completed_samples}."""
         )
+        progress.update(task, advance=1)
         del coordinator
         gc.collect()
 
@@ -268,43 +283,47 @@ class Scheduler:
             self.data = self.data[self.config.num_samples :]
         else:
             processing_data = self.data
-
-        while True:
-            logger.info(f"Processing {len(processing_data)} samples.")
-            pool = ThreadPool(processes=self.config.max_concurrent_requests)
-            results = []
-            for sample in processing_data:
-                try:
-                    results.append(
-                        pool.apply_async(
-                            self.run_discussion,
-                            (client, sample),
-                        )
-                    )
-                except Exception as e:
-                    logger.error("Failed to run discussion.")
-                    logger.error(e)
-            pool.close()  # Done adding tasks.
-            pool.join()  # Wait for all tasks to complete.
-            del pool
-
-            if len(self.failed_example_ids) == 0:
-                logger.info("No samples failed.")
-                break
-            logger.warning(
-                f"{len(self.failed_example_ids)} samples failed. Here is a list of their example_ids: \n{self.failed_example_ids!s}"
+        with Progress() as progress:
+            task = progress.add_task(
+                "[cyan]Finished discussions...", total=len(processing_data)
             )
-            if len(self.data) < len(self.failed_example_ids):
-                logger.error(
-                    "No more samples in the datasets to substitute failed samples."
+            while True:
+                logger.info(f"Processing {len(processing_data)} samples.")
+                pool = ThreadPool(processes=self.config.max_concurrent_requests)
+                results = []
+
+                for sample in processing_data:
+                    try:
+                        results.append(
+                            pool.apply_async(
+                                self.run_discussion,
+                                (client, sample, progress, task),
+                            )
+                        )
+                    except Exception as e:
+                        logger.error("Failed to run discussion.")
+                        logger.error(e)
+                pool.close()  # Done adding tasks.
+                pool.join()  # Wait for all tasks to complete.
+                del pool
+
+                if len(self.failed_example_ids) == 0:
+                    logger.info("No samples failed.")
+                    break
+                logger.warning(
+                    f"{len(self.failed_example_ids)} samples failed. Here is a list of their example_ids: \n{self.failed_example_ids!s}"
                 )
-                raise Exception(
-                    "No more samples in the datasets to substitute failed samples."
-                )
-            logger.warning("Resampling from the dataset as a substitute...")
-            processing_data = self.data[: len(self.failed_example_ids)]
-            self.data = self.data[len(self.failed_example_ids) :]
-            self.failed_example_ids = []
+                if len(self.data) < len(self.failed_example_ids):
+                    logger.error(
+                        "No more samples in the datasets to substitute failed samples."
+                    )
+                    raise Exception(
+                        "No more samples in the datasets to substitute failed samples."
+                    )
+                logger.warning("Resampling from the dataset as a substitute...")
+                processing_data = self.data[: len(self.failed_example_ids)]
+                self.data = self.data[len(self.failed_example_ids) :]
+                self.failed_example_ids = []
 
     def run_ablation(
         self, client: httpx.Client, sample: InputExample, exchanged_messages: int
@@ -571,8 +590,14 @@ class Scheduler:
 
 
 def main() -> None:
+    width = 70
+    print("\n" + "=" * width)
+    print("CONFIGURATION PARAMETERS".center(width))
+    print("=" * width + "\n")
     config = fire.Fire(Config, serialize=print)
-    pretty_print_dict(config)
+    print("\n" + "=" * width)
+    print("END OF CONFIGURATION PARAMETERS".center(width))
+    print("=" * width + "\n")
     scheduler = Scheduler(config)
     scheduler.run()
     print("Done.")
