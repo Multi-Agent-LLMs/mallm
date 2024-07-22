@@ -205,6 +205,6 @@ class DiscourseDebate(DiscoursePolicy):
             )
             if self.decision:
                 break
-            self.print_turn_messages(coordinator, input_str, task_instruction)
-
+            self.print_messages(coordinator, input_str, task_instruction)
+        self.print_messages(coordinator, input_str, task_instruction, False)
         return self.draft, self.turn, self.agreements, self.decision

@@ -240,13 +240,13 @@ class Coordinator:
         logger.info(
             f"""Starting discussion with coordinator {self.id}...
 -------------
-Instruction: {sample_instruction}
-Input: {input_str}
-Feedback sentences: {config.feedback_sentences!s}
-Maximum turns: {config.max_turns}
-Agents: {[a.persona for a in self.agents]!s}
-Paradigm: {policy.__class__.__name__}
-Decision-protocol: {self.decision_protocol.__class__.__name__}
+[bold blue]Instruction:[/] {sample_instruction}
+[bold blue]Input:[/] {input_str}
+[bold blue]Feedback sentences:[/] {config.feedback_sentences!s}
+[bold blue]Maximum turns:[/] {config.max_turns}
+[bold blue]Agents:[/] {[a.persona for a in self.agents]!s}
+[bold blue]Paradigm:[/] {policy.__class__.__name__}
+[bold blue]Decision-protocol:[/] {self.decision_protocol.__class__.__name__}
 -------------"""
         )
 

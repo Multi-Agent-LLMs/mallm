@@ -50,7 +50,7 @@ class Agent:
         self.chain_of_thought = chain_of_thought
         self.feedback_only = feedback_only
         logger.info(
-            f"Creating agent {self.short_id} with personality {self.persona}: {self.persona_description}"
+            f"Creating agent [bold blue]{self.short_id}[/] with personality [bold blue]{self.persona}[/]: {self.persona_description}"
         )
 
     def improve(

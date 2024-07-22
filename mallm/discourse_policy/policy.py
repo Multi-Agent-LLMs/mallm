@@ -101,36 +101,48 @@ class DiscoursePolicy(ABC):
                 if self.decision:
                     break
 
-            self.print_turn_messages(coordinator, input_str, task_instruction)
+            self.print_messages(coordinator, input_str, task_instruction)
 
+        self.print_messages(coordinator, input_str, task_instruction, False)
         return self.draft, self.turn, self.agreements, self.decision
 
-    def print_turn_messages(
-        self, coordinator: Coordinator, input_str: str, task_instruction: str
+    def print_messages(
+        self,
+        coordinator: Coordinator,
+        input_str: str,
+        task_instruction: str,
+        only_current_turn: bool = True,
     ) -> None:
         global_memories = [
             memory
             for memory in coordinator.get_global_memory()
-            if memory.turn == self.turn
+            if memory.turn == self.turn or not only_current_turn
         ]
         console = Console()
         max_width = min(console.width, 100)
         discussion_text = Text(
-            f"Task instruction: {task_instruction}\n\nInput: {input_str}\n\n"
-            + "\n\n".join(
+            f"Task instruction: {task_instruction}\n\nInput: {input_str}\n-----------\n"
+            + "\n-----------\n".join(
                 [
                     f"Agent ({m.persona})({"agreed" if m.agreement else "disagreed"}): {m.message}"
                     for m in global_memories
                 ]
             )
+            + f"\n-----------\nDecision Success: {self.decision} \n\nAccepted solution: {self.draft}"
         )
         discussion_text.highlight_regex(r"Agent .*\):", style="bold blue")
-        discussion_text.highlight_regex(r"Task instruction:", style="bold red")
-        discussion_text.highlight_regex(r"Input:", style="bold red")
+        discussion_text.highlight_regex(r"Task instruction:", style="bold green")
+        discussion_text.highlight_regex(r"Input:", style="bold green")
+        discussion_text.highlight_regex(r"Decision Success:", style="bold green")
+        discussion_text.highlight_regex(r"Accepted solution:", style="bold green")
         discussion_text.highlight_regex(r"####.*", style="bold green")
         panel = Panel(
             discussion_text,
-            title=f"Discussion Turn {global_memories[0].turn}",
+            title=(
+                f"Discussion Turn {global_memories[0].turn}"
+                if only_current_turn
+                else "Discussion"
+            ),
             subtitle=f"Decision: {self.decision}",
             expand=False,
             width=max_width,
