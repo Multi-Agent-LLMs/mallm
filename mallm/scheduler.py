@@ -389,7 +389,10 @@ class Scheduler:
             }
         )
         try:
-            with open(Path(self.config.out).stem + "-ablation.json", "w") as file:
+            out_path = Path(self.config.out)
+            with open(
+                out_path.with_name(out_path.stem + "-ablation.json"), "w"
+            ) as file:
                 file.write(
                     json.dumps(self.ablation_output_dicts)
                 )  # TODO: ensure correct json formatting (sometimes there is an invalid escape sequence warning)
@@ -564,9 +567,10 @@ class Scheduler:
 
         sort_output_file(input_file=self.config.data, output_file=self.config.out)
         if self.config.ablation:
+            out_path = Path(self.config.out)
             sort_output_file(
                 input_file=self.config.data,
-                output_file=str(Path(self.config.out).stem + "-ablation.json"),
+                output_file=str(out_path.with_name(out_path.stem + "-ablation.json")),
             )
 
 
