@@ -4,6 +4,11 @@ import logging
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Optional
 
+from rich import print
+from rich.panel import Panel
+from rich.progress import Console
+from rich.text import Text
+
 from mallm.agents.moderator import Moderator
 from mallm.agents.panelist import Panelist
 from mallm.utils.types import Agreement, Memory, TemplateFilling
@@ -36,7 +41,7 @@ class DiscoursePolicy(ABC):
         include_current_turn_in_memory: bool = False,
         debate_rounds: int = 2,
     ) -> tuple[Optional[str], int, list[Agreement], bool]:
-        logger.debug(self.paradigm_str)
+        logger.info(self.paradigm_str)
         while (not self.decision or force_all_turns) and self.turn < max_turns:
             self.turn += 1
             logger.info(f"Ongoing. Current turn: {self.turn}")
@@ -92,10 +97,45 @@ class DiscoursePolicy(ABC):
                         self.agreements, self.turn, i, task_instruction, input_str
                     )
                 )
+
                 if self.decision:
                     break
 
+            self.print_turn_messages(coordinator, input_str, task_instruction)
+
         return self.draft, self.turn, self.agreements, self.decision
+
+    def print_turn_messages(
+        self, coordinator: Coordinator, input_str: str, task_instruction: str
+    ) -> None:
+        global_memories = [
+            memory
+            for memory in coordinator.get_global_memory()
+            if memory.turn == self.turn
+        ]
+        console = Console()
+        max_width = min(console.width, 100)
+        discussion_text = Text(
+            f"Task instruction: {task_instruction}\n\nInput: {input_str}\n\n"
+            + "\n\n".join(
+                [
+                    f"Agent ({m.persona})({"agreed" if m.agreement else "disagreed"}): {m.message}"
+                    for m in global_memories
+                ]
+            )
+        )
+        discussion_text.highlight_regex(r"Agent .*\):", style="bold blue")
+        discussion_text.highlight_regex(r"Task instruction:", style="bold red")
+        discussion_text.highlight_regex(r"Input:", style="bold red")
+        discussion_text.highlight_regex(r"####.*", style="bold green")
+        panel = Panel(
+            discussion_text,
+            title=f"Discussion Turn {global_memories[0].turn}",
+            subtitle=f"Decision: {self.decision}",
+            expand=False,
+            width=max_width,
+        )
+        print(panel)
 
     @abstractmethod
     def moderator_call(

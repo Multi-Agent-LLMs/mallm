@@ -55,7 +55,7 @@ class DiscourseDebate(DiscoursePolicy):
         unique_id = 0
         memories = []
 
-        logger.debug(
+        logger.info(
             f"""Paradigm: Debate (rounds: {debate_rounds})
                             ┌───┐
                   ┌────────►│A 1│◄────────┐
@@ -205,5 +205,6 @@ class DiscourseDebate(DiscoursePolicy):
             )
             if self.decision:
                 break
+            self.print_turn_messages(coordinator, input_str, task_instruction)
 
         return self.draft, self.turn, self.agreements, self.decision

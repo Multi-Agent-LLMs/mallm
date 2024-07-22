@@ -125,7 +125,6 @@ class Coordinator:
         """
         with dbm.open(self.memory_bucket, "c") as db:
             db[str(memory.message_id)] = json.dumps(dataclasses.asdict(memory))
-            logger.debug(str(db[str(memory.message_id)]))
         self.save_global_memory_to_json()
 
     def get_global_memory(self) -> list[Memory]:
