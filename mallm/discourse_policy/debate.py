@@ -3,6 +3,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Optional
 
+from rich.progress import Console  # type: ignore
+
 from mallm.agents.moderator import Moderator
 from mallm.agents.panelist import Panelist
 from mallm.discourse_policy.policy import DiscoursePolicy
@@ -51,9 +53,13 @@ class DiscourseDebate(DiscoursePolicy):
         context_length: int = 1,
         include_current_turn_in_memory: bool = False,
         debate_rounds: int = 2,
+        console: Console = None,
     ) -> tuple[Optional[str], int, list[Agreement], bool]:
         unique_id = 0
         memories = []
+        voting_process_string = ""
+        if console is None:
+            console = Console()
 
         logger.info(
             f"""Paradigm: Debate (rounds: {debate_rounds})
@@ -194,7 +200,7 @@ class DiscourseDebate(DiscoursePolicy):
                 logger.error("No decision protocol module found.")
                 raise Exception("No decision protocol module found.")
 
-            self.draft, self.decision, self.agreements = (
+            self.draft, self.decision, self.agreements, voting_process_string = (
                 coordinator.decision_protocol.make_decision(
                     self.agreements,
                     self.turn,
@@ -206,5 +212,12 @@ class DiscourseDebate(DiscoursePolicy):
             if self.decision:
                 break
             self.print_messages(coordinator, input_str, task_instruction)
-        self.print_messages(coordinator, input_str, task_instruction, False)
+        self.print_messages(
+            coordinator,
+            input_str,
+            task_instruction,
+            False,
+            voting_process_string,
+            console=console,
+        )
         return self.draft, self.turn, self.agreements, self.decision

@@ -7,9 +7,11 @@ import time
 import uuid
 from collections.abc import Sequence
 from datetime import timedelta
+from pathlib import Path
 from typing import Optional
 
 import httpx
+from rich.progress import Console  # type: ignore
 
 from mallm.agents.agent import Agent
 from mallm.agents.moderator import Moderator
@@ -39,6 +41,7 @@ class Coordinator:
         agent_generator: str = "expert",
         use_moderator: bool = False,
         memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
+        console: Console = None,
     ):
         self.personas = None
         self.id = str(uuid.uuid4())
@@ -54,6 +57,7 @@ class Coordinator:
         self.response_generator: ResponseGenerator = SimpleResponseGenerator(self.llm)
         self.client = client
         self.agent_generator = agent_generator
+        self.console = console or Console()
 
     def init_agents(
         self,
@@ -261,6 +265,7 @@ class Coordinator:
             context_length=config.context_length,
             include_current_turn_in_memory=config.include_current_turn_in_memory,
             debate_rounds=config.debate_rounds,
+            console=self.console,
         )
 
         discussion_time = timedelta(
@@ -269,6 +274,7 @@ class Coordinator:
 
         global_mem = self.get_global_memory()
         agent_mems = [a.get_memories()[0] for a in self.agents]
+        self.console.save_html(str(Path(config.out).with_suffix(".html")), clear=False)
 
         return (
             answer,

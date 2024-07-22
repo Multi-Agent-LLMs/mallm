@@ -22,8 +22,7 @@ from datasets import load_dataset
 from openai import OpenAI
 from rich import print
 from rich.logging import RichHandler
-from rich.panel import Panel
-from rich.progress import Console, Progress, TaskID
+from rich.progress import Console, Progress, TaskID  # type: ignore
 
 from mallm.coordinator import Coordinator
 from mallm.models.Chat import Chat
@@ -44,19 +43,6 @@ handler = RichHandler(
 formatter = logging.Formatter(fmt=FORMAT, datefmt="[%X]")
 handler.setFormatter(formatter)
 logger.addHandler(handler)
-console = Console()
-max_width = min(console.width, 100)
-panel = Panel(
-    "Test",
-    title=f"Discussion {1}",
-    subtitle=f"BertScore: {1}, \
-        ROUGE-L: {1}",
-    expand=False,
-    width=max_width,
-)
-
-
-console.log(panel)
 
 
 class Scheduler:
@@ -169,6 +155,7 @@ class Scheduler:
         self,
         client: httpx.Client,
         sample: InputExample,
+        console: Console,
         progress: Progress,
         task: TaskID,
     ) -> Optional[str]:
@@ -184,6 +171,7 @@ class Scheduler:
                 agent_generator=self.config.agent_generator,
                 client=client,
                 memory_bucket_dir=self.config.memory_bucket_dir,
+                console=console,
             )
         except Exception as e:
             logger.error("Failed intializing coordinator.")
@@ -276,6 +264,7 @@ class Scheduler:
         Once a spot in the queue is free because a discussion ended, the next discussion is initialized.
         """
         logger.debug("Starting discussion manager...")
+        console = Console(record=True)
         # Creating HuggingFace endpoint
 
         if self.config.num_samples:
@@ -297,7 +286,7 @@ class Scheduler:
                         results.append(
                             pool.apply_async(
                                 self.run_discussion,
-                                (client, sample, progress, task),
+                                (client, sample, console, progress, task),
                             )
                         )
                     except Exception as e:

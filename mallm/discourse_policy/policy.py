@@ -4,9 +4,8 @@ import logging
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Optional
 
-from rich import print
 from rich.panel import Panel
-from rich.progress import Console
+from rich.progress import Console  # type: ignore
 from rich.text import Text
 
 from mallm.agents.moderator import Moderator
@@ -40,8 +39,12 @@ class DiscoursePolicy(ABC):
         context_length: int = 1,
         include_current_turn_in_memory: bool = False,
         debate_rounds: int = 2,
+        console: Console = None,
     ) -> tuple[Optional[str], int, list[Agreement], bool]:
         logger.info(self.paradigm_str)
+        voting_process_string = ""
+        if console is None:
+            console = Console()
         while (not self.decision or force_all_turns) and self.turn < max_turns:
             self.turn += 1
             logger.info(f"Ongoing. Current turn: {self.turn}")
@@ -92,7 +95,7 @@ class DiscoursePolicy(ABC):
                     logger.error("No decision protocol module found.")
                     raise Exception("No decision protocol module found.")
 
-                self.draft, self.decision, self.agreements = (
+                self.draft, self.decision, self.agreements, voting_process_string = (
                     coordinator.decision_protocol.make_decision(
                         self.agreements, self.turn, i, task_instruction, input_str
                     )
@@ -103,7 +106,14 @@ class DiscoursePolicy(ABC):
 
             self.print_messages(coordinator, input_str, task_instruction)
 
-        self.print_messages(coordinator, input_str, task_instruction, False)
+        self.print_messages(
+            coordinator,
+            input_str,
+            task_instruction,
+            False,
+            voting_process_string,
+            console,
+        )
         return self.draft, self.turn, self.agreements, self.decision
 
     def print_messages(
@@ -112,13 +122,16 @@ class DiscoursePolicy(ABC):
         input_str: str,
         task_instruction: str,
         only_current_turn: bool = True,
+        voting_process_string: str = "",
+        console: Console = None,
     ) -> None:
+        if console is None:
+            console = Console()
         global_memories = [
             memory
             for memory in coordinator.get_global_memory()
             if memory.turn == self.turn or not only_current_turn
         ]
-        console = Console()
         max_width = min(console.width, 100)
         discussion_text = Text(
             f"Task instruction: {task_instruction}\n\nInput: {input_str}\n-----------\n"
@@ -129,6 +142,7 @@ class DiscoursePolicy(ABC):
                 ]
             )
             + f"\n-----------\nDecision Success: {self.decision} \n\nAccepted solution: {self.draft}"
+            + (f"\n\n{voting_process_string}" if voting_process_string else "")
         )
         discussion_text.highlight_regex(r"Agent .*\):", style="bold blue")
         discussion_text.highlight_regex(r"Task instruction:", style="bold green")
@@ -147,7 +161,7 @@ class DiscoursePolicy(ABC):
             expand=False,
             width=max_width,
         )
-        print(panel)
+        console.print(panel)
 
     @abstractmethod
     def moderator_call(
