@@ -47,7 +47,7 @@ class Evaluator:
             output_dir = Path(output_dir_path)
             output_file_path = output_dir
         else:
-            output_file_path = self.input_file_path.parent
+            output_file_path = self.input_file_path
 
         self.stats_file_path = output_file_path.with_name(
             output_file_path.stem + "-stats.json"
@@ -55,8 +55,7 @@ class Evaluator:
         self.eval_file_path = output_file_path.with_name(
             output_file_path.stem + "-eval.json"
         )
-        self.stats_file_path = output_file_path.parent / (output_file_path.stem + "-stats.json")
-        self.eval_file_path = output_file_path.parent / (output_file_path.stem + "-eval.json")
+        
         self.data = self._load_data()
         self.metrics = self._initialize_metrics(metrics)
         self.extensive = extensive
