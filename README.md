@@ -41,7 +41,7 @@ For self-hosting you need the checkpoints for the instruction-tuned model you wa
 
 Once the endpoint is available, you can initiate all discussions by a single script. Example with TGI:
 
-`python mallm/scheduler.py --data=data/datasets/etpc_debugging.json --out=test_out.json --instruction="Paraphrase the input text." --endpoint_url="http://127.0.0.1:8080" --model="tgi"`
+`python mallm/scheduler.py --data=data/datasets/etpc_debugging.json --out=test_out.json --instruction="Paraphrase the input text." --endpoint_url="http://127.0.0.1:8080/v1" --model="tgi"`
 
 Or with OpenAI:
 
@@ -58,7 +58,7 @@ mallm_scheduler = scheduler.Scheduler(
     data="data/datasets/etpc_debugging.json",
     out="test_out.json",
     instruction="Paraphrase the input text.",
-    endpoint_url="http://127.0.0.1:8080",
+    endpoint_url="http://127.0.0.1:8080/v1",
     model="tgi"
   )
 )
@@ -72,7 +72,7 @@ mallm_scheduler = scheduler.Scheduler(
     data="data/datasets/etpc_debugging.json",
     out="test_out.json",
     instruction="Paraphrase the input text.",
-    endpoint_url="https://api.openai.com",
+    endpoint_url="https://api.openai.com/v1",
     model="gpt-3.5-turbo", # or another model from this list: https://platform.openai.com/docs/models
     api_key="<your-key>"
   )
@@ -100,7 +100,7 @@ Use "tgi" as a model for Text Generation Inference by HuggingFace or one of thes
 data: str = None
 out: str = None
 instruction: str = None
-endpoint_url: str = "https://api.openai.com"
+endpoint_url: str = "https://api.openai.com/v1"
 model: str = "gpt-3.5-turbo"
 api_key: str = "-"
 use_moderator: bool = False
@@ -138,7 +138,7 @@ Response Generators: `freetext`, `json`, `simple`, `splitfreetext`
 
 Decision Protocols: `approval`, `cumulative`, `hybrid_consensus`, `majority_consensus`, `ranked`, `supermajority_consensus`, `unanimity_consensus`, `voting`
 
-Persona Generators: `expert`, `ipip`, `mock`
+Persona Generators: `expert`, `ipip`, `mock`, `paraphrasetypes`
 
 Discussion Paradigms: `debate`, `memory`, `relay`, `report`
 

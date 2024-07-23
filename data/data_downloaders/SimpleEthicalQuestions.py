@@ -45,7 +45,6 @@ class SimpleEthicalQuestionsDownloader(DatasetDownloader):
                     inputs=[s["input"]],
                     context=multiple_choices,
                     references=[ref],
-                    personas=None,
                 )
             )
         return input_examples

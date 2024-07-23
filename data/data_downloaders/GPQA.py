@@ -42,7 +42,6 @@ class GPQADownloader(DatasetDownloader):
                     inputs=[question_and_answers],
                     context=None,
                     references=[correct_answer_label],
-                    personas=None,
                 )
             )
         return input_examples

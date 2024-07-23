@@ -4,7 +4,7 @@ import pytest
 
 from mallm.coordinator import Coordinator
 from mallm.utils.config import Config
-from mallm.utils.types import Memory
+from mallm.utils.types import Memory, InputExample
 
 
 # Test initialization of Coordinator
@@ -31,6 +31,13 @@ def test_init_agents_with_persona_generator():
     coordinator = Coordinator(
         model, client, agent_generator="mock", memory_bucket_dir="./test/data/"
     )
+    sample = InputExample(
+        example_id="",
+        dataset_id=None,
+        inputs=["input_str"],
+        context=None,
+        references=[],
+    )
     coordinator.init_agents(
         "task_instruction",
         "input_str",
@@ -38,6 +45,7 @@ def test_init_agents_with_persona_generator():
         num_agents=3,
         chain_of_thought=False,
         feedback_only=False,
+        sample=sample,
     )
     assert len(coordinator.agents) == 3  # TODO This hardcoded value is not good
 
@@ -50,6 +58,13 @@ def test_init_agents_with_wrong_persona_generator():
     coordinator = Coordinator(
         model, client, agent_generator=agent_generator, memory_bucket_dir="./test/data/"
     )
+    sample = InputExample(
+        example_id="",
+        dataset_id=None,
+        inputs=["input_str"],
+        context=None,
+        references=[],
+    )
     with pytest.raises(Exception, match="Invalid persona generator."):
         coordinator.init_agents(
             "task_instruction",
@@ -58,6 +73,7 @@ def test_init_agents_with_wrong_persona_generator():
             num_agents=3,
             chain_of_thought=False,
             feedback_only=False,
+            sample=sample,
         )
 
 
@@ -117,6 +133,13 @@ def test_update_memories():
     coordinator = Coordinator(
         model, client, agent_generator="mock", memory_bucket_dir="./test/data/"
     )
+    sample = InputExample(
+        example_id="",
+        dataset_id=None,
+        inputs=["input_str"],
+        context=None,
+        references=[],
+    )
     coordinator.init_agents(
         task_instruction="task_instruction",
         input_str="input_str",
@@ -124,6 +147,7 @@ def test_update_memories():
         num_agents=3,
         chain_of_thought=False,
         feedback_only=False,
+        sample=sample,
     )
     memories = [
         Memory(
@@ -154,6 +178,13 @@ def test_discuss_with_invalid_paradigm():
     coordinator = Coordinator(
         model, client, agent_generator="mock", memory_bucket_dir="./test/data/"
     )
+    sample = InputExample(
+        example_id="",
+        dataset_id=None,
+        inputs=["input_str"],
+        context=None,
+        references=[],
+    )
     with pytest.raises(
         Exception, match="No valid discourse policy for paradigm invalid_paradigm"
     ):
@@ -166,8 +197,7 @@ def test_discuss_with_invalid_paradigm():
                 decision_protocol="majority_consensus",
                 num_agents=3,
             ),
-            ["input_str"],
-            [],
+            sample,
         )
 
 
@@ -177,6 +207,13 @@ def test_discuss_with_invalid_decision_protocol():
     client = Mock()
     coordinator = Coordinator(
         model, client, agent_generator="mock", memory_bucket_dir="./test/data/"
+    )
+    sample = InputExample(
+        example_id="",
+        dataset_id=None,
+        inputs=["input_str"],
+        context=None,
+        references=[],
     )
     with pytest.raises(
         Exception, match="No valid decision protocol for invalid_protocol"
@@ -190,6 +227,5 @@ def test_discuss_with_invalid_decision_protocol():
                 decision_protocol="invalid_protocol",
                 num_agents=3,
             ),
-            ["input_str"],
-            [],
+            sample,
         )

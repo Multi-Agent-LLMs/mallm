@@ -5,6 +5,7 @@ from json_repair import repair_json
 
 from mallm.models.Chat import Chat
 from mallm.models.personas.PersonaGenerator import PersonaGenerator
+from mallm.utils.types import InputExample
 
 logger = logging.getLogger("mallm")
 
@@ -41,7 +42,7 @@ New Participant:
         }
 
     def generate_personas(
-        self, task_description: str, num_agents: int
+        self, task_description: str, num_agents: int, sample: InputExample
     ) -> list[dict[str, str]]:
         current_prompt = [
             self.base_prompt,
@@ -51,7 +52,6 @@ New Participant:
             },
         ]
 
-        logger.debug("Creating " + str(num_agents) + " personas...")
         agents: list[dict[str, str]] = []
         retry = 0
         while len(agents) < num_agents:
@@ -94,6 +94,5 @@ New Participant:
                     "content": f"Already Generated Participants:\n{response}",
                 }
             )
-        logger.debug("Found agents: \n" + str(agents))
 
         return agents

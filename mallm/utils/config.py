@@ -15,7 +15,7 @@ class Config:
     data: str
     out: str
     instruction: str
-    endpoint_url: str = "https://api.openai.com"
+    endpoint_url: str = "https://api.openai.com/v1"
     model: str = "gpt-3.5-turbo"
     api_key: str = "-"
     use_moderator: bool = False

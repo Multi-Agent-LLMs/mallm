@@ -80,9 +80,14 @@ class SquadScore(Metric):
             {"answers": {"answer_start": [], "text": reference_texts}, "id": ""}
         ]
 
-        return cast(
+        scores = cast(
             dict[str, Any],
             SquadScore.squad_v2_metric.compute(
                 predictions=predictions, references=references
-            ),
+            )
         )
+        for key in ["exact", "f1", "HasAns_exact", "best_exact", "best_f1", "HasAns_f1"]:
+            if key in scores:
+                scores[key] /= 100
+
+        return scores

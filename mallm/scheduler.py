@@ -104,7 +104,6 @@ class Scheduler:
                             if x.get(config.hf_dataset_reference_column) is not None
                             else []
                         ),
-                        personas=None,
                     )
                     for x in dataset
                 ]
@@ -187,9 +186,7 @@ class Scheduler:
                 agreements,
                 discussion_time,
                 decision_success,
-            ) = coordinator.discuss(
-                config=self.config, input_lines=sample.inputs, context=sample.context
-            )
+            ) = coordinator.discuss(config=self.config, sample=sample)
         except Exception:
             # More extensive error logging to ease debugging during async execution
             logger.error(f"Failed discussion of sample {sample.example_id}.")
@@ -398,7 +395,10 @@ class Scheduler:
             }
         )
         try:
-            with open(Path(self.config.out).stem + "-ablation.json", "w") as file:
+            out_path = Path(self.config.out)
+            with open(
+                out_path.with_name(out_path.stem + "-ablation.json"), "w"
+            ) as file:
                 file.write(
                     json.dumps(self.ablation_output_dicts)
                 )  # TODO: ensure correct json formatting (sometimes there is an invalid escape sequence warning)
@@ -573,9 +573,10 @@ class Scheduler:
 
         sort_output_file(input_file=self.config.data, output_file=self.config.out)
         if self.config.ablation:
+            out_path = Path(self.config.out)
             sort_output_file(
                 input_file=self.config.data,
-                output_file=str(Path(self.config.out).stem + "-ablation.json"),
+                output_file=str(out_path.with_name(out_path.stem + "-ablation.json")),
             )
 
 

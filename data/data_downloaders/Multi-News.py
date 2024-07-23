@@ -33,7 +33,6 @@ class MultiNewsDownloader(DatasetDownloader):
                     inputs=docs,
                     context=None,
                     references=sample["summary"],
-                    personas=None,
                 )
             )
         return input_examples
