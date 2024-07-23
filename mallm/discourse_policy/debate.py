@@ -53,7 +53,7 @@ class DiscourseDebate(DiscoursePolicy):
         context_length: int = 1,
         include_current_turn_in_memory: bool = False,
         debate_rounds: int = 2,
-        console: Console = None,
+        console: Optional[Console] = None,
     ) -> tuple[Optional[str], int, list[Agreement], bool]:
         unique_id = 0
         memories = []

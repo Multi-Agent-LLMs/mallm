@@ -41,7 +41,7 @@ class Coordinator:
         agent_generator: str = "expert",
         use_moderator: bool = False,
         memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
-        console: Console = None,
+        console: Optional[Console] = None,
     ):
         self.personas = None
         self.id = str(uuid.uuid4())

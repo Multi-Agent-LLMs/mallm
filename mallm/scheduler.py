@@ -155,7 +155,7 @@ class Scheduler:
         self,
         client: httpx.Client,
         sample: InputExample,
-        console: Console,
+        console: Optional[Console],
         progress: Progress,
         task: TaskID,
     ) -> Optional[str]:

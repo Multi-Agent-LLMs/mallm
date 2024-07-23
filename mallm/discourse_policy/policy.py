@@ -39,7 +39,7 @@ class DiscoursePolicy(ABC):
         context_length: int = 1,
         include_current_turn_in_memory: bool = False,
         debate_rounds: int = 2,
-        console: Console = None,
+        console: Optional[Console] = None,
     ) -> tuple[Optional[str], int, list[Agreement], bool]:
         logger.info(self.paradigm_str)
         voting_process_string = ""
@@ -123,7 +123,7 @@ class DiscoursePolicy(ABC):
         task_instruction: str,
         only_current_turn: bool = True,
         voting_process_string: str = "",
-        console: Console = None,
+        console: Optional[Console] = None,
     ) -> None:
         if console is None:
             console = Console()
@@ -137,7 +137,7 @@ class DiscoursePolicy(ABC):
             f"Task instruction: {task_instruction}\n\nInput: {input_str}\n-----------\n"
             + "\n-----------\n".join(
                 [
-                    f"Agent ({m.persona})({"agreed" if m.agreement else "disagreed"}): {m.message}"
+                    f"Agent ({m.persona})({'agreed' if m.agreement else 'disagreed'}): {m.message}"
                     for m in global_memories
                 ]
             )
