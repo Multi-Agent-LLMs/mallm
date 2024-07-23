@@ -43,6 +43,7 @@ handler = RichHandler(
 formatter = logging.Formatter(fmt=FORMAT, datefmt="[%X]")
 handler.setFormatter(formatter)
 logger.addHandler(handler)
+logging.basicConfig(filename="log.txt", filemode="w")
 
 
 class Scheduler:

@@ -30,7 +30,7 @@ class SplitFreeTextResponseGenerator(FreeTextResponseGenerator):
             }[agreement]
             instr_prompt = {
                 "role": "user",
-                "content": f"{prefix}Based on the current solution, give constructive feedback but be concise.",
+                "content": f"{prefix}Based on the current solution, give constructive feedback.",
             }
 
         current_prompt = [
@@ -56,11 +56,11 @@ class SplitFreeTextResponseGenerator(FreeTextResponseGenerator):
             prefix = {
                 None: "",
                 True: "You agree with the current solution. ",
-                False: "You disagree with the current solution. Please provide a better solution to ",
+                False: "You disagree with the current solution. ",
             }[agreement]
             instr_prompt = {
                 "role": "user",
-                "content": f"{prefix}Improve the current solution but be as concise as possible.",
+                "content": f"{prefix}Improve the current solution.",
             }
 
         current_prompt = [

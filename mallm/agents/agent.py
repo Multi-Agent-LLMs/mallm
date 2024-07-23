@@ -61,12 +61,12 @@ class Agent:
         template_filling: TemplateFilling,
         agreements: list[Agreement],
     ) -> tuple[str, Memory, list[Agreement]]:
-        logger.debug(f"Agent {self.short_id} is improving the solution.")
+        logger.debug(f"Agent [bold blue]{self.short_id}[/] is improving the solution.")
         response = self.response_generator.generate_improve(
             template_filling, self.chain_of_thought
         )
         logger.debug(
-            f"Agent {self.short_id} {'agreed' if response.agreement else 'disagreed'} with the solution."
+            f"Agent [bold blue]{self.short_id}[/] {'agreed' if response.agreement else 'disagreed'} with the solution."
         )
         agreements.append(
             Agreement(
@@ -103,7 +103,7 @@ class Agent:
         agreements: list[Agreement],
         is_moderator: bool = False,
     ) -> tuple[str, Memory, list[Agreement]]:
-        logger.debug(f"Agent {self.short_id} is drafting a solution.")
+        logger.debug(f"Agent [bold blue]{self.short_id}[/] is drafting a solution.")
         response = self.response_generator.generate_draft(
             template_filling, self.chain_of_thought
         )
@@ -141,14 +141,16 @@ class Agent:
         template_filling: TemplateFilling,
         agreements: list[Agreement],
     ) -> tuple[str, Memory, list[Agreement]]:
-        logger.debug(f"Agent {self.short_id} provides feedback to a solution.")
+        logger.debug(
+            f"Agent [bold blue]{self.short_id}[/] provides feedback to a solution."
+        )
         response = self.response_generator.generate_feedback(
             template_filling, self.chain_of_thought
         )
         logger.debug(
-            f"Agent {self.short_id} {'agreed' if response.agreement else 'disagreed'} with the solution."
+            f"Agent [bold blue]{self.short_id}[/] {'agreed' if response.agreement else 'disagreed'} with the solution."
         )
-        logger.debug(f"Agent {self.short_id}: {response.message}")
+        logger.debug(f"Agent [bold blue]{self.short_id}[/]: {response.message}")
         agreements.append(
             Agreement(
                 agreement=response.agreement,
