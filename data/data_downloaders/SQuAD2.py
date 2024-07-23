@@ -31,7 +31,6 @@ class EuroparlDownloader(DatasetDownloader):
                     inputs=[s["question"][0]],
                     context=[s["context"][0]],
                     references=s["answers"][0]["text"],
-                    personas=None,
                 )
             )
         return input_examples

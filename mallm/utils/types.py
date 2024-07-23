@@ -51,7 +51,6 @@ class InputExample:
     inputs: list[str]
     context: Optional[list[str]]
     references: list[str]
-    personas: Optional[list[str]]
 
     def confirm_types(self) -> None:
         # Confirm type of example_id
@@ -67,11 +66,6 @@ class InputExample:
         assert isinstance(self.references, list), "References is not a list"
         for r in self.references:
             assert isinstance(r, str), "References is not a list of only strings"
-        # Confirm type of personas
-        if self.personas is not None:
-            assert isinstance(self.personas, list), "Personas is not a list"
-            for p in self.personas:
-                assert isinstance(p, str), "Personas is not a list of only strings"
         # Confirm type of context
         if self.context is not None:
             assert isinstance(self.context, list), "Context is not a list"

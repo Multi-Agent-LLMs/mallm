@@ -108,7 +108,6 @@ class BTVoteDownloader(DatasetDownloader):
                     inputs=[input_data],
                     context=None,
                     references=[reference_data],
-                    personas=None,
                 )
             )
         random.shuffle(input_examples)

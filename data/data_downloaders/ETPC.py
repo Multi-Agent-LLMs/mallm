@@ -35,7 +35,6 @@ class ETPCDownloader(DatasetDownloader):
                         inputs=[s["sentence1"][0]],
                         context=[paraphrase_types_str],
                         references=[s["sentence2"][0]],
-                        personas=None,
                     )
                 )
         input_examples = input_examples[: self.sample_size]

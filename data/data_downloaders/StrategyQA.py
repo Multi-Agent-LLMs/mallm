@@ -49,7 +49,6 @@ class StrategyGADownloader(DatasetDownloader):
                         .strip()
                         .strip('"'),
                     ],
-                    personas=None,
                 )
             )
         return input_examples

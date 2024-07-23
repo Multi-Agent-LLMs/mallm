@@ -105,7 +105,6 @@ class Scheduler:
                             if x.get(config.hf_dataset_reference_column) is not None
                             else []
                         ),
-                        personas=None,
                     )
                     for x in dataset
                 ]
@@ -184,9 +183,7 @@ class Scheduler:
                 agreements,
                 discussion_time,
                 decision_success,
-            ) = coordinator.discuss(
-                config=self.config, input_lines=sample.inputs, context=sample.context
-            )
+            ) = coordinator.discuss(config=self.config, sample=sample)
         except Exception:
             # More extensive error logging to ease debugging during async execution
             logger.error(f"Failed discussion of sample {sample.example_id}.")

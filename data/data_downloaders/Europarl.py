@@ -30,7 +30,6 @@ class EuroparlDownloader(DatasetDownloader):
                     inputs=[s["translation"][0]["de"]],
                     context=None,
                     references=[s["translation"][0]["en"]],
-                    personas=None,
                 )
             )
         return input_examples
