@@ -10,11 +10,14 @@ logger = logging.getLogger("mallm")
 class ParaphraseTypesGenerator(PersonaGenerator):
     def __init__(self, llm: Chat):
         self.llm = llm
-        # definitions of paraphrase types started from https://github.com/worta/generate_apt_paraphrases/blob/main/definitions.json and expanded with ChatGPT on 2024/07/16
+        # definitions of paraphrase types started from 
+        # https://github.com/worta/generate_apt_paraphrases/blob/main/definitions.json
+        # and https://direct.mit.edu/coli/article/39/4/917/1450/Plagiarism-Meets-Paraphrasing-Insights-for-the
+        # and expanded with ChatGPT on 2024/07/16
         self.paraphrase_types = (
             {
                 "inflectional changes": "Inflectional changes consist of changing inflectional affixes of words.",
-                "modal verb changes": "Modal verb changes consist of replacing one modal verb with another, altering the modality of the sentence but preserving its overall meaning.",
+                "modal verb changes": "Modal verb changes are changes of modality using modal verbs, like might and could.",
                 "derivational changes": "Derivational Changes consist of changes of category with or without using derivational affixes. These changes imply a syntactic change in the sentence in which they occur.",
                 "spelling changes": "Spelling and format changes comprise changes in the spelling and format of lexical (or functional) units, such as case changes, abbreviations, or digit/letter alternations.",
                 "same polarity substitution (habitual)": "Same polarity substitution (habitual) involves replacing a word or phrase with another that has a similar habitual or general meaning, maintaining the original sentence's polarity.",
@@ -24,16 +27,16 @@ class ParaphraseTypesGenerator(PersonaGenerator):
                 "opposite polarity substitution (habitual)": "Opposite polarity substitution (habitual) consists of replacing a word or phrase with another that has an opposite habitual meaning, altering the sentence's overall polarity.",
                 "opposite polarity substitution (contextual)": "Opposite polarity substitution (contextual) involves substituting a word or phrase with another that has an opposite meaning in a specific context, changing the sentence's polarity.",
                 "synthetic/analytic substitution": "Synthetic/analytic substitution consists of changing synthetic structures for analytic structures, and vice versa. This type comprises mechanisms such as compounding/ decomposition, light element, or lexically emptied specifier additions/deletions, or alternations affecting genitives and possessives.",
-                "converse substitution": "Converse substitution involves replacing a word or phrase with its converse, altering the perspective but preserving the overall relationship described in the sentence.",
-                "diathesis alternation": "Diathesis alternation consists of changing the voice of a verb in a sentence, such as switching from active to passive voice, or vice versa.",
-                "negation switching": "Negation switching involves introducing or removing negation from a sentence, altering its affirmative or negative status.",
-                "ellipsis": "Ellipsis consists of omitting parts of a sentence that are understood from context, creating a more concise expression without losing meaning.",
-                "coordination changes": "Coordination changes involve altering the structure of coordinated elements in a sentence, such as changing conjunctions or the order of coordinated phrases.",
+                "converse substitution": "Converse substitutions take place when a lexical unit is changed for its converse pair. In order to maintain the same meaning, an argument inversion has to occur.",
+                "diathesis alternation": "Diathesis alternation type gathers those diathesis alternations in which verbs can participate, such as the active/passive alternation",
+                "negation switching": "Negation switching consists of changing the position of the negation within a sentence.",
+                "ellipsis": "Ellipsis includes linguistic ellipsis, i.e, those cases in which the elided fragments can be recovered through linguistic mechanisms.",
+                "coordination changes": "Coordination changes consist of changes in which one of the members of the pair contains coordinated linguistic units, and this coordination is not present or changes its position and/or form in the other member of the pair.",
                 "subordination and nesting changes": "Subordination and nesting changes consist of changes in which one of the members of the pair contains a subordination or nested element, which is not present, or changes its position and/or form within the other member of the pair.",
                 "punctuation changes": "Punctuation and format changes consist of any change in the punctuation or format of a sentence (not of a lexical unit, cf. lexicon-based changes).",
-                "direct/indirect style alternations": "Direct/indirect style alternations involve changing the sentence from direct speech to indirect speech or vice versa, altering the reporting style.",
-                "sentence modality changes": "Sentence modality changes involve altering the modality of a sentence, such as changing from declarative to interrogative, or from imperative to subjunctive.",
-                "syntax/discourse structure changes": "Syntax/discourse structure changes involve alterations in the syntactic structure or the overall discourse organization of the text.",
+                "direct/indirect style alternations": "Direct/indirect style alternations consist of changing direct style for indirect style, and vice versa.",
+                "sentence modality changes": "Sentence modality changes are those cases in which there is a change of modality (not provoked by modal verbs, cf. modal verb changes), but the illocutive value is maintained.",
+                "syntax/discourse structure changes": "Syntax/discourse structure changes gather a wide variety of syntax/discourse reorganizations not covered by the types in the syntax and discourse subclasses.",
                 "addition/deletion": "Addition/Deletion consists of all additions/deletions of lexical and functional units.",
                 "change of order": "Change of order includes any type of change of order from the word level to the sentence level.",
                 "semantic based": "Semantics-based changes are those that involve a different lexicalization of the same content units. These changes affect more than one lexical unit and a clear-cut division of these units in the mapping between the two members of the paraphrase pair is not possible."
