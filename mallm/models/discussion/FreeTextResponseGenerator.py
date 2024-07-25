@@ -21,7 +21,7 @@ class FreeTextResponseGenerator(ResponseGenerator):
 
         self.base_prompt_baseline = {
             "role": "system",
-            "content": "Solve the provided task. Do not ask back questions.",
+            "content": "Solve the provided task. Do not ask back questions. Clearly indicate your final solution after the text 'Final Solution:'.",
         }
 
     def generate_baseline(
