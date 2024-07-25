@@ -18,7 +18,6 @@ class FreeTextResponseGenerator(ResponseGenerator):
             "role": "system",
             "content": "You are participating in a discussion to solve the provided task.",
         }
-
         self.base_prompt_baseline = {
             "role": "system",
             "content": "Solve the provided task. Do not ask back questions. Clearly indicate your final solution after the text 'Final Solution:'.",

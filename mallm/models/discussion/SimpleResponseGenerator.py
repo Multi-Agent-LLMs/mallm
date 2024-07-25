@@ -13,6 +13,10 @@ class SimpleResponseGenerator(FreeTextResponseGenerator):
 
     def __init__(self, llm: Chat):
         self.llm = llm
+        self.base_prompt_baseline = {
+            "role": "system",
+            "content": "Solve the provided task. Do not ask back questions. Clearly indicate your final solution after the text 'Final Solution:'.",
+        }
 
     def generate_baseline(
         self, task_instruction: str, input_str: str, chain_of_thought: bool
