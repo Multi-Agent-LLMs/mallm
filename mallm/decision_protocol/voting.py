@@ -2,7 +2,7 @@ import logging
 from collections import Counter
 
 from mallm.agents.panelist import Panelist
-from mallm.decision_protocol.protocol import DecisionProtocol
+from mallm.decision_protocol.protocol import DECISION_ALTERATIONS, DecisionProtocol
 from mallm.utils.prompts import (
     generate_final_answer_prompt,
     generate_voting_prompt,
@@ -30,12 +30,12 @@ class Voting(DecisionProtocol):
         agent_index: int,
         task: str,
         question: str,
-    ) -> tuple[str, bool, list[Agreement], str]:
+    ) -> tuple[str, bool, list[Agreement], str, dict[str, any]]:
         if len(agreements) > self.total_agents:
             agreements = agreements[-self.total_agents :]
 
         if turn < self.vote_turn or agent_index != self.total_agents - 1:
-            return "", False, agreements, ""
+            return "", False, agreements, "", {}
         final_answers = []
         for panelist in self.panelists:
             prev_answer: Agreement = next(
@@ -52,48 +52,56 @@ class Voting(DecisionProtocol):
             )
             prev_answer.solution = response
             final_answers.append(response)
-
-        votes = []
-        voting_process_string = ""
-        for panelist in self.panelists:
-            retries = 0
-            while retries < 10:
-                # Creates a prompt with all the answers and asks the agent to vote for the best one, 0 indexed inorder
-                vote = panelist.llm.invoke(
-                    generate_voting_prompt(
-                        panelist.persona,
-                        panelist.persona_description,
-                        task,
-                        question,
-                        final_answers,
-                    )
-                )
-                try:
-                    vote_int = int(vote.strip())
-                    if 0 <= vote_int < len(final_answers):
-                        votes.append(vote_int)
-                        logger.info(
-                            f"{panelist.short_id} voted for answer from {self.panelists[vote_int].short_id}"
+        all_votes = {}
+        for alteration in DECISION_ALTERATIONS:
+            votes = []
+            voting_process_string = ""
+            for panelist in self.panelists:
+                retries = 0
+                while retries < 10:
+                    # Creates a prompt with all the answers and asks the agent to vote for the best one, 0 indexed inorder
+                    vote = panelist.llm.invoke(
+                        generate_voting_prompt(
+                            panelist.persona,
+                            panelist.persona_description,
+                            task,
+                            question,
+                            final_answers,
                         )
-                        voting_process_string += f"{panelist.persona} voted for answer from {self.panelists[vote_int].persona}\n"
-                        break
-                    logger.debug(
-                        f"{panelist.short_id} cast an invalid vote: {vote}. Asking to vote again."
                     )
-                except ValueError:
-                    retries += 1
-                    logger.debug(
-                        f"{panelist.short_id} cast an invalid vote: {vote}. Asking to vote again."
+                    try:
+                        vote_int = int(vote.strip())
+                        if 0 <= vote_int < len(final_answers):
+                            votes.append(vote_int)
+                            logger.info(
+                                f"{panelist.short_id} voted for answer from {self.panelists[vote_int].short_id}"
+                            )
+                            voting_process_string += f"{panelist.persona} voted for answer from {self.panelists[vote_int].persona}\n"
+                            break
+                        logger.debug(
+                            f"{panelist.short_id} cast an invalid vote: {vote}. Asking to vote again."
+                        )
+                    except ValueError:
+                        retries += 1
+                        logger.debug(
+                            f"{panelist.short_id} cast an invalid vote: {vote}. Asking to vote again."
+                        )
+                if retries >= 10:
+                    logger.warning(
+                        f"{panelist.short_id} reached maximum retries. Counting as invalid vote."
                     )
-            if retries >= 10:
-                logger.warning(
-                    f"{panelist.short_id} reached maximum retries. Counting as invalid vote."
-                )
 
-        # Search for the answer with the most votes from the agents
-        vote_counts = Counter(votes)
-        most_voted = vote_counts.most_common(1)[0][0]
-        logger.info(
-            f"Voted for answer from agent {self.panelists[most_voted].short_id}"
+            # Search for the answer with the most votes from the agents
+            vote_counts = Counter(votes)
+            most_voted = vote_counts.most_common(1)[0][0]
+            all_votes[alteration] = {"votes": votes, "most_voted": most_voted}
+            logger.info(
+                f"Voted for answer from agent {self.panelists[most_voted].short_id}"
+            )
+        return (
+            final_answers[most_voted],
+            True,
+            agreements,
+            voting_process_string,
+            all_votes,
         )
-        return final_answers[most_voted], True, agreements, voting_process_string

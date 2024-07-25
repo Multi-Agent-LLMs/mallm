@@ -186,6 +186,7 @@ class Scheduler:
                 agreements,
                 discussion_time,
                 decision_success,
+                additional_voting_results,
             ) = coordinator.discuss(config=self.config, sample=sample)
         except Exception:
             # More extensive error logging to ease debugging during async execution
@@ -227,6 +228,7 @@ class Scheduler:
                     for agent in agent_mems
                     if agent
                 ],
+                "additional_voting_results": additional_voting_results,
             }
         )
         try:

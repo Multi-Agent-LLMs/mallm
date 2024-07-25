@@ -8,7 +8,7 @@ import uuid
 from collections.abc import Sequence
 from datetime import timedelta
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import httpx
 from rich.progress import Console  # type: ignore
@@ -74,7 +74,9 @@ class Coordinator:
         1) identify helpful personas
         2) create agents with the personas
         """
-        logger.debug(f"Coordinator {self.id} creates the agents ({self.agent_generator})...")
+        logger.debug(
+            f"Coordinator {self.id} creates the agents ({self.agent_generator})..."
+        )
         self.panelists = []
         self.agents = []
 
@@ -118,9 +120,11 @@ class Coordinator:
             self.agents = [self.moderator, *self.panelists]
         else:
             self.agents = self.panelists
-        
+
         if len(self.agents) == 1:
-            logger.warning("Created only 1 agent. The discussion will be replaced by a self-improvement mechanism.")
+            logger.warning(
+                "Created only 1 agent. The discussion will be replaced by a self-improvement mechanism."
+            )
 
     def get_agents(self) -> list[dict[str, str]]:
         return [
@@ -184,13 +188,14 @@ class Coordinator:
         config: Config,
         sample: InputExample,
     ) -> tuple[
-        Optional[str],
+        str | None,
         list[Memory],
-        list[Optional[list[Memory]]],
+        list[list[Memory] | None],
         int,
         list[Agreement],
         float,
         bool,
+        dict[str, Any],
     ]:
         """
         The routine responsible for the discussion between agents to solve a task.
@@ -262,18 +267,20 @@ class Coordinator:
 -------------"""
         )
 
-        answer, turn, agreements, decision_success = policy.discuss(
-            coordinator=self,
-            task_instruction=sample_instruction,
-            input_str=input_str,
-            use_moderator=config.use_moderator,
-            feedback_sentences=config.feedback_sentences,
-            max_turns=config.max_turns,
-            force_all_turns=config.force_all_turns,
-            context_length=config.context_length,
-            include_current_turn_in_memory=config.include_current_turn_in_memory,
-            debate_rounds=config.debate_rounds,
-            console=self.console,
+        answer, turn, agreements, decision_success, additional_voting_results = (
+            policy.discuss(
+                coordinator=self,
+                task_instruction=sample_instruction,
+                input_str=input_str,
+                use_moderator=config.use_moderator,
+                feedback_sentences=config.feedback_sentences,
+                max_turns=config.max_turns,
+                force_all_turns=config.force_all_turns,
+                context_length=config.context_length,
+                include_current_turn_in_memory=config.include_current_turn_in_memory,
+                debate_rounds=config.debate_rounds,
+                console=self.console,
+            )
         )
 
         discussion_time = timedelta(
@@ -292,4 +299,5 @@ class Coordinator:
             agreements,
             discussion_time,
             decision_success,
+            additional_voting_results,
         )

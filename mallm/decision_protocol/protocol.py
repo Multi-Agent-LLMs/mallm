@@ -3,6 +3,8 @@ from abc import ABC, abstractmethod
 from mallm.agents.panelist import Panelist
 from mallm.utils.types import Agreement
 
+DECISION_ALTERATIONS = ["public", "facts", "confidence", "anonymous"]
+
 
 class DecisionProtocol(ABC):
     """
@@ -23,7 +25,7 @@ class DecisionProtocol(ABC):
         agent_index: int,
         task: str,
         question: str,
-    ) -> tuple[str, bool, list[Agreement], str]:
+    ) -> tuple[str, bool, list[Agreement], str, dict[str, any]]:
         """
         Abstract method to make a decision based on agreements, the current turn number, and the list of panelists.
 

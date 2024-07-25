@@ -185,6 +185,7 @@ def generate_voting_prompt(
     task: str,
     question: str,
     solutions: list[str],
+    additional_context: Optional[str] = None,
 ) -> list[dict[str, str]]:
     prompts = [
         {
@@ -193,7 +194,7 @@ def generate_voting_prompt(
         },
         {
             "role": "user",
-            "content": f"You are tasked with voting for the best solution from the list provided below based on the given task.\nTask: {task}\nQuestion: {question}\n\nHere are the possible solutions:",
+            "content": f"You are tasked with voting for the best solution from the list provided below based on the given task.\nTask: {task}\nQuestion: {question}{f'\nAdditional Context: {additional_context}' if additional_context else ""}\n\nHere are the possible solutions:",
         },
     ]
 

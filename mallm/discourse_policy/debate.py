@@ -54,10 +54,11 @@ class DiscourseDebate(DiscoursePolicy):
         include_current_turn_in_memory: bool = False,
         debate_rounds: int = 2,
         console: Optional[Console] = None,
-    ) -> tuple[Optional[str], int, list[Agreement], bool]:
+    ) -> tuple[Optional[str], int, list[Agreement], bool, dict[str, any]]:
         unique_id = 0
         memories = []
         voting_process_string = ""
+        additional_voting_results = {}
         if console is None:
             console = Console()
 
@@ -200,14 +201,18 @@ class DiscourseDebate(DiscoursePolicy):
                 logger.error("No decision protocol module found.")
                 raise Exception("No decision protocol module found.")
 
-            self.draft, self.decision, self.agreements, voting_process_string = (
-                coordinator.decision_protocol.make_decision(
-                    self.agreements,
-                    self.turn,
-                    len(coordinator.agents),
-                    task_instruction,
-                    input_str,
-                )
+            (
+                self.draft,
+                self.decision,
+                self.agreements,
+                voting_process_string,
+                additional_voting_results,
+            ) = coordinator.decision_protocol.make_decision(
+                self.agreements,
+                self.turn,
+                len(coordinator.agents),
+                task_instruction,
+                input_str,
             )
             if self.decision:
                 break
@@ -220,4 +225,10 @@ class DiscourseDebate(DiscoursePolicy):
             voting_process_string,
             console=console,
         )
-        return self.draft, self.turn, self.agreements, self.decision
+        return (
+            self.draft,
+            self.turn,
+            self.agreements,
+            self.decision,
+            additional_voting_results,
+        )
