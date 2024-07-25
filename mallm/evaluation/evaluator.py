@@ -55,7 +55,7 @@ class Evaluator:
         self.eval_file_path = output_file_path.with_name(
             output_file_path.stem + "-eval.json"
         )
-        
+
         self.data = self._load_data()
         self.metrics = self._initialize_metrics(metrics)
         self.extensive = extensive
@@ -134,7 +134,11 @@ class Evaluator:
         for metric in reported_metrics:
             logger.info(f"-> Statistics for: {metric.upper()}, {self.stats_file_path}")
             scores = [item.get("scores", {}).get(metric) for item in self.data]
-            scores = [score for score in scores if isinstance(score, (int, float))]
+            scores = [
+                score
+                for score in scores
+                if isinstance(score, (int, float)) and score is not None
+            ]
 
             if not scores:
                 logger.warning(f"No numeric scores found for {metric}")

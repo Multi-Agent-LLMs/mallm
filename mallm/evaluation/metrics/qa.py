@@ -31,7 +31,7 @@ class MultiChoiceBoolean(Metric):
 
         if not match:
             logger.warning(f"No pattern match found in answer: {generated_text}")
-            return {"correct": False}
+            return {"correct": None}
 
         logger.debug(f"Extracted answer: {match.group(1)} from {generated_text}")
         logger.debug(f"Comparing against reference: {reference}")
@@ -84,9 +84,16 @@ class SquadScore(Metric):
             dict[str, Any],
             SquadScore.squad_v2_metric.compute(
                 predictions=predictions, references=references
-            )
+            ),
         )
-        for key in ["exact", "f1", "HasAns_exact", "best_exact", "best_f1", "HasAns_f1"]:
+        for key in [
+            "exact",
+            "f1",
+            "HasAns_exact",
+            "best_exact",
+            "best_f1",
+            "HasAns_f1",
+        ]:
             if key in scores:
                 scores[key] /= 100
 
