@@ -1,5 +1,6 @@
 import json
 import sys
+import traceback
 from copy import deepcopy
 from typing import Any, Optional, List, Dict
 
@@ -38,6 +39,8 @@ def validate_config(config: Config) -> bool:
 
 def run_configuration(config: Config, run_name: str, name: str, repeat: int) -> None:
     # Adjust the output name for each repeat
+    if config.out.startswith("."):
+        config.out = config.out[1:]
     original_out = config.out.split(".")
     config.out = f"{original_out[0]}_{name}_repeat{repeat}.{original_out[1]}"
 
@@ -48,6 +51,7 @@ def run_configuration(config: Config, run_name: str, name: str, repeat: int) -> 
         print(f"Completed {run_name} (Repeat {repeat})")
     except Exception as e:
         print(f"Error running {run_name} (Repeat {repeat}): {e}")
+        print(traceback.format_exc())
 
 
 def validate_all_configs(
@@ -104,13 +108,7 @@ def run_batch(config_path: str) -> None:
     # Summarize the runs
     summarize_runs(valid_configs, repeats)
 
-    # Ask for confirmation
-    confirmation = input(
-        "Do you want to proceed with the batch process? (y/n): "
-    ).lower()
-    if confirmation != "y":
-        print("Batch process canceled.")
-        return
+    print("Starting batch processing.")
 
     # Run valid configurations
     for i, config in enumerate(valid_configs, 1):

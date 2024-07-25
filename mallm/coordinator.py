@@ -114,7 +114,7 @@ class Coordinator:
             self.agents = [self.moderator, *self.panelists]
         else:
             self.agents = self.panelists
-        
+
         if len(self.agents) == 1:
             logger.warning("Created only 1 agent. The discussion will be replaced by a self-improvement mechanism.")
 
