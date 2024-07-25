@@ -18,10 +18,11 @@ class SimpleResponseGenerator(FreeTextResponseGenerator):
         self, task_instruction: str, input_str: str, chain_of_thought: bool
     ) -> Response:
         prompt_content = f"""
-{task_instruction}
+Task: {task_instruction}
 Input: {input_str}
-"""  # input has context appended
+        """  # input has context appended
         prompt = [
+            self.base_prompt_baseline,
             {
                 "role": "system",
                 "content": prompt_content,
