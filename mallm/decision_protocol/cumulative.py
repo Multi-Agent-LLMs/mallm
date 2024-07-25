@@ -32,12 +32,12 @@ class CumulativeVoting(DecisionProtocol):
         agent_index: int,
         task: str,
         question: str,
-    ) -> tuple[str, bool, list[Agreement]]:
+    ) -> tuple[str, bool, list[Agreement], str]:
         if len(agreements) > self.total_agents:
             agreements = agreements[-self.total_agents :]
 
         if turn < self.vote_turn or agent_index != self.total_agents - 1:
-            return "", False, agreements
+            return "", False, agreements, ""
         final_answers = []
         for panelist in self.panelists:
             prev_answer: Agreement = next(
@@ -57,6 +57,7 @@ class CumulativeVoting(DecisionProtocol):
 
         # Collect points distribution from each panelist
         point_distributions = []
+        voting_process_string = ""
         for panelist in self.panelists:
             retries = 0
             while retries < 10:
@@ -81,6 +82,9 @@ class CumulativeVoting(DecisionProtocol):
                         point_distributions.append(points_dict)
                         logger.info(
                             f"{panelist.short_id} allocated points: {points_dict}"
+                        )
+                        voting_process_string += (
+                            f"{panelist.persona} allocated points: {points_dict}\n"
                         )
                         break
                     raise ValueError
@@ -114,7 +118,12 @@ class CumulativeVoting(DecisionProtocol):
             f"Selected answer from agent {self.panelists[best_solution_index].short_id} with {max_points} points"
         )
 
-        return final_answers[best_solution_index], agreed, agreements
+        return (
+            final_answers[best_solution_index],
+            agreed,
+            agreements,
+            voting_process_string,
+        )
 
     @staticmethod
     def validate_points_distribution(
