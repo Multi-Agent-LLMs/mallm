@@ -4,6 +4,7 @@ import glob
 import json
 import logging
 import os
+import random
 import sys
 import time
 import traceback
@@ -124,6 +125,10 @@ class Scheduler:
                 f"Input data has wrong format. Please delete and download the data again:\n{e}"
             )
             sys.exit(1)
+
+        if config.shuffle_input_samples:
+            random.shuffle(self.data)
+            logger.info("Shuffled the input data.")
 
         self.config = config
         self.llm = Chat(
