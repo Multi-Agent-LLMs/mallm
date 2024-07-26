@@ -39,10 +39,13 @@ def validate_config(config: Config) -> bool:
     return True
 
 def shuffle_input_data(config: Config, repeat: int) -> Config:
-    data = config.data
+    with open(config.data, "r") as f:
+        data = json.load(f)
+    
     random.shuffle(data)
 
-    new_file_name = str(Path(config.data).with_suffix(f"_repeat{repeat}.json"))
+    original_in = config.out.split(".")
+    new_file_name = config.data.replace("."+original_in[-1], f"_repeat{repeat}.json")
     with open(new_file_name, "w") as f:
         json.dump(data, f)
     config.data = new_file_name
