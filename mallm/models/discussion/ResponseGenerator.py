@@ -14,6 +14,7 @@ class ResponseGenerator(ABC):
     def generate_response(
         self,
         current_prompt: list[dict[str, str]],
+        task_instruction: str,
         chain_of_thought: bool,
         agreement: Optional[bool],
         baseline: bool,
