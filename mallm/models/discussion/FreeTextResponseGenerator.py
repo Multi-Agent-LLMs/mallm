@@ -37,12 +37,13 @@ Input: {input_str}
                 "content": prompt_content,
             },
         ]
-        return self.generate_response(prompt, task_instruction, chain_of_thought, None, True, True)
+        return self.generate_response(prompt, task_instruction, input_str, chain_of_thought, None, True, True)
 
     def generate_response(
         self,
         current_prompt: list[dict[str, str]],
         task_instruction: str,
+        input_str: str,
         chain_of_thought: bool,
         agreement: Optional[bool],
         baseline: bool,
@@ -69,7 +70,7 @@ Input: {input_str}
                     else self.extract_agreement(res, drafting)
                 ),
                 message=res,
-                solution=self.extract_result(res, task_instruction),
+                solution=self.extract_result(res, task_instruction, input_str),
             )
 
             if response.agreement is None and not drafting and not baseline:
@@ -101,7 +102,7 @@ Input: {input_str}
             instr_prompt,
         ]
         return self.generate_response(
-            current_prompt, data.task_instruction, chain_of_thought, None, False, False
+            current_prompt, data.task_instruction, data.input_str, chain_of_thought, None, False, False
         )
 
     def generate_improve(
@@ -122,7 +123,7 @@ Input: {input_str}
             instr_prompt,
         ]
         return self.generate_response(
-            current_prompt, data.task_instruction, chain_of_thought, None, False, False
+            current_prompt, data.task_instruction, data.input_str, chain_of_thought, None, False, False
         )
 
     def generate_draft(self, data: TemplateFilling, chain_of_thought: bool) -> Response:
@@ -141,18 +142,18 @@ Input: {input_str}
             instr_prompt,
         ]
         return self.generate_response(
-            current_prompt, data.task_instruction, chain_of_thought, None, False, True
+            current_prompt, data.task_instruction, data.input_str, chain_of_thought, None, False, True
         )
 
-    def extract_result(self, result: Optional[str], task_instruction: str) -> str:
+    def extract_result(self, result: Optional[str], task_instruction: str, input_text: str) -> str:
         current_prompt = [
             {
                 "role": "system",
-                "content": "Extract the final solution to the task from the provided text. Remove statements of agreement, disagreement, and explanations. Do not modify the text. Do not output any text besides the solution. Include the letter (A, B, C, D) in the solution if it exists. If there is no solution provided, just copy the text.",
+                "content": "Extract the final solution to the task from the output text. Remove statements of agreement, disagreement, and explanations. Do not modify the text. Do not output any text besides the solution. Include the letter (A, B, C, D) in the solution if it exists. If there is no solution provided, just copy the output text.",
             },
             {
                 "role": "user",
-                "content": f"Task: {task_instruction}\nText: {result}\nFinal solution:",
+                "content": f"Task: {task_instruction}\nInput Text: {input_text}\nOutput Text: {result}\nFinal solution:",
             },
         ]
         return self.llm.invoke(current_prompt)
@@ -179,6 +180,7 @@ Current solution: {current_solution}
         return self.generate_response(
             current_prompt=prompt,
             task_instruction=task_instruction,
+            input_str=input_str,
             chain_of_thought=chain_of_thought,
             agreement=None,
             baseline=True,
