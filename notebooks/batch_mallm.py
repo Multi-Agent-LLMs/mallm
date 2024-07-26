@@ -53,10 +53,8 @@ def shuffle_input_data(config: Config, repeat: int) -> Config:
     return config
 
 def run_configuration(config: Config, run_name: str, repeat: int) -> None:
-    if config.out.startswith("."):
-        config.out = config.out[1:]
-    original_out = config.out.split(".")
-    config.out = f"{original_out[0]}_repeat{repeat}.{original_out[1]}"
+    original_out = ".".join(config.out.split(".")[:-1])
+    config.out = f"{original_out}_repeat{repeat}.json"
 
     if repeat != 1: # keep one with unchanged samples for correlation evaluations
         config = shuffle_input_data(config, repeat)
