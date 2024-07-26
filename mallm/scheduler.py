@@ -173,6 +173,7 @@ class Scheduler:
         except Exception as e:
             logger.error("Failed intializing coordinator.")
             logger.error(e)
+            self.failed_example_ids.append(sample.example_id)
             return None
         try:
             (

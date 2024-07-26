@@ -178,6 +178,7 @@ Current solution: {current_solution}
         ]
         return self.generate_response(
             current_prompt=prompt,
+            task_instruction=task_instruction,
             chain_of_thought=chain_of_thought,
             agreement=None,
             baseline=True,
