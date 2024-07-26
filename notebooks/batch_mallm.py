@@ -56,7 +56,7 @@ def run_configuration(config: Config, run_name: str, repeat: int) -> None:
     config.out = f"{original_out[0]}_repeat{repeat}.{original_out[1]}"
 
     if repeat != 1: # keep one with unchanged samples for correlation evaluations
-        shuffle_input_data(config, repeat)
+        config = shuffle_input_data(config, repeat)
 
     try:
         print(f"Running {run_name} (Repeat {repeat})")
