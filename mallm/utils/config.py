@@ -30,8 +30,6 @@ class Config:
     extract_all_drafts: bool = True
     debate_rounds: int = 2
     max_concurrent_requests: int = 100
-    clear_memory_bucket: bool = True
-    memory_bucket_dir: str = "./mallm/utils/memory_bucket/"
     baseline: bool = False
     chain_of_thought: bool = True
     num_agents: int = 3
@@ -95,6 +93,3 @@ class Config:
                 "max_concurrent_requests is too large. TGI can only handle about 500 requests. Please make sure to leave computing for other poeple too. Recommended: ~250."
             )
             sys.exit(1)
-        if not os.path.exists(self.memory_bucket_dir):
-            os.makedirs(self.memory_bucket_dir)
-            logger.info(f"Created memory bucket directory: {self.memory_bucket_dir}")

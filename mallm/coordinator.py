@@ -1,8 +1,4 @@
-import dataclasses
-import dbm
-import json
 import logging
-import os
 import time
 import uuid
 from collections.abc import Sequence
@@ -38,7 +34,6 @@ class Coordinator:
         client: httpx.Client,
         agent_generator: str = "expert",
         use_moderator: bool = False,
-        memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
     ):
         self.personas = None
         self.id = str(uuid.uuid4())
@@ -47,14 +42,12 @@ class Coordinator:
         self.agents: Sequence[Agent] = []
         self.use_moderator = use_moderator
         self.moderator: Optional[Moderator] = None
-        self.memory_bucket_dir = memory_bucket_dir
-        self.memory_bucket = os.path.join(self.memory_bucket_dir, "global_" + self.id)
-        dbm.open(self.memory_bucket, "c")
         self.decision_protocol: Optional[DecisionProtocol] = None
         self.llm = model
         self.response_generator: ResponseGenerator = SimpleResponseGenerator(self.llm)
         self.client = client
         self.agent_generator = agent_generator
+        self.memory : dict[str, Memory] = {}
 
     def init_agents(
         self,
@@ -71,7 +64,7 @@ class Coordinator:
         1) identify helpful personas
         2) create agents with the personas
         """
-        logger.debug(f"Coordinator {self.id} creates the agents ({self.agent_generator})...")
+        logger.debug(f"Coordinator {self.id} creates {num_agents} agents ({self.agent_generator})...")
         self.panelists = []
         self.agents = []
 
@@ -132,13 +125,11 @@ class Coordinator:
 
     def update_global_memory(self, memory: Memory) -> None:
         """
-        Updates the dbm memory with another discussion entry.
+        Updates the memory with another discussion entry.
         Returns string
         """
-        with dbm.open(self.memory_bucket, "c") as db:
-            db[str(memory.message_id)] = json.dumps(dataclasses.asdict(memory))
-            logger.debug(str(db[str(memory.message_id)]))
-        self.save_global_memory_to_json()
+        self.memory[str(memory.message_id)] = memory
+        logger.debug(str(self.memory[str(memory.message_id)]))
 
     def get_global_memory(self) -> list[Memory]:
         """
@@ -146,25 +137,9 @@ class Coordinator:
         Returns: dict
         """
         memory = []
-        with dbm.open(self.memory_bucket, "r") as db:
-            for key in db.keys():
-                json_object = json.loads(db[key].decode())
-                memory.append(Memory(**json_object))
+        for key in self.memory.keys():
+            memory.extend([self.memory[key]])
         return memory
-
-    def save_global_memory_to_json(self) -> None:
-        """
-        Converts the memory bucket dbm data to json format
-        """
-        try:
-            with open(self.memory_bucket + ".json", "w") as f:
-                json.dump(
-                    [dataclasses.asdict(memory) for memory in self.get_global_memory()],
-                    f,
-                )
-        except Exception as e:
-            logger.error(f"Failed to save agent memory to {self.memory_bucket}: {e}")
-            logger.error(self.get_global_memory())
 
     @staticmethod
     def update_memories(

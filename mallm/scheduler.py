@@ -1,6 +1,5 @@
 import dataclasses
 import gc
-import glob
 import json
 import logging
 import os
@@ -56,10 +55,6 @@ class Scheduler:
         if os.path.exists(config.out):
             os.remove(config.out)
             logger.info(f"""The file {config.out} has been deleted.""")
-
-        # Cleaning the memory bucked from previous runs
-        if config.clear_memory_bucket:
-            self.clean_memory_bucket(config.memory_bucket_dir)
 
         # Read input data (format: json lines)
         try:
@@ -173,7 +168,6 @@ class Scheduler:
                 model=self.llm,
                 agent_generator=self.config.agent_generator,
                 client=client,
-                memory_bucket_dir=self.config.memory_bucket_dir,
             )
         except Exception as e:
             logger.error("Failed intializing coordinator.")
@@ -536,27 +530,6 @@ class Scheduler:
             processing_data = self.data[: len(self.failed_example_ids)]
             self.data = self.data[len(self.failed_example_ids) :]
             self.failed_example_ids = []
-
-    def clean_memory_bucket(self, memory_bucket_dir: Optional[str] = None) -> None:
-        """
-        Deletes all stored global memory
-        """
-        if not memory_bucket_dir:
-            memory_bucket_dir = self.config.memory_bucket_dir
-
-        filelist = glob.glob(os.path.join(memory_bucket_dir, "*.bak"))
-        for f in filelist:
-            os.remove(f)
-        filelist = glob.glob(os.path.join(memory_bucket_dir, "*.dat"))
-        for f in filelist:
-            os.remove(f)
-        filelist = glob.glob(os.path.join(memory_bucket_dir, "*.dir"))
-        for f in filelist:
-            os.remove(f)
-        filelist = glob.glob(os.path.join(memory_bucket_dir, "*.json"))
-        for f in filelist:
-            os.remove(f)
-        logger.info(f"Cleaned the memory bucket {memory_bucket_dir!s}.")
 
     def run(self) -> None:
         """
