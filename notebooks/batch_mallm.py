@@ -1,8 +1,10 @@
 import json
 import sys
 import traceback
+import random
 from copy import deepcopy
 from typing import Any, Optional, List, Dict
+from pathlib import Path
 
 from mallm.scheduler import Scheduler
 from mallm.utils.config import Config
@@ -36,13 +38,25 @@ def validate_config(config: Config) -> bool:
             return False
     return True
 
+def shuffle_input_data(config: Config, repeat: int) -> Config:
+    data = config.data
+    random.shuffle(data)
 
-def run_configuration(config: Config, run_name: str, name: str, repeat: int) -> None:
-    # Adjust the output name for each repeat
+    new_file_name = str(Path(config.data).with_suffix(f"_repeat{repeat}.json"))
+    with open(new_file_name, "w") as f:
+        json.dump(data, f)
+    config.data = new_file_name
+
+    return config
+
+def run_configuration(config: Config, run_name: str, repeat: int) -> None:
     if config.out.startswith("."):
         config.out = config.out[1:]
     original_out = config.out.split(".")
-    config.out = f"{original_out[0]}_{name}_repeat{repeat}.{original_out[1]}"
+    config.out = f"{original_out[0]}_repeat{repeat}.{original_out[1]}"
+
+    if repeat != 1: # keep one with unchanged samples for correlation evaluations
+        shuffle_input_data(config, repeat)
 
     try:
         print(f"Running {run_name} (Repeat {repeat})")
@@ -114,7 +128,7 @@ def run_batch(config_path: str) -> None:
     for i, config in enumerate(valid_configs, 1):
         print(f"\nProcessing run {i}/{len(valid_configs)}")
         for repeat in range(1, repeats + 1):
-            run_configuration(deepcopy(config), f"Run {i}", name, repeat)
+            run_configuration(deepcopy(config), f"Run {i}", repeat)
 
     print("\nBatch processing completed.")
 
