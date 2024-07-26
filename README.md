@@ -131,6 +131,7 @@ hf_dataset_reference_column: Optional[str] = None
 hf_dataset_context_column: Optional[str] = None
 feedback_only: bool = False
 ablation: bool = False
+shuffle_input_samples: bool = False
 ```
 
 ### Discussion Parameters:
