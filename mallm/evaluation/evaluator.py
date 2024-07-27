@@ -136,7 +136,11 @@ class Evaluator:
         for metric in reported_metrics:
             logger.info(f"-> Statistics for: {metric.upper()}, {self.stats_file_path}")
             scores = [item.get("scores", {}).get(metric) for item in self.data]
-            scores = [score for score in scores if isinstance(score, (int, float))]
+            scores = [
+                score
+                for score in scores
+                if isinstance(score, (int, float)) and score is not None
+            ]
 
             if not scores:
                 logger.warning(f"No numeric scores found for {metric}")

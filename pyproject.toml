@@ -40,8 +40,7 @@ bert-score = "^0.3.13"
 evaluate = "^0.4.2"
 json-repair = "^0.25.1"
 distinct-n = { git = "https://github.com/neural-dialogue-metrics/Distinct-N.git" }
-
-
+rich = "^13.7.1"
 
 [tool.poetry.group.dev.dependencies]
 tqdm = "^4.66.2"

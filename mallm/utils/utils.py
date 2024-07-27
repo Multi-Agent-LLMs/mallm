@@ -4,6 +4,9 @@ import sys
 from contextlib import AbstractContextManager
 from typing import Any, TextIO
 
+from rich.progress import Console  # type: ignore
+from rich.text import Text
+
 
 class SuppressOutput:
     def __init__(self) -> None:
@@ -46,3 +49,13 @@ def pretty_print_dict(
     print("\n" + "=" * width)
     print("END OF CONFIGURATION PARAMETERS".center(width))
     print("=" * width + "\n")
+
+
+def log_rich(rich_element: Any) -> Text:
+    """Generate an ascii formatted presentation of a Rich table
+    Eliminates any column styling
+    """
+    console = Console(width=150)
+    with console.capture() as capture:
+        console.print(rich_element)
+    return Text.from_ansi(capture.get())
