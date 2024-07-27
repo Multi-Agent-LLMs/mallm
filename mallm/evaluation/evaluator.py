@@ -9,6 +9,7 @@ from tqdm import tqdm
 import mallm.scheduler  # noqa
 from mallm.evaluation.metrics.bertscore import BERTScore
 from mallm.evaluation.metrics.bleu import BLEU
+from mallm.evaluation.metrics.distinct import Distinct
 from mallm.evaluation.metrics.meteor import METEOR
 from mallm.evaluation.metrics.qa import (
     AnswerabilityBoolean,
@@ -26,6 +27,7 @@ ALL_METRICS = [
     MultiChoiceBoolean(),
     ROUGE(),
     SquadScore(),
+    Distinct(),
 ]
 
 logger = logging.getLogger("mallm")
@@ -55,7 +57,7 @@ class Evaluator:
         self.eval_file_path = output_file_path.with_name(
             output_file_path.stem + "-eval.json"
         )
-        
+
         self.data = self._load_data()
         self.metrics = self._initialize_metrics(metrics)
         self.extensive = extensive
