@@ -24,7 +24,6 @@ from mallm.models.Chat import Chat
 from mallm.utils.config import Config
 from mallm.utils.CustomFormatter import CustomFormatter
 from mallm.utils.dicts import RESPONSE_GENERATORS
-from mallm.utils.functions import sort_output_file
 from mallm.utils.types import InputExample, Response
 from mallm.utils.utils import pretty_print_dict
 
@@ -540,14 +539,6 @@ class Scheduler:
                 self.manage_baseline(client)  # baseline (single LM)
             else:
                 self.manage_discussions(client)  # multi-agent discussion
-
-        sort_output_file(input_file=self.config.data, output_file=self.config.out)
-        if self.config.ablation:
-            out_path = Path(self.config.out)
-            sort_output_file(
-                input_file=self.config.data,
-                output_file=str(out_path.with_name(out_path.stem + "-ablation.json")),
-            )
 
 
 def main() -> None:

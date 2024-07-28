@@ -1,5 +1,3 @@
-import json
-from pathlib import Path
 from typing import Optional
 
 
@@ -16,24 +14,3 @@ def extract_draft(response: Optional[str]) -> Optional[str]:
             0
         ]  # because LM tends to add extra explanation afterwards
     return None
-
-
-def sort_output_file(input_file: str, output_file: str) -> None:
-    """
-    Sorts the output file to match the input file.
-    """
-    print(f"Sorting output file {output_file} to match the input file {input_file}...")
-    data_out = json.loads(Path(output_file).read_text())
-    data_in = json.loads(Path(input_file).read_text())
-
-    # Create a dictionary to map example_ids to their corresponding data_out entries
-    data_out_dict = {entry["exampleId"]: entry for entry in data_out}
-
-    # Reorder data_out to match the order of example_ids in data_in
-    sorted_data_out = [
-        data_out_dict[entry["example_id"]]
-        for entry in data_in
-        if entry["example_id"] in data_out_dict
-    ]
-
-    Path(output_file).write_text(json.dumps(sorted_data_out, indent=4))
