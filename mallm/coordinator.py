@@ -50,6 +50,7 @@ class Coordinator:
         self.response_generator: ResponseGenerator = SimpleResponseGenerator(self.llm)
         self.client = client
         self.agent_generator = agent_generator
+        self.memory: dict[str, Memory] = {}
         self.console = console or Console()
 
     def init_agents(
