@@ -42,6 +42,7 @@ class Agent:
         self.memory_bucket = os.path.join(
             coordinator.memory_bucket_dir, f"agent_{self.id}"
         )
+        dbm.open(self.memory_bucket, "c")
         self.coordinator = coordinator
         self.moderator = moderator
         self.llm = llm

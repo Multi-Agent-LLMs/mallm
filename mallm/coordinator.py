@@ -52,6 +52,7 @@ class Coordinator:
         self.moderator: Optional[Moderator] = None
         self.memory_bucket_dir = memory_bucket_dir
         self.memory_bucket = os.path.join(self.memory_bucket_dir, "global_" + self.id)
+        dbm.open(self.memory_bucket, "c")
         self.decision_protocol: Optional[DecisionProtocol] = None
         self.llm = model
         self.response_generator: ResponseGenerator = SimpleResponseGenerator(self.llm)
@@ -118,7 +119,7 @@ class Coordinator:
             self.agents = [self.moderator, *self.panelists]
         else:
             self.agents = self.panelists
-        
+
         if len(self.agents) == 1:
             logger.warning("Created only 1 agent. The discussion will be replaced by a self-improvement mechanism.")
 
