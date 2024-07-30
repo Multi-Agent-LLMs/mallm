@@ -146,7 +146,7 @@ Discussion Paradigms: `debate`, `memory`, `relay`, `report`
 ## Evaluation
 
 We provide some basic evaluation metrics that can be directly applied to the output json of mallm.
-Supported metrics: `answerability`, `bertscore`, `bleu`, `meteor`, `multichoice`, `rouge`, `squad`
+Supported metrics: `answerability`, `bertscore`, `bleu`, `distinct`, `meteor`, `multichoice`, `rouge`, `squad`
 
 From terminal:
 

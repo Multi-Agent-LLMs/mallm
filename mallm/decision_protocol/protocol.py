@@ -23,7 +23,7 @@ class DecisionProtocol(ABC):
         agent_index: int,
         task: str,
         question: str,
-    ) -> tuple[str, bool, list[Agreement]]:
+    ) -> tuple[str, bool, list[Agreement], str]:
         """
         Abstract method to make a decision based on agreements, the current turn number, and the list of panelists.
 

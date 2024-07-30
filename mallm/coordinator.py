@@ -3,9 +3,11 @@ import time
 import uuid
 from collections.abc import Sequence
 from datetime import timedelta
+from pathlib import Path
 from typing import Optional
 
 import httpx
+from rich.progress import Console  # type: ignore
 
 from mallm.agents.agent import Agent
 from mallm.agents.moderator import Moderator
@@ -34,6 +36,7 @@ class Coordinator:
         client: httpx.Client,
         agent_generator: str = "expert",
         use_moderator: bool = False,
+        console: Optional[Console] = None,
     ):
         self.personas = None
         self.id = str(uuid.uuid4())
@@ -47,7 +50,7 @@ class Coordinator:
         self.response_generator: ResponseGenerator = SimpleResponseGenerator(self.llm)
         self.client = client
         self.agent_generator = agent_generator
-        self.memory : dict[str, Memory] = {}
+        self.console = console or Console()
 
     def init_agents(
         self,
@@ -225,13 +228,13 @@ class Coordinator:
         logger.info(
             f"""Starting discussion with coordinator {self.id}...
 -------------
-Instruction: {sample_instruction}
-Input: {input_str}
-Feedback sentences: {config.feedback_sentences!s}
-Maximum turns: {config.max_turns}
-Agents: {[a.persona for a in self.agents]!s}
-Paradigm: {policy.__class__.__name__}
-Decision-protocol: {self.decision_protocol.__class__.__name__}
+[bold blue]Instruction:[/] {sample_instruction}
+[bold blue]Input:[/] {input_str}
+[bold blue]Feedback sentences:[/] {config.feedback_sentences!s}
+[bold blue]Maximum turns:[/] {config.max_turns}
+[bold blue]Agents:[/] {[a.persona for a in self.agents]!s}
+[bold blue]Paradigm:[/] {policy.__class__.__name__}
+[bold blue]Decision-protocol:[/] {self.decision_protocol.__class__.__name__}
 -------------"""
         )
 
@@ -246,6 +249,7 @@ Decision-protocol: {self.decision_protocol.__class__.__name__}
             context_length=config.context_length,
             include_current_turn_in_memory=config.include_current_turn_in_memory,
             debate_rounds=config.debate_rounds,
+            console=self.console,
         )
 
         discussion_time = timedelta(
@@ -254,6 +258,7 @@ Decision-protocol: {self.decision_protocol.__class__.__name__}
 
         global_mem = self.get_global_memory()
         agent_mems = [a.get_memories()[0] for a in self.agents]
+        self.console.save_html(str(Path(config.out).with_suffix(".html")), clear=False)
 
         return (
             answer,
