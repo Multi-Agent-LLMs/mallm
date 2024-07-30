@@ -4,11 +4,13 @@ from pathlib import Path
 from typing import Any, Optional
 
 import fire
+import json_repair
 from tqdm import tqdm
 
 import mallm.scheduler  # noqa
 from mallm.evaluation.metrics.bertscore import BERTScore
 from mallm.evaluation.metrics.bleu import BLEU
+from mallm.evaluation.metrics.distinct import Distinct
 from mallm.evaluation.metrics.meteor import METEOR
 from mallm.evaluation.metrics.qa import (
     AnswerabilityBoolean,
@@ -26,6 +28,7 @@ ALL_METRICS = [
     MultiChoiceBoolean(),
     ROUGE(),
     SquadScore(),
+    Distinct(),
 ]
 
 logger = logging.getLogger("mallm")
@@ -61,9 +64,9 @@ class Evaluator:
         self.extensive = extensive
 
     def _load_data(self) -> list[dict[str, Any]]:
-        with open(self.input_file_path) as file:
-            data: list[dict[str, Any]] = json.load(file)
-            return data
+        data_str = Path(self.input_file_path).read_text()
+        data: list[dict[str, Any]] = json_repair.repair_json(data_str, return_objects=True)
+        return data
 
     @staticmethod
     def _initialize_metrics(metrics: Optional[list[str]]) -> list[Any]:
@@ -132,7 +135,6 @@ class Evaluator:
 
         stats = {}
         for metric in reported_metrics:
-            logger.info(f"-> Statistics for: {metric.upper()}, {self.stats_file_path}")
             scores = [item.get("scores", {}).get(metric) for item in self.data]
             scores = [
                 score
