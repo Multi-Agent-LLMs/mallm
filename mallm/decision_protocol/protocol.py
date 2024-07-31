@@ -1,9 +1,15 @@
 from abc import ABC, abstractmethod
+from enum import Enum
 
 from mallm.agents.panelist import Panelist
 from mallm.utils.types import Agreement
 
-DECISION_ALTERATIONS = ["public", "facts", "confidence", "anonymous"]
+
+class DecisionAlteration(Enum):
+    PUBLIC = "public"
+    FACTS = "facts"
+    CONFIDENCE = "confidence"
+    ANONYMOUS = "anonymous"
 
 
 class DecisionProtocol(ABC):

@@ -55,7 +55,7 @@ class Evaluator:
         self.eval_file_path = output_file_path.with_name(
             output_file_path.stem + "-eval.json"
         )
-        
+
         self.data = self._load_data()
         self.metrics = self._initialize_metrics(metrics)
         self.extensive = extensive

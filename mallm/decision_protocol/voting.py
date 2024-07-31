@@ -1,8 +1,10 @@
 import logging
 from collections import Counter
 
+from contextplus import context
+
 from mallm.agents.panelist import Panelist
-from mallm.decision_protocol.protocol import DECISION_ALTERATIONS, DecisionProtocol
+from mallm.decision_protocol.protocol import DecisionAlteration, DecisionProtocol
 from mallm.utils.prompts import (
     generate_final_answer_prompt,
     generate_voting_prompt,
@@ -53,22 +55,41 @@ class Voting(DecisionProtocol):
             prev_answer.solution = response
             final_answers.append(response)
         all_votes = {}
-        for alteration in DECISION_ALTERATIONS:
+        facts = None
+        for alteration in DecisionAlteration:
+            if alteration == DecisionAlteration.FACTS:
+                facts = context(question)
             votes = []
             voting_process_string = ""
             for panelist in self.panelists:
                 retries = 0
                 while retries < 10:
                     # Creates a prompt with all the answers and asks the agent to vote for the best one, 0 indexed inorder
-                    vote = panelist.llm.invoke(
-                        generate_voting_prompt(
-                            panelist.persona,
-                            panelist.persona_description,
-                            task,
-                            question,
-                            final_answers,
+                    if alteration == DecisionAlteration.ANONYMOUS:
+                        vote = panelist.llm.invoke(
+                            generate_voting_prompt(
+                                panelist.persona,
+                                panelist.persona_description,
+                                task,
+                                question,
+                                final_answers,
+                            )
                         )
-                    )
+                    elif alteration == DecisionAlteration.FACTS:
+                        vote = panelist.llm.invoke(
+                            generate_voting_prompt(
+                                panelist.persona,
+                                panelist.persona_description,
+                                task,
+                                question,
+                                final_answers,
+                                additional_context=facts,
+                            )
+                        )
+                    elif alteration == DecisionAlteration.CONFIDENCE:
+                        continue
+                    else:
+                        continue
                     try:
                         vote_int = int(vote.strip())
                         if 0 <= vote_int < len(final_answers):
@@ -94,14 +115,22 @@ class Voting(DecisionProtocol):
             # Search for the answer with the most votes from the agents
             vote_counts = Counter(votes)
             most_voted = vote_counts.most_common(1)[0][0]
-            all_votes[alteration] = {"votes": votes, "most_voted": most_voted}
+            all_votes[alteration] = {
+                "votes": votes,
+                "most_voted": most_voted,
+                "voting_process_string": voting_process_string,
+            }
             logger.info(
                 f"Voted for answer from agent {self.panelists[most_voted].short_id}"
             )
+        all_votes["final_answers"] = final_answers
+        all_votes["type"] = "voting"
         return (
-            final_answers[most_voted],
+            final_answers[all_votes[DecisionAlteration.ANONYMOUS]["most_voted"]],
             True,
             agreements,
-            voting_process_string,
+            final_answers[
+                all_votes[DecisionAlteration.ANONYMOUS]["voting_process_string"]
+            ],
             all_votes,
         )
