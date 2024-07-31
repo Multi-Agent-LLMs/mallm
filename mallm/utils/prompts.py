@@ -2,6 +2,7 @@ import json
 import logging
 from typing import Optional
 
+from mallm.agents.panelist import Panelist
 from mallm.utils.types import TemplateFilling
 
 logger = logging.getLogger("mallm")
@@ -179,32 +180,71 @@ def generate_final_answer_prompt(
     ]
 
 
-def generate_voting_prompt(
-    persona: str,
-    persona_description: str,
+def voting_base_prompt(
+    voting_message: str,
+    panelist: Panelist,
+    panelists: list[Panelist],
     task: str,
     question: str,
     solutions: list[str],
     additional_context: Optional[str] = None,
-) -> list[dict[str, str]]:
+    anonymous: bool = True,
+    confidence: Optional[list[float]] = None,
+    history: bool = False,
+):
     prompts = [
         {
             "role": "system",
-            "content": f"Your role: {persona} ({persona_description})",
-        },
+            "content": f"Your role: {panelist.persona} ({panelist.persona_description})",
+        }
+    ]
+    if history:
+        prompts.append(
+            {
+                "role": "user",
+                "content": "Here is the discussion history to help you make a decision:",
+            }
+        )
+        prompts.extend(panelist.get_discussion_history())
+    prompts.append(
         {
             "role": "user",
-            "content": f"You are tasked with voting for the best solution from the list provided below based on the given task.\nTask: {task}\nQuestion: {question}{f'\nAdditional Context: {additional_context}' if additional_context else ""}\n\nHere are the possible solutions:",
-        },
-    ]
-
+            "content": f"{voting_message}\nTask: {task}\nQuestion: {question}{f'\nAdditional Context: {additional_context}' if additional_context else ""}\n\nHere are the possible solutions:",
+        }
+    )
     for i, solution in enumerate(solutions):
         prompts.append(
             {
                 "role": "user",
-                "content": f"Solution {i}: {solution}",
+                "content": f"Solution {i if anonymous else panelists[i].persona}: {solution}{"" if confidence is None else f'\n\n(Confidence: {confidence[i]} %)'}",
             }
         )
+    return prompts
+
+
+def generate_voting_prompt(
+    panelist: Panelist,
+    panelists: list[Panelist],
+    task: str,
+    question: str,
+    solutions: list[str],
+    additional_context: Optional[str] = None,
+    anonymous: bool = True,
+    confidence: Optional[list[float]] = None,
+    history: bool = False,
+) -> list[dict[str, str]]:
+    prompts = voting_base_prompt(
+        "You are tasked with voting for the best solution from the list provided below based on the given task.",
+        panelist,
+        panelists,
+        task,
+        question,
+        solutions,
+        additional_context,
+        anonymous,
+        confidence,
+        history,
+    )
 
     prompts.append(
         {
@@ -217,30 +257,28 @@ def generate_voting_prompt(
 
 
 def generate_approval_voting_prompt(
-    persona: str,
-    persona_description: str,
+    panelist: Panelist,
+    panelists: list[Panelist],
     task: str,
     question: str,
     solutions: list[str],
+    additional_context: Optional[str] = None,
+    anonymous: bool = True,
+    confidence: Optional[list[float]] = None,
+    history: bool = False,
 ) -> list[dict[str, str]]:
-    prompts = [
-        {
-            "role": "system",
-            "content": f"Your role: {persona} ({persona_description})",
-        },
-        {
-            "role": "user",
-            "content": f"You are tasked with approving any number of solutions from the list provided below based on the given task.\nTask: {task}\nQuestion: {question}\n\nHere are the possible solutions:",
-        },
-    ]
-
-    for i, solution in enumerate(solutions):
-        prompts.append(
-            {
-                "role": "user",
-                "content": f"Solution {i}: {solution}",
-            }
-        )
+    prompts = voting_base_prompt(
+        "You are tasked with approving any number of solutions from the list provided below based on the given task.",
+        panelist,
+        panelists,
+        task,
+        question,
+        solutions,
+        additional_context,
+        anonymous,
+        confidence,
+        history,
+    )
 
     prompts.append(
         {
@@ -253,30 +291,28 @@ def generate_approval_voting_prompt(
 
 
 def generate_cumulative_voting_prompt(
-    persona: str,
-    persona_description: str,
+    panelist: Panelist,
+    panelists: list[Panelist],
     task: str,
     question: str,
     solutions: list[str],
+    additional_context: Optional[str] = None,
+    anonymous: bool = True,
+    confidence: Optional[list[float]] = None,
+    history: bool = False,
 ) -> list[dict[str, str]]:
-    prompts = [
-        {
-            "role": "system",
-            "content": f"Your role: {persona} ({persona_description})",
-        },
-        {
-            "role": "user",
-            "content": f"You are tasked with distributing 10 points among the provided solutions based on the given task.\nTask: {task}\nQuestion: {question}\n\nHere are the possible solutions:",
-        },
-    ]
-
-    for i, solution in enumerate(solutions):
-        prompts.append(
-            {
-                "role": "user",
-                "content": f"Solution {i}: {solution}",
-            }
-        )
+    prompts = voting_base_prompt(
+        "You are tasked with distributing 10 points among the provided solutions based on the given task.",
+        panelist,
+        panelists,
+        task,
+        question,
+        solutions,
+        additional_context,
+        anonymous,
+        confidence,
+        history,
+    )
 
     prompts.append(
         {
@@ -289,30 +325,28 @@ def generate_cumulative_voting_prompt(
 
 
 def generate_ranking_prompt(
-    persona: str,
-    persona_description: str,
+    panelist: Panelist,
+    panelists: list[Panelist],
     task: str,
     question: str,
     solutions: list[str],
+    additional_context: Optional[str] = None,
+    anonymous: bool = True,
+    confidence: Optional[list[float]] = None,
+    history: bool = False,
 ) -> list[dict[str, str]]:
-    prompts = [
-        {
-            "role": "system",
-            "content": f"Your role: {persona} ({persona_description})",
-        },
-        {
-            "role": "user",
-            "content": f"You are tasked with ranking the solutions from the most preferred to the least preferred based on the given task.\nTask: {task}\nQuestion: {question}\n\nHere are the possible solutions:",
-        },
-    ]
-
-    for i, solution in enumerate(solutions):
-        prompts.append(
-            {
-                "role": "user",
-                "content": f"Solution {i}: {solution}",
-            }
-        )
+    prompts = voting_base_prompt(
+        "You are tasked with ranking the solutions from the most preferred to the least preferred based on the given task.",
+        panelist,
+        panelists,
+        task,
+        question,
+        solutions,
+        additional_context,
+        anonymous,
+        confidence,
+        history,
+    )
 
     prompts.append(
         {

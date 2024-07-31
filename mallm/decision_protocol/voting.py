@@ -68,8 +68,8 @@ class Voting(DecisionProtocol):
                     if alteration == DecisionAlteration.ANONYMOUS:
                         vote = panelist.llm.invoke(
                             generate_voting_prompt(
-                                panelist.persona,
-                                panelist.persona_description,
+                                panelist,
+                                self.panelists,
                                 task,
                                 question,
                                 final_answers,
@@ -78,8 +78,8 @@ class Voting(DecisionProtocol):
                     elif alteration == DecisionAlteration.FACTS:
                         vote = panelist.llm.invoke(
                             generate_voting_prompt(
-                                panelist.persona,
-                                panelist.persona_description,
+                                panelist,
+                                self.panelists,
                                 task,
                                 question,
                                 final_answers,
@@ -87,9 +87,31 @@ class Voting(DecisionProtocol):
                             )
                         )
                     elif alteration == DecisionAlteration.CONFIDENCE:
-                        continue
+                        vote = panelist.llm.invoke(
+                            generate_voting_prompt(
+                                panelist,
+                                self.panelists,
+                                task,
+                                question,
+                                final_answers,
+                                confidence=[100.0 for _ in self.panelists],
+                            )
+                        )
+                    elif alteration == DecisionAlteration.PUBLIC:
+                        vote = panelist.llm.invoke(
+                            generate_voting_prompt(
+                                panelist,
+                                self.panelists,
+                                task,
+                                question,
+                                final_answers,
+                                anonymous=False,
+                            )
+                        )
                     else:
-                        continue
+                        raise ValueError(
+                            f"Unknown DecisionAlteration type: {alteration}"
+                        )
                     try:
                         vote_int = int(vote.strip())
                         if 0 <= vote_int < len(final_answers):
