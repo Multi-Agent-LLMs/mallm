@@ -151,8 +151,6 @@ class Voting(DecisionProtocol):
             final_answers[all_votes[DecisionAlteration.ANONYMOUS]["most_voted"]],
             True,
             agreements,
-            final_answers[
-                all_votes[DecisionAlteration.ANONYMOUS]["voting_process_string"]
-            ],
+            all_votes[DecisionAlteration.ANONYMOUS]["voting_process_string"],
             all_votes,
         )
