@@ -192,9 +192,7 @@ class Agent:
         memory_ids = []
         current_draft = None
 
-        for key in self.memory.keys():
-            memories.extend([self.memory[key]])
-        memories = sorted(memories, key=lambda x: x.message_id, reverse=False)
+        memories = sorted(self.memory.values(), key=lambda x: x.message_id, reverse=False)
         context_memory = []
         for memory in memories:
             if (
