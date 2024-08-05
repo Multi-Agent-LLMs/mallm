@@ -86,7 +86,7 @@ class Agent:
             memory_ids=memory_ids,
             additional_args=dataclasses.asdict(template_filling),
         )
-        self.coordinator.update_global_memory(memory)
+        self.coordinator.memory.append(memory)
         return response.message, memory, agreements
 
     def draft(
@@ -125,7 +125,7 @@ class Agent:
             memory_ids=memory_ids,
             additional_args=dataclasses.asdict(template_filling),
         )
-        self.coordinator.update_global_memory(memory)
+        self.coordinator.memory.append(memory)
         return response.message, memory, agreements
 
     def feedback(
@@ -169,7 +169,7 @@ class Agent:
             memory_ids=memory_ids,
             additional_args=dataclasses.asdict(template_filling),
         )
-        self.coordinator.update_global_memory(memory)
+        self.coordinator.memory.append(memory)
         return response.message, memory, agreements
 
     def update_memory(self, memory: Memory) -> None:

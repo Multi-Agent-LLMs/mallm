@@ -96,8 +96,8 @@ def test_update_global_memory():
         persona="test",
         contribution="contribution",
     )
-    coordinator.update_global_memory(memory)
-    retrieved_memory = coordinator.get_global_memory()
+    coordinator.memory.append(memory)
+    retrieved_memory = coordinator.memory
     assert len(retrieved_memory) == 1
     assert retrieved_memory[0].message_id == 1
     assert retrieved_memory[0].message == "content"

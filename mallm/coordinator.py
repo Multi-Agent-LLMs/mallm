@@ -50,7 +50,7 @@ class Coordinator:
         self.response_generator: ResponseGenerator = SimpleResponseGenerator(self.llm)
         self.client = client
         self.agent_generator = agent_generator
-        self.memory: dict[str, Memory] = {}
+        self.memory: list[Memory] = []
         self.console = console or Console()
 
     def init_agents(
@@ -127,24 +127,6 @@ class Coordinator:
             for a in self.agents
         ]
 
-    def update_global_memory(self, memory: Memory) -> None:
-        """
-        Updates the memory with another discussion entry.
-        Returns string
-        """
-        self.memory[str(memory.message_id)] = memory
-        logger.debug(str(self.memory[str(memory.message_id)]))
-
-    def get_global_memory(self) -> list[Memory]:
-        """
-        Retrieves memory from the agents memory bucket as a dictionary
-        Returns: dict
-        """
-        memory = []
-        for key in self.memory.keys():
-            memory.extend([self.memory[key]])
-        return memory
-
     @staticmethod
     def update_memories(
         memories: list[Memory], agents_to_update: Sequence[Agent]
@@ -177,7 +159,7 @@ class Coordinator:
         2) Discuss the problem based on the given paradigm (iteratively check for agreement between agents)
         3) After max turns or agreement reached: return the final result to the task sample
 
-        Returns the final response agreed on, the global memory, agent specific memory, turns needed, last agreements of agents
+        Returns final response, global memory, agent specific memory, turns needed, last agreements of agents, discussion time in seconds, boolean if agreement was reached
         """
         sample_instruction = config.instruction
         if sample.context:
@@ -257,14 +239,12 @@ class Coordinator:
             seconds=time.perf_counter() - start_time
         ).total_seconds()
 
-        global_mem = self.get_global_memory()
-        agent_mems = [a.get_memories()[0] for a in self.agents]
         self.console.save_html(str(Path(config.out).with_suffix(".html")), clear=False)
 
         return (
             answer,
-            global_mem,
-            agent_mems,
+            self.memory,
+            [a.get_memories()[0] for a in self.agents],
             turn,
             agreements,
             discussion_time,
