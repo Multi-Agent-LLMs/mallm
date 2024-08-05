@@ -44,7 +44,7 @@ def shuffle_input_data(config: Config, repeat: int) -> Config:
 
     random.shuffle(data)
     data_path = Path(config.data)
-    new_file_name = data_path.with_name(f"{data_path.stem}_repeat1.json")
+    new_file_name = data_path.with_name(f"{data_path.stem}_repeat{repeat}.json")
 
     with open(new_file_name, "w") as f:
         json.dump(data, f)
