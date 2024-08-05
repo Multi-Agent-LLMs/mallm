@@ -6,6 +6,8 @@ from typing import Optional
 
 import requests
 
+from mallm.utils.dicts import PROMPT_TEMPLATES
+
 logger = logging.getLogger("mallm")
 
 
@@ -14,7 +16,8 @@ class Config:
     # DO NOT overwrite these values once assigned.
     data: str
     out: str
-    instruction: str
+    instruction: str = ""  # Maybe rename to prompt?
+    instruction_template: Optional[str] = None
     endpoint_url: str = "https://api.openai.com/v1"
     model: str = "gpt-3.5-turbo"
     api_key: str = "-"
@@ -48,8 +51,17 @@ class Config:
     ablation: bool = False
     shuffle_input_samples: bool = False
 
+    def __post_init__(self):
+        if not self.instruction and self.instruction_template in PROMPT_TEMPLATES:
+            self.instruction = PROMPT_TEMPLATES[self.instruction_template]
+
     def check_config(self) -> None:
         # TODO: make this more robust and conclusive. All arguments should be checked for validity, making the use of MALLM as fool-proof as possible.
+        if not self.instruction:
+            logger.error(
+                "Please provide an instruction using the --instruction argument or a template using --instruction_template."
+            )
+            sys.exit(1)
         if os.path.isfile(self.data):
             if not self.data.endswith(".json"):
                 logger.error("The dataset path does not seem to be a json file.")
