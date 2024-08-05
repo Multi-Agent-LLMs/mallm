@@ -39,6 +39,7 @@ class Voting(DecisionProtocol):
         if turn < self.vote_turn or agent_index != self.total_agents - 1:
             return "", False, agreements, "", {}
         final_answers = []
+        voting_process_string = ""
         for panelist in self.panelists:
             prev_answer: Agreement = next(
                 a for a in agreements if a.agent_id == panelist.id
@@ -54,18 +55,19 @@ class Voting(DecisionProtocol):
             )
             prev_answer.solution = response
             final_answers.append(response)
+            voting_process_string += f"{panelist.persona} final answer: {response}\n"
         all_votes = {}
         facts = None
         for alteration in DecisionAlteration:
             if alteration == DecisionAlteration.FACTS:
                 facts = context(question)
             votes = []
-            voting_process_string = ""
             for panelist in self.panelists:
                 retries = 0
                 while retries < 10:
                     # Creates a prompt with all the answers and asks the agent to vote for the best one, 0 indexed inorder
                     if alteration == DecisionAlteration.ANONYMOUS:
+                        voting_process_string += "\nAnonymous voting\n"
                         vote = panelist.llm.invoke(
                             generate_voting_prompt(
                                 panelist,
@@ -76,6 +78,9 @@ class Voting(DecisionProtocol):
                             )
                         )
                     elif alteration == DecisionAlteration.FACTS:
+                        voting_process_string += (
+                            f"\nVoting with facts\nFacts: {facts}\n"
+                        )
                         vote = panelist.llm.invoke(
                             generate_voting_prompt(
                                 panelist,
@@ -87,6 +92,10 @@ class Voting(DecisionProtocol):
                             )
                         )
                     elif alteration == DecisionAlteration.CONFIDENCE:
+                        confidence = [100.0 for _ in self.panelists]
+                        voting_process_string += (
+                            f"\nVoting with confidence\nConfidence: {confidence}\n"
+                        )
                         vote = panelist.llm.invoke(
                             generate_voting_prompt(
                                 panelist,
@@ -94,10 +103,11 @@ class Voting(DecisionProtocol):
                                 task,
                                 question,
                                 final_answers,
-                                confidence=[100.0 for _ in self.panelists],
+                                confidence=confidence,
                             )
                         )
                     elif alteration == DecisionAlteration.PUBLIC:
+                        voting_process_string += "\nPublic voting\n"
                         vote = panelist.llm.invoke(
                             generate_voting_prompt(
                                 panelist,
@@ -139,8 +149,9 @@ class Voting(DecisionProtocol):
             most_voted = vote_counts.most_common(1)[0][0]
             all_votes[alteration] = {
                 "votes": votes,
+                "answer": final_answers[most_voted],
                 "most_voted": most_voted,
-                "voting_process_string": voting_process_string,
+                "agreed": True,
             }
             logger.info(
                 f"Voted for answer from agent {self.panelists[most_voted].short_id}"
@@ -149,8 +160,8 @@ class Voting(DecisionProtocol):
         all_votes["type"] = "voting"
         return (
             final_answers[all_votes[DecisionAlteration.ANONYMOUS]["most_voted"]],
-            True,
+            all_votes[DecisionAlteration.ANONYMOUS]["agreed"],
             agreements,
-            all_votes[DecisionAlteration.ANONYMOUS]["voting_process_string"],
+            voting_process_string,
             all_votes,
         )

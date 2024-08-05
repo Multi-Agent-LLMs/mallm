@@ -1,8 +1,10 @@
 import logging
 from collections import Counter
 
+from contextplus import context
+
 from mallm.agents.panelist import Panelist
-from mallm.decision_protocol.protocol import DecisionProtocol
+from mallm.decision_protocol.protocol import DecisionAlteration, DecisionProtocol
 from mallm.utils.prompts import (
     generate_approval_voting_prompt,
     generate_final_answer_prompt,
@@ -37,6 +39,7 @@ class ApprovalVoting(DecisionProtocol):
         if turn < self.vote_turn or agent_index != self.total_agents - 1:
             return "", False, agreements, ""
         final_answers = []
+        voting_process_string = ""
         for panelist in self.panelists:
             prev_answer: Agreement = next(
                 a for a in agreements if a.agent_id == panelist.id
@@ -52,50 +55,115 @@ class ApprovalVoting(DecisionProtocol):
             )
             prev_answer.solution = response
             final_answers.append(response)
+            voting_process_string += f"{panelist.persona} final answer: {response}\n"
 
-        approvals = []
-        voting_process_string = ""
-        for panelist in self.panelists:
-            retries = 0
-            while retries < 10:
-                # Creates a prompt with all the answers and asks the agent to vote for all acceptable ones, 0 indexed in order
-                approval = panelist.llm.invoke(
-                    generate_approval_voting_prompt(
-                        panelist.persona,
-                        panelist.persona_description,
-                        task,
-                        question,
-                        final_answers,
-                    )
-                )
-                try:
-                    approval_list = [
-                        int(a.strip())
-                        for a in approval.split(",")
-                        if 0 <= int(a.strip()) < len(final_answers)
-                    ]
-                    if approval_list:
-                        approvals.extend(approval_list)
-                        logger.info(
-                            f"{panelist.short_id} approved answers from {[self.panelists[a].short_id for a in approval_list]}"
+        all_votes = {}
+        facts = None
+        for alteration in DecisionAlteration:
+            if alteration == DecisionAlteration.FACTS:
+                facts = context(question)
+            approvals = []
+            for panelist in self.panelists:
+                retries = 0
+                while retries < 10:
+                    # Creates a prompt with all the answers and asks the agent to vote for the best one, 0 indexed inorder
+                    if alteration == DecisionAlteration.ANONYMOUS:
+                        voting_process_string += "\nAnonymous voting\n"
+                        approval = panelist.llm.invoke(
+                            generate_approval_voting_prompt(
+                                panelist,
+                                self.panelists,
+                                task,
+                                question,
+                                final_answers,
+                            )
                         )
-                        voting_process_string += f"{panelist.persona} approved answers from {[self.panelists[a].persona for a in approval_list]}\n"
-                        break
-                    raise ValueError
-                except ValueError:
-                    retries += 1
-                    logger.debug(
-                        f"{panelist.short_id} cast an invalid approval: {approval}. Asking to approve again. Retry {retries}/10."
+                    elif alteration == DecisionAlteration.FACTS:
+                        voting_process_string += (
+                            f"\nVoting with facts\nFacts: {facts}\n"
+                        )
+                        approval = panelist.llm.invoke(
+                            generate_approval_voting_prompt(
+                                panelist,
+                                self.panelists,
+                                task,
+                                question,
+                                final_answers,
+                                additional_context=facts,
+                            )
+                        )
+                    elif alteration == DecisionAlteration.CONFIDENCE:
+                        confidence = [100.0 for _ in self.panelists]
+                        voting_process_string += (
+                            f"\nVoting with confidence\nConfidence: {confidence}\n"
+                        )
+                        approval = panelist.llm.invoke(
+                            generate_approval_voting_prompt(
+                                panelist,
+                                self.panelists,
+                                task,
+                                question,
+                                final_answers,
+                                confidence=confidence,
+                            )
+                        )
+                    elif alteration == DecisionAlteration.PUBLIC:
+                        voting_process_string += "\nPublic voting\n"
+                        approval = panelist.llm.invoke(
+                            generate_approval_voting_prompt(
+                                panelist,
+                                self.panelists,
+                                task,
+                                question,
+                                final_answers,
+                                anonymous=False,
+                            )
+                        )
+                    else:
+                        raise ValueError(
+                            f"Unknown DecisionAlteration type: {alteration}"
+                        )
+                    try:
+                        approval_list = [
+                            int(a.strip())
+                            for a in approval.split(",")
+                            if 0 <= int(a.strip()) < len(final_answers)
+                        ]
+                        if approval_list:
+                            approvals.extend(approval_list)
+                            logger.info(
+                                f"{panelist.short_id} approved answers from {[self.panelists[a].short_id for a in approval_list]}"
+                            )
+                            voting_process_string += f"{panelist.persona} approved answers from {[self.panelists[a].persona for a in approval_list]}\n"
+                            break
+                        raise ValueError
+                    except ValueError:
+                        retries += 1
+                        logger.debug(
+                            f"{panelist.short_id} cast an invalid approval: {approval}. Asking to approve again. Retry {retries}/10."
+                        )
+                if retries >= 10:
+                    logger.warning(
+                        f"{panelist.short_id} reached maximum retries. Counting as invalid vote."
                     )
-            if retries >= 10:
-                logger.warning(
-                    f"{panelist.short_id} reached maximum retries. Counting as invalid vote."
-                )
 
-        # Count approvals for each answer
-        approval_counts = Counter(approvals)
-        most_approved = approval_counts.most_common(1)[0][0]
-        logger.info(
-            f"Most approved answer from agent {self.panelists[most_approved].short_id}"
+            # Count approvals for each answer
+            approval_counts = Counter(approvals)
+            most_approved = approval_counts.most_common(1)[0][0]
+
+            all_votes[alteration] = {
+                "votes": approvals,
+                "answer": final_answers[most_approved],
+                "most_voted": most_approved,
+                "agreed": True,
+            }
+
+            logger.info(
+                f"Most approved answer from agent {self.panelists[most_approved].short_id}"
+            )
+        return (
+            final_answers[all_votes[DecisionAlteration.ANONYMOUS]["most_voted"]],
+            all_votes[DecisionAlteration.ANONYMOUS]["agreed"],
+            agreements,
+            voting_process_string,
         )
-        return final_answers[most_approved], True, agreements, voting_process_string

@@ -2,8 +2,10 @@ import ast
 import json
 import logging
 
+from contextplus import context
+
 from mallm.agents.panelist import Panelist
-from mallm.decision_protocol.protocol import DecisionProtocol
+from mallm.decision_protocol.protocol import DecisionAlteration, DecisionProtocol
 from mallm.utils.prompts import (
     generate_cumulative_voting_prompt,
     generate_final_answer_prompt,
@@ -39,6 +41,7 @@ class CumulativeVoting(DecisionProtocol):
         if turn < self.vote_turn or agent_index != self.total_agents - 1:
             return "", False, agreements, ""
         final_answers = []
+        voting_process_string = ""
         for panelist in self.panelists:
             prev_answer: Agreement = next(
                 a for a in agreements if a.agent_id == panelist.id
@@ -54,73 +57,133 @@ class CumulativeVoting(DecisionProtocol):
             )
             prev_answer.solution = response
             final_answers.append(response)
+            voting_process_string += f"{panelist.persona} final answer: {response}\n"
 
         # Collect points distribution from each panelist
-        point_distributions = []
-        voting_process_string = ""
-        for panelist in self.panelists:
-            retries = 0
-            while retries < 10:
-                point_distribution = panelist.llm.invoke(
-                    generate_cumulative_voting_prompt(
-                        panelist.persona,
-                        panelist.persona_description,
-                        task,
-                        question,
-                        final_answers,
-                    )
-                )
-                point_distribution = (
-                    point_distribution.replace("\n", "").replace(" ", "").strip()
-                )
-                try:
-                    points_dict = ast.literal_eval(point_distribution)
-                    points_dict = {int(k): int(v) for k, v in points_dict.items()}
-                    if self.validate_points_distribution(
-                        points_dict, len(final_answers)
-                    ):
-                        point_distributions.append(points_dict)
-                        logger.info(
-                            f"{panelist.short_id} allocated points: {points_dict}"
+        all_votes = {}
+        facts = None
+        for alteration in DecisionAlteration:
+            if alteration == DecisionAlteration.FACTS:
+                facts = context(question)
+            point_distributions = []
+            for panelist in self.panelists:
+                retries = 0
+                while retries < 10:
+                    # Creates a prompt with all the answers and asks the agent to vote for the best one, 0 indexed inorder
+                    if alteration == DecisionAlteration.ANONYMOUS:
+                        voting_process_string += "\nAnonymous voting\n"
+                        point_distribution = panelist.llm.invoke(
+                            generate_cumulative_voting_prompt(
+                                panelist,
+                                self.panelists,
+                                task,
+                                question,
+                                final_answers,
+                            )
                         )
+                    elif alteration == DecisionAlteration.FACTS:
                         voting_process_string += (
-                            f"{panelist.persona} allocated points: {points_dict}\n"
+                            f"\nVoting with facts\nFacts: {facts}\n"
                         )
-                        break
-                    raise ValueError
-                except (ValueError, json.JSONDecodeError):
-                    retries += 1
-                    logger.debug(
-                        f"{panelist.short_id} provided an invalid points distribution: {point_distribution}. Asking to distribute points again."
+                        point_distribution = panelist.llm.invoke(
+                            generate_cumulative_voting_prompt(
+                                panelist,
+                                self.panelists,
+                                task,
+                                question,
+                                final_answers,
+                                additional_context=facts,
+                            )
+                        )
+                    elif alteration == DecisionAlteration.CONFIDENCE:
+                        confidence = [100.0 for _ in self.panelists]
+                        voting_process_string += (
+                            f"\nVoting with confidence\nConfidence: {confidence}\n"
+                        )
+                        point_distribution = panelist.llm.invoke(
+                            generate_cumulative_voting_prompt(
+                                panelist,
+                                self.panelists,
+                                task,
+                                question,
+                                final_answers,
+                                confidence=confidence,
+                            )
+                        )
+                    elif alteration == DecisionAlteration.PUBLIC:
+                        voting_process_string += "\nPublic voting\n"
+                        point_distribution = panelist.llm.invoke(
+                            generate_cumulative_voting_prompt(
+                                panelist,
+                                self.panelists,
+                                task,
+                                question,
+                                final_answers,
+                                anonymous=False,
+                            )
+                        )
+                    else:
+                        raise ValueError(
+                            f"Unknown DecisionAlteration type: {alteration}"
+                        )
+                    point_distribution = (
+                        point_distribution.replace("\n", "").replace(" ", "").strip()
                     )
-            if retries >= 10:
-                logger.warning(
-                    f"{panelist.short_id} reached maximum retries. Counting as invalid vote."
-                )
+                    try:
+                        points_dict = ast.literal_eval(point_distribution)
+                        points_dict = {int(k): int(v) for k, v in points_dict.items()}
+                        if self.validate_points_distribution(
+                            points_dict, len(final_answers)
+                        ):
+                            point_distributions.append(points_dict)
+                            logger.info(
+                                f"{panelist.short_id} allocated points: {points_dict}"
+                            )
+                            voting_process_string += (
+                                f"{panelist.persona} allocated points: {points_dict}\n"
+                            )
+                            break
+                        raise ValueError
+                    except (ValueError, json.JSONDecodeError):
+                        retries += 1
+                        logger.debug(
+                            f"{panelist.short_id} provided an invalid points distribution: {point_distribution}. Asking to distribute points again."
+                        )
+                if retries >= 10:
+                    logger.warning(
+                        f"{panelist.short_id} reached maximum retries. Counting as invalid vote."
+                    )
 
-        # Aggregate points for each solution
-        total_points = [0] * len(final_answers)
-        for points in point_distributions:
-            for index, point in points.items():
-                total_points[index] += point
+            # Aggregate points for each solution
+            total_points = [0] * len(final_answers)
+            for points in point_distributions:
+                for index, point in points.items():
+                    total_points[index] += point
 
-        # Determine the solution with the highest points, break ties by selecting the first solution and go for another round
-        max_points = max(total_points)
-        best_solution_index = total_points.index(max_points)
-        best_answers = [
-            final_answers[i]
-            for i, score in enumerate(total_points)
-            if score == max_points
-        ]
-        agreed = len(best_answers) == 1
+            # Determine the solution with the highest points, break ties by selecting the first solution and go for another round
+            max_points = max(total_points)
+            best_solution_index = total_points.index(max_points)
+            best_answers = [
+                final_answers[i]
+                for i, score in enumerate(total_points)
+                if score == max_points
+            ]
+            agreed = len(best_answers) == 1
 
-        logger.info(
-            f"Selected answer from agent {self.panelists[best_solution_index].short_id} with {max_points} points"
-        )
+            all_votes[alteration] = {
+                "votes": point_distributions,
+                "answer": final_answers[best_solution_index],
+                "most_voted": best_solution_index,
+                "agreed": agreed,
+            }
+
+            logger.info(
+                f"Selected answer from agent {self.panelists[best_solution_index].short_id} with {max_points} points"
+            )
 
         return (
-            final_answers[best_solution_index],
-            agreed,
+            final_answers[all_votes[DecisionAlteration.ANONYMOUS]["most_voted"]],
+            all_votes[DecisionAlteration.ANONYMOUS]["agreed"],
             agreements,
             voting_process_string,
         )

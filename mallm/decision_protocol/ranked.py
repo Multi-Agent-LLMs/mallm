@@ -1,7 +1,9 @@
 import logging
 
+from contextplus import context
+
 from mallm.agents.panelist import Panelist
-from mallm.decision_protocol.protocol import DecisionProtocol
+from mallm.decision_protocol.protocol import DecisionAlteration, DecisionProtocol
 from mallm.utils.prompts import (
     generate_final_answer_prompt,
     generate_ranking_prompt,
@@ -37,6 +39,7 @@ class RankedVoting(DecisionProtocol):
             return "", False, agreements, ""
 
         final_answers = []
+        voting_process_string = ""
         for panelist in self.panelists:
             prev_answer: Agreement = next(
                 a for a in agreements if a.agent_id == panelist.id
@@ -52,69 +55,134 @@ class RankedVoting(DecisionProtocol):
             )
             prev_answer.solution = response
             final_answers.append(response)
+            voting_process_string += f"{panelist.persona} final answer: {response}\n"
 
-        rankings = []
-        voting_process_string = ""
-        for panelist in self.panelists:
-            retries = 0
-            while retries < 10:
-                # Creates a prompt with all the answers and asks the agent to rank them
-                ranking = panelist.llm.invoke(
-                    generate_ranking_prompt(
-                        panelist.persona,
-                        panelist.persona_description,
-                        task,
-                        question,
-                        final_answers,
-                    )
-                )
-                try:
-                    # Split the ranking and convert to a list of integers
-                    ranking_list = list(map(int, ranking.strip().split()))
-                    if (
-                        all(0 <= rank < len(final_answers) for rank in ranking_list)
-                        and len(ranking_list) <= 5
-                    ):
-                        rankings.append(ranking_list)
-                        logger.info(
-                            f"{panelist.short_id} ranked answers: {ranking_list}"
+        all_votes = {}
+        facts = None
+        for alteration in DecisionAlteration:
+            if alteration == DecisionAlteration.FACTS:
+                facts = context(question)
+            rankings = []
+            for panelist in self.panelists:
+                retries = 0
+                while retries < 10:
+                    # Creates a prompt with all the answers and asks the agent to vote for the best one, 0 indexed inorder
+                    if alteration == DecisionAlteration.ANONYMOUS:
+                        voting_process_string += "\nAnonymous voting\n"
+                        ranking = panelist.llm.invoke(
+                            generate_ranking_prompt(
+                                panelist,
+                                self.panelists,
+                                task,
+                                question,
+                                final_answers,
+                            )
                         )
+                    elif alteration == DecisionAlteration.FACTS:
                         voting_process_string += (
-                            f"{panelist.persona} ranked answers: {ranking_list}\n"
+                            f"\nVoting with facts\nFacts: {facts}\n"
                         )
-                        break
-                    raise ValueError
-                except ValueError:
-                    retries += 1
-                    logger.debug(
-                        f"{panelist.short_id} cast an invalid ranking: {ranking}. Asking to rank again."
+                        ranking = panelist.llm.invoke(
+                            generate_ranking_prompt(
+                                panelist,
+                                self.panelists,
+                                task,
+                                question,
+                                final_answers,
+                                additional_context=facts,
+                            )
+                        )
+                    elif alteration == DecisionAlteration.CONFIDENCE:
+                        confidence = [100.0 for _ in self.panelists]
+                        voting_process_string += (
+                            f"\nVoting with confidence\nConfidence: {confidence}\n"
+                        )
+                        ranking = panelist.llm.invoke(
+                            generate_ranking_prompt(
+                                panelist,
+                                self.panelists,
+                                task,
+                                question,
+                                final_answers,
+                                confidence=confidence,
+                            )
+                        )
+                    elif alteration == DecisionAlteration.PUBLIC:
+                        voting_process_string += "\nPublic voting\n"
+                        ranking = panelist.llm.invoke(
+                            generate_ranking_prompt(
+                                panelist,
+                                self.panelists,
+                                task,
+                                question,
+                                final_answers,
+                                anonymous=False,
+                            )
+                        )
+                    else:
+                        raise ValueError(
+                            f"Unknown DecisionAlteration type: {alteration}"
+                        )
+                    try:
+                        # Split the ranking and convert to a list of integers
+                        ranking_list = list(map(int, ranking.strip().split()))
+                        if (
+                            all(0 <= rank < len(final_answers) for rank in ranking_list)
+                            and len(ranking_list) <= 5
+                        ):
+                            rankings.append(ranking_list)
+                            logger.info(
+                                f"{panelist.short_id} ranked answers: {ranking_list}"
+                            )
+                            voting_process_string += (
+                                f"{panelist.persona} ranked answers: {ranking_list}\n"
+                            )
+                            break
+                        raise ValueError
+                    except ValueError:
+                        retries += 1
+                        logger.debug(
+                            f"{panelist.short_id} cast an invalid ranking: {ranking}. Asking to rank again."
+                        )
+                if retries >= 10:
+                    logger.warning(
+                        f"{panelist.short_id} reached maximum retries. Counting as invalid vote."
                     )
-            if retries >= 10:
-                logger.warning(
-                    f"{panelist.short_id} reached maximum retries. Counting as invalid vote."
-                )
 
-        # Calculate the score for each answer based on the rankings
-        scores = [0] * len(final_answers)
-        for ranking_list in rankings:
-            for rank, idx in enumerate(ranking_list):
-                scores[idx] += (
-                    min(5, self.total_agents) - rank
-                )  # Score 5 for the 1st rank, 4 for the 2nd, etc.
+            # Calculate the score for each answer based on the rankings
+            scores = [0] * len(final_answers)
+            for ranking_list in rankings:
+                for rank, idx in enumerate(ranking_list):
+                    scores[idx] += (
+                        min(5, self.total_agents) - rank
+                    )  # Score 5 for the 1st rank, 4 for the 2nd, etc.
 
-        # Find the answer with the highest score
-        highest_score = max(scores)
-        index = scores.index(highest_score)
-        best_answers = [
-            final_answers[i] for i, score in enumerate(scores) if score == highest_score
-        ]
+            # Find the answer with the highest score
+            highest_score = max(scores)
+            index = scores.index(highest_score)
+            best_answers = [
+                final_answers[i]
+                for i, score in enumerate(scores)
+                if score == highest_score
+            ]
 
-        # If there's a tie, pick the first answer among the best
-        result = final_answers[index]
-        # If all panelists agree on the best answer finished else go for another round
-        agreed = len(best_answers) == 1
-        logger.info(
-            f"Selected answer from agent {self.panelists[index].short_id} with {highest_score} points"
+            # If there's a tie, pick the first answer among the best
+            result = final_answers[index]
+            # If all panelists agree on the best answer finished else go for another round
+            agreed = len(best_answers) == 1
+            all_votes[alteration] = {
+                "votes": rankings,
+                "answer": result,
+                "most_voted": index,
+                "agreed": agreed,
+            }
+            logger.info(
+                f"Selected answer from agent {self.panelists[index].short_id} with {highest_score} points"
+            )
+
+        return (
+            final_answers[all_votes[DecisionAlteration.ANONYMOUS]["most_voted"]],
+            all_votes[DecisionAlteration.ANONYMOUS]["agreed"],
+            agreements,
+            voting_process_string,
         )
-
-        return result, agreed, agreements, voting_process_string
