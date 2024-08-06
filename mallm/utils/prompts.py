@@ -209,7 +209,7 @@ def voting_base_prompt(
     prompts.append(
         {
             "role": "user",
-            "content": f"{voting_message}\nTask: {task}\nQuestion: {question}{f'\nAdditional Context: {additional_context}' if additional_context else ""}\n\nHere are the possible solutions:",
+            "content": f"{voting_message}\nTask: {task}\nQuestion: {question}{f'\nAdditional Context: {additional_context}' if additional_context else ''}\n\nHere are the possible solutions:",
         }
     )
     for i, solution in enumerate(solutions):
