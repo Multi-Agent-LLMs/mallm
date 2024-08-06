@@ -1,10 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
-import dbm
-import json
 import logging
-import os
 import uuid
 from typing import TYPE_CHECKING, Optional
 
@@ -39,10 +36,6 @@ class Agent:
         self.short_id = self.id[:4]
         self.persona = persona
         self.persona_description = persona_description
-        self.memory_bucket = os.path.join(
-            coordinator.memory_bucket_dir, f"agent_{self.id}"
-        )
-        dbm.open(self.memory_bucket, "c")
         self.coordinator = coordinator
         self.moderator = moderator
         self.llm = llm
@@ -50,6 +43,7 @@ class Agent:
         self.client = client
         self.chain_of_thought = chain_of_thought
         self.feedback_only = feedback_only
+        self.memory : dict[str, Memory] = {}
         logger.info(
             f"Creating agent [bold blue]{self.short_id}[/] with personality [bold blue]{self.persona}[/]: {self.persona_description}"
         )
@@ -92,7 +86,7 @@ class Agent:
             memory_ids=memory_ids,
             additional_args=dataclasses.asdict(template_filling),
         )
-        self.coordinator.update_global_memory(memory)
+        self.coordinator.memory.append(memory)
         return response.message, memory, agreements
 
     def draft(
@@ -131,7 +125,7 @@ class Agent:
             memory_ids=memory_ids,
             additional_args=dataclasses.asdict(template_filling),
         )
-        self.coordinator.update_global_memory(memory)
+        self.coordinator.memory.append(memory)
         return response.message, memory, agreements
 
     def feedback(
@@ -175,16 +169,14 @@ class Agent:
             memory_ids=memory_ids,
             additional_args=dataclasses.asdict(template_filling),
         )
-        self.coordinator.update_global_memory(memory)
+        self.coordinator.memory.append(memory)
         return response.message, memory, agreements
 
     def update_memory(self, memory: Memory) -> None:
         """
-        Updates the dbm memory with another discussion entry.
+        Updates the memory with another discussion entry.
         """
-        with dbm.open(self.memory_bucket, "c") as db:
-            db[str(memory.message_id)] = json.dumps(dataclasses.asdict(memory))
-        self.save_memory_to_json()
+        self.memory[str(memory.message_id)] = memory
 
     def get_memories(
         self,
@@ -200,35 +192,28 @@ class Agent:
         memory_ids = []
         current_draft = None
 
-        try:
-            with dbm.open(self.memory_bucket, "r") as db:
-                for key in db.keys():
-                    json_object = json.loads(db[key].decode())
-                    memories.append(Memory(**json_object))
-            memories = sorted(memories, key=lambda x: x.message_id, reverse=False)
-            context_memory = []
-            for memory in memories:
-                if (
-                    context_length
-                    and turn
-                    and memory.turn >= turn - context_length
-                    and (turn > memory.turn or include_this_turn)
+        memories = sorted(self.memory.values(), key=lambda x: x.message_id, reverse=False)
+        context_memory = []
+        for memory in memories:
+            if (
+                context_length
+                and turn
+                and memory.turn >= turn - context_length
+                and (turn > memory.turn or include_this_turn)
+            ):
+                context_memory.append(memory)
+                memory_ids.append(int(memory.message_id))
+                if memory.contribution == "draft" or (
+                    memory.contribution == "improve" and memory.agreement is False
                 ):
-                    context_memory.append(memory)
-                    memory_ids.append(int(memory.message_id))
-                    if memory.contribution == "draft" or (
-                        memory.contribution == "improve" and memory.agreement is False
-                    ):
-                        current_draft = memory.solution
-                else:
-                    context_memory.append(memory)
-                    memory_ids.append(int(memory.message_id))
-                    if memory.contribution == "draft" or (
-                        memory.contribution == "improve" and memory.agreement is False
-                    ):
-                        current_draft = memory.solution
-        except dbm.error:
-            context_memory = None
+                    current_draft = memory.solution
+            else:
+                context_memory.append(memory)
+                memory_ids.append(int(memory.message_id))
+                if memory.contribution == "draft" or (
+                    memory.contribution == "improve" and memory.agreement is False
+                ):
+                    current_draft = memory.solution
 
         return context_memory, memory_ids, current_draft
 
@@ -265,23 +250,3 @@ class Agent:
         else:
             debate_history = None
         return debate_history, memory_ids, current_draft
-
-    def save_memory_to_json(self, out: Optional[str] = None) -> None:
-        """
-        Converts the memory bucket dbm data to json format
-        """
-        save_path = out or self.memory_bucket + ".json"
-        try:
-            memories, memory_ids, current_draft = self.get_memories()
-            if memories:
-                with open(save_path, "w") as f:
-                    json.dump(
-                        (
-                            [dataclasses.asdict(memory) for memory in memories],
-                            memory_ids,
-                            current_draft,
-                        ),
-                        f,
-                    )
-        except Exception as e:
-            logger.error(f"Failed to save agent memory to {save_path}: {e}")
