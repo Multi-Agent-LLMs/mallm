@@ -171,8 +171,10 @@ cython_debug/
 
 log.txt
 /*.json
+*.html
 
 data/result.json
+data/result.html
 
 test/data/*.json
 test/data/*.dir

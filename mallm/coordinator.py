@@ -1,15 +1,13 @@
-import dataclasses
-import dbm
-import json
 import logging
-import os
 import time
 import uuid
 from collections.abc import Sequence
 from datetime import timedelta
+from pathlib import Path
 from typing import Optional
 
 import httpx
+from rich.progress import Console  # type: ignore
 
 from mallm.agents.agent import Agent
 from mallm.agents.moderator import Moderator
@@ -38,7 +36,7 @@ class Coordinator:
         client: httpx.Client,
         agent_generator: str = "expert",
         use_moderator: bool = False,
-        memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
+        console: Optional[Console] = None,
     ):
         self.personas = None
         self.id = str(uuid.uuid4())
@@ -47,13 +45,13 @@ class Coordinator:
         self.agents: Sequence[Agent] = []
         self.use_moderator = use_moderator
         self.moderator: Optional[Moderator] = None
-        self.memory_bucket_dir = memory_bucket_dir
-        self.memory_bucket = os.path.join(self.memory_bucket_dir, "global_" + self.id)
         self.decision_protocol: Optional[DecisionProtocol] = None
         self.llm = model
         self.response_generator: ResponseGenerator = SimpleResponseGenerator(self.llm)
         self.client = client
         self.agent_generator = agent_generator
+        self.memory: list[Memory] = []
+        self.console = console or Console()
 
     def init_agents(
         self,
@@ -70,7 +68,7 @@ class Coordinator:
         1) identify helpful personas
         2) create agents with the personas
         """
-        logger.debug(f"Coordinator {self.id} creates the agents ({self.agent_generator})...")
+        logger.debug(f"Coordinator {self.id} creates {num_agents} agents ({self.agent_generator})...")
         self.panelists = []
         self.agents = []
 
@@ -129,42 +127,6 @@ class Coordinator:
             for a in self.agents
         ]
 
-    def update_global_memory(self, memory: Memory) -> None:
-        """
-        Updates the dbm memory with another discussion entry.
-        Returns string
-        """
-        with dbm.open(self.memory_bucket, "c") as db:
-            db[str(memory.message_id)] = json.dumps(dataclasses.asdict(memory))
-            logger.debug(str(db[str(memory.message_id)]))
-        self.save_global_memory_to_json()
-
-    def get_global_memory(self) -> list[Memory]:
-        """
-        Retrieves memory from the agents memory bucket as a dictionary
-        Returns: dict
-        """
-        memory = []
-        with dbm.open(self.memory_bucket, "r") as db:
-            for key in db.keys():
-                json_object = json.loads(db[key].decode())
-                memory.append(Memory(**json_object))
-        return memory
-
-    def save_global_memory_to_json(self) -> None:
-        """
-        Converts the memory bucket dbm data to json format
-        """
-        try:
-            with open(self.memory_bucket + ".json", "w") as f:
-                json.dump(
-                    [dataclasses.asdict(memory) for memory in self.get_global_memory()],
-                    f,
-                )
-        except Exception as e:
-            logger.error(f"Failed to save agent memory to {self.memory_bucket}: {e}")
-            logger.error(self.get_global_memory())
-
     @staticmethod
     def update_memories(
         memories: list[Memory], agents_to_update: Sequence[Agent]
@@ -197,7 +159,7 @@ class Coordinator:
         2) Discuss the problem based on the given paradigm (iteratively check for agreement between agents)
         3) After max turns or agreement reached: return the final result to the task sample
 
-        Returns the final response agreed on, the global memory, agent specific memory, turns needed, last agreements of agents
+        Returns final response, global memory, agent specific memory, turns needed, last agreements of agents, discussion time in seconds, boolean if agreement was reached
         """
         sample_instruction = config.instruction
         if sample.context:
@@ -249,13 +211,13 @@ class Coordinator:
         logger.info(
             f"""Starting discussion with coordinator {self.id}...
 -------------
-Instruction: {sample_instruction}
-Input: {input_str}
-Feedback sentences: {config.feedback_sentences!s}
-Maximum turns: {config.max_turns}
-Agents: {[a.persona for a in self.agents]!s}
-Paradigm: {policy.__class__.__name__}
-Decision-protocol: {self.decision_protocol.__class__.__name__}
+[bold blue]Instruction:[/] {sample_instruction}
+[bold blue]Input:[/] {input_str}
+[bold blue]Feedback sentences:[/] {config.feedback_sentences!s}
+[bold blue]Maximum turns:[/] {config.max_turns}
+[bold blue]Agents:[/] {[a.persona for a in self.agents]!s}
+[bold blue]Paradigm:[/] {policy.__class__.__name__}
+[bold blue]Decision-protocol:[/] {self.decision_protocol.__class__.__name__}
 -------------"""
         )
 
@@ -270,19 +232,19 @@ Decision-protocol: {self.decision_protocol.__class__.__name__}
             context_length=config.context_length,
             include_current_turn_in_memory=config.include_current_turn_in_memory,
             debate_rounds=config.debate_rounds,
+            console=self.console,
         )
 
         discussion_time = timedelta(
             seconds=time.perf_counter() - start_time
         ).total_seconds()
 
-        global_mem = self.get_global_memory()
-        agent_mems = [a.get_memories()[0] for a in self.agents]
+        self.console.save_html(str(Path(config.out).with_suffix(".html")), clear=False)
 
         return (
             answer,
-            global_mem,
-            agent_mems,
+            self.memory,
+            [a.get_memories()[0] for a in self.agents],
             turn,
             agreements,
             discussion_time,

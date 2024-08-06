@@ -1,9 +1,9 @@
 import dataclasses
 import gc
-import glob
 import json
 import logging
 import os
+import random
 import sys
 import time
 import traceback
@@ -15,36 +15,34 @@ from typing import Any, Optional
 
 import fire
 import httpx
-from colorama import just_fix_windows_console
+import langchain
+import langchain_core
+import openai
 from datasets import load_dataset
 from openai import OpenAI
+from rich import print
+from rich.logging import RichHandler
+from rich.progress import Console, Progress, TaskID  # type: ignore
 
 from mallm.coordinator import Coordinator
 from mallm.models.Chat import Chat
 from mallm.utils.config import Config
-from mallm.utils.CustomFormatter import CustomFormatter
 from mallm.utils.dicts import RESPONSE_GENERATORS
-from mallm.utils.functions import sort_output_file
 from mallm.utils.types import InputExample, Response
-from mallm.utils.utils import pretty_print_dict
 
-# Configure logging for the library
-library_logger = logging.getLogger("mallm")
-library_logger.setLevel(logging.DEBUG)
+FORMAT = "%(message)s"
 
-# Add handlers to the logger
-stream_handler = logging.StreamHandler()
-
-# Optionally set a formatter
-stream_handler.setFormatter(CustomFormatter())
-
-# Attach the handler to the logger
-library_logger.addHandler(stream_handler)
-
-just_fix_windows_console()
-
-logging.basicConfig(filename="log.txt", filemode="w")
 logger = logging.getLogger("mallm")
+logger.setLevel(logging.DEBUG)
+handler = RichHandler(
+    rich_tracebacks=True,
+    tracebacks_suppress=[openai, httpx, langchain, langchain_core],
+    markup=True,
+)
+formatter = logging.Formatter(fmt=FORMAT, datefmt="[%X]")
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+logging.basicConfig(filename="log.txt", filemode="w")
 
 
 class Scheduler:
@@ -55,10 +53,6 @@ class Scheduler:
         if os.path.exists(config.out):
             os.remove(config.out)
             logger.info(f"""The file {config.out} has been deleted.""")
-
-        # Cleaning the memory bucked from previous runs
-        if config.clear_memory_bucket:
-            self.clean_memory_bucket(config.memory_bucket_dir)
 
         # Read input data (format: json lines)
         try:
@@ -125,6 +119,10 @@ class Scheduler:
             )
             sys.exit(1)
 
+        if config.shuffle_input_samples:
+            random.shuffle(self.data)
+            logger.info("Shuffled the input data.")
+
         self.config = config
         self.llm = Chat(
             client=OpenAI(
@@ -156,6 +154,9 @@ class Scheduler:
         self,
         client: httpx.Client,
         sample: InputExample,
+        console: Optional[Console],
+        progress: Progress,
+        task: TaskID,
     ) -> Optional[str]:
         """
         Runs a single discussion between agents on a sample.
@@ -168,11 +169,12 @@ class Scheduler:
                 model=self.llm,
                 agent_generator=self.config.agent_generator,
                 client=client,
-                memory_bucket_dir=self.config.memory_bucket_dir,
+                console=console,
             )
         except Exception as e:
             logger.error("Failed intializing coordinator.")
             logger.error(e)
+            self.failed_example_ids.append(sample.example_id)
             return None
         try:
             (
@@ -241,6 +243,7 @@ class Scheduler:
         logger.info(
             f"""Completed samples: {self.completed_samples}. Samples left: {self.total_samples - self.completed_samples}."""
         )
+        progress.update(task, advance=1)
         del coordinator
         gc.collect()
 
@@ -258,6 +261,7 @@ class Scheduler:
         Once a spot in the queue is free because a discussion ended, the next discussion is initialized.
         """
         logger.debug("Starting discussion manager...")
+        console = Console(record=True)
         # Creating HuggingFace endpoint
 
         if self.config.num_samples:
@@ -265,43 +269,47 @@ class Scheduler:
             self.data = self.data[self.config.num_samples :]
         else:
             processing_data = self.data
-
-        while True:
-            logger.info(f"Processing {len(processing_data)} samples.")
-            pool = ThreadPool(processes=self.config.max_concurrent_requests)
-            results = []
-            for sample in processing_data:
-                try:
-                    results.append(
-                        pool.apply_async(
-                            self.run_discussion,
-                            (client, sample),
-                        )
-                    )
-                except Exception as e:
-                    logger.error("Failed to run discussion.")
-                    logger.error(e)
-            pool.close()  # Done adding tasks.
-            pool.join()  # Wait for all tasks to complete.
-            del pool
-
-            if len(self.failed_example_ids) == 0:
-                logger.info("No samples failed.")
-                break
-            logger.warning(
-                f"{len(self.failed_example_ids)} samples failed. Here is a list of their example_ids: \n{self.failed_example_ids!s}"
+        with Progress() as progress:
+            task = progress.add_task(
+                "[cyan]Finished discussions...", total=len(processing_data)
             )
-            if len(self.data) < len(self.failed_example_ids):
-                logger.error(
-                    "No more samples in the datasets to substitute failed samples."
+            while True:
+                logger.info(f"Processing {len(processing_data)} samples.")
+                pool = ThreadPool(processes=self.config.max_concurrent_requests)
+                results = []
+
+                for sample in processing_data:
+                    try:
+                        results.append(
+                            pool.apply_async(
+                                self.run_discussion,
+                                (client, sample, console, progress, task),
+                            )
+                        )
+                    except Exception as e:
+                        logger.error("Failed to run discussion.")
+                        logger.error(e)
+                pool.close()  # Done adding tasks.
+                pool.join()  # Wait for all tasks to complete.
+                del pool
+
+                if len(self.failed_example_ids) == 0:
+                    logger.info("No samples failed.")
+                    break
+                logger.warning(
+                    f"{len(self.failed_example_ids)} samples failed. Here is a list of their example_ids: \n{self.failed_example_ids!s}"
                 )
-                raise Exception(
-                    "No more samples in the datasets to substitute failed samples."
-                )
-            logger.warning("Resampling from the dataset as a substitute...")
-            processing_data = self.data[: len(self.failed_example_ids)]
-            self.data = self.data[len(self.failed_example_ids) :]
-            self.failed_example_ids = []
+                if len(self.data) < len(self.failed_example_ids):
+                    logger.error(
+                        "No more samples in the datasets to substitute failed samples."
+                    )
+                    raise Exception(
+                        "No more samples in the datasets to substitute failed samples."
+                    )
+                logger.warning("Resampling from the dataset as a substitute...")
+                processing_data = self.data[: len(self.failed_example_ids)]
+                self.data = self.data[len(self.failed_example_ids) :]
+                self.failed_example_ids = []
 
     def run_ablation(
         self, client: httpx.Client, sample: InputExample, exchanged_messages: int
@@ -531,27 +539,6 @@ class Scheduler:
             self.data = self.data[len(self.failed_example_ids) :]
             self.failed_example_ids = []
 
-    def clean_memory_bucket(self, memory_bucket_dir: Optional[str] = None) -> None:
-        """
-        Deletes all stored global memory
-        """
-        if not memory_bucket_dir:
-            memory_bucket_dir = self.config.memory_bucket_dir
-
-        filelist = glob.glob(os.path.join(memory_bucket_dir, "*.bak"))
-        for f in filelist:
-            os.remove(f)
-        filelist = glob.glob(os.path.join(memory_bucket_dir, "*.dat"))
-        for f in filelist:
-            os.remove(f)
-        filelist = glob.glob(os.path.join(memory_bucket_dir, "*.dir"))
-        for f in filelist:
-            os.remove(f)
-        filelist = glob.glob(os.path.join(memory_bucket_dir, "*.json"))
-        for f in filelist:
-            os.remove(f)
-        logger.info(f"Cleaned the memory bucket {memory_bucket_dir!s}.")
-
     def run(self) -> None:
         """
         The routine that runs the discussions between LLM agents on the provided data.
@@ -562,18 +549,16 @@ class Scheduler:
             else:
                 self.manage_discussions(client)  # multi-agent discussion
 
-        sort_output_file(input_file=self.config.data, output_file=self.config.out)
-        if self.config.ablation:
-            out_path = Path(self.config.out)
-            sort_output_file(
-                input_file=self.config.data,
-                output_file=str(out_path.with_name(out_path.stem + "-ablation.json")),
-            )
-
 
 def main() -> None:
+    width = 70
+    print("\n" + "=" * width)
+    print("CONFIGURATION PARAMETERS".center(width))
+    print("=" * width + "\n")
     config = fire.Fire(Config, serialize=print)
-    pretty_print_dict(config)
+    print("\n" + "=" * width)
+    print("END OF CONFIGURATION PARAMETERS".center(width))
+    print("=" * width + "\n")
     scheduler = Scheduler(config)
     scheduler.run()
     print("Done.")

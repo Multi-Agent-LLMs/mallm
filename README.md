@@ -115,8 +115,6 @@ include_current_turn_in_memory: bool = True
 extract_all_drafts: bool = True
 debate_rounds: int = 2
 max_concurrent_requests: int = 100
-clear_memory_bucket: bool = True
-memory_bucket_dir: str = "./mallm/utils/memory_bucket/"
 baseline: bool = False
 chain_of_thought: bool = True
 num_agents: int = 3
@@ -131,6 +129,7 @@ hf_dataset_reference_column: Optional[str] = None
 hf_dataset_context_column: Optional[str] = None
 feedback_only: bool = False
 ablation: bool = False
+shuffle_input_samples: bool = False
 ```
 
 ### Discussion Parameters:
@@ -145,7 +144,7 @@ Discussion Paradigms: `debate`, `memory`, `relay`, `report`
 ## Evaluation
 
 We provide some basic evaluation metrics that can be directly applied to the output json of mallm.
-Supported metrics: `answerability`, `bertscore`, `bleu`, `meteor`, `multichoice`, `rouge`, `squad`
+Supported metrics: `answerability`, `bertscore`, `bleu`, `distinct`, `meteor`, `multichoice`, `rouge`, `squad`
 
 From terminal:
 

@@ -12,7 +12,7 @@ def test_coordinator_initialization():
     model = Mock()
     client = Mock()
     coordinator = Coordinator(
-        model, client, agent_generator="mock", memory_bucket_dir="./test/data/"
+        model, client, agent_generator="mock"
     )
     assert coordinator.llm == model
     assert coordinator.client == client
@@ -29,7 +29,7 @@ def test_init_agents_with_persona_generator():
     model = Mock()
     client = Mock()
     coordinator = Coordinator(
-        model, client, agent_generator="mock", memory_bucket_dir="./test/data/"
+        model, client, agent_generator="mock"
     )
     sample = InputExample(
         example_id="",
@@ -56,7 +56,7 @@ def test_init_agents_with_wrong_persona_generator():
     client = Mock()
     agent_generator = "exp"
     coordinator = Coordinator(
-        model, client, agent_generator=agent_generator, memory_bucket_dir="./test/data/"
+        model, client, agent_generator=agent_generator
     )
     sample = InputExample(
         example_id="",
@@ -82,7 +82,7 @@ def test_update_global_memory():
     model = Mock()
     client = Mock()
     coordinator = Coordinator(
-        model, client, agent_generator="mock", memory_bucket_dir="./test/data/"
+        model, client, agent_generator="mock"
     )
     memory = Memory(
         message_id=1,
@@ -96,42 +96,19 @@ def test_update_global_memory():
         persona="test",
         contribution="contribution",
     )
-    coordinator.update_global_memory(memory)
-    retrieved_memory = coordinator.get_global_memory()
+    coordinator.memory.append(memory)
+    retrieved_memory = coordinator.memory
     assert len(retrieved_memory) == 1
     assert retrieved_memory[0].message_id == 1
     assert retrieved_memory[0].message == "content"
     assert retrieved_memory[0].agent_id == "agent1"
-
-
-def test_update_global_memory_fail():
-    model = Mock()
-    client = Mock()
-    coordinator = Coordinator(
-        model, client, agent_generator="mock", memory_bucket_dir="./test/data_invalid/"
-    )
-    memory = Memory(
-        message_id=1,
-        message="content",
-        agent_id="agent1",
-        agreement=True,
-        solution="draft",
-        memory_ids=[1],
-        additional_args={},
-        turn=1,
-        persona="test",
-        contribution="contribution",
-    )
-    with pytest.raises(Exception, match="No such file or directory"):
-        coordinator.update_global_memory(memory)
-
 
 # Test updating memories of agents
 def test_update_memories():
     model = Mock()
     client = Mock()
     coordinator = Coordinator(
-        model, client, agent_generator="mock", memory_bucket_dir="./test/data/"
+        model, client, agent_generator="mock"
     )
     sample = InputExample(
         example_id="",
@@ -176,7 +153,7 @@ def test_discuss_with_invalid_paradigm():
     model = Mock()
     client = Mock()
     coordinator = Coordinator(
-        model, client, agent_generator="mock", memory_bucket_dir="./test/data/"
+        model, client, agent_generator="mock"
     )
     sample = InputExample(
         example_id="",
@@ -206,7 +183,7 @@ def test_discuss_with_invalid_decision_protocol():
     model = Mock()
     client = Mock()
     coordinator = Coordinator(
-        model, client, agent_generator="mock", memory_bucket_dir="./test/data/"
+        model, client, agent_generator="mock"
     )
     sample = InputExample(
         example_id="",

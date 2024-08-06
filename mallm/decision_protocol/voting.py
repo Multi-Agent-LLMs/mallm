@@ -30,12 +30,12 @@ class Voting(DecisionProtocol):
         agent_index: int,
         task: str,
         question: str,
-    ) -> tuple[str, bool, list[Agreement]]:
+    ) -> tuple[str, bool, list[Agreement], str]:
         if len(agreements) > self.total_agents:
             agreements = agreements[-self.total_agents :]
 
         if turn < self.vote_turn or agent_index != self.total_agents - 1:
-            return "", False, agreements
+            return "", False, agreements, ""
         final_answers = []
         for panelist in self.panelists:
             prev_answer: Agreement = next(
@@ -54,6 +54,7 @@ class Voting(DecisionProtocol):
             final_answers.append(response)
 
         votes = []
+        voting_process_string = ""
         for panelist in self.panelists:
             retries = 0
             while retries < 10:
@@ -74,6 +75,7 @@ class Voting(DecisionProtocol):
                         logger.info(
                             f"{panelist.short_id} voted for answer from {self.panelists[vote_int].short_id}"
                         )
+                        voting_process_string += f"{panelist.persona} voted for answer from {self.panelists[vote_int].persona}\n"
                         break
                     logger.debug(
                         f"{panelist.short_id} cast an invalid vote: {vote}. Asking to vote again."
@@ -94,4 +96,4 @@ class Voting(DecisionProtocol):
         logger.info(
             f"Voted for answer from agent {self.panelists[most_voted].short_id}"
         )
-        return final_answers[most_voted], True, agreements
+        return final_answers[most_voted], True, agreements, voting_process_string
