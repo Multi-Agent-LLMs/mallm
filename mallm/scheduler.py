@@ -1,6 +1,5 @@
 import dataclasses
 import gc
-import glob
 import json
 import logging
 import os
@@ -29,7 +28,6 @@ from mallm.coordinator import Coordinator
 from mallm.models.Chat import Chat
 from mallm.utils.config import Config
 from mallm.utils.dicts import RESPONSE_GENERATORS
-from mallm.utils.functions import sort_output_file
 from mallm.utils.types import InputExample, Response
 
 FORMAT = "%(message)s"
@@ -55,10 +53,6 @@ class Scheduler:
         if os.path.exists(config.out):
             os.remove(config.out)
             logger.info(f"""The file {config.out} has been deleted.""")
-
-        # Cleaning the memory bucked from previous runs
-        if config.clear_memory_bucket:
-            self.clean_memory_bucket(config.memory_bucket_dir)
 
         # Read input data (format: json lines)
         try:
@@ -175,7 +169,6 @@ class Scheduler:
                 model=self.llm,
                 agent_generator=self.config.agent_generator,
                 client=client,
-                memory_bucket_dir=self.config.memory_bucket_dir,
                 console=console,
             )
         except Exception as e:
@@ -546,27 +539,6 @@ class Scheduler:
             self.data = self.data[len(self.failed_example_ids) :]
             self.failed_example_ids = []
 
-    def clean_memory_bucket(self, memory_bucket_dir: Optional[str] = None) -> None:
-        """
-        Deletes all stored global memory
-        """
-        if not memory_bucket_dir:
-            memory_bucket_dir = self.config.memory_bucket_dir
-
-        filelist = glob.glob(os.path.join(memory_bucket_dir, "*.bak"))
-        for f in filelist:
-            os.remove(f)
-        filelist = glob.glob(os.path.join(memory_bucket_dir, "*.dat"))
-        for f in filelist:
-            os.remove(f)
-        filelist = glob.glob(os.path.join(memory_bucket_dir, "*.dir"))
-        for f in filelist:
-            os.remove(f)
-        filelist = glob.glob(os.path.join(memory_bucket_dir, "*.json"))
-        for f in filelist:
-            os.remove(f)
-        logger.info(f"Cleaned the memory bucket {memory_bucket_dir!s}.")
-
     def run(self) -> None:
         """
         The routine that runs the discussions between LLM agents on the provided data.
@@ -576,14 +548,6 @@ class Scheduler:
                 self.manage_baseline(client)  # baseline (single LM)
             else:
                 self.manage_discussions(client)  # multi-agent discussion
-
-        sort_output_file(input_file=self.config.data, output_file=self.config.out)
-        if self.config.ablation:
-            out_path = Path(self.config.out)
-            sort_output_file(
-                input_file=self.config.data,
-                output_file=str(out_path.with_name(out_path.stem + "-ablation.json")),
-            )
 
 
 def main() -> None:
