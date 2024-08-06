@@ -206,10 +206,20 @@ def voting_base_prompt(
             }
         )
         prompts.extend(panelist.get_discussion_history())
+    additional_context_str = (
+        f"\nAdditional Context: {additional_context}" if additional_context else ""
+    )
+    content_str = (
+        f"{voting_message}\n"
+        f"Task: {task}\n"
+        f"Question: {question}"
+        f"{additional_context_str}\n\n"
+        "Here are the possible solutions:"
+    )
     prompts.append(
         {
             "role": "user",
-            "content": f"{voting_message}\nTask: {task}\nQuestion: {question}{f'\nAdditional Context: {additional_context}' if additional_context else ''}\n\nHere are the possible solutions:",
+            "content": content_str,
         }
     )
     for i, solution in enumerate(solutions):
