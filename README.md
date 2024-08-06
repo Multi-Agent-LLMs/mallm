@@ -49,18 +49,19 @@ Or with OpenAI:
 
 ## Run as Module
 If installed, you can use MALLM from anywhere on your system:
+
 ```py
 from mallm import scheduler
 from mallm.utils.config import Config
 
 mallm_scheduler = scheduler.Scheduler(
-  Config(
-    data="data/datasets/etpc_debugging.json",
-    out="test_out.json",
-    instruction="Paraphrase the input text.",
-    endpoint_url="http://127.0.0.1:8080/v1",
-    model="tgi"
-  )
+    Config(
+        data="data/datasets/etpc_debugging.json",
+        out="test_out.json",
+        instruction_prompt="Paraphrase the input text.",
+        endpoint_url="http://127.0.0.1:8080/v1",
+        model="tgi"
+    )
 )
 mallm_scheduler.run()
 ```

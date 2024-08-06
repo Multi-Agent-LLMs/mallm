@@ -107,10 +107,13 @@ def test_update_global_memory():
 def test_update_global_memory_fail():
     model = Mock()
     client = Mock()
-    
+
     with pytest.raises(Exception, match="No such file or directory"):
         Coordinator(
-            model, client, agent_generator="mock", memory_bucket_dir="./test/data_invalid/"
+            model,
+            client,
+            agent_generator="mock",
+            memory_bucket_dir="./test/data_invalid/",
         )
 
 
@@ -180,7 +183,7 @@ def test_discuss_with_invalid_paradigm():
             Config(
                 data="",
                 out="",
-                instruction="task_instruction",
+                instruction_prompt="task_instruction",
                 paradigm="invalid_paradigm",
                 decision_protocol="majority_consensus",
                 num_agents=3,
@@ -210,7 +213,7 @@ def test_discuss_with_invalid_decision_protocol():
             Config(
                 data="",
                 out="",
-                instruction="task_instruction",
+                instruction_prompt="task_instruction",
                 paradigm="memory",
                 decision_protocol="invalid_protocol",
                 num_agents=3,
