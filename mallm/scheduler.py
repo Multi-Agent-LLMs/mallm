@@ -206,7 +206,7 @@ class Scheduler:
                 "dataset": self.dataset_name,
                 "exampleId": sample.example_id,
                 "datasetId": sample.dataset_id,
-                "instruction": self.config.instruction,
+                "instruction": self.config.instruction_prompt,
                 "coordinatorId": coordinator.id,
                 "personas": coordinator.get_agents(),
                 "paradigm": self.config.paradigm,
@@ -322,7 +322,7 @@ class Scheduler:
         )
         start_time = time.perf_counter()
 
-        sample_instruction = self.config.instruction
+        sample_instruction = self.config.instruction_prompt
         if sample.context:
             sample_instruction += "\nContext:"
             for c in sample.context:
@@ -377,7 +377,7 @@ class Scheduler:
                 "dataset": self.dataset_name,
                 "exampleId": sample.example_id,
                 "datasetId": sample.dataset_id,
-                "instruction": self.config.instruction,
+                "instruction": self.config.instruction_prompt,
                 "coordinatorId": None,
                 "personas": None,
                 "paradigm": None,
@@ -416,7 +416,7 @@ class Scheduler:
         """
         Task a single LM to solve a sample.
         """
-        sample_instruction = self.config.instruction
+        sample_instruction = self.config.instruction_prompt
         if sample.context:
             sample_instruction += "\nContext:"
             for c in sample.context:
@@ -455,7 +455,7 @@ class Scheduler:
                 "dataset": self.dataset_name,
                 "exampleId": sample.example_id,
                 "datasetId": sample.dataset_id,
-                "instruction": self.config.instruction,
+                "instruction": self.config.instruction_prompt,
                 "coordinatorId": None,
                 "personas": None,
                 "paradigm": None,

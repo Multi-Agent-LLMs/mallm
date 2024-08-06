@@ -114,7 +114,9 @@ class Coordinator:
             self.agents = self.panelists
 
         if len(self.agents) == 1:
-            logger.warning("Created only 1 agent. The discussion will be replaced by a self-improvement mechanism.")
+            logger.warning(
+                "Created only 1 agent. The discussion will be replaced by a self-improvement mechanism."
+            )
 
     def get_agents(self) -> list[dict[str, str]]:
         return [
@@ -161,7 +163,7 @@ class Coordinator:
 
         Returns final response, global memory, agent specific memory, turns needed, last agreements of agents, discussion time in seconds, boolean if agreement was reached
         """
-        sample_instruction = config.instruction
+        sample_instruction = config.instruction_prompt
         if sample.context:
             sample_instruction += "\nContext:"
             for c in sample.context:
