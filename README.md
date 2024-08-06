@@ -49,18 +49,19 @@ Or with OpenAI:
 
 ## Run as Module
 If installed, you can use MALLM from anywhere on your system:
+
 ```py
 from mallm import scheduler
 from mallm.utils.config import Config
 
 mallm_scheduler = scheduler.Scheduler(
-  Config(
-    data="data/datasets/etpc_debugging.json",
-    out="test_out.json",
-    instruction="Paraphrase the input text.",
-    endpoint_url="http://127.0.0.1:8080/v1",
-    model="tgi"
-  )
+    Config(
+        data="data/datasets/etpc_debugging.json",
+        out="test_out.json",
+        instruction_prompt="Paraphrase the input text.",
+        endpoint_url="http://127.0.0.1:8080/v1",
+        model="tgi"
+    )
 )
 mallm_scheduler.run()
 ```
@@ -99,7 +100,8 @@ Use "tgi" as a model for Text Generation Inference by HuggingFace or one of thes
 ```py
 data: str = None
 out: str = None
-instruction: str = None
+instruction_prompt: str = None
+instruction_prompt_template: Optional[str] = None
 endpoint_url: str = "https://api.openai.com/v1"
 model: str = "gpt-3.5-turbo"
 api_key: str = "-"
@@ -115,8 +117,6 @@ include_current_turn_in_memory: bool = True
 extract_all_drafts: bool = True
 debate_rounds: int = 2
 max_concurrent_requests: int = 100
-clear_memory_bucket: bool = True
-memory_bucket_dir: str = "./mallm/utils/memory_bucket/"
 baseline: bool = False
 chain_of_thought: bool = True
 num_agents: int = 3
@@ -131,6 +131,7 @@ hf_dataset_reference_column: Optional[str] = None
 hf_dataset_context_column: Optional[str] = None
 feedback_only: bool = False
 ablation: bool = False
+shuffle_input_samples: bool = False
 ```
 
 ### Discussion Parameters:
@@ -145,7 +146,7 @@ Discussion Paradigms: `debate`, `memory`, `relay`, `report`
 ## Evaluation
 
 We provide some basic evaluation metrics that can be directly applied to the output json of mallm.
-Supported metrics: `answerability`, `bertscore`, `bleu`, `meteor`, `multichoice`, `rouge`, `squad`
+Supported metrics: `answerability`, `bertscore`, `bleu`, `distinct`, `meteor`, `multichoice`, `rouge`, `squad`
 
 From terminal:
 

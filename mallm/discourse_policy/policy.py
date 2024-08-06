@@ -140,7 +140,7 @@ class DiscoursePolicy(ABC):
             console = Console()
         global_memories = [
             memory
-            for memory in coordinator.get_global_memory()
+            for memory in coordinator.memory
             if memory.turn == self.turn or not only_current_turn
         ]
         max_width = min(console.width, 100)
