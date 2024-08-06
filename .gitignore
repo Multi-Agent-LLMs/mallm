@@ -178,3 +178,4 @@ test/data/*.json
 test/data/*.dir
 test/data/*.dat
 test/data/*.bak
+test_out.html

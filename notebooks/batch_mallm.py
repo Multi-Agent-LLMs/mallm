@@ -52,9 +52,11 @@ def shuffle_input_data(config: Config, repeat: int) -> Config:
     
     return config
 
-def run_configuration(config: Config, run_name: str, repeat: int) -> None:
+def run_configuration(config: Config, name: Optional[str], run_name: str, repeat: int) -> None:
     original_out = ".".join(config.out.split(".")[:-1])
     config.out = f"{original_out}_repeat{repeat}.json"
+    if name:
+        config.out = f"{original_out}_{name}_repeat{repeat}.json"
 
     if repeat != 1: # keep one with unchanged samples for correlation evaluations
         config = shuffle_input_data(config, repeat)
@@ -107,7 +109,7 @@ def run_batch(config_path: str) -> None:
     common_config = config_data.get("common", {})
     runs = config_data.get("runs", [])
     repeats = config_data.get("repeats", 1)
-    name = config_data.get("name", "mallm")
+    name = config_data.get("name", None)
 
     if not common_config:
         print("No common configuration found. Exiting.")
@@ -129,7 +131,7 @@ def run_batch(config_path: str) -> None:
     for i, config in enumerate(valid_configs, 1):
         print(f"\nProcessing run {i}/{len(valid_configs)}")
         for repeat in range(1, repeats + 1):
-            run_configuration(deepcopy(config), f"Run {i}", repeat)
+            run_configuration(deepcopy(config), name, f"Run {i}", repeat)
 
     print("\nBatch processing completed.")
 
