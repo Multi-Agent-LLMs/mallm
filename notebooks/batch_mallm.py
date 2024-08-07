@@ -38,28 +38,11 @@ def validate_config(config: Config) -> bool:
             return False
     return True
 
-def shuffle_input_data(config: Config, repeat: int) -> Config:
-    with open(config.data, "r") as f:
-        data = json.load(f)
-
-    random.shuffle(data)
-    data_path = Path(config.data)
-    new_file_name = data_path.with_name(f"{data_path.stem}_repeat{repeat}.json")
-
-    with open(new_file_name, "w") as f:
-        json.dump(data, f)
-    config.data = new_file_name
-    
-    return config
-
 def run_configuration(config: Config, name: Optional[str], run_name: str, repeat: int) -> None:
     original_out = ".".join(config.out.split(".")[:-1])
     config.out = f"{original_out}_repeat{repeat}.json"
     if name:
         config.out = f"{original_out}_{name}_repeat{repeat}.json"
-
-    if repeat != 1: # keep one with unchanged samples for correlation evaluations
-        config = shuffle_input_data(config, repeat)
 
     try:
         print(f"Running {run_name} (Repeat {repeat})")
