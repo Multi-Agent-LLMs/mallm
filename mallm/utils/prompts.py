@@ -223,10 +223,13 @@ def voting_base_prompt(
         }
     )
     for i, solution in enumerate(solutions):
+        confidence_str = (
+            "" if confidence is None else f"\n\n(Confidence: {confidence[i]} %)"
+        )
         prompts.append(
             {
                 "role": "user",
-                "content": f"Solution {i if anonymous else panelists[i].persona}: {solution}{"" if confidence is None else f'\n\n(Confidence: {confidence[i]} %)'}",
+                "content": f"Solution {i if anonymous else panelists[i].persona}: {solution}{confidence_str}",
             }
         )
     return prompts
