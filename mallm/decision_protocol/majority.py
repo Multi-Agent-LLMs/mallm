@@ -3,7 +3,7 @@ from typing import Optional
 
 from mallm.agents.panelist import Panelist
 from mallm.decision_protocol.protocol import DecisionProtocol
-from mallm.utils.types import Agreement
+from mallm.utils.types import Agreement, VotingResults
 
 logger = logging.getLogger("mallm")
 
@@ -29,7 +29,7 @@ class ThresholdConsensus(DecisionProtocol):
         agent_index: int,
         task: str,
         question: str,
-    ) -> tuple[str, bool, list[Agreement], str]:
+    ) -> tuple[str, bool, list[Agreement], str, Optional[VotingResults]]:
         if len(agreements) > self.total_agents:
             agreements = agreements[-self.total_agents :]
         reversed_agreements = agreements[::-1]
@@ -49,16 +49,16 @@ class ThresholdConsensus(DecisionProtocol):
                 (a for a in reversed_agreements if a.agreement is None), None
             )
             if moderator_agreement:
-                return moderator_agreement.solution, False, agreements, ""
+                return moderator_agreement.solution, False, agreements, "", None
             recent_panelist_agreement = next(
                 (a for a in reversed_agreements if not a.agreement), None
             )
             if recent_panelist_agreement:
-                return recent_panelist_agreement.solution, False, agreements, ""
+                return recent_panelist_agreement.solution, False, agreements, "", None
             logger.warning(
                 "Failed gathering the most recent disagreement. Returning None as current solution."
             )
-            return "None", False, agreements, ""
+            return "None", False, agreements, "", None
 
         if (self.threshold_agents and len(self.panelists) <= self.threshold_agents) or (
             self.threshold_turn and turn < self.threshold_turn
@@ -70,6 +70,7 @@ class ThresholdConsensus(DecisionProtocol):
                 num_agreements / self.total_agents >= 1,
                 agreements,
                 "",
+                None,
             )
         # more than <threshold_percent> of the agents need to agree
         return (
@@ -77,6 +78,7 @@ class ThresholdConsensus(DecisionProtocol):
             num_agreements / self.total_agents >= self.threshold_percent,
             agreements,
             "",
+            None,
         )
 
 

@@ -45,6 +45,22 @@ class TemplateFilling:
 
 
 @dataclass
+class VotingResult:
+    votes: Any
+    final_answer: str
+    most_voted: int
+    agreed: bool
+
+
+@dataclass
+class VotingResults:
+    final_answers: list[str]
+    type: str
+    voting_process_string: str
+    alterations: dict[str, VotingResult]
+
+
+@dataclass
 class InputExample:
     example_id: str
     dataset_id: Optional[str]

@@ -23,7 +23,7 @@ def test_unanimous_decision():
             agent_id="",
             persona="",
             response="",
-            message_id="",
+            message_id=0,
         )
     ]
     agreements.extend(
@@ -34,12 +34,12 @@ def test_unanimous_decision():
                 agent_id="",
                 persona="",
                 response="",
-                message_id="",
+                message_id=0,
             )
             for _ in range(2)
         ]
     )
-    decision, is_consensus, agreements, voting_string = mc.make_decision(
+    decision, is_consensus, agreements, voting_string, _ = mc.make_decision(
         agreements, 4, 0, "", ""
     )
     assert is_consensus
@@ -54,7 +54,7 @@ def test_unanimous_decision_in_first_five_turns():
             agent_id="",
             persona="",
             response="",
-            message_id="",
+            message_id=0,
         )
     ]
     agreements.extend(
@@ -65,12 +65,12 @@ def test_unanimous_decision_in_first_five_turns():
                 agent_id="",
                 persona="",
                 response="",
-                message_id="",
+                message_id=0,
             )
             for _ in range(2)
         ]
     )
-    decision, is_consensus, agreements, voting_string = mc.make_decision(
+    decision, is_consensus, agreements, voting_string, _ = mc.make_decision(
         agreements, 4, 0, "", ""
     )
     assert is_consensus
@@ -85,7 +85,7 @@ def test_unanimous_decision_in_first_five_turns_with_moderator():
             agent_id="",
             persona="",
             response="",
-            message_id="",
+            message_id=0,
         ),
         Agreement(
             agreement=None,
@@ -93,7 +93,7 @@ def test_unanimous_decision_in_first_five_turns_with_moderator():
             agent_id="",
             persona="",
             response="",
-            message_id="",
+            message_id=0,
         ),
     ]
     agreements.extend(
@@ -104,12 +104,12 @@ def test_unanimous_decision_in_first_five_turns_with_moderator():
                 agent_id="",
                 persona="",
                 response="",
-                message_id="",
+                message_id=0,
             )
             for _ in range(3)
         ]
     )
-    decision, is_consensus, agreements, voting_string = mc.make_decision(
+    decision, is_consensus, agreements, voting_string, _ = mc.make_decision(
         agreements, 4, 0, "", ""
     )
     assert is_consensus
@@ -124,7 +124,7 @@ def test_no_unanimous_decision_in_first_five_turns():
             agent_id="",
             persona="",
             response="",
-            message_id="",
+            message_id=0,
         ),
         Agreement(
             agreement=False,
@@ -132,7 +132,7 @@ def test_no_unanimous_decision_in_first_five_turns():
             agent_id="",
             persona="",
             response="",
-            message_id="",
+            message_id=0,
         ),
         Agreement(
             agreement=True,
@@ -140,10 +140,10 @@ def test_no_unanimous_decision_in_first_five_turns():
             agent_id="",
             persona="",
             response="",
-            message_id="",
+            message_id=0,
         ),
     ]
-    decision, is_consensus, agreements, voting_string = mc.make_decision(
+    decision, is_consensus, agreements, voting_string, _ = mc.make_decision(
         agreements, 4, 0, "", ""
     )
     assert not is_consensus
@@ -158,7 +158,7 @@ def test_no_unanimous_decision_in_first_five_turns_with_moderator():
             agent_id="",
             persona="",
             response="",
-            message_id="",
+            message_id=0,
         ),
         Agreement(
             agreement=False,
@@ -166,7 +166,7 @@ def test_no_unanimous_decision_in_first_five_turns_with_moderator():
             agent_id="",
             persona="",
             response="",
-            message_id="",
+            message_id=0,
         ),
         Agreement(
             agreement=True,
@@ -174,10 +174,10 @@ def test_no_unanimous_decision_in_first_five_turns_with_moderator():
             agent_id="",
             persona="",
             response="",
-            message_id="",
+            message_id=0,
         ),
     ]
-    decision, is_consensus, agreements, voting_string = mc.make_decision(
+    decision, is_consensus, agreements, voting_string, _ = mc.make_decision(
         agreements, 4, 0, "", ""
     )
     assert not is_consensus
@@ -192,7 +192,7 @@ def test_majority_decision_after_five_turns():
             agent_id="",
             persona="",
             response="",
-            message_id="",
+            message_id=0,
         )
         for _ in range(2)
     ]
@@ -204,12 +204,12 @@ def test_majority_decision_after_five_turns():
                 agent_id="",
                 persona="",
                 response="",
-                message_id="",
+                message_id=0,
             )
             for _ in range(3)
         ]
     )
-    decision, is_consensus, agreements, voting_string = mc.make_decision(
+    decision, is_consensus, agreements, voting_string, _ = mc.make_decision(
         agreements, 6, 0, "", ""
     )
     assert is_consensus
@@ -224,7 +224,7 @@ def test_no_majority_decision_after_five_turns():
             agent_id="",
             persona="",
             response="",
-            message_id="",
+            message_id=0,
         )
         for _ in range(3)
     ]
@@ -236,12 +236,12 @@ def test_no_majority_decision_after_five_turns():
                 agent_id="",
                 persona="",
                 response="",
-                message_id="",
+                message_id=0,
             )
             for _ in range(2)
         ]
     )
-    decision, is_consensus, agreements, voting_string = mc.make_decision(
+    decision, is_consensus, agreements, voting_string, _ = mc.make_decision(
         agreements, 6, 0, "", ""
     )
     assert not is_consensus

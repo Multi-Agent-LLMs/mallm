@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 from contextplus import context
 
@@ -8,7 +9,7 @@ from mallm.utils.prompts import (
     generate_final_answer_prompt,
     generate_ranking_prompt,
 )
-from mallm.utils.types import Agreement
+from mallm.utils.types import Agreement, VotingResult, VotingResults
 
 logger = logging.getLogger("mallm")
 
@@ -31,12 +32,12 @@ class RankedVoting(DecisionProtocol):
         agent_index: int,
         task: str,
         question: str,
-    ) -> tuple[str, bool, list[Agreement], str]:
+    ) -> tuple[str, bool, list[Agreement], str, Optional[VotingResults]]:
         if len(agreements) > self.total_agents:
             agreements = agreements[-self.total_agents :]
 
         if turn < self.vote_turn or agent_index != self.total_agents - 1:
-            return "", False, agreements, ""
+            return "", False, agreements, "", None
 
         final_answers = []
         voting_process_string = ""
@@ -59,16 +60,21 @@ class RankedVoting(DecisionProtocol):
 
         all_votes = {}
         facts = None
+        confidence = []
         for alteration in DecisionAlteration:
+            voting_process_string += f"\nVoting with alteration: {alteration.value}\n"
             if alteration == DecisionAlteration.FACTS:
                 facts = context(question)
+                voting_process_string += f"\nFacts: {facts}\n\n"
+            if alteration == DecisionAlteration.CONFIDENCE:
+                confidence = [100.0 for _ in self.panelists]
+                voting_process_string += f"\nConfidence: {confidence}\n"
             rankings = []
             for panelist in self.panelists:
                 retries = 0
                 while retries < 10:
                     # Creates a prompt with all the answers and asks the agent to vote for the best one, 0 indexed inorder
                     if alteration == DecisionAlteration.ANONYMOUS:
-                        voting_process_string += "\nAnonymous voting\n"
                         ranking = panelist.llm.invoke(
                             generate_ranking_prompt(
                                 panelist,
@@ -79,9 +85,6 @@ class RankedVoting(DecisionProtocol):
                             )
                         )
                     elif alteration == DecisionAlteration.FACTS:
-                        voting_process_string += (
-                            f"\nVoting with facts\nFacts: {facts}\n"
-                        )
                         ranking = panelist.llm.invoke(
                             generate_ranking_prompt(
                                 panelist,
@@ -93,10 +96,6 @@ class RankedVoting(DecisionProtocol):
                             )
                         )
                     elif alteration == DecisionAlteration.CONFIDENCE:
-                        confidence = [100.0 for _ in self.panelists]
-                        voting_process_string += (
-                            f"\nVoting with confidence\nConfidence: {confidence}\n"
-                        )
                         ranking = panelist.llm.invoke(
                             generate_ranking_prompt(
                                 panelist,
@@ -108,7 +107,6 @@ class RankedVoting(DecisionProtocol):
                             )
                         )
                     elif alteration == DecisionAlteration.PUBLIC:
-                        voting_process_string += "\nPublic voting\n"
                         ranking = panelist.llm.invoke(
                             generate_ranking_prompt(
                                 panelist,
@@ -121,7 +119,7 @@ class RankedVoting(DecisionProtocol):
                         )
                     else:
                         raise ValueError(
-                            f"Unknown DecisionAlteration type: {alteration}"
+                            f"Unknown DecisionAlteration type: {alteration.value}"
                         )
                     try:
                         # Split the ranking and convert to a list of integers
@@ -167,22 +165,31 @@ class RankedVoting(DecisionProtocol):
             ]
 
             # If there's a tie, pick the first answer among the best
-            result = final_answers[index]
             # If all panelists agree on the best answer finished else go for another round
             agreed = len(best_answers) == 1
-            all_votes[alteration] = {
-                "votes": rankings,
-                "answer": result,
-                "most_voted": index,
-                "agreed": agreed,
-            }
+            all_votes[alteration.value] = VotingResult(
+                votes=rankings,
+                most_voted=index,
+                final_answer=final_answers[index],
+                agreed=agreed,
+            )
             logger.info(
                 f"Selected answer from agent {self.panelists[index].short_id} with {highest_score} points"
             )
-
+        results = VotingResults(
+            voting_process_string=voting_process_string,
+            final_answers=final_answers,
+            alterations=all_votes,
+            type="ranked",
+        )
+        final_answer: str = final_answers[
+            all_votes[DecisionAlteration.ANONYMOUS.value].most_voted
+        ]
+        decision: bool = all_votes[DecisionAlteration.ANONYMOUS.value].agreed
         return (
-            final_answers[all_votes[DecisionAlteration.ANONYMOUS]["most_voted"]],
-            all_votes[DecisionAlteration.ANONYMOUS]["agreed"],
+            final_answer,
+            decision,
             agreements,
             voting_process_string,
+            results,
         )

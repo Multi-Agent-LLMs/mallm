@@ -8,7 +8,7 @@ from rich.progress import Console  # type: ignore
 from mallm.agents.moderator import Moderator
 from mallm.agents.panelist import Panelist
 from mallm.discourse_policy.policy import DiscoursePolicy
-from mallm.utils.types import Agreement, TemplateFilling
+from mallm.utils.types import Agreement, TemplateFilling, VotingResults
 
 if TYPE_CHECKING:
     from mallm.coordinator import Coordinator
@@ -54,11 +54,11 @@ class DiscourseDebate(DiscoursePolicy):
         include_current_turn_in_memory: bool = False,
         debate_rounds: int = 2,
         console: Optional[Console] = None,
-    ) -> tuple[Optional[str], int, list[Agreement], bool, dict[str, any]]:
+    ) -> tuple[Optional[str], int, list[Agreement], bool, Optional[VotingResults]]:
         unique_id = 0
         memories = []
         voting_process_string = ""
-        additional_voting_results = {}
+        additional_voting_results: Optional[VotingResults] = None
         if console is None:
             console = Console()
 

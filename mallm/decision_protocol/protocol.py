@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
 from enum import Enum
+from typing import Optional
 
 from mallm.agents.panelist import Panelist
-from mallm.utils.types import Agreement
+from mallm.utils.types import Agreement, VotingResults
 
 
 class DecisionAlteration(Enum):
@@ -31,7 +32,7 @@ class DecisionProtocol(ABC):
         agent_index: int,
         task: str,
         question: str,
-    ) -> tuple[str, bool, list[Agreement], str, dict[str, any]]:
+    ) -> tuple[str, bool, list[Agreement], str, Optional[VotingResults]]:
         """
         Abstract method to make a decision based on agreements, the current turn number, and the list of panelists.
 

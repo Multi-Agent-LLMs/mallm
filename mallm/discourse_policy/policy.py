@@ -10,7 +10,7 @@ from rich.text import Text
 
 from mallm.agents.moderator import Moderator
 from mallm.agents.panelist import Panelist
-from mallm.utils.types import Agreement, Memory, TemplateFilling
+from mallm.utils.types import Agreement, Memory, TemplateFilling, VotingResults
 
 if TYPE_CHECKING:
     from mallm.coordinator import Coordinator
@@ -40,10 +40,10 @@ class DiscoursePolicy(ABC):
         include_current_turn_in_memory: bool = False,
         debate_rounds: int = 2,
         console: Optional[Console] = None,
-    ) -> tuple[Optional[str], int, list[Agreement], bool, dict[str, any]]:
+    ) -> tuple[Optional[str], int, list[Agreement], bool, Optional[VotingResults]]:
         logger.info(self.paradigm_str)
         voting_process_string = ""
-        additional_voting_results = {}
+        additional_voting_results: Optional[VotingResults] = None
         if console is None:
             console = Console()
         while (not self.decision or force_all_turns) and self.turn < max_turns:

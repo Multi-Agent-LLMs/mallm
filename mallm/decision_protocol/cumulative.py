@@ -1,6 +1,7 @@
 import ast
 import json
 import logging
+from typing import Optional
 
 from contextplus import context
 
@@ -10,7 +11,7 @@ from mallm.utils.prompts import (
     generate_cumulative_voting_prompt,
     generate_final_answer_prompt,
 )
-from mallm.utils.types import Agreement
+from mallm.utils.types import Agreement, VotingResult, VotingResults
 
 logger = logging.getLogger("mallm")
 
@@ -34,12 +35,12 @@ class CumulativeVoting(DecisionProtocol):
         agent_index: int,
         task: str,
         question: str,
-    ) -> tuple[str, bool, list[Agreement], str]:
+    ) -> tuple[str, bool, list[Agreement], str, Optional[VotingResults]]:
         if len(agreements) > self.total_agents:
             agreements = agreements[-self.total_agents :]
 
         if turn < self.vote_turn or agent_index != self.total_agents - 1:
-            return "", False, agreements, ""
+            return "", False, agreements, "", None
         final_answers = []
         voting_process_string = ""
         for panelist in self.panelists:
@@ -62,16 +63,21 @@ class CumulativeVoting(DecisionProtocol):
         # Collect points distribution from each panelist
         all_votes = {}
         facts = None
+        confidence = []
         for alteration in DecisionAlteration:
+            voting_process_string += f"\nVoting with alteration: {alteration.value}\n"
             if alteration == DecisionAlteration.FACTS:
                 facts = context(question)
+                voting_process_string += f"\nFacts: {facts}\n\n"
+            if alteration == DecisionAlteration.CONFIDENCE:
+                confidence = [100.0 for _ in self.panelists]
+                voting_process_string += f"\nConfidence: {confidence}\n"
             point_distributions = []
             for panelist in self.panelists:
                 retries = 0
                 while retries < 10:
                     # Creates a prompt with all the answers and asks the agent to vote for the best one, 0 indexed inorder
                     if alteration == DecisionAlteration.ANONYMOUS:
-                        voting_process_string += "\nAnonymous voting\n"
                         point_distribution = panelist.llm.invoke(
                             generate_cumulative_voting_prompt(
                                 panelist,
@@ -82,9 +88,6 @@ class CumulativeVoting(DecisionProtocol):
                             )
                         )
                     elif alteration == DecisionAlteration.FACTS:
-                        voting_process_string += (
-                            f"\nVoting with facts\nFacts: {facts}\n"
-                        )
                         point_distribution = panelist.llm.invoke(
                             generate_cumulative_voting_prompt(
                                 panelist,
@@ -96,10 +99,6 @@ class CumulativeVoting(DecisionProtocol):
                             )
                         )
                     elif alteration == DecisionAlteration.CONFIDENCE:
-                        confidence = [100.0 for _ in self.panelists]
-                        voting_process_string += (
-                            f"\nVoting with confidence\nConfidence: {confidence}\n"
-                        )
                         point_distribution = panelist.llm.invoke(
                             generate_cumulative_voting_prompt(
                                 panelist,
@@ -111,7 +110,6 @@ class CumulativeVoting(DecisionProtocol):
                             )
                         )
                     elif alteration == DecisionAlteration.PUBLIC:
-                        voting_process_string += "\nPublic voting\n"
                         point_distribution = panelist.llm.invoke(
                             generate_cumulative_voting_prompt(
                                 panelist,
@@ -124,7 +122,7 @@ class CumulativeVoting(DecisionProtocol):
                         )
                     else:
                         raise ValueError(
-                            f"Unknown DecisionAlteration type: {alteration}"
+                            f"Unknown DecisionAlteration type: {alteration.value}"
                         )
                     point_distribution = (
                         point_distribution.replace("\n", "").replace(" ", "").strip()
@@ -170,22 +168,32 @@ class CumulativeVoting(DecisionProtocol):
             ]
             agreed = len(best_answers) == 1
 
-            all_votes[alteration] = {
-                "votes": point_distributions,
-                "answer": final_answers[best_solution_index],
-                "most_voted": best_solution_index,
-                "agreed": agreed,
-            }
-
+            all_votes[alteration.value] = VotingResult(
+                votes=point_distributions,
+                most_voted=best_solution_index,
+                final_answer=final_answers[best_solution_index],
+                agreed=agreed,
+            )
             logger.info(
                 f"Selected answer from agent {self.panelists[best_solution_index].short_id} with {max_points} points"
             )
 
+        results = VotingResults(
+            voting_process_string=voting_process_string,
+            final_answers=final_answers,
+            alterations=all_votes,
+            type="cumulative",
+        )
+        final_answer: str = final_answers[
+            all_votes[DecisionAlteration.ANONYMOUS.value].most_voted
+        ]
+        decision: bool = all_votes[DecisionAlteration.ANONYMOUS.value].agreed
         return (
-            final_answers[all_votes[DecisionAlteration.ANONYMOUS]["most_voted"]],
-            all_votes[DecisionAlteration.ANONYMOUS]["agreed"],
+            final_answer,
+            decision,
             agreements,
             voting_process_string,
+            results,
         )
 
     @staticmethod

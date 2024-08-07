@@ -4,7 +4,7 @@ import uuid
 from collections.abc import Sequence
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 import httpx
 from rich.progress import Console  # type: ignore
@@ -24,7 +24,7 @@ from mallm.utils.dicts import (
     PERSONA_GENERATORS,
     RESPONSE_GENERATORS,
 )
-from mallm.utils.types import Agreement, InputExample, Memory
+from mallm.utils.types import Agreement, InputExample, Memory, VotingResults
 
 logger = logging.getLogger("mallm")
 
@@ -154,7 +154,7 @@ class Coordinator:
         list[Agreement],
         float,
         bool,
-        dict[str, Any],
+        Optional[VotingResults],
     ]:
         """
         The routine responsible for the discussion between agents to solve a task.

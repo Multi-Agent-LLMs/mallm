@@ -191,7 +191,7 @@ def voting_base_prompt(
     anonymous: bool = True,
     confidence: Optional[list[float]] = None,
     history: bool = False,
-):
+) -> list[dict[str, str]]:
     prompts = [
         {
             "role": "system",
@@ -199,13 +199,15 @@ def voting_base_prompt(
         }
     ]
     if history:
-        prompts.append(
-            {
-                "role": "user",
-                "content": "Here is the discussion history to help you make a decision:",
-            }
-        )
-        prompts.extend(panelist.get_discussion_history())
+        discussion_history = panelist.get_discussion_history()[0]
+        if discussion_history:
+            prompts.append(
+                {
+                    "role": "user",
+                    "content": "Here is the discussion history to help you make a decision:",
+                }
+            )
+            prompts.extend(discussion_history)
     additional_context_str = (
         f"\nAdditional Context: {additional_context}" if additional_context else ""
     )

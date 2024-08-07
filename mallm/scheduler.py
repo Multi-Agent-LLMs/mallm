@@ -227,7 +227,11 @@ class Scheduler:
                     for agent in agent_mems
                     if agent
                 ],
-                "additional_voting_results": additional_voting_results,
+                "additional_voting_results": (
+                    dataclasses.asdict(additional_voting_results)
+                    if additional_voting_results
+                    else None
+                ),
             }
         )
         try:

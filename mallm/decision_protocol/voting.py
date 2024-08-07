@@ -1,5 +1,6 @@
 import logging
 from collections import Counter
+from typing import Optional
 
 from contextplus import context
 
@@ -9,7 +10,7 @@ from mallm.utils.prompts import (
     generate_final_answer_prompt,
     generate_voting_prompt,
 )
-from mallm.utils.types import Agreement
+from mallm.utils.types import Agreement, VotingResult, VotingResults
 
 logger = logging.getLogger("mallm")
 
@@ -32,12 +33,12 @@ class Voting(DecisionProtocol):
         agent_index: int,
         task: str,
         question: str,
-    ) -> tuple[str, bool, list[Agreement], str, dict[str, any]]:
+    ) -> tuple[str, bool, list[Agreement], str, Optional[VotingResults]]:
         if len(agreements) > self.total_agents:
             agreements = agreements[-self.total_agents :]
 
         if turn < self.vote_turn or agent_index != self.total_agents - 1:
-            return "", False, agreements, "", {}
+            return "", False, agreements, "", None
         final_answers = []
         voting_process_string = ""
         for panelist in self.panelists:
@@ -58,16 +59,21 @@ class Voting(DecisionProtocol):
             voting_process_string += f"{panelist.persona} final answer: {response}\n"
         all_votes = {}
         facts = None
+        confidence = []
         for alteration in DecisionAlteration:
+            voting_process_string += f"\nVoting with alteration: {alteration.value}\n"
             if alteration == DecisionAlteration.FACTS:
                 facts = context(question)
+                voting_process_string += f"\nFacts: {facts}\n\n"
+            if alteration == DecisionAlteration.CONFIDENCE:
+                confidence = [100.0 for _ in self.panelists]
+                voting_process_string += f"\nConfidence: {confidence}\n"
             votes = []
             for panelist in self.panelists:
                 retries = 0
                 while retries < 10:
                     # Creates a prompt with all the answers and asks the agent to vote for the best one, 0 indexed inorder
                     if alteration == DecisionAlteration.ANONYMOUS:
-                        voting_process_string += "\nAnonymous voting\n"
                         vote = panelist.llm.invoke(
                             generate_voting_prompt(
                                 panelist,
@@ -78,9 +84,6 @@ class Voting(DecisionProtocol):
                             )
                         )
                     elif alteration == DecisionAlteration.FACTS:
-                        voting_process_string += (
-                            f"\nVoting with facts\nFacts: {facts}\n"
-                        )
                         vote = panelist.llm.invoke(
                             generate_voting_prompt(
                                 panelist,
@@ -92,10 +95,6 @@ class Voting(DecisionProtocol):
                             )
                         )
                     elif alteration == DecisionAlteration.CONFIDENCE:
-                        confidence = [100.0 for _ in self.panelists]
-                        voting_process_string += (
-                            f"\nVoting with confidence\nConfidence: {confidence}\n"
-                        )
                         vote = panelist.llm.invoke(
                             generate_voting_prompt(
                                 panelist,
@@ -107,7 +106,6 @@ class Voting(DecisionProtocol):
                             )
                         )
                     elif alteration == DecisionAlteration.PUBLIC:
-                        voting_process_string += "\nPublic voting\n"
                         vote = panelist.llm.invoke(
                             generate_voting_prompt(
                                 panelist,
@@ -120,7 +118,7 @@ class Voting(DecisionProtocol):
                         )
                     else:
                         raise ValueError(
-                            f"Unknown DecisionAlteration type: {alteration}"
+                            f"Unknown DecisionAlteration type: {alteration.value}"
                         )
                     try:
                         vote_int = int(vote.strip())
@@ -147,21 +145,29 @@ class Voting(DecisionProtocol):
             # Search for the answer with the most votes from the agents
             vote_counts = Counter(votes)
             most_voted = vote_counts.most_common(1)[0][0]
-            all_votes[alteration] = {
-                "votes": votes,
-                "answer": final_answers[most_voted],
-                "most_voted": most_voted,
-                "agreed": True,
-            }
+            all_votes[alteration.value] = VotingResult(
+                votes=votes,
+                most_voted=most_voted,
+                final_answer=final_answers[most_voted],
+                agreed=True,
+            )
             logger.info(
                 f"Voted for answer from agent {self.panelists[most_voted].short_id}"
             )
-        all_votes["final_answers"] = final_answers
-        all_votes["type"] = "voting"
+        results = VotingResults(
+            voting_process_string=voting_process_string,
+            final_answers=final_answers,
+            alterations=all_votes,
+            type="voting",
+        )
+        final_answer: str = final_answers[
+            all_votes[DecisionAlteration.ANONYMOUS.value].most_voted
+        ]
+        decision: bool = all_votes[DecisionAlteration.ANONYMOUS.value].agreed
         return (
-            final_answers[all_votes[DecisionAlteration.ANONYMOUS]["most_voted"]],
-            all_votes[DecisionAlteration.ANONYMOUS]["agreed"],
+            final_answer,
+            decision,
             agreements,
             voting_process_string,
-            all_votes,
+            results,
         )
