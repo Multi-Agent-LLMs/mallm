@@ -49,7 +49,7 @@ class Config:
     ablation: bool = False
     shuffle_input_samples: bool = False
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if (
             not self.instruction_prompt
             and self.instruction_prompt_template in PROMPT_TEMPLATES
