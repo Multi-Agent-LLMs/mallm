@@ -129,9 +129,7 @@ class Voting(DecisionProtocol):
                             )
                             voting_process_string += f"{panelist.persona} voted for answer from {self.panelists[vote_int].persona}\n"
                             break
-                        logger.debug(
-                            f"{panelist.short_id} cast an invalid vote: {vote}. Asking to vote again."
-                        )
+                        raise ValueError
                     except ValueError:
                         retries += 1
                         logger.debug(
