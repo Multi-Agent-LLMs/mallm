@@ -147,9 +147,9 @@ class Coordinator:
         config: Config,
         sample: InputExample,
     ) -> tuple[
-        str | None,
+        Optional[str],
         list[Memory],
-        list[list[Memory] | None],
+        list[Optional[list[Memory]]],
         int,
         list[Agreement],
         float,
