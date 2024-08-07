@@ -103,6 +103,7 @@ def test_update_global_memory():
     assert retrieved_memory[0].message == "content"
     assert retrieved_memory[0].agent_id == "agent1"
 
+
 # Test updating memories of agents
 def test_update_memories():
     model = Mock()
@@ -169,7 +170,7 @@ def test_discuss_with_invalid_paradigm():
             Config(
                 data="",
                 out="",
-                instruction="task_instruction",
+                instruction_prompt="task_instruction",
                 paradigm="invalid_paradigm",
                 decision_protocol="majority_consensus",
                 num_agents=3,
@@ -199,7 +200,7 @@ def test_discuss_with_invalid_decision_protocol():
             Config(
                 data="",
                 out="",
-                instruction="task_instruction",
+                instruction_prompt="task_instruction",
                 paradigm="memory",
                 decision_protocol="invalid_protocol",
                 num_agents=3,

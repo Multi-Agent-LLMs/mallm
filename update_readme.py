@@ -13,7 +13,7 @@ import re
 # SCHEDULER CONFIG
 print("Updating Scheduler Config...")
 with open("README.md", "r+") as readme_file:
-    config = Config(data=None, out=None, instruction=None)
+    config = Config(data=None, out=None, instruction_prompt=None)
     attributes = {
         attr: getattr(config, attr)
         for attr in dir(config)
@@ -98,7 +98,7 @@ with open("README.md", "r+") as readme_file:
 # DISCUSSION PARAMETERS:
 print("Updating Discussion Parameters...")
 with open("README.md", "r+") as readme_file:
-    config = Config(data=None, out=None, instruction=None)
+    config = Config(data=None, out=None, instruction_prompt=None)
     content = readme_file.read()
 
     extra_content = "\nResponse Generators: "
