@@ -31,7 +31,6 @@ class XSUMDownloader(DatasetDownloader):
                     inputs=[s["document"][0]],
                     context=None,
                     references=s["references"][0],
-                    personas=None,
                 )
             )
         return input_examples

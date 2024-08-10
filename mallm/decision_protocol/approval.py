@@ -30,12 +30,12 @@ class ApprovalVoting(DecisionProtocol):
         agent_index: int,
         task: str,
         question: str,
-    ) -> tuple[str, bool, list[Agreement]]:
+    ) -> tuple[str, bool, list[Agreement], str]:
         if len(agreements) > self.total_agents:
             agreements = agreements[-self.total_agents :]
 
         if turn < self.vote_turn or agent_index != self.total_agents - 1:
-            return "", False, agreements
+            return "", False, agreements, ""
         final_answers = []
         for panelist in self.panelists:
             prev_answer: Agreement = next(
@@ -54,9 +54,11 @@ class ApprovalVoting(DecisionProtocol):
             final_answers.append(response)
 
         approvals = []
+        voting_process_string = ""
         for panelist in self.panelists:
-            while True:
-                # Creates a prompt with all the answers and asks the agent to vote for all acceptable ones, 0 indexed inorder
+            retries = 0
+            while retries < 10:
+                # Creates a prompt with all the answers and asks the agent to vote for all acceptable ones, 0 indexed in order
                 approval = panelist.llm.invoke(
                     generate_approval_voting_prompt(
                         panelist.persona,
@@ -77,12 +79,18 @@ class ApprovalVoting(DecisionProtocol):
                         logger.info(
                             f"{panelist.short_id} approved answers from {[self.panelists[a].short_id for a in approval_list]}"
                         )
+                        voting_process_string += f"{panelist.persona} approved answers from {[self.panelists[a].persona for a in approval_list]}\n"
                         break
                     raise ValueError
                 except ValueError:
+                    retries += 1
                     logger.debug(
-                        f"{panelist.short_id} cast an invalid approval: {approval}. Asking to approve again."
+                        f"{panelist.short_id} cast an invalid approval: {approval}. Asking to approve again. Retry {retries}/10."
                     )
+            if retries >= 10:
+                logger.warning(
+                    f"{panelist.short_id} reached maximum retries. Counting as invalid vote."
+                )
 
         # Count approvals for each answer
         approval_counts = Counter(approvals)
@@ -90,4 +98,4 @@ class ApprovalVoting(DecisionProtocol):
         logger.info(
             f"Most approved answer from agent {self.panelists[most_approved].short_id}"
         )
-        return final_answers[most_approved], True, agreements
+        return final_answers[most_approved], True, agreements, voting_process_string

@@ -1,7 +1,8 @@
 import gc
 import json
 import sys
-from typing import Any, Optional
+from copy import deepcopy
+from typing import Any, Optional, List, Dict
 
 from mallm.scheduler import Scheduler
 from mallm.utils.config import Config
@@ -11,8 +12,8 @@ def load_config(config_path: str) -> Any:
     try:
         with open(config_path, "r") as f:
             return json.load(f)
-    except json.JSONDecodeError:
-        print(f"Error: {config_path} is not a valid JSON file.")
+    except json.JSONDecodeError as e:
+        print(f"Error: {config_path} is not a valid JSON file.\n{e}")
         return {}
     except FileNotFoundError:
         print(f"Error: {config_path} not found.")
@@ -36,20 +37,47 @@ def validate_config(config: Config) -> bool:
     return True
 
 
-def run_configuration(config: Config, run_name: str) -> None:
-    if not validate_config(config):
-        print(f"Skipping {run_name} due to validation error.")
-        return
+def run_configuration(config: Config, run_name: str, name: str, repeat: int) -> None:
+    # Adjust the output name for each repeat
+    original_out = config.out.split(".")
+    config.out = f"{original_out[0]}_{name}_repeat{repeat}.{original_out[1]}"
 
     try:
-        print(f"Running {run_name}")
+        print(f"Running {run_name} (Repeat {repeat})")
         scheduler = Scheduler(config)
         scheduler.run()
-        del scheduler
-        gc.collect()
-        print(f"Completed {run_name}")
+        print(f"Completed {run_name} (Repeat {repeat})")
     except Exception as e:
-        print(f"Error running {run_name}: {e}")
+        print(f"Error running {run_name} (Repeat {repeat}): {e}")
+
+
+def validate_all_configs(
+    common_config: Dict[str, Any], runs: List[Dict[str, Any]]
+) -> List[Config]:
+    valid_configs = []
+    for i, run_config in enumerate(runs, 1):
+        merged_config = {**common_config, **run_config}
+        config = create_config(merged_config)
+        if config and validate_config(config):
+            valid_configs.append(config)
+        else:
+            print(f"Configuration for Run {i} is invalid.")
+    return valid_configs
+
+
+def summarize_runs(valid_configs: List[Config], repeats: int) -> None:
+    print("\nRun Summary:")
+    print(f"Total valid runs: {len(valid_configs)}")
+    print(f"Repeats per run: {repeats}")
+    print(f"Total executions: {len(valid_configs) * repeats}")
+    print("\nValid Runs:")
+    for i, config in enumerate(valid_configs, 1):
+        print(f"Run {i}:")
+        print(f"  Data: {config.data}")
+        print(f"  Out: {config.out}")
+        print(f"  Model: {config.model}")
+        print(f"  Max Turns: {config.max_turns}")
+        print()
 
 
 def run_batch(config_path: str) -> None:
@@ -60,19 +88,36 @@ def run_batch(config_path: str) -> None:
 
     common_config = config_data.get("common", {})
     runs = config_data.get("runs", [])
+    repeats = config_data.get("repeats", 1)
+    name = config_data.get("name", "mallm")
 
     if not common_config:
         print("No common configuration found. Exiting.")
         return
 
-    # Run specific configurations
-    for i, run_config in enumerate(runs, 1):
-        print(f"\nProcessing run {i}/{len(runs)}")
-        # Merge common config with run-specific config, prioritizing run-specific values
-        merged_config = {**common_config, **run_config}
-        config = create_config(merged_config)
-        if config:
-            run_configuration(config, f"Run {i}")
+    # Validate all configurations upfront
+    valid_configs = validate_all_configs(common_config, runs)
+
+    if len(valid_configs) != len(runs):
+        print("Some configurations are invalid. Canceling batch process.")
+        return
+
+    # Summarize the runs
+    summarize_runs(valid_configs, repeats)
+
+    # Ask for confirmation
+    confirmation = input(
+        "Do you want to proceed with the batch process? (y/n): "
+    ).lower()
+    if confirmation != "y":
+        print("Batch process canceled.")
+        return
+
+    # Run valid configurations
+    for i, config in enumerate(valid_configs, 1):
+        print(f"\nProcessing run {i}/{len(valid_configs)}")
+        for repeat in range(1, repeats + 1):
+            run_configuration(deepcopy(config), f"Run {i}", name, repeat)
 
     print("\nBatch processing completed.")
 

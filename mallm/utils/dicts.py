@@ -24,6 +24,7 @@ from mallm.models.discussion.SplitFreeTextResponseGenerator import (
 from mallm.models.personas.ExpertGenerator import ExpertGenerator
 from mallm.models.personas.IPIPPersonaGenerator import IPIPPersonaGenerator
 from mallm.models.personas.MockGenerator import MockGenerator
+from mallm.models.personas.ParaphraseTypesGenerator import ParaphraseTypesGenerator
 from mallm.models.personas.PersonaGenerator import PersonaGenerator
 
 DECISION_PROTOCOLS: dict[str, type[DecisionProtocol]] = {
@@ -47,6 +48,7 @@ DISCUSSION_PARADIGMS: dict[str, type[DiscoursePolicy]] = {
 PERSONA_GENERATORS: dict[str, type[PersonaGenerator]] = {
     "expert": ExpertGenerator,
     "ipip": IPIPPersonaGenerator,
+    "paraphrasetypes": ParaphraseTypesGenerator,
     "mock": MockGenerator,
 }
 
@@ -55,4 +57,13 @@ RESPONSE_GENERATORS: dict[str, type[ResponseGenerator]] = {
     "freetext": FreeTextResponseGenerator,
     "splitfreetext": SplitFreeTextResponseGenerator,
     "simple": SimpleResponseGenerator,
+}
+
+PROMPT_TEMPLATES: dict[str, str] = {
+    "etpc": "Paraphrase the provided text into a single paraphrase by using all paraphrase types.",
+    "wmt19_de_en": "Translate the provided text from German to English.",
+    "simple_ethical_questions": "Answer the provided question by choosing option A, B, C, or D. Include the letter corresponding to your answer in the solution.",
+    "squad_v2": "Answer the following question. If the question is not answerable with the provided information, write '[UNKNOWN]'.",
+    "strategyqa": "Answer the following question with A) Yes or B) No. Include the letter corresponding to your answer in the solution.",
+    "xsum": "Summarize the provided text into one sentence.",
 }

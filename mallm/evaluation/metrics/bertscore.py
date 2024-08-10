@@ -16,17 +16,11 @@ class BERTScore(Metric):
     @staticmethod
     def evaluate(generated_text: str, reference_texts: list[str]) -> dict[str, Any]:
         # Calculate BERTScore
-        P, R, F1 = bert_score(
+        _P, _R, F1 = bert_score(
             cands=[generated_text],
             refs=[reference_texts[0]],
             lang="en",
             model_type="bert-base-uncased",
             num_layers=9,
         )
-        return {
-            "bertscore": {
-                "precision": P.mean().item(),
-                "recall": R.mean().item(),
-                "fmeasure": F1.mean().item(),
-            }
-        }
+        return {"bertscore": F1.mean().item()}

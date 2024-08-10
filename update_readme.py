@@ -1,6 +1,7 @@
 from mallm.utils.config import Config
 from pathlib import Path
 import mallm.evaluation.evaluator as evaluator
+import typing
 from mallm.utils.dicts import (
     DECISION_PROTOCOLS,
     DISCUSSION_PARADIGMS,
@@ -12,7 +13,7 @@ import re
 # SCHEDULER CONFIG
 print("Updating Scheduler Config...")
 with open("README.md", "r+") as readme_file:
-    config = Config(data=None, out=None, instruction=None)
+    config = Config(data=None, out=None, instruction_prompt=None)
     attributes = {
         attr: getattr(config, attr)
         for attr in dir(config)
@@ -21,11 +22,18 @@ with open("README.md", "r+") as readme_file:
 
     content = readme_file.read()
 
+    types = typing.get_type_hints(Config, include_extras=True)
     attributes_content = ""
-    for attr, value in attributes.items():
+    for attr, type in types.items():
+        value = attributes[attr]
         if isinstance(value, str):
             value = '"' + value + '"'
-        attributes_content += f"{attr}: {type(value).__name__} = {value}\n"
+        type_str = str(type).replace("typing.", "")
+        if "Optional" in type_str:
+            type_str = type_str.replace("Optional[", "", 1).rsplit("]", 1)[0]
+            attributes_content += f"{attr}: Optional[{type_str}] = {value}\n"
+        else:
+            attributes_content += f"{attr}: {type.__name__} = {value}\n"
 
     replacement_str = "### Config Arguments:\n```py\n" + attributes_content + "```"
 
@@ -90,22 +98,22 @@ with open("README.md", "r+") as readme_file:
 # DISCUSSION PARAMETERS:
 print("Updating Discussion Parameters...")
 with open("README.md", "r+") as readme_file:
-    config = Config(data=None, out=None, instruction=None)
+    config = Config(data=None, out=None, instruction_prompt=None)
     content = readme_file.read()
 
     extra_content = "\nResponse Generators: "
     for key in sorted(RESPONSE_GENERATORS.keys()):
         extra_content += "`" + key + "`, "
     extra_content = extra_content[:-2]
-    extra_content += "\nDecision Protocols: "
+    extra_content += "\n\nDecision Protocols: "
     for key in sorted(DECISION_PROTOCOLS.keys()):
         extra_content += "`" + key + "`, "
     extra_content = extra_content[:-2]
-    extra_content += "\nPersona Generators: "
+    extra_content += "\n\nPersona Generators: "
     for key in sorted(PERSONA_GENERATORS.keys()):
         extra_content += "`" + key + "`, "
     extra_content = extra_content[:-2]
-    extra_content += "\nDiscussion Paradigms: "
+    extra_content += "\n\nDiscussion Paradigms: "
     for key in sorted(DISCUSSION_PARADIGMS.keys()):
         extra_content += "`" + key + "`, "
     extra_content = extra_content[:-2]

@@ -156,7 +156,7 @@ def generate_chat_prompt_draft(
     return prompts
 
 
-def generate_final_answer_prompt(
+def generate_final_answer_prompt(   # TODO: can we delete this? seems to duplicate with response generators
     persona: str,
     persona_description: str,
     question: str,
@@ -174,7 +174,7 @@ def generate_final_answer_prompt(
         },
         {
             "role": "user",
-            "content": "Based on the above information, provide your final solution. Ensure your solution is comprehensive and well-considered.",
+            "content": "Extract the final solution to the task from the provided text. Remove statements of agreement, disagreement, and explanations. Do not modify the text. Do not output any text besides the solution.",
         },
     ]
 

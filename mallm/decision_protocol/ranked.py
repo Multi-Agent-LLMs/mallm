@@ -29,12 +29,12 @@ class RankedVoting(DecisionProtocol):
         agent_index: int,
         task: str,
         question: str,
-    ) -> tuple[str, bool, list[Agreement]]:
+    ) -> tuple[str, bool, list[Agreement], str]:
         if len(agreements) > self.total_agents:
             agreements = agreements[-self.total_agents :]
 
         if turn < self.vote_turn or agent_index != self.total_agents - 1:
-            return "", False, agreements
+            return "", False, agreements, ""
 
         final_answers = []
         for panelist in self.panelists:
@@ -54,8 +54,10 @@ class RankedVoting(DecisionProtocol):
             final_answers.append(response)
 
         rankings = []
+        voting_process_string = ""
         for panelist in self.panelists:
-            while True:
+            retries = 0
+            while retries < 10:
                 # Creates a prompt with all the answers and asks the agent to rank them
                 ranking = panelist.llm.invoke(
                     generate_ranking_prompt(
@@ -77,12 +79,20 @@ class RankedVoting(DecisionProtocol):
                         logger.info(
                             f"{panelist.short_id} ranked answers: {ranking_list}"
                         )
+                        voting_process_string += (
+                            f"{panelist.persona} ranked answers: {ranking_list}\n"
+                        )
                         break
                     raise ValueError
                 except ValueError:
+                    retries += 1
                     logger.debug(
                         f"{panelist.short_id} cast an invalid ranking: {ranking}. Asking to rank again."
                     )
+            if retries >= 10:
+                logger.warning(
+                    f"{panelist.short_id} reached maximum retries. Counting as invalid vote."
+                )
 
         # Calculate the score for each answer based on the rankings
         scores = [0] * len(final_answers)
@@ -107,4 +117,4 @@ class RankedVoting(DecisionProtocol):
             f"Selected answer from agent {self.panelists[index].short_id} with {highest_score} points"
         )
 
-        return result, agreed, agreements
+        return result, agreed, agreements, voting_process_string

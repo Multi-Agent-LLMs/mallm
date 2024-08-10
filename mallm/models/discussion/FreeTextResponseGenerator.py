@@ -1,4 +1,3 @@
-import json
 import logging
 from typing import Optional
 
@@ -19,10 +18,9 @@ class FreeTextResponseGenerator(ResponseGenerator):
             "role": "system",
             "content": "You are participating in a discussion to solve the provided task.",
         }
-
         self.base_prompt_baseline = {
             "role": "system",
-            "content": "Solve the provided task.",
+            "content": "Solve the provided task. Do not ask back questions. Clearly indicate your final solution after the text 'Final Solution:'.",
         }
 
     def generate_baseline(
@@ -39,13 +37,13 @@ Input: {input_str}
                 "content": prompt_content,
             },
         ]
-        return self.generate_response(
-            prompt, chain_of_thought, None, True, True, input_str
-        )
+        return self.generate_response(prompt, task_instruction, input_str, chain_of_thought, None, True, True)
 
     def generate_response(
         self,
         current_prompt: list[dict[str, str]],
+        task_instruction: str,
+        input_str: str,
         chain_of_thought: bool,
         agreement: Optional[bool],
         baseline: bool,
@@ -55,11 +53,12 @@ Input: {input_str}
         if chain_of_thought:
             current_prompt.append(
                 {
-                    "role": "assistant",
+                    "role": "user",
                     "content": "Let's think step by step.",
                 }
             )
-        logger.debug(f"Sending prompt: {json.dumps(current_prompt, indent=2)}")
+        current_prompt = ResponseGenerator.merge_consecutive_messages(current_prompt)
+        # logger.debug(f"Sending prompt: {json.dumps(current_prompt, indent=2)}")
 
         retry = 0
         while retry < 10:
@@ -72,7 +71,7 @@ Input: {input_str}
                     else self.extract_agreement(res, drafting)
                 ),
                 message=res,
-                solution=self.extract_result(res, input_str),
+                solution=self.extract_result(res, task_instruction, input_str),
             )
 
             if response.agreement is None and not drafting and not baseline:
@@ -104,7 +103,7 @@ Input: {input_str}
             instr_prompt,
         ]
         return self.generate_response(
-            current_prompt, chain_of_thought, None, False, False, data.input_str
+            current_prompt, data.task_instruction, data.input_str, chain_of_thought, None, False, False
         )
 
     def generate_improve(
@@ -125,7 +124,7 @@ Input: {input_str}
             instr_prompt,
         ]
         return self.generate_response(
-            current_prompt, chain_of_thought, None, False, False, data.input_str
+            current_prompt, data.task_instruction, data.input_str, chain_of_thought, None, False, False
         )
 
     def generate_draft(self, data: TemplateFilling, chain_of_thought: bool) -> Response:
@@ -144,22 +143,47 @@ Input: {input_str}
             instr_prompt,
         ]
         return self.generate_response(
-            current_prompt, chain_of_thought, None, False, True, data.input_str
+            current_prompt, data.task_instruction, data.input_str, chain_of_thought, None, False, True
         )
 
-    def extract_result(self, result: Optional[str], input_str: str) -> str:
+    def extract_result(self, result: Optional[str], task_instruction: str, input_text: str) -> str:
         current_prompt = [
             {
                 "role": "system",
-                "content": "Extract the final solution to the task from the provided text. Remove statements of agreement, disagreement, and explanations. Do not modify the text. Make absolutely sure to mention the respective letter option A-D from the Original Task.",
+                "content": "Extract the final solution to the task from the output text. Remove statements of agreement, disagreement, and explanations. Do not modify the text. Do not output any text besides the solution. Include the letter (A, B, C, D) in the solution if it exists. If there is no solution provided, just copy the output text.",
             },
             {
                 "role": "user",
-                "content": f"Text: {result}, Original Task: {input_str}",
-            },
-            {
-                "role": "assistant",
-                "content": "Final solution:",
+                "content": f"Task: {task_instruction}\nInput Text: {input_text}\nOutput Text: {result}\nFinal solution:",
             },
         ]
         return self.llm.invoke(current_prompt)
+
+    def generate_ablation(
+        self,
+        task_instruction: str,
+        input_str: str,
+        current_solution: str,
+        chain_of_thought: bool,
+    ) -> Response:
+        prompt_content = f"""
+When, faced with a task, improve the current solution.
+Task: {task_instruction}
+Input: {input_str}
+Current solution: {current_solution}
+"""  # input has context appended
+        prompt = [
+            {
+                "role": "user",
+                "content": prompt_content,
+            },
+        ]
+        return self.generate_response(
+            current_prompt=prompt,
+            task_instruction=task_instruction,
+            input_str=input_str,
+            chain_of_thought=chain_of_thought,
+            agreement=None,
+            baseline=True,
+            drafting=True,
+        )

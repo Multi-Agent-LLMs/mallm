@@ -2,6 +2,7 @@ import logging
 from typing import Optional
 
 from mallm.models.discussion.FreeTextResponseGenerator import FreeTextResponseGenerator
+from mallm.models.discussion.ResponseGenerator import ResponseGenerator
 from mallm.utils.types import Response, TemplateFilling
 
 logger = logging.getLogger("mallm")
@@ -38,7 +39,7 @@ class SplitFreeTextResponseGenerator(FreeTextResponseGenerator):
             instr_prompt,
         ]
         return self.generate_response(
-            current_prompt, chain_of_thought, agreement, False, False, data.input_str
+            current_prompt, data.task_instruction, data.input_str, chain_of_thought, agreement, False, False
         )
 
     def generate_improve(
@@ -68,7 +69,7 @@ class SplitFreeTextResponseGenerator(FreeTextResponseGenerator):
             instr_prompt,
         ]
         return self.generate_response(
-            current_prompt, chain_of_thought, agreement, False, False, data.input_str
+            current_prompt, data.task_instruction, data.input_str, chain_of_thought, agreement, False, False
         )
 
     def generate_agreement(self, data: TemplateFilling) -> Optional[bool]:
@@ -80,4 +81,5 @@ class SplitFreeTextResponseGenerator(FreeTextResponseGenerator):
                 "content": "Do you agree with the solution, considering the arguments and evidence presented? Please provide your reasoning step-by-step. After that, respond with [AGREE] or [DISAGREE].",
             },
         ]
+        prompt = ResponseGenerator.merge_consecutive_messages(prompt)
         return self.extract_agreement(res=self.llm.invoke(prompt), drafting=False)

@@ -13,23 +13,26 @@ class SimpleResponseGenerator(FreeTextResponseGenerator):
 
     def __init__(self, llm: Chat):
         self.llm = llm
+        self.base_prompt_baseline = {
+            "role": "system",
+            "content": "Solve the provided task. Do not ask back questions. Clearly indicate your final solution after the text 'Final Solution:'.",
+        }
 
     def generate_baseline(
         self, task_instruction: str, input_str: str, chain_of_thought: bool
     ) -> Response:
         prompt_content = f"""
-{task_instruction}
+Task: {task_instruction}
 Input: {input_str}
-"""  # input has context appended
+        """  # input has context appended
         prompt = [
+            self.base_prompt_baseline,
             {
                 "role": "system",
                 "content": prompt_content,
             },
         ]
-        return self.generate_response(
-            prompt, chain_of_thought, None, True, True, input_str
-        )
+        return self.generate_response(prompt, task_instruction, input_str, chain_of_thought, None, True, True)
 
     def generate_feedback(
         self, data: TemplateFilling, chain_of_thought: bool
@@ -48,7 +51,7 @@ Input: {input_str}
             instr_prompt,
         ]
         return self.generate_response(
-            current_prompt, chain_of_thought, None, False, False, data.input_str
+            current_prompt, data.task_instruction, data.input_str, chain_of_thought, None, False, False
         )
 
     def generate_improve(
@@ -68,7 +71,7 @@ Input: {input_str}
             instr_prompt,
         ]
         return self.generate_response(
-            current_prompt, chain_of_thought, None, False, False, data.input_str
+            current_prompt, data.task_instruction, data.input_str, chain_of_thought, None, False, False
         )
 
     def generate_draft(self, data: TemplateFilling, chain_of_thought: bool) -> Response:
@@ -86,7 +89,7 @@ Input: {input_str}
             instr_prompt,
         ]
         return self.generate_response(
-            current_prompt, chain_of_thought, None, False, True, data.input_str
+            current_prompt, data.task_instruction, data.input_str, chain_of_thought, None, False, True
         )
 
     @staticmethod

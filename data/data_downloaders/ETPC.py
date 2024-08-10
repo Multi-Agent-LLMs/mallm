@@ -23,7 +23,7 @@ class ETPCDownloader(DatasetDownloader):
         data = self.shuffle_and_select("train", False)
         input_examples = []
         for s in data.iter(batch_size=1):
-            if s["etpc_label"][0] == 1:
+            if s["etpc_label"][0] == 1 and s["sentence2"][0]:
                 paraphrase_types_str = "Paraphrase Types: "
                 for p in list(set(s["paraphrase_types"][0])):
                     paraphrase_types_str += p + ", "
@@ -35,7 +35,6 @@ class ETPCDownloader(DatasetDownloader):
                         inputs=[s["sentence1"][0]],
                         context=[paraphrase_types_str],
                         references=[s["sentence2"][0]],
-                        personas=None,
                     )
                 )
         input_examples = input_examples[: self.sample_size]

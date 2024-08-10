@@ -1,15 +1,14 @@
-import dataclasses
-import dbm
-import json
 import logging
 import random
 import time
 import uuid
 from collections.abc import Sequence
 from datetime import timedelta
+from pathlib import Path
 from typing import Optional
 
 import httpx
+from rich.progress import Console  # type: ignore
 
 from mallm.agents.agent import Agent
 from mallm.agents.moderator import Moderator
@@ -26,7 +25,7 @@ from mallm.utils.dicts import (
     PERSONA_GENERATORS,
     RESPONSE_GENERATORS,
 )
-from mallm.utils.types import Agreement, Memory
+from mallm.utils.types import Agreement, InputExample, Memory
 
 logger = logging.getLogger("mallm")
 
@@ -38,7 +37,7 @@ class Coordinator:
         client: httpx.Client,
         agent_generator: str = "expert",
         use_moderator: bool = False,
-        memory_bucket_dir: str = "./mallm/utils/memory_bucket/",
+        console: Optional[Console] = None,
     ):
         self.personas = None
         self.id = str(uuid.uuid4())
@@ -47,13 +46,13 @@ class Coordinator:
         self.agents: Sequence[Agent] = []
         self.use_moderator = use_moderator
         self.moderator: Optional[Moderator] = None
-        self.memory_bucket_dir = memory_bucket_dir
-        self.memory_bucket = self.memory_bucket_dir + "global_" + self.id
         self.decision_protocol: Optional[DecisionProtocol] = None
         self.llm = model
         self.response_generator: ResponseGenerator = SimpleResponseGenerator(self.llm)
         self.client = client
         self.agent_generator = agent_generator
+        self.memory: list[Memory] = []
+        self.console = console or Console()
 
     def init_agents(
         self,
@@ -62,15 +61,20 @@ class Coordinator:
         use_moderator: bool,
         num_agents: int,
         chain_of_thought: bool,
-        response_generator: str = "json",
+        feedback_only: bool,
+        sample: InputExample,
     ) -> None:
         """
         Instantiates the agents by
         1) identify helpful personas
         2) create agents with the personas
         """
+        logger.debug(f"Coordinator {self.id} creates {num_agents} agents ({self.agent_generator})...")
         self.panelists = []
         self.agents = []
+
+        if use_moderator:
+            num_agents -= 1
 
         if self.agent_generator not in PERSONA_GENERATORS:
             logger.error(
@@ -89,24 +93,11 @@ class Coordinator:
         personas = PERSONA_GENERATORS[self.agent_generator](
             llm=self.llm
         ).generate_personas(
-            task_description=f"{task_instruction} {input_str}", num_agents=num_agents
+            task_description=f"{task_instruction} {input_str}",
+            num_agents=num_agents,
+            sample=sample,
         )
-        # Add a Neutral Agent with a very Neutral Description
-        personas.append(
-            {
-                "role": "Neutral",
-                "description": "Neutral",
-                "attributes": {
-                    "extraversion": "neutral",
-                    "agreeableness": "neutral",
-                    "conscientiousness": "neutral",
-                    "neuroticism": "neutral",
-                    "openness": "neutral",
-                    "experience": "Neutral",
-                    "gender": "neutral",
-                },
-            }
-        )
+        logger.debug(f"Created {len(personas)} personas: \n" + str(personas))
 
         if use_moderator:
             self.moderator = Moderator(
@@ -123,6 +114,7 @@ class Coordinator:
                     persona_description=persona["description"],
                     persona_attributes=persona["attributes"],
                     chain_of_thought=chain_of_thought,
+                    feedback_only=feedback_only,
                 )
             )
 
@@ -132,6 +124,11 @@ class Coordinator:
             self.agents = [self.moderator, *self.panelists]
         else:
             self.agents = self.panelists
+
+        if len(self.agents) == 1:
+            logger.warning(
+                "Created only 1 agent. The discussion will be replaced by a self-improvement mechanism."
+            )
 
     def get_agents(self) -> list[dict[str, str]]:
         return [
@@ -144,56 +141,6 @@ class Coordinator:
             for a in self.agents
         ]
 
-    def update_global_memory(self, memory: Memory) -> None:
-        """
-        Updates the dbm memory with another discussion entry.
-        Returns string
-        """
-        with dbm.open(self.memory_bucket, "c") as db:
-            db[str(memory.message_id)] = json.dumps(dataclasses.asdict(memory))
-            logger.debug(str(db[str(memory.message_id)]))
-        self.save_global_memory_to_json()
-
-    def get_global_memory(self) -> list[Memory]:
-        """
-        Retrieves memory from the agents memory bucket as a dictionary
-        Returns: dict
-        """
-        memory = []
-        with dbm.open(self.memory_bucket, "r") as db:
-            for key in db.keys():
-                json_object = json.loads(db[key].decode())
-                memory.append(Memory(**json_object))
-        return memory
-
-    def save_global_memory_to_json(self) -> None:
-        """
-        Converts the memory bucket dbm data to json format
-        """
-        try:
-            with open(self.memory_bucket + ".json", "w") as f:
-                json.dump(
-                    [dataclasses.asdict(memory) for memory in self.get_global_memory()],
-                    f,
-                )
-        except Exception as e:
-            logger.error(f"Failed to save agent memory to {self.memory_bucket}: {e}")
-            logger.error(self.get_global_memory())
-
-    def clear_global_memory(self) -> None:
-        """
-        Clears the memory bucket.
-        """
-        logger.info(f"Clearing memory bucket {self.memory_bucket}")
-
-        with dbm.open(self.memory_bucket, "n") as _:
-            pass
-
-        del self.get_global_memory()[:]
-
-        for agent in self.agents:
-            agent.clear_memory()
-
     @staticmethod
     def update_memories(
         memories: list[Memory], agents_to_update: Sequence[Agent]
@@ -205,31 +152,11 @@ class Coordinator:
             for agent in agents_to_update:
                 agent.update_memory(memory)
 
-    def setup_personas(
-        self, config: Config, input_lines: list[str], context: Optional[list[str]]
-    ) -> None:
-        self.sample_instruction = config.instruction
-        if context:
-            self.sample_instruction += "\nHere is some context you need to consider:"
-            for c in context:
-                self.sample_instruction += "\n" + c
-        self.input_str = ""
-        for num, input_line in enumerate(input_lines):
-            if len(input_lines) > 1:
-                self.input_str += str(num + 1) + ") " + input_line + "\n"
-            else:
-                self.input_str = input_line
-
-        self.init_agents(
-            self.sample_instruction,
-            self.input_str,
-            use_moderator=config.use_moderator,
-            num_agents=0,
-            chain_of_thought=config.chain_of_thought,
-            response_generator=config.response_generator,
-        )
-
-    def discuss(self, config: Config) -> tuple[
+    def discuss(
+        self,
+        config: Config,
+        sample: InputExample,
+    ) -> tuple[
         Optional[str],
         list[Memory],
         list[Optional[list[Memory]]],
@@ -247,10 +174,38 @@ class Coordinator:
         2) Discuss the problem based on the given paradigm (iteratively check for agreement between agents)
         3) After max turns or agreement reached: return the final result to the task sample
 
-        Returns the final response agreed on, the global memory, agent specific memory, turns needed, last agreements of agents
+        Returns final response, global memory, agent specific memory, turns needed, last agreements of agents, discussion time in seconds, boolean if agreement was reached
         """
+        sample_instruction = config.instruction_prompt
+        if sample.context:
+            sample_instruction += "\nContext:"
+            for c in sample.context:
+                sample_instruction += "\n" + c
+        input_str = ""
+        for num, input_line in enumerate(sample.inputs):
+            if len(sample.inputs) > 1:
+                input_str += str(num + 1) + ") " + input_line + "\n"
+            else:
+                input_str = input_line
 
-        mypanelists = random.sample(self.panelists, config.num_agents)
+        if config.response_generator not in RESPONSE_GENERATORS:
+            logger.error(f"No valid response generator for {config.response_generator}")
+            raise Exception(
+                f"No valid response generator for {config.response_generator}"
+            )
+        self.response_generator = RESPONSE_GENERATORS[config.response_generator](
+            self.llm
+        )
+
+        self.init_agents(
+            sample_instruction,
+            input_str,
+            use_moderator=config.use_moderator,
+            num_agents=config.num_agents,
+            chain_of_thought=config.chain_of_thought,
+            feedback_only=config.feedback_only,
+            sample=sample,
+        )
 
         if config.decision_protocol not in DECISION_PROTOCOLS:
             logger.error(f"No valid decision protocol for {config.decision_protocol}")
@@ -271,13 +226,13 @@ class Coordinator:
         logger.info(
             f"""Starting discussion with coordinator {self.id}...
 -------------
-Instruction: {self.sample_instruction}
-Input: {self.input_str}
-Feedback sentences: {config.feedback_sentences!s}
-Maximum turns: {config.max_turns}
-Panelists: {[a.persona for a in mypanelists]!s}
-Paradigm: {policy.__class__.__name__}
-Decision-protocol: {self.decision_protocol.__class__.__name__}
+[bold blue]Instruction:[/] {sample_instruction}
+[bold blue]Input:[/] {input_str}
+[bold blue]Feedback sentences:[/] {config.feedback_sentences!s}
+[bold blue]Maximum turns:[/] {config.max_turns}
+[bold blue]Agents:[/] {[a.persona for a in self.agents]!s}
+[bold blue]Paradigm:[/] {policy.__class__.__name__}
+[bold blue]Decision-protocol:[/] {self.decision_protocol.__class__.__name__}
 -------------"""
         )
 
@@ -292,19 +247,19 @@ Decision-protocol: {self.decision_protocol.__class__.__name__}
             context_length=config.context_length,
             include_current_turn_in_memory=config.include_current_turn_in_memory,
             debate_rounds=config.debate_rounds,
+            console=self.console,
         )
 
         discussion_time = timedelta(
             seconds=time.perf_counter() - start_time
         ).total_seconds()
 
-        global_mem = self.get_global_memory()
-        agent_mems = [a.get_memories()[0] for a in self.agents]
+        self.console.save_html(str(Path(config.out).with_suffix(".html")), clear=False)
 
         return (
             answer,
-            global_mem,
-            agent_mems,
+            self.memory,
+            [a.get_memories()[0] for a in self.agents],
             turn,
             agreements,
             discussion_time,

@@ -103,13 +103,13 @@ Input: {input_str}
                 "content": prompt_content,
             },
         ]
-        return self.generate_response(
-            prompt, chain_of_thought, None, True, True, input_str
-        )
+        return self.generate_response(prompt, task_instruction, input_str, chain_of_thought, None, True, True)
 
     def generate_response(
         self,
         current_prompt: list[dict[str, str]],
+        task_instruction: str,
+        input_str: str,
         chain_of_thought: bool,
         agreement: Optional[bool],
         baseline: bool,
@@ -119,11 +119,12 @@ Input: {input_str}
         if chain_of_thought:
             current_prompt.append(
                 {
-                    "role": "assistant",
+                    "role": "user",
                     "content": "Let's think step by step.",
                 }
             )
-        logger.debug(f"Sending prompt: {json.dumps(current_prompt, indent=2)}")
+        current_prompt = ResponseGenerator.merge_consecutive_messages(current_prompt)
+        # logger.debug(f"Sending prompt: {json.dumps(current_prompt, indent=2)}")
 
         retry = 0
         while retry < 10:
@@ -190,7 +191,7 @@ Input: {input_str}
             instr_prompt,
         ]
         return self.generate_response(
-            current_prompt, chain_of_thought, None, False, False, data.input_str
+            current_prompt, data.task_instruction, data.input_str, chain_of_thought, None, False, False
         )
 
     def generate_improve(
@@ -211,7 +212,7 @@ Input: {input_str}
             instr_prompt,
         ]
         return self.generate_response(
-            current_prompt, chain_of_thought, None, False, False, data.input_str
+            current_prompt, data.task_instruction, data.input_str, chain_of_thought, None, False, False
         )
 
     def generate_draft(self, data: TemplateFilling, chain_of_thought: bool) -> Response:
@@ -230,5 +231,34 @@ Input: {input_str}
             instr_prompt,
         ]
         return self.generate_response(
-            current_prompt, chain_of_thought, None, False, True, data.input_str
+            current_prompt, data.task_instruction, data.input_str, chain_of_thought, None, False, True
+        )
+
+    def generate_ablation(
+        self,
+        task_instruction: str,
+        input_str: str,
+        current_solution: str,
+        chain_of_thought: bool,
+    ) -> Response:
+        prompt_content = f"""
+When, faced with a task, improve the current solution.
+Task: {task_instruction}
+Input: {input_str}
+Current solution: {current_solution}
+"""  # input has context appended
+        prompt = [
+            {
+                "role": "user",
+                "content": prompt_content,
+            },
+        ]
+        return self.generate_response(
+            current_prompt=prompt,
+            task_instruction=task_instruction,
+            input_str=input_str,
+            chain_of_thought=chain_of_thought,
+            agreement=None,
+            baseline=True,
+            drafting=True,
         )

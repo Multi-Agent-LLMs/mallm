@@ -27,11 +27,9 @@ class GPQADownloader(DatasetDownloader):
         input_examples = []
 
         for sample in data.iter(batch_size=1):
-            answers = self._format_answers(sample)
-            correct_answer_index = answers.index(
-                json.dumps(sample["Correct Answer"][0])
-            )
-            correct_answer_label = chr(65 + correct_answer_index)
+            answers, correct_answer = self._format_answers(sample)
+            correct_answer_index = answers.index(json.dumps(correct_answer))
+            correct_answer_label = f"{chr(65 + correct_answer_index)}) {correct_answer}"
 
             question_text = self._clean_text(sample["Question"][0])
             formatted_answers = self._format_answer_choices(answers)
@@ -44,7 +42,6 @@ class GPQADownloader(DatasetDownloader):
                     inputs=[question_and_answers],
                     context=None,
                     references=[correct_answer_label],
-                    personas=None,
                 )
             )
         return input_examples
@@ -52,12 +49,13 @@ class GPQADownloader(DatasetDownloader):
     @staticmethod
     def _format_answers(sample: InputExample):
         answers = [json.dumps(sample[f"Incorrect Answer {i}"][0]) for i in range(1, 4)]
-        answers.insert(0, json.dumps(sample["Correct Answer"][0]))
+        correct_answer = sample["Correct Answer"][0]
+        answers.insert(0, json.dumps(correct_answer))
         random.shuffle(answers)
-        return answers
+        return answers, correct_answer
 
     def _format_answer_choices(self, answers):
-        return [f" {chr(65 + i)}. {self._clean_text(answers[i])}" for i in range(4)]
+        return [f" {chr(65 + i)}) {self._clean_text(answers[i])}" for i in range(4)]
 
     def _clean_text(self, text):
         return (

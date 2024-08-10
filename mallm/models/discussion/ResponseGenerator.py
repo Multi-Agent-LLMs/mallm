@@ -14,6 +14,8 @@ class ResponseGenerator(ABC):
     def generate_response(
         self,
         current_prompt: list[dict[str, str]],
+        task_instruction: str,
+        input_str: str,
         chain_of_thought: bool,
         agreement: Optional[bool],
         baseline: bool,
@@ -42,9 +44,29 @@ class ResponseGenerator(ABC):
         Abstract method to generate the response of a single LM as a baseline.
 
         Parameters:
-        data (TemplateFilling): The fields used for prompting the LM.
         task_instruction (str): The instruction for the task and appended context.
         input_str (str): The input for the task.
+        chain_of_thought (bool): Whether to use Zero-Shot CoT.
+
+        Returns:
+        Response: An object with the attributes "agreement", "message", and "solution".
+        """
+
+    @abstractmethod
+    def generate_ablation(
+        self,
+        task_instruction: str,
+        input_str: str,
+        current_solution: str,
+        chain_of_thought: bool,
+    ) -> Response:
+        """
+        Abstract method to generate the response of a single LM that iteratively improves on the current solution.
+
+        Parameters:
+        task_instruction (str): The instruction for the task and appended context.
+        input_str (str): The input for the task.
+        current_solution: (str): The current solution to improve.
         chain_of_thought (bool): Whether to use Zero-Shot CoT.
 
         Returns:
@@ -157,3 +179,31 @@ Current Solution: {data.current_draft}
         if drafting:
             return None
         return "agree" in res.lower() and "disagree" not in res.lower()
+
+    @staticmethod
+    def merge_consecutive_messages(
+        messages: list[dict[str, str]]
+    ) -> list[dict[str, str]]:
+        if not messages:
+            return []
+
+        merged_messages = []
+        current_role = messages[0]["role"]
+        current_content = ""
+
+        for msg in messages:
+            if msg["role"] == current_role:
+                current_content += msg["content"] + "\n\n"
+            else:
+                merged_messages.append(
+                    {"role": current_role, "content": current_content.strip()}
+                )
+                current_role = msg["role"]
+                current_content = msg["content"] + "\n\n"
+
+        if current_content:
+            merged_messages.append(
+                {"role": current_role, "content": current_content.strip()}
+            )
+
+        return merged_messages

@@ -1,7 +1,9 @@
-from typing import Any, Iterator, Optional, Union, cast
 import logging
+import time
 from collections.abc import Iterator
 from typing import Any, Optional, Union, cast
+
+from openai.types.chat import ChatCompletionChunk
 
 logger = logging.getLogger("mallm")
 
@@ -11,7 +13,7 @@ from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import LLMResult
 from langchain_core.prompt_values import PromptValue
-from openai import APIError, OpenAI
+from openai import APIError, RateLimitError, OpenAI
 
 
 class Chat(LLM):
@@ -58,6 +60,34 @@ class Chat(LLM):
         # this is a wrong cast, but we need it because we use a custom call function which can handle this
         return self.generate(prompts, stop=stop, callbacks=callbacks, **kwargs)  # type: ignore
 
+    @staticmethod
+    def merge_consecutive_messages(
+        messages: list[dict[str, str]]
+    ) -> list[dict[str, str]]:
+        if not messages:
+            return []
+
+        merged_messages = []
+        current_role = messages[0]["role"]
+        current_content = ""
+
+        for msg in messages:
+            if msg["role"] == current_role:
+                current_content += msg["content"] + "\n\n"
+            else:
+                merged_messages.append(
+                    {"role": current_role, "content": current_content.strip()}
+                )
+                current_role = msg["role"]
+                current_content = msg["content"] + "\n\n"
+
+        if current_content:
+            merged_messages.append(
+                {"role": current_role, "content": current_content.strip()}
+            )
+
+        return merged_messages
+
     def _call(  # type: ignore
         self,
         prompt,
@@ -81,12 +111,13 @@ class Chat(LLM):
         Returns:
             The model output as a string. Actual completions SHOULD NOT include the prompt.
         """
+        merged_messages = self.merge_consecutive_messages(prompt)
         retries = 0
         while retries < 5:
             try:
                 chat_completion = self.client.chat.completions.create(
                     model=self.model,
-                    messages=prompt,
+                    messages=merged_messages,  # type: ignore
                     stream=True,
                     stop=self.stop_tokens,
                     max_tokens=self.max_tokens,
@@ -94,7 +125,9 @@ class Chat(LLM):
                 # iterate and print stream
                 collected_messages = []
                 for message in chat_completion:
-                    message_str = message.choices[0].delta.content
+                    message_str = (
+                        cast(ChatCompletionChunk, message).choices[0].delta.content
+                    )
                     if message_str and message_str not in self.stop_tokens:
                         collected_messages.append(message_str)
                 break
@@ -105,9 +138,18 @@ class Chat(LLM):
                     logger.warning(
                         f"API returned an Error: {e}. Retry number {retries}..."
                     )
+                    time.sleep(3)
                 else:
                     logger.error(f" {e}: Exceeded maximum retries. This sample failed.")
                     raise Exception("Exceeded maximum API retries.")
+            except RateLimitError as e:
+                # Handle rate limit error (we recommend using exponential backoff)
+                print(f"OpenAI API request exceeded rate limit: {e}")
+                # Check if we got a 429 error and wait for the retry-after time
+                if e.status_code == 429:
+                    retry_after = e.response.headers.get("Retry-After")
+                    if retry_after:
+                        time.sleep(int(retry_after))
                 continue
 
         return "".join(collected_messages)
