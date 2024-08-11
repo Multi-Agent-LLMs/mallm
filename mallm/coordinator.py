@@ -42,7 +42,7 @@ class Coordinator:
         self.id = str(uuid.uuid4())
         self.short_id = self.id[:4]
         self.panelists: list[Panelist] = []
-        self.agents: Sequence[Agent] = []
+        self.agents: list[Agent] = []
         self.num_neutral_agents = num_neutral_agents
         self.draft_proposers: list[DraftProposer] = []
         self.decision_protocol: Optional[DecisionProtocol] = None
@@ -69,9 +69,6 @@ class Coordinator:
         2) create agents with the personas
         """
         logger.debug(f"Coordinator {self.id} creates {num_agents} agents ({self.agent_generator})...")
-        self.panelists = []
-        self.draft_proposers = []
-        self.agents = []
 
         num_agents -= num_neutral_agents
 
@@ -91,14 +88,16 @@ class Coordinator:
         logger.debug(f"Created {len(personas)} personas: \n" + str(personas))
 
         for _ in range(num_neutral_agents):
-            self.draft_proposers.append(
-                DraftProposer(
+            draft_proposer = DraftProposer(
                     self.llm, self.client, self, response_generator=self.response_generator
                 )
+            self.draft_proposers.append(
+                draft_proposer
             )
+            self.agents.append(draft_proposer)
+
         for persona in personas:
-            self.panelists.append(
-                Panelist(
+            panelist = Panelist(
                     llm=self.llm,
                     client=self.client,
                     coordinator=self,
@@ -108,9 +107,10 @@ class Coordinator:
                     chain_of_thought=chain_of_thought,
                     drafting_agent=all_agents_drafting,
                 )
+            self.panelists.append(
+                panelist
             )
-
-        self.agents = self.draft_proposers + self.panelists
+            self.agents.append(panelist)
 
         if len(self.agents) == 1:
             logger.warning(

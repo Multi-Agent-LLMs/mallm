@@ -67,7 +67,7 @@ class Config:
         else:
             headers = {"Authorization": f"Bearer {self.hf_token}"}
             response = requests.get(
-                f"https://datasets-server.huggingface.co/is-valid?dataset={self.data}",
+                f"https://datasets-server.huggingface.co/is-valid?dataset={self.input_json_file_path}",
                 headers=headers,
             )
             if not response.json()["preview"]:

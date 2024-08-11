@@ -11,7 +11,7 @@ from mallm.models.Chat import Chat
 from mallm.models.discussion.ResponseGenerator import ResponseGenerator
 
 if TYPE_CHECKING:
-    from mallm.agents.moderator import Moderator
+    from mallm.agents.draftProposer import DraftProposer
     from mallm.coordinator import Coordinator
 
 from mallm.utils.types import Agreement, Memory, TemplateFilling
@@ -28,7 +28,6 @@ class Agent:
         response_generator: ResponseGenerator,
         persona: str,
         persona_description: str,
-        moderator: Optional[Moderator] = None,
         chain_of_thought: bool = False,
         drafting_agent: bool = False,
     ):
@@ -37,7 +36,6 @@ class Agent:
         self.persona = persona
         self.persona_description = persona_description
         self.coordinator = coordinator
-        self.moderator = moderator
         self.llm = llm
         self.response_generator = response_generator
         self.client = client
@@ -96,7 +94,7 @@ class Agent:
         memory_ids: list[int],
         template_filling: TemplateFilling,
         agreements: list[Agreement],
-        is_moderator: bool = False,
+        is_neutral: bool = False,
     ) -> tuple[str, Memory, list[Agreement]]:
         logger.debug(f"Agent [bold blue]{self.short_id}[/] is drafting a solution.")
         response = self.response_generator.generate_draft(

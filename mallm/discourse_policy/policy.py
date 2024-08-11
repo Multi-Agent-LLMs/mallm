@@ -143,7 +143,7 @@ class DiscoursePolicy(ABC):
             + f"\n-----------\nDecision Success: {self.decision} \n\nAccepted solution: {self.draft}"
             + (f"\n\n{voting_process_string}" if voting_process_string else "")
         )
-        discussion_text.highlight_regex(r"Agent .*\):", style="bold blue")
+        discussion_text.highlight_regex(r"Agent .*\):", style="bold green")
         discussion_text.highlight_regex(r"Task instruction:", style="bold green")
         discussion_text.highlight_regex(r"Input:", style="bold green")
         discussion_text.highlight_regex(r"Decision Success:", style="bold green")
