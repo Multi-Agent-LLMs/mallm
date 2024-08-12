@@ -85,8 +85,8 @@ class Config:
                 "When using the OpenAI API, you need to provide a key with the argument: --api_key=<your key>"
             )
             sys.exit(1)
-        if self.num_neutral_agents > self.num_agents:
-            logger.error("There can not be more neutral agents than total agents. Set num_neutral_agents <= neutral_agents.")
+        if self.num_neutral_agents >= self.num_agents and not self.skip_decision_making:
+            logger.error("You need at least one non-neutral agent to allow for decision-making. Set num_neutral_agents < num_agents.")
             sys.exit(1)
         if self.endpoint_url.endswith("/"):
             logger.warning("Removing trailing / from the endpoint url.")

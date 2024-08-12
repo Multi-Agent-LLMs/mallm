@@ -112,14 +112,13 @@ class DiscourseDebate(DiscoursePolicy):
 
             # ---- Agents A2, A3, ...
             for r in range(debate_rounds):
-                logger.debug("Debate round: " + str(r))
+                logger.debug(f"Discussion {coordinator.id} goes into debate round: {str(r)}")
                 debate_agreements: list[Agreement] = []
                 for i, a in enumerate(
                     coordinator.agents[1:]
                 ):  # similar to relay paradigm
                     # Because we should only iterate over Panelists with [1:]
                     # We call participate() below, which is a method of Panelist
-                    assert isinstance(a, Panelist)
 
                     debate_history, memory_ids, current_draft = (
                         a.get_discussion_history(
@@ -150,15 +149,27 @@ class DiscourseDebate(DiscoursePolicy):
                         ]
                     else:
                         agents_to_update = [a, coordinator.agents[next_a]]
-                    debate_agreements = a.participate(
-                        memories=memories,
-                        unique_id=unique_id,
-                        turn=self.turn,
-                        memory_ids=memory_ids,
-                        template_filling=template_filling,
-                        agents_to_update=agents_to_update,
-                        agreements=debate_agreements,
-                    )
+                    
+                    if isinstance(a, DraftProposer):
+                        _res, _debate_memory, debate_agreements = a.draft(
+                            unique_id=unique_id,
+                            turn=self.turn,
+                            memory_ids=memory_ids,
+                            template_filling=template_filling,
+                            agreements=debate_agreements,
+                            is_neutral=True,
+                        )
+                    else:
+                        debate_agreements = a.participate(
+                            memories=memories,
+                            unique_id=unique_id,
+                            turn=self.turn,
+                            memory_ids=memory_ids,
+                            template_filling=template_filling,
+                            agents_to_update=agents_to_update,
+                            agreements=debate_agreements,
+                        )
+
                     if len(debate_agreements) > len(coordinator.agents) - 1:
                         debate_agreements = debate_agreements[
                             1 - len(coordinator.agents) :

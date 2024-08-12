@@ -87,9 +87,9 @@ class Coordinator:
         )
         logger.debug(f"Created {len(personas)} personas: \n" + str(personas))
 
-        for _ in range(num_neutral_agents):
+        for n in range(num_neutral_agents):
             draft_proposer = DraftProposer(
-                    self.llm, self.client, self, response_generator=self.response_generator
+                    self.llm, self.client, self, response_generator=self.response_generator, persona=f"Moderator {n+1}" if num_neutral_agents>1 else "Moderator"
                 )
             self.draft_proposers.append(
                 draft_proposer
