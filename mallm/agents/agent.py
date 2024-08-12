@@ -11,7 +11,6 @@ from mallm.models.Chat import Chat
 from mallm.models.discussion.ResponseGenerator import ResponseGenerator
 
 if TYPE_CHECKING:
-    from mallm.agents.draftProposer import DraftProposer
     from mallm.coordinator import Coordinator
 
 from mallm.utils.types import Agreement, Memory, TemplateFilling

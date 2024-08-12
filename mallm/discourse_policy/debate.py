@@ -112,7 +112,7 @@ class DiscourseDebate(DiscoursePolicy):
 
             # ---- Agents A2, A3, ...
             for r in range(debate_rounds):
-                logger.debug(f"Discussion {coordinator.id} goes into debate round: {str(r)}")
+                logger.debug(f"Discussion {coordinator.id} goes into debate round: {r!s}")
                 debate_agreements: list[Agreement] = []
                 for i, a in enumerate(
                     coordinator.agents[1:]
@@ -149,7 +149,7 @@ class DiscourseDebate(DiscoursePolicy):
                         ]
                     else:
                         agents_to_update = [a, coordinator.agents[next_a]]
-                    
+
                     if isinstance(a, DraftProposer):
                         _res, _debate_memory, debate_agreements = a.draft(
                             unique_id=unique_id,

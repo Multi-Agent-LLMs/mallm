@@ -106,7 +106,7 @@ def test_unanimous_decision_in_first_five_turns_with_draft_proposer():
                 response="",
                 message_id="",
             )
-            for _ in range(3)
+            for _ in range(2)
         ]
     )
     decision, is_consensus, agreements, voting_string = mc.make_decision(
