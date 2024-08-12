@@ -159,7 +159,7 @@ class DiscourseDebate(DiscoursePolicy):
                             agreements=debate_agreements,
                             is_neutral=True,
                         )
-                    else:
+                    elif isinstance(a, Panelist):
                         debate_agreements = a.participate(
                             memories=memories,
                             unique_id=unique_id,
