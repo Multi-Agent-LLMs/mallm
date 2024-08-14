@@ -194,7 +194,7 @@ The batch executor allows you to run multiple configurations of the MALLM (Multi
 1. **Prepare your configuration file:**
    - Copy the `batch.json.template` file and rename it (e.g., `my_batch_config.json`).
    - Edit the JSON file to define your configurations. The file has four main sections:
-     - `name`: A descriptive name for the batch of runs. This is optional but can help identify the purpose of the batch.
+     - `name`: A descriptive name for the batch of runs. This is optional but will be added to the output filename and can help identify the purpose of the batch.
      - `repeats`: The number of times to repeat each run. This is useful for running multiple trials with the same configuration.
      - `common`: Contains settings that apply to all runs unless overridden.
      - `runs`: An array of run-specific configurations.
