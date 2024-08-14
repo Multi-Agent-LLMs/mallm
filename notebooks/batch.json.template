@@ -14,7 +14,7 @@
     "use_chain_of_thought": true,
     "num_agents": 3,
     "agent_generator": "expert",
-    "input_json_file_path": "data/datasets/etpc_debugging.json"
+    "input_json_file_path": "data/datasets/etpc_debugging.json",
     "shuffle_input_samples": true
   },
   "runs": [
