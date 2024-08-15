@@ -29,9 +29,11 @@ def create_config(config_dict: Any) -> Optional[Config]:
 
 
 def validate_config(config: Config) -> bool:
-    required_fields = ["data", "out", "instruction"]
+    required_fields = ["data", "out", "instruction_prompt"]
     for field in required_fields:
-        if not getattr(config, field):
+        try:
+            getattr(config, field)
+        except AttributeError:
             print(f"Error: '{field}' is required but not provided or empty.")
             return False
     return True
