@@ -176,6 +176,11 @@ class Scheduler:
             logger.error(e)
             self.failed_example_ids.append(sample.example_id)
             return None
+
+        # coordinator.setup_personas(
+        #     self.config, input_lines=sample.inputs, context=sample.context
+        # )
+
         try:
             (
                 answer,
@@ -193,10 +198,6 @@ class Scheduler:
             logger.error("Exception occurred", exc_info=True)
             logger.error(traceback.format_exc())
             return None
-
-        coordinator.setup_personas(
-            self.config, input_lines=sample.inputs, context=sample.context
-        )
 
         self.output_dicts.append(
             {
@@ -217,12 +218,12 @@ class Scheduler:
                 ],
                 "turns": turn,
                 "clockSeconds": float(f"{discussion_time:.2f}"),
-                "globalMemory": [dataclasses.asdict(memory) for memory in global_mem],
-                "agentMemory": [
-                    [dataclasses.asdict(memory) for memory in agent]
-                    for agent in agent_mems
-                    if agent
-                ],
+                # "globalMemory": [dataclasses.asdict(memory) for memory in global_mem],
+                # "agentMemory": [
+                #     [dataclasses.asdict(memory) for memory in agent]
+                #     for agent in agent_mems
+                #     if agent
+                # ],
             }
         )
         try:

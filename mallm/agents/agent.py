@@ -28,7 +28,7 @@ class Agent:
         response_generator: ResponseGenerator,
         persona: str,
         persona_description: str,
-        persona_attributes: dict[str, str],
+        persona_attributes: Optional[dict[str, str]],
         moderator: Optional[Moderator] = None,
         chain_of_thought: bool = False,
         feedback_only: bool = False,
@@ -37,6 +37,7 @@ class Agent:
         self.short_id = self.id[:4]
         self.persona = persona
         self.persona_description = persona_description
+        self.persona_attributes = persona_attributes
         self.coordinator = coordinator
         self.moderator = moderator
         self.llm = llm
@@ -44,7 +45,7 @@ class Agent:
         self.client = client
         self.chain_of_thought = chain_of_thought
         self.feedback_only = feedback_only
-        self.memory : dict[str, Memory] = {}
+        self.memory: dict[str, Memory] = {}
         logger.info(
             f"Creating agent [bold blue]{self.short_id}[/] with personality [bold blue]{self.persona}[/]: {self.persona_description}"
         )
@@ -193,7 +194,9 @@ class Agent:
         memory_ids = []
         current_draft = None
 
-        memories = sorted(self.memory.values(), key=lambda x: x.message_id, reverse=False)
+        memories = sorted(
+            self.memory.values(), key=lambda x: x.message_id, reverse=False
+        )
         context_memory = []
         for memory in memories:
             if (

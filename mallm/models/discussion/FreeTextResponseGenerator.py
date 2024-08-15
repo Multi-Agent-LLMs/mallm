@@ -37,7 +37,9 @@ Input: {input_str}
                 "content": prompt_content,
             },
         ]
-        return self.generate_response(prompt, task_instruction, input_str, chain_of_thought, None, True, True)
+        return self.generate_response(
+            prompt, task_instruction, input_str, chain_of_thought, None, True, True
+        )
 
     def generate_response(
         self,
@@ -48,7 +50,6 @@ Input: {input_str}
         agreement: Optional[bool],
         baseline: bool,
         drafting: bool,
-        input_str: str,
     ) -> Response:
         if chain_of_thought:
             current_prompt.append(
@@ -103,7 +104,13 @@ Input: {input_str}
             instr_prompt,
         ]
         return self.generate_response(
-            current_prompt, data.task_instruction, data.input_str, chain_of_thought, None, False, False
+            current_prompt,
+            data.task_instruction,
+            data.input_str,
+            chain_of_thought,
+            None,
+            False,
+            False,
         )
 
     def generate_improve(
@@ -124,7 +131,13 @@ Input: {input_str}
             instr_prompt,
         ]
         return self.generate_response(
-            current_prompt, data.task_instruction, data.input_str, chain_of_thought, None, False, False
+            current_prompt,
+            data.task_instruction,
+            data.input_str,
+            chain_of_thought,
+            None,
+            False,
+            False,
         )
 
     def generate_draft(self, data: TemplateFilling, chain_of_thought: bool) -> Response:
@@ -143,10 +156,18 @@ Input: {input_str}
             instr_prompt,
         ]
         return self.generate_response(
-            current_prompt, data.task_instruction, data.input_str, chain_of_thought, None, False, True
+            current_prompt,
+            data.task_instruction,
+            data.input_str,
+            chain_of_thought,
+            None,
+            False,
+            True,
         )
 
-    def extract_result(self, result: Optional[str], task_instruction: str, input_text: str) -> str:
+    def extract_result(
+        self, result: Optional[str], task_instruction: str, input_text: str
+    ) -> str:
         current_prompt = [
             {
                 "role": "system",

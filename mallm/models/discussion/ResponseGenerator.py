@@ -20,7 +20,6 @@ class ResponseGenerator(ABC):
         agreement: Optional[bool],
         baseline: bool,
         drafting: bool,
-        input_str: str,
     ) -> Response:
         """
         Abstract method to generate an agents response to a discussion.

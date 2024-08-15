@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import httpx
 
@@ -21,7 +21,7 @@ class Moderator(Agent):
         response_generator: ResponseGenerator,
         persona: str = "Moderator",
         persona_description: str = "A super-intelligent individual with critical thinking who has a neutral position at all times. He acts as a mediator between other discussion participants.",
-        persona_attributes: dict[str, str] = {},
+        persona_attributes: Optional[dict[str, str]] = None,
     ) -> None:
         super().__init__(
             llm,

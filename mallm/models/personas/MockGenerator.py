@@ -12,6 +12,6 @@ class MockGenerator(PersonaGenerator):
         task_description: str, num_agents: int, sample: InputExample
     ) -> list[dict[str, str]]:
         return [
-            {"role": f"Panelist {i}", "description": "generic"}
+            {"role": f"Panelist {i}", "description": "generic", "attributes": {}}
             for i in range(1, num_agents + 1)
         ]

@@ -1,5 +1,4 @@
 import logging
-import random
 import time
 import uuid
 from collections.abc import Sequence
@@ -69,7 +68,9 @@ class Coordinator:
         1) identify helpful personas
         2) create agents with the personas
         """
-        logger.debug(f"Coordinator {self.id} creates {num_agents} agents ({self.agent_generator})...")
+        logger.debug(
+            f"Coordinator {self.id} creates {num_agents} agents ({self.agent_generator})..."
+        )
         self.panelists = []
         self.agents = []
 
@@ -82,13 +83,8 @@ class Coordinator:
             )
             raise Exception("Invalid persona generator.")
 
-        if response_generator not in RESPONSE_GENERATORS:
-            logger.error(f"No valid response generator for {response_generator}")
-            raise Exception(f"No valid response generator for {response_generator}")
-        self.response_generator = RESPONSE_GENERATORS[response_generator](self.llm)
-
-        num_agents = 10
-        logger.warn(f"Overriding agent generator to generate {num_agents} agents")
+        # num_agents = 10
+        # logger.warning(f"Overriding agent generator to generate {num_agents} agents")
 
         personas = PERSONA_GENERATORS[self.agent_generator](
             llm=self.llm
@@ -137,6 +133,7 @@ class Coordinator:
                 "model": a.llm.model,
                 "persona": a.persona,
                 "personaDescription": a.persona_description,
+                "personaAttributes": a.persona_attributes,
             }
             for a in self.agents
         ]
@@ -152,6 +149,14 @@ class Coordinator:
             for agent in agents_to_update:
                 agent.update_memory(memory)
 
+    # def setup_personas(self, input_lines, context) -> None:
+    #     """
+    #     Setup the personas for the agents based on the input lines and context.
+    #     """
+    #     self.personas = PERSONA_GENERATORS[self.agent_generator](
+    #         llm=self.llm
+    #     ).generate_personas(input_lines, context)
+
     def discuss(
         self,
         config: Config,
@@ -163,8 +168,7 @@ class Coordinator:
         int,
         list[Agreement],
         float,
-        bool,
-        list[Panelist],
+        bool
     ]:
         """
         The routine responsible for the discussion between agents to solve a task.
@@ -213,7 +217,7 @@ class Coordinator:
                 f"No valid decision protocol for {config.decision_protocol}"
             )
         self.decision_protocol = DECISION_PROTOCOLS[config.decision_protocol](
-            mypanelists, config.use_moderator
+            self.panelists, config.use_moderator
         )
 
         start_time = time.perf_counter()
@@ -238,8 +242,8 @@ class Coordinator:
 
         answer, turn, agreements, decision_success = policy.discuss(
             coordinator=self,
-            task_instruction=self.sample_instruction,
-            input_str=self.input_str,
+            task_instruction=sample_instruction,
+            input_str=input_str,
             use_moderator=config.use_moderator,
             feedback_sentences=config.feedback_sentences,
             max_turns=config.max_turns,
@@ -264,5 +268,5 @@ class Coordinator:
             agreements,
             discussion_time,
             decision_success,
-            mypanelists,
+            # self.panelists,
         )

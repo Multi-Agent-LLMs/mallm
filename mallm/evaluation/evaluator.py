@@ -65,7 +65,9 @@ class Evaluator:
 
     def _load_data(self) -> list[dict[str, Any]]:
         data_str = Path(self.input_file_path).read_text()
-        data: list[dict[str, Any]] = json_repair.repair_json(data_str, return_objects=True)
+        data: list[dict[str, Any]] = json_repair.repair_json(
+            data_str, return_objects=True
+        )
         return data
 
     @staticmethod

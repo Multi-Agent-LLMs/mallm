@@ -156,7 +156,7 @@ def generate_chat_prompt_draft(
     return prompts
 
 
-def generate_final_answer_prompt(   # TODO: can we delete this? seems to duplicate with response generators
+def generate_final_answer_prompt(  # TODO: can we delete this? seems to duplicate with response generators
     persona: str,
     persona_description: str,
     question: str,

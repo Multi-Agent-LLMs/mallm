@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from typing import Any
 
 from mallm.models.Chat import Chat
 from mallm.utils.types import InputExample
