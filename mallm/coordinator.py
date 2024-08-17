@@ -62,6 +62,7 @@ class Coordinator:
         chain_of_thought: bool,
         feedback_only: bool,
         sample: InputExample,
+        extra_args: Optional[str] = None,
     ) -> None:
         """
         Instantiates the agents by
@@ -92,6 +93,7 @@ class Coordinator:
             task_description=f"{task_instruction} {input_str}",
             num_agents=num_agents,
             sample=sample,
+            extra_args=extra_args,
         )
         logger.debug(f"Created {len(personas)} personas: \n" + str(personas))
 
@@ -209,6 +211,7 @@ class Coordinator:
             chain_of_thought=config.chain_of_thought,
             feedback_only=config.feedback_only,
             sample=sample,
+            extra_args=config.extra_args,
         )
 
         if config.decision_protocol not in DECISION_PROTOCOLS:

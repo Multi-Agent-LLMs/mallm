@@ -1,5 +1,6 @@
 import json
 import logging
+from typing import Optional
 
 from mallm.models.Chat import Chat
 from mallm.models.personas.PersonaGenerator import PersonaGenerator
@@ -43,7 +44,7 @@ New Participant:
         }
 
     def generate_personas(
-        self, task_description: str, num_agents: int, sample: InputExample
+        self, task_description: str, num_agents: int, sample: InputExample, extra_args: Optional[str] = None
     ) -> list[dict[str, str]]:
         current_prompt = [
             self.base_prompt,
@@ -70,6 +71,29 @@ New Participant:
             logger.debug("Persona Response: " + response)
             try:
                 new_agent = json.loads(response)
+
+                if extra_args:
+                    if "e" in extra_args: # force low extraversion
+                        new_agent["extraversion"] = "low"
+                    if "a" in extra_args: # force low agreeableness
+                        new_agent["agreeableness"] = "low"
+                    if "c" in extra_args: # force low conscientiousness
+                        new_agent["conscientiousness"] = "low"
+                    if "n" in extra_args: # force low neuroticism
+                        new_agent["neuroticism"] = "low"
+                    if "o" in extra_args: # force low openness
+                        new_agent["openness"] = "low"
+
+                    if "E" in extra_args: # force high extraversion
+                        new_agent["extraversion"] = "high"
+                    if "A" in extra_args: # force high agreeableness
+                        new_agent["agreeableness"] = "high"
+                    if "C" in extra_args: # force high conscientiousness
+                        new_agent["conscientiousness"] = "high"
+                    if "N" in extra_args: # force high neuroticism
+                        new_agent["neuroticism"] = "high"
+                    if "O" in extra_args: # force high openness
+                        new_agent["openness"] = "high"
 
                 # Check if all the required fields are present AND contain the valid options
                 if "role" not in new_agent:

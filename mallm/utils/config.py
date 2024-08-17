@@ -48,6 +48,7 @@ class Config:
     feedback_only: bool = False
     ablation: bool = False
     shuffle_input_samples: bool = False
+    extra_args: Optional[str] = None
 
     def __post_init__(self) -> None:
         if (
