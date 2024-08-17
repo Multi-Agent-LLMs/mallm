@@ -44,7 +44,7 @@ class QAData:
     context: Optional[None]
     answer: str
     references: List[str]
-    decision_success: bool
+    # decision_success: bool
     turns: int
     clockSeconds: float
     scores: Scores
@@ -98,12 +98,13 @@ def parse_dataset_file(filename):
                 context=item["context"],
                 answer=item["answer"],
                 references=item["references"],
-                decision_success=item["decision_success"],
+                # decision_success=item["decision_success"],
                 turns=item["turns"],
                 clockSeconds=item["clockSeconds"],
                 scores=Scores(**item["scores"]),
             )
             for item in data
+            if item["scores"]["correct"] is not None
         ]
     return datasets
 
@@ -123,6 +124,12 @@ if __name__ == "__main__":
     qaData = parse_dataset_file(filename)
     print(f"Loaded {len(qaData)} datasets.")
 
+    # Calculate score
+    correct = sum(run.scores.correct for run in qaData)
+    total = len(qaData)
+    accuracy = correct / total
+    print(f"Overall accuracy: {accuracy:.1%} (n = {total})")
+    print("-" * 80)
     # Collect all possible values for each attribute
     attribute_values: dict[str, set] = defaultdict(set)
     for run in qaData:
@@ -179,6 +186,10 @@ if __name__ == "__main__":
                 print(
                     f"{attribute} = {value}: {average_score:.1%} (n = {len(fdata)}) (p = {pvalue:.3f})"
                 )
+            else:
+                print(f"{attribute} = {value}: No data")
+
+    print("-" * 80)
 
     personality_results = {}
     # add all "high"/"low" personality combinations
@@ -216,6 +227,16 @@ if __name__ == "__main__":
         accuracy = correct / total if total > 0 else 0
         # convert 5-tuple to string with uppercase/lowercase first letter of each personality trait
         personality = "".join(
-            f"{name[0].upper() if trait == "high" else name[0].lower()}" for trait, name in zip(personality, ["Extraversion", "Agreeableness", "Conscientiousness", "Neuroticism", "Openness"])
+            f"{name[0].upper() if trait == "high" else name[0].lower()}"
+            for trait, name in zip(
+                personality,
+                [
+                    "Extraversion",
+                    "Agreeableness",
+                    "Conscientiousness",
+                    "Neuroticism",
+                    "Openness",
+                ],
+            )
         )
         print(f"{personality}: {accuracy:.1%} (n = {total})")
