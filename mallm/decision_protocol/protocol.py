@@ -3,6 +3,7 @@ from enum import Enum
 from typing import Optional
 
 from mallm.agents.panelist import Panelist
+from mallm.utils.prompts import generate_final_answer_prompt
 from mallm.utils.types import Agreement, VotingResults
 
 
@@ -23,6 +24,29 @@ class DecisionProtocol(ABC):
         self.panelists: list[Panelist] = panelists
         self.use_moderator: bool = use_moderator
         self.total_agents: int = len(panelists) + (1 if use_moderator else 0)
+
+    def generate_final_answers(
+        self, agreements: list[Agreement], question: str, task: str
+    ):
+        final_answers = []
+        voting_process_string = ""
+        for panelist in self.panelists:
+            prev_answer: Agreement = next(
+                a for a in agreements if a.agent_id == panelist.id
+            )
+            response = panelist.llm.invoke(
+                generate_final_answer_prompt(
+                    panelist.persona,
+                    panelist.persona_description,
+                    question,
+                    task,
+                    prev_answer.solution,
+                )
+            )
+            prev_answer.solution = response
+            final_answers.append(response)
+            voting_process_string += f"{panelist.persona} final answer: {response}\n"
+        return final_answers, voting_process_string
 
     @abstractmethod
     def make_decision(

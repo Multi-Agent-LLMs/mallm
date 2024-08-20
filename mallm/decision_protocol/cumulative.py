@@ -9,7 +9,6 @@ from mallm.agents.panelist import Panelist
 from mallm.decision_protocol.protocol import DecisionAlteration, DecisionProtocol
 from mallm.utils.prompts import (
     generate_cumulative_voting_prompt,
-    generate_final_answer_prompt,
 )
 from mallm.utils.types import Agreement, VotingResult, VotingResults
 
@@ -41,24 +40,10 @@ class CumulativeVoting(DecisionProtocol):
 
         if turn < self.vote_turn or agent_index != self.total_agents - 1:
             return "", False, agreements, "", None
-        final_answers = []
-        voting_process_string = ""
-        for panelist in self.panelists:
-            prev_answer: Agreement = next(
-                a for a in agreements if a.agent_id == panelist.id
-            )
-            response = panelist.llm.invoke(
-                generate_final_answer_prompt(
-                    panelist.persona,
-                    panelist.persona_description,
-                    question,
-                    task,
-                    prev_answer.solution,
-                )
-            )
-            prev_answer.solution = response
-            final_answers.append(response)
-            voting_process_string += f"{panelist.persona} final answer: {response}\n"
+
+        final_answers, voting_process_string = self.generate_final_answers(
+            agreements, question, task
+        )
 
         # Collect points distribution from each panelist
         all_votes = {}
