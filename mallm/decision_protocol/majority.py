@@ -1,14 +1,33 @@
 import logging
-from typing import Optional
+from typing import Any, Optional
 
 from mallm.agents.panelist import Panelist
-from mallm.decision_protocol.protocol import DecisionProtocol
-from mallm.utils.types import Agreement, VotingResults
+from mallm.decision_protocol.protocol import DecisionAlteration, DecisionProtocol
+from mallm.utils.types import Agreement, VotingResult, VotingResults
 
 logger = logging.getLogger("mallm")
 
 
 class ThresholdConsensus(DecisionProtocol):
+    def process_votes(
+        self,
+        final_answers: list[str],
+        panelist: Panelist,
+        vote_str: str,
+        vote: Any,
+        voting_process_string: str,
+    ) -> tuple[str, Any, bool, str]:
+        raise NotImplementedError
+
+    def process_results(
+        self,
+        all_votes: dict[str, VotingResult],
+        alteration: DecisionAlteration,
+        final_answers: list[str],
+        votes: Any,
+    ) -> dict[str, VotingResult]:
+        raise NotImplementedError
+
     def __init__(
         self,
         panelists: list[Panelist],

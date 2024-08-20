@@ -1,10 +1,16 @@
+import json
+import logging
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Optional
+from typing import Any, Optional, Protocol
+
+from contextplus import context
 
 from mallm.agents.panelist import Panelist
 from mallm.utils.prompts import generate_final_answer_prompt
-from mallm.utils.types import Agreement, VotingResults
+from mallm.utils.types import Agreement, VotingResult, VotingResults
+
+logger = logging.getLogger("mallm")
 
 
 class DecisionAlteration(Enum):
@@ -12,6 +18,21 @@ class DecisionAlteration(Enum):
     FACTS = "facts"
     CONFIDENCE = "confidence"
     ANONYMOUS = "anonymous"
+
+
+class VotingPromptFunction(Protocol):
+    def __call__(
+        self,
+        panelist: Panelist,
+        panelists: list[Panelist],
+        task: str,
+        question: str,
+        solutions: list[str],
+        additional_context: Optional[str] = None,
+        anonymous: bool = True,
+        confidence: Optional[list[float]] = None,
+        history: bool = False,
+    ) -> list[dict[str, str]]: ...
 
 
 class DecisionProtocol(ABC):
@@ -27,7 +48,7 @@ class DecisionProtocol(ABC):
 
     def generate_final_answers(
         self, agreements: list[Agreement], question: str, task: str
-    ):
+    ) -> tuple[list[str], str]:
         final_answers = []
         voting_process_string = ""
         for panelist in self.panelists:
@@ -48,6 +69,116 @@ class DecisionProtocol(ABC):
             voting_process_string += f"{panelist.persona} final answer: {response}\n"
         return final_answers, voting_process_string
 
+    def vote_with_alterations(
+        self,
+        final_answers: list[str],
+        question: str,
+        task: str,
+        voting_process_string: str,
+        decision_protocol_name: str,
+        voting_prompt_function: VotingPromptFunction,
+    ) -> tuple[bool, str, VotingResults, str]:
+        all_votes: dict[str, VotingResult] = {}
+        facts = None
+        confidence = []
+        for alteration in DecisionAlteration:
+            voting_process_string += f"\nVoting with alteration: {alteration.value}\n"
+            if alteration == DecisionAlteration.FACTS:
+                facts = context(question)
+                voting_process_string += f"\nFacts: {facts}\n\n"
+            if alteration == DecisionAlteration.CONFIDENCE:
+                confidence = [100.0 for _ in self.panelists]
+                voting_process_string += f"\nConfidence: {confidence}\n"
+            votes: Any = []
+            for panelist in self.panelists:
+                retries = 0
+                while retries < 10:
+                    # Creates a prompt with all the answers and asks the agent to vote for the best one, 0 indexed inorder
+                    if alteration == DecisionAlteration.ANONYMOUS:
+                        vote = panelist.llm.invoke(
+                            voting_prompt_function(
+                                panelist=panelist,
+                                panelists=self.panelists,
+                                task=task,
+                                question=question,
+                                solutions=final_answers,
+                            )
+                        )
+                    elif alteration == DecisionAlteration.FACTS:
+                        vote = panelist.llm.invoke(
+                            voting_prompt_function(
+                                panelist=panelist,
+                                panelists=self.panelists,
+                                task=task,
+                                question=question,
+                                solutions=final_answers,
+                                additional_context=facts,
+                            )
+                        )
+                    elif alteration == DecisionAlteration.CONFIDENCE:
+                        vote = panelist.llm.invoke(
+                            voting_prompt_function(
+                                panelist=panelist,
+                                panelists=self.panelists,
+                                task=task,
+                                question=question,
+                                solutions=final_answers,
+                                confidence=confidence,
+                            )
+                        )
+                    elif alteration == DecisionAlteration.PUBLIC:
+                        vote = panelist.llm.invoke(
+                            voting_prompt_function(
+                                panelist=panelist,
+                                panelists=self.panelists,
+                                task=task,
+                                question=question,
+                                solutions=final_answers,
+                                anonymous=False,
+                            )
+                        )
+                    else:
+                        raise ValueError(
+                            f"Unknown DecisionAlteration type: {alteration.value}"
+                        )
+                    try:
+                        vote, votes, success, voting_process_string = (
+                            self.process_votes(
+                                final_answers,
+                                panelist,
+                                vote,
+                                votes,
+                                voting_process_string,
+                            )
+                        )
+                        if success:
+                            break
+                        raise ValueError
+                    except (ValueError, json.JSONDecodeError):
+                        retries += 1
+                        logger.debug(
+                            f"{panelist.short_id} provided an invalid vote: {vote}. Asking to re-vote."
+                        )
+                if retries >= 10:
+                    logger.warning(
+                        f"{panelist.short_id} reached maximum retries. Counting as invalid vote."
+                    )
+
+            all_votes = self.process_results(
+                all_votes, alteration, final_answers, votes
+            )
+        results = VotingResults(
+            voting_process_string=voting_process_string,
+            final_answers=final_answers,
+            alterations=all_votes,
+            type=decision_protocol_name,
+        )
+        final_answer: str = final_answers[
+            all_votes[DecisionAlteration.ANONYMOUS.value].most_voted
+        ]
+        decision: bool = all_votes[DecisionAlteration.ANONYMOUS.value].agreed
+        return decision, final_answer, results, voting_process_string
+
     @abstractmethod
     def make_decision(
         self,
@@ -67,3 +198,24 @@ class DecisionProtocol(ABC):
         Returns:
         str, bool: str is the result of the conversation and bool describes whether they agreed or not.
         """
+
+    @abstractmethod
+    def process_votes(
+        self,
+        final_answers: list[str],
+        panelist: Panelist,
+        vote_str: str,
+        vote: Any,
+        voting_process_string: str,
+    ) -> tuple[str, Any, bool, str]:
+        pass
+
+    @abstractmethod
+    def process_results(
+        self,
+        all_votes: dict[str, VotingResult],
+        alteration: DecisionAlteration,
+        final_answers: list[str],
+        votes: Any,
+    ) -> dict[str, VotingResult]:
+        pass
