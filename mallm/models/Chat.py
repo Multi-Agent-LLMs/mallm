@@ -1,4 +1,5 @@
 import logging
+import math
 import time
 from collections.abc import Iterator
 from typing import Any, Optional, Union, cast
@@ -121,15 +122,24 @@ class Chat(LLM):
                     stream=True,
                     stop=self.stop_tokens,
                     max_tokens=self.max_tokens,
+                    logprobs=True,
                 )
                 # iterate and print stream
                 collected_messages = []
+                log_prob_sum = 0
                 for message in chat_completion:
                     message_str = (
                         cast(ChatCompletionChunk, message).choices[0].delta.content
                     )
+                    log_prob_sum += (
+                        cast(ChatCompletionChunk, message)
+                        .choices[0]
+                        .logprobs.content[0]
+                        .logprob
+                    )
                     if message_str and message_str not in self.stop_tokens:
                         collected_messages.append(message_str)
+                log_prob_sum = log_prob_sum / len(collected_messages)
                 break
             except APIError as e:
                 # Handle API error here, e.g. retry or log
@@ -151,7 +161,8 @@ class Chat(LLM):
                     if retry_after:
                         time.sleep(int(retry_after))
                 continue
-
+        confidence = math.exp(log_prob_sum)
+        print(f"Confidence: {confidence}")
         return "".join(collected_messages)
 
     def _stream(  # type: ignore
