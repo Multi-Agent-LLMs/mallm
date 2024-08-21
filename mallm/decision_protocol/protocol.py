@@ -55,6 +55,12 @@ class DecisionProtocol(ABC):
             prev_answer: Agreement = next(
                 a for a in agreements if a.agent_id == panelist.id
             )
+            confidence = None
+
+            def confidence_callback(confidence_value: float) -> None:
+                nonlocal confidence
+                confidence = confidence_value
+
             response = panelist.llm.invoke(
                 generate_final_answer_prompt(
                     panelist.persona,
@@ -62,8 +68,10 @@ class DecisionProtocol(ABC):
                     question,
                     task,
                     prev_answer.solution,
-                )
+                ),
+                confidence_callback=confidence_callback,
             )
+            print(f"Confidence: {confidence}")
             prev_answer.solution = response
             final_answers.append(response)
             voting_process_string += f"{panelist.persona} final answer: {response}\n"

@@ -43,7 +43,7 @@ class Agent:
         self.client = client
         self.chain_of_thought = chain_of_thought
         self.feedback_only = feedback_only
-        self.memory : dict[str, Memory] = {}
+        self.memory: dict[str, Memory] = {}
         logger.info(
             f"Creating agent [bold blue]{self.short_id}[/] with personality [bold blue]{self.persona}[/]: {self.persona_description}"
         )
@@ -188,11 +188,12 @@ class Agent:
         Retrieves memory from the agents memory bucket as a Memory
         Returns: Memory
         """
-        memories: list[Memory] = []
         memory_ids = []
         current_draft = None
 
-        memories = sorted(self.memory.values(), key=lambda x: x.message_id, reverse=False)
+        memories = sorted(
+            self.memory.values(), key=lambda x: x.message_id, reverse=False
+        )
         context_memory = []
         for memory in memories:
             if (
