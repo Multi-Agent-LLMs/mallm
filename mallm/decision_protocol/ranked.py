@@ -36,13 +36,13 @@ class RankedVoting(DecisionProtocol):
         if turn < self.vote_turn or agent_index != self.total_agents - 1:
             return "", False, agreements, "", None
 
-        final_answers, voting_process_string = self.generate_final_answers(
-            agreements, question, task
+        final_answers_with_confidence, voting_process_string = (
+            self.generate_final_answers(agreements, question, task)
         )
 
         decision, final_answer, results, voting_process_string = (
             self.vote_with_alterations(
-                final_answers,
+                final_answers_with_confidence,
                 question,
                 task,
                 voting_process_string,

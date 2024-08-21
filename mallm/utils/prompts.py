@@ -226,7 +226,7 @@ def voting_base_prompt(
     )
     for i, solution in enumerate(solutions):
         confidence_str = (
-            "" if confidence is None else f"\n\n(Confidence: {confidence[i]} %)"
+            "" if confidence is None else f"\n\n(Confidence: {round(confidence[i])} %)"
         )
         prompts.append(
             {

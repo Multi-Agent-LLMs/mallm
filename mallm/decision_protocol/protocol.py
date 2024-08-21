@@ -17,6 +17,7 @@ class DecisionAlteration(Enum):
     PUBLIC = "public"
     FACTS = "facts"
     CONFIDENCE = "confidence"
+    CONFIDENCE_LOG_PROBS = "confidence_log_probs"
     ANONYMOUS = "anonymous"
 
 
@@ -48,14 +49,14 @@ class DecisionProtocol(ABC):
 
     def generate_final_answers(
         self, agreements: list[Agreement], question: str, task: str
-    ) -> tuple[list[str], str]:
-        final_answers = []
+    ) -> tuple[list[tuple[str, float]], str]:
+        final_answers_with_confidence = []
         voting_process_string = ""
         for panelist in self.panelists:
             prev_answer: Agreement = next(
                 a for a in agreements if a.agent_id == panelist.id
             )
-            confidence = None
+            confidence = 0.0
 
             def confidence_callback(confidence_value: float) -> None:
                 nonlocal confidence
@@ -71,15 +72,14 @@ class DecisionProtocol(ABC):
                 ),
                 confidence_callback=confidence_callback,
             )
-            print(f"Confidence: {confidence}")
             prev_answer.solution = response
-            final_answers.append(response)
+            final_answers_with_confidence.append((response, confidence * 100))
             voting_process_string += f"{panelist.persona} final answer: {response}\n"
-        return final_answers, voting_process_string
+        return final_answers_with_confidence, voting_process_string
 
     def vote_with_alterations(
         self,
-        final_answers: list[str],
+        final_answers_with_confidence: list[tuple[str, float]],
         question: str,
         task: str,
         voting_process_string: str,
@@ -89,6 +89,10 @@ class DecisionProtocol(ABC):
         all_votes: dict[str, VotingResult] = {}
         facts = None
         confidence = []
+        final_answers = [answer for answer, _ in final_answers_with_confidence]
+        log_prob_confidences = [
+            log_prob for _, log_prob in final_answers_with_confidence
+        ]
         for alteration in DecisionAlteration:
             voting_process_string += f"\nVoting with alteration: {alteration.value}\n"
             if alteration == DecisionAlteration.FACTS:
@@ -97,6 +101,8 @@ class DecisionProtocol(ABC):
             if alteration == DecisionAlteration.CONFIDENCE:
                 confidence = [100.0 for _ in self.panelists]
                 voting_process_string += f"\nConfidence: {confidence}\n"
+            if alteration == DecisionAlteration.CONFIDENCE_LOG_PROBS:
+                voting_process_string += f"\nConfidence: {log_prob_confidences}\n"
             votes: Any = []
             for panelist in self.panelists:
                 retries = 0
@@ -132,6 +138,17 @@ class DecisionProtocol(ABC):
                                 question=question,
                                 solutions=final_answers,
                                 confidence=confidence,
+                            )
+                        )
+                    elif alteration == DecisionAlteration.CONFIDENCE_LOG_PROBS:
+                        vote = panelist.llm.invoke(
+                            voting_prompt_function(
+                                panelist=panelist,
+                                panelists=self.panelists,
+                                task=task,
+                                question=question,
+                                solutions=final_answers,
+                                confidence=log_prob_confidences,
                             )
                         )
                     elif alteration == DecisionAlteration.PUBLIC:

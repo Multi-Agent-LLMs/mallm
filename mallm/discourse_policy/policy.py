@@ -160,7 +160,12 @@ class DiscoursePolicy(ABC):
         discussion_text.highlight_regex(r"Input:", style="bold green")
         discussion_text.highlight_regex(r"Decision Success:", style="bold green")
         discussion_text.highlight_regex(r"Accepted solution:", style="bold green")
+        discussion_text.highlight_regex(r"Voting with alteration:", style="bold green")
+        discussion_text.highlight_regex(r".* final answer:", style="bold green")
+        discussion_text.highlight_regex(r"Facts:", style="bold green")
         discussion_text.highlight_regex(r"####.*", style="bold green")
+        for panelist in coordinator.panelists:
+            discussion_text.highlight_regex(panelist.persona, style="bold blue")
         panel = Panel(
             discussion_text,
             title=(
