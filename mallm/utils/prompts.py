@@ -219,7 +219,7 @@ def voting_base_prompt(
     solutions: list[str],
     additional_context: Optional[str] = None,
     anonymous: bool = True,
-    confidence: Optional[list[float]] = None,
+    confidence: Optional[list[int]] = None,
     history: bool = False,
 ) -> list[dict[str, str]]:
     prompts = [
@@ -275,7 +275,7 @@ def generate_voting_prompt(
     solutions: list[str],
     additional_context: Optional[str] = None,
     anonymous: bool = True,
-    confidence: Optional[list[float]] = None,
+    confidence: Optional[list[int]] = None,
     history: bool = False,
 ) -> list[dict[str, str]]:
     prompts = voting_base_prompt(
@@ -309,7 +309,7 @@ def generate_approval_voting_prompt(
     solutions: list[str],
     additional_context: Optional[str] = None,
     anonymous: bool = True,
-    confidence: Optional[list[float]] = None,
+    confidence: Optional[list[int]] = None,
     history: bool = False,
 ) -> list[dict[str, str]]:
     prompts = voting_base_prompt(
@@ -343,7 +343,7 @@ def generate_cumulative_voting_prompt(
     solutions: list[str],
     additional_context: Optional[str] = None,
     anonymous: bool = True,
-    confidence: Optional[list[float]] = None,
+    confidence: Optional[list[int]] = None,
     history: bool = False,
 ) -> list[dict[str, str]]:
     prompts = voting_base_prompt(
@@ -377,7 +377,7 @@ def generate_ranking_prompt(
     solutions: list[str],
     additional_context: Optional[str] = None,
     anonymous: bool = True,
-    confidence: Optional[list[float]] = None,
+    confidence: Optional[list[int]] = None,
     history: bool = False,
 ) -> list[dict[str, str]]:
     prompts = voting_base_prompt(

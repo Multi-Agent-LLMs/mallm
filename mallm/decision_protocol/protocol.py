@@ -36,7 +36,7 @@ class VotingPromptFunction(Protocol):
         solutions: list[str],
         additional_context: Optional[str] = None,
         anonymous: bool = True,
-        confidence: Optional[list[float]] = None,
+        confidence: Optional[list[int]] = None,
         history: bool = False,
     ) -> list[dict[str, str]]: ...
 
@@ -54,7 +54,7 @@ class DecisionProtocol(ABC):
 
     def generate_final_answers(
         self, agreements: list[Agreement], question: str, task: str
-    ) -> tuple[list[tuple[str, float]], str]:
+    ) -> tuple[list[tuple[str, int]], str]:
         final_answers_with_confidence = []
         voting_process_string = ""
         for panelist in self.panelists:
@@ -84,7 +84,7 @@ class DecisionProtocol(ABC):
 
     def vote_with_alterations(
         self,
-        final_answers_with_confidence: list[tuple[str, float]],
+        final_answers_with_confidence: list[tuple[str, int]],
         question: str,
         task: str,
         voting_process_string: str,
@@ -107,7 +107,7 @@ class DecisionProtocol(ABC):
                 facts = context(question)
                 voting_process_string += f"\nFacts: {facts}\n\n"
             if alteration == DecisionAlteration.CONFIDENCE:
-                confidences_static = [100.0 for _ in self.panelists]
+                confidences_static = [100 for _ in self.panelists]
                 voting_process_string += f"\nConfidence: {confidences_static}\n"
             if alteration == DecisionAlteration.CONFIDENCE_LOG_PROBS:
                 voting_process_string += f"\nConfidence: {confidences_log_prob}\n"
