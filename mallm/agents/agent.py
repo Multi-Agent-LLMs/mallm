@@ -218,6 +218,21 @@ class Agent:
 
         return context_memory, memory_ids, current_draft
 
+    def get_own_messages(self, context_length: Optional[int] = None) -> list[str]:
+        """
+        Retrieves memory from the agents memory bucket as a string
+        context_length refers to the amount of turns the agent can use as rationale
+        Returns: string
+        """
+        memories, _, _ = self.get_memories(context_length=context_length)
+        if memories:
+            own_messages = [
+                memory.message for memory in memories if memory.agent_id == self.id
+            ]
+        else:
+            own_messages = []
+        return own_messages
+
     def get_discussion_history(
         self,
         context_length: Optional[int] = None,

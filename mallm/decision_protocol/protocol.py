@@ -4,7 +4,10 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Optional, Protocol
 
+import numpy as np
 from contextplus import context
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
 
 from mallm.agents.panelist import Panelist
 from mallm.utils.prompts import (
@@ -51,6 +54,7 @@ class DecisionProtocol(ABC):
         self.panelists: list[Panelist] = panelists
         self.use_moderator: bool = use_moderator
         self.total_agents: int = len(panelists) + (1 if use_moderator else 0)
+        self._paraphrase_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
 
     def generate_final_answers(
         self, agreements: list[Agreement], question: str, task: str
@@ -117,7 +121,7 @@ class DecisionProtocol(ABC):
                 )
                 voting_process_string += f"\nConfidence: {confidences_prompted}\n"
             if alteration == DecisionAlteration.CONFIDENCE_CONSISTENCY:
-                confidences_consistency = [100 for _ in self.panelists]
+                confidences_consistency = self.get_consistency_confidences()
                 voting_process_string += f"\nConfidence: {confidences_consistency}\n"
             votes: Any = []
             for panelist in self.panelists:
@@ -241,6 +245,23 @@ class DecisionProtocol(ABC):
         ]
         decision: bool = all_votes[DecisionAlteration.ANONYMOUS.value].agreed
         return decision, final_answer, results, voting_process_string
+
+    def get_consistency_confidences(self) -> list[int]:
+        confidences_consistency = []
+        for panelist in self.panelists:
+            answers = panelist.get_own_messages()
+            embeddings = self._paraphrase_model.encode(answers)
+
+            cosine_sim_matrix = cosine_similarity(embeddings)
+
+            # We only need the upper triangle of the matrix, excluding the diagonal
+            upper_triangle_indices = np.triu_indices_from(cosine_sim_matrix, k=1)
+            pairwise_similarities = cosine_sim_matrix[upper_triangle_indices]
+
+            # Calculate the average similarity (confidence score)
+            confidence_score = np.mean(pairwise_similarities)
+            confidences_consistency.append(int(confidence_score * 100))
+        return confidences_consistency
 
     def generate_prompted_confidence(
         self, final_answers: list[str], question: str, task: str
