@@ -57,6 +57,9 @@ class DiscoursePolicy(ABC):
                         include_this_turn=include_current_turn_in_memory,
                     )
                 )
+                if self.turn == 1:
+                    current_draft = None
+                    debate_history = None
 
                 template_filling = TemplateFilling(
                     task_instruction=task_instruction,
