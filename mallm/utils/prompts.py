@@ -157,7 +157,7 @@ def generate_chat_prompt_draft(
     return prompts
 
 
-def generate_final_answer_prompt(  # TODO: can we delete this? seems to duplicate with response generators
+def generate_final_answer_prompt(
     persona: str,
     persona_description: str,
     question: str,
@@ -178,6 +178,36 @@ def generate_final_answer_prompt(  # TODO: can we delete this? seems to duplicat
             "content": "Extract the final solution to the task from the provided text. Remove statements of agreement, disagreement, and explanations. Do not modify the text. Do not output any text besides the solution.",
         },
     ]
+
+
+def generate_answer_confidence_prompt(
+    panelist: Panelist,
+    question: str,
+    task: str,
+    final_answer: str,
+) -> list[dict[str, str]]:
+    prompts = [
+        {
+            "role": "system",
+            "content": f"Your role: {panelist.persona} ({panelist.persona_description})",
+        }
+    ]
+    discussion_history = panelist.get_discussion_history()[0]
+    if discussion_history:
+        prompts.append(
+            {
+                "role": "user",
+                "content": "Here is the discussion history to help you make a decision:",
+            }
+        )
+        prompts.extend(discussion_history)
+    prompts.append(
+        {
+            "role": "user",
+            "content": f"The task is: {task}. The question is: {question}. This is the final answer you provided: '{final_answer}'. Based on this information, please generate a confidence score between 0 and 100 for the final answer. Be critical abd only answer with the number.",
+        }
+    )
+    return prompts
 
 
 def voting_base_prompt(

@@ -66,17 +66,26 @@ class Voting(DecisionProtocol):
         final_answers: list[str],
         votes: list[int],
     ) -> dict[str, VotingResult]:
-        vote_counts = Counter(votes)
-        most_voted = vote_counts.most_common(1)[0][0]
-        all_votes[alteration.value] = VotingResult(
-            votes=votes,
-            most_voted=most_voted,
-            final_answer=final_answers[most_voted],
-            agreed=True,
-        )
-        logger.info(
-            f"Voted for answer from agent {self.panelists[most_voted].short_id}"
-        )
+        if votes:
+            vote_counts = Counter(votes)
+            most_voted = vote_counts.most_common(1)[0][0]
+            all_votes[alteration.value] = VotingResult(
+                votes=votes,
+                most_voted=most_voted,
+                final_answer=final_answers[most_voted],
+                agreed=True,
+            )
+            logger.info(
+                f"Voted for answer from agent {self.panelists[most_voted].short_id}"
+            )
+        else:
+            all_votes[alteration.value] = VotingResult(
+                votes=votes,
+                most_voted=-1,
+                final_answer="",
+                agreed=False,
+            )
+            logger.info("No votes were cast")
         return all_votes
 
     def process_votes(
@@ -88,7 +97,7 @@ class Voting(DecisionProtocol):
         voting_process_string: str,
     ) -> tuple[str, Any, bool, str]:
         success = False
-        vote_int = int(vote_str.strip())
+        vote_int = int("".join([x for x in vote_str if x.isnumeric()]))
         if 0 <= vote_int < len(final_answers):
             vote.append(vote_int)
             logger.info(

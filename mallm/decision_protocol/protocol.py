@@ -7,7 +7,10 @@ from typing import Any, Optional, Protocol
 from contextplus import context
 
 from mallm.agents.panelist import Panelist
-from mallm.utils.prompts import generate_final_answer_prompt
+from mallm.utils.prompts import (
+    generate_answer_confidence_prompt,
+    generate_final_answer_prompt,
+)
 from mallm.utils.types import Agreement, VotingResult, VotingResults
 
 logger = logging.getLogger("mallm")
@@ -18,6 +21,8 @@ class DecisionAlteration(Enum):
     FACTS = "facts"
     CONFIDENCE = "confidence"
     CONFIDENCE_LOG_PROBS = "confidence_log_probs"
+    CONFIDENCE_PROMPTED = "confidence_prompted"
+    CONFIDENCE_CONSISTENCY = "confidence_consistency"
     ANONYMOUS = "anonymous"
 
 
@@ -73,7 +78,7 @@ class DecisionProtocol(ABC):
                 confidence_callback=confidence_callback,
             )
             prev_answer.solution = response
-            final_answers_with_confidence.append((response, confidence * 100))
+            final_answers_with_confidence.append((response, int(confidence * 100)))
             voting_process_string += f"{panelist.persona} final answer: {response}\n"
         return final_answers_with_confidence, voting_process_string
 
@@ -88,21 +93,32 @@ class DecisionProtocol(ABC):
     ) -> tuple[bool, str, VotingResults, str]:
         all_votes: dict[str, VotingResult] = {}
         facts = None
-        confidence = []
         final_answers = [answer for answer, _ in final_answers_with_confidence]
-        log_prob_confidences = [
+        confidences_static = []
+        confidences_log_prob = [
             log_prob for _, log_prob in final_answers_with_confidence
         ]
+        confidences_prompted = []
+        confidences_consistency = []
+
         for alteration in DecisionAlteration:
             voting_process_string += f"\nVoting with alteration: {alteration.value}\n"
             if alteration == DecisionAlteration.FACTS:
                 facts = context(question)
                 voting_process_string += f"\nFacts: {facts}\n\n"
             if alteration == DecisionAlteration.CONFIDENCE:
-                confidence = [100.0 for _ in self.panelists]
-                voting_process_string += f"\nConfidence: {confidence}\n"
+                confidences_static = [100.0 for _ in self.panelists]
+                voting_process_string += f"\nConfidence: {confidences_static}\n"
             if alteration == DecisionAlteration.CONFIDENCE_LOG_PROBS:
-                voting_process_string += f"\nConfidence: {log_prob_confidences}\n"
+                voting_process_string += f"\nConfidence: {confidences_log_prob}\n"
+            if alteration == DecisionAlteration.CONFIDENCE_PROMPTED:
+                confidences_prompted = self.generate_prompted_confidence(
+                    final_answers, question, task
+                )
+                voting_process_string += f"\nConfidence: {confidences_prompted}\n"
+            if alteration == DecisionAlteration.CONFIDENCE_CONSISTENCY:
+                confidences_consistency = [100 for _ in self.panelists]
+                voting_process_string += f"\nConfidence: {confidences_consistency}\n"
             votes: Any = []
             for panelist in self.panelists:
                 retries = 0
@@ -137,7 +153,7 @@ class DecisionProtocol(ABC):
                                 task=task,
                                 question=question,
                                 solutions=final_answers,
-                                confidence=confidence,
+                                confidence=confidences_static,
                             )
                         )
                     elif alteration == DecisionAlteration.CONFIDENCE_LOG_PROBS:
@@ -148,7 +164,29 @@ class DecisionProtocol(ABC):
                                 task=task,
                                 question=question,
                                 solutions=final_answers,
-                                confidence=log_prob_confidences,
+                                confidence=confidences_log_prob,
+                            )
+                        )
+                    elif alteration == DecisionAlteration.CONFIDENCE_PROMPTED:
+                        vote = panelist.llm.invoke(
+                            voting_prompt_function(
+                                panelist=panelist,
+                                panelists=self.panelists,
+                                task=task,
+                                question=question,
+                                solutions=final_answers,
+                                confidence=confidences_prompted,
+                            )
+                        )
+                    elif alteration == DecisionAlteration.CONFIDENCE_CONSISTENCY:
+                        vote = panelist.llm.invoke(
+                            voting_prompt_function(
+                                panelist=panelist,
+                                panelists=self.panelists,
+                                task=task,
+                                question=question,
+                                solutions=final_answers,
+                                confidence=confidences_consistency,
                             )
                         )
                     elif alteration == DecisionAlteration.PUBLIC:
@@ -203,6 +241,32 @@ class DecisionProtocol(ABC):
         ]
         decision: bool = all_votes[DecisionAlteration.ANONYMOUS.value].agreed
         return decision, final_answer, results, voting_process_string
+
+    def generate_prompted_confidence(
+        self, final_answers: list[str], question: str, task: str
+    ) -> list[int]:
+        confidences_prompted = []
+        for final_answer, panelist in zip(final_answers, self.panelists):
+            retries = 0
+            confidence_score = None
+            while retries < 10:
+                confidence_prompted = panelist.llm.invoke(
+                    generate_answer_confidence_prompt(
+                        panelist, question, task, final_answer
+                    )
+                )
+                try:
+                    confidence_score = int(confidence_prompted.strip())
+                    if 0 <= confidence_score <= 100:
+                        break
+                except ValueError:
+                    pass
+
+                retries += 1
+            if confidence_score is None or not (0 <= confidence_score <= 100):
+                confidence_score = 0
+            confidences_prompted.append(confidence_score)
+        return confidences_prompted
 
     @abstractmethod
     def make_decision(
