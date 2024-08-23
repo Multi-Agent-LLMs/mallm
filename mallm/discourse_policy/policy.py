@@ -14,6 +14,7 @@ from mallm.utils.types import Agreement, Memory, TemplateFilling
 
 if TYPE_CHECKING:
     from mallm.coordinator import Coordinator
+    from mallm.utils.config import Config
 logger = logging.getLogger("mallm")
 
 
@@ -32,32 +33,28 @@ class DiscoursePolicy(ABC):
         coordinator: Coordinator,
         task_instruction: str,
         input_str: str,
-        use_moderator: bool = False,
-        feedback_sentences: Optional[tuple[int, int]] = None,
-        max_turns: int = 10,
-        force_all_turns: bool = False,
-        context_length: int = 1,
-        include_current_turn_in_memory: bool = False,
-        debate_rounds: int = 2,
+        config: Config,
         console: Optional[Console] = None,
     ) -> tuple[Optional[str], int, list[Agreement], bool]:
         logger.info(self.paradigm_str)
         voting_process_string = ""
         if console is None:
             console = Console()
-        while (not self.decision or force_all_turns) and self.turn < max_turns:
+        while (
+            not self.decision or config.force_all_turns
+        ) and self.turn < config.max_turns:
             self.turn += 1
             logger.info(f"Ongoing. Current turn: {self.turn}")
 
             for i, agent in enumerate(coordinator.agents):
                 debate_history, memory_ids, current_draft = (
                     agent.get_discussion_history(
-                        context_length=context_length,
+                        context_length=config.context_length,
                         turn=self.turn,
-                        include_this_turn=include_current_turn_in_memory,
+                        include_this_turn=config.include_current_turn_in_memory,
                     )
                 )
-                if self.turn == 1:
+                if self.turn == 1 and config.all_agents_generate_first_draft:
                     current_draft = None
                     debate_history = None
 
@@ -68,7 +65,7 @@ class DiscoursePolicy(ABC):
                     persona=agent.persona,
                     persona_description=agent.persona_description,
                     agent_memory=debate_history,
-                    feedback_sentences=feedback_sentences,
+                    feedback_sentences=config.feedback_sentences,
                 )
 
                 if isinstance(agent, Moderator):

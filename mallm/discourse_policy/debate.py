@@ -12,6 +12,7 @@ from mallm.utils.types import Agreement, TemplateFilling
 
 if TYPE_CHECKING:
     from mallm.coordinator import Coordinator
+    from mallm.utils.config import Config
 
 logger = logging.getLogger("mallm")
 
@@ -46,13 +47,7 @@ class DiscourseDebate(DiscoursePolicy):
         coordinator: Coordinator,
         task_instruction: str,
         input_str: str,
-        use_moderator: bool = False,
-        feedback_sentences: Optional[tuple[int, int]] = None,
-        max_turns: int = 10,
-        force_all_turns: bool = False,
-        context_length: int = 1,
-        include_current_turn_in_memory: bool = False,
-        debate_rounds: int = 2,
+        config: Config,
         console: Optional[Console] = None,
     ) -> tuple[Optional[str], int, list[Agreement], bool]:
         unique_id = 0
@@ -62,7 +57,7 @@ class DiscourseDebate(DiscoursePolicy):
             console = Console()
 
         logger.info(
-            f"""Paradigm: Debate (rounds: {debate_rounds})
+            f"""Paradigm: Debate (rounds: {config.debate_rounds})
                             ┌───┐
                   ┌────────►│A 1│◄────────┐
                   │         └───┘         │
@@ -75,21 +70,28 @@ class DiscourseDebate(DiscoursePolicy):
                 """
         )
 
-        logger.info("Debate rounds between agents A2, ..., An: " + str(debate_rounds))
+        logger.info(
+            "Debate rounds between agents A2, ..., An: " + str(config.debate_rounds)
+        )
 
-        while (not self.decision or force_all_turns) and self.turn < max_turns:
+        while (
+            not self.decision or config.force_all_turns
+        ) and self.turn < config.max_turns:
             self.turn += 1
             logger.info("Ongoing. Current turn: " + str(self.turn))
 
             # ---- Agent A1
-            if use_moderator and coordinator.moderator is not None:
+            if config.use_moderator and coordinator.moderator is not None:
                 debate_history, memory_ids, current_draft = (
                     coordinator.moderator.get_discussion_history(
-                        context_length=context_length,
+                        context_length=config.context_length,
                         turn=self.turn,
-                        include_this_turn=include_current_turn_in_memory,
+                        include_this_turn=config.include_current_turn_in_memory,
                     )
                 )
+                if self.turn == 1 and config.all_agents_generate_first_draft:
+                    current_draft = None
+                    debate_history = None
                 template_filling = TemplateFilling(
                     task_instruction=task_instruction,
                     input_str=input_str,
@@ -114,10 +116,13 @@ class DiscourseDebate(DiscoursePolicy):
                 debate_history, memory_ids, current_draft = coordinator.panelists[
                     0
                 ].get_discussion_history(
-                    context_length=context_length,
+                    context_length=config.context_length,
                     turn=self.turn,
-                    include_this_turn=include_current_turn_in_memory,
+                    include_this_turn=config.include_current_turn_in_memory,
                 )
+                if self.turn == 1 and config.all_agents_generate_first_draft:
+                    current_draft = None
+                    debate_history = None
                 template_filling = TemplateFilling(
                     task_instruction=task_instruction,
                     input_str=input_str,
@@ -139,7 +144,7 @@ class DiscourseDebate(DiscoursePolicy):
                 memories = []
                 unique_id += 1
 
-            for r in range(debate_rounds):  # ---- Agents A2, A3, ...
+            for r in range(config.debate_rounds):  # ---- Agents A2, A3, ...
                 logger.debug("Debate round: " + str(r))
                 debate_agreements: list[Agreement] = []
                 for i, a in enumerate(
@@ -151,15 +156,17 @@ class DiscourseDebate(DiscoursePolicy):
 
                     debate_history, memory_ids, current_draft = (
                         a.get_discussion_history(
-                            context_length=context_length,
+                            context_length=config.context_length,
                             turn=self.turn,
-                            include_this_turn=include_current_turn_in_memory,
+                            include_this_turn=config.include_current_turn_in_memory,
                         )
                     )
                     next_a = i + 2
                     if i == len(coordinator.agents[1:]) - 1:
                         next_a = 1  # start again with agent 1 (loop)
-
+                    if self.turn == 1 and config.all_agents_generate_first_draft:
+                        current_draft = None
+                        debate_history = None
                     template_filling = TemplateFilling(
                         task_instruction=task_instruction,
                         input_str=input_str,
@@ -167,10 +174,10 @@ class DiscourseDebate(DiscoursePolicy):
                         persona=a.persona,
                         persona_description=a.persona_description,
                         agent_memory=debate_history,
-                        feedback_sentences=feedback_sentences,
+                        feedback_sentences=config.feedback_sentences,
                     )
 
-                    if r == debate_rounds - 1:  # last debate round
+                    if r == config.debate_rounds - 1:  # last debate round
                         agents_to_update = [
                             coordinator.agents[0],
                             a,

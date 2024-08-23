@@ -48,6 +48,7 @@ class Config:
     feedback_only: bool = False
     ablation: bool = False
     shuffle_input_samples: bool = False
+    all_agents_generate_first_draft: bool = False
 
     def __post_init__(self) -> None:
         if (
