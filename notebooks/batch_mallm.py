@@ -1,10 +1,8 @@
 import json
 import sys
 import traceback
-import random
 from copy import deepcopy
 from typing import Any, Optional, List, Dict
-from pathlib import Path
 
 from mallm.scheduler import Scheduler
 from mallm.utils.config import Config
@@ -30,15 +28,9 @@ def create_config(config_dict: Any) -> Optional[Config]:
         return None
 
 
-def validate_config(config: Config) -> bool:
-    required_fields = ["data", "out", "instruction"]
-    for field in required_fields:
-        if not getattr(config, field):
-            print(f"Error: '{field}' is required but not provided or empty.")
-            return False
-    return True
-
-def run_configuration(config: Config, name: Optional[str], run_name: str, repeat: int) -> None:
+def run_configuration(
+    config: Config, name: Optional[str], run_name: str, repeat: int
+) -> None:
     original_out = ".".join(config.out.split(".")[:-1])
     config.out = f"{original_out}_repeat{repeat}.json"
     if name:
@@ -61,7 +53,7 @@ def validate_all_configs(
     for i, run_config in enumerate(runs, 1):
         merged_config = {**common_config, **run_config}
         config = create_config(merged_config)
-        if config and validate_config(config):
+        if config:
             valid_configs.append(config)
         else:
             print(f"Configuration for Run {i} is invalid.")
