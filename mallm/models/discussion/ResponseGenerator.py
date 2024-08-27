@@ -125,8 +125,6 @@ Current Solution: {data.current_draft}
 """  # input has context appended
 
         appendix = ""
-        if data.feedback_sentences is not None:
-            appendix += f"\nExplain your feedback and solution in {data.feedback_sentences[0]} to {data.feedback_sentences[1]} sentences!"
         if data.current_draft is None:
             appendix += (
                 "\nNobody proposed a solution yet. Please provide the first one."
@@ -178,31 +176,3 @@ Current Solution: {data.current_draft}
         if drafting:
             return None
         return "agree" in res.lower() and "disagree" not in res.lower()
-
-    @staticmethod
-    def merge_consecutive_messages(
-        messages: list[dict[str, str]]
-    ) -> list[dict[str, str]]:
-        if not messages:
-            return []
-
-        merged_messages = []
-        current_role = messages[0]["role"]
-        current_content = ""
-
-        for msg in messages:
-            if msg["role"] == current_role:
-                current_content += msg["content"] + "\n\n"
-            else:
-                merged_messages.append(
-                    {"role": current_role, "content": current_content.strip()}
-                )
-                current_role = msg["role"]
-                current_content = msg["content"] + "\n\n"
-
-        if current_content:
-            merged_messages.append(
-                {"role": current_role, "content": current_content.strip()}
-            )
-
-        return merged_messages

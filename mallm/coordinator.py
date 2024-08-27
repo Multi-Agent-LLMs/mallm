@@ -10,7 +10,7 @@ import httpx
 from rich.progress import Console  # type: ignore
 
 from mallm.agents.agent import Agent
-from mallm.agents.moderator import Moderator
+from mallm.agents.draftProposer import DraftProposer
 from mallm.agents.panelist import Panelist
 from mallm.decision_protocol.protocol import DecisionProtocol
 from mallm.discourse_policy.policy import DiscoursePolicy
@@ -35,16 +35,16 @@ class Coordinator:
         model: Chat,
         client: httpx.Client,
         agent_generator: str = "expert",
-        use_moderator: bool = False,
+        num_neutral_agents: int = 0,
         console: Optional[Console] = None,
     ):
         self.personas = None
         self.id = str(uuid.uuid4())
         self.short_id = self.id[:4]
         self.panelists: list[Panelist] = []
-        self.agents: Sequence[Agent] = []
-        self.use_moderator = use_moderator
-        self.moderator: Optional[Moderator] = None
+        self.agents: list[Agent] = []
+        self.num_neutral_agents = num_neutral_agents
+        self.draft_proposers: list[DraftProposer] = []
         self.decision_protocol: Optional[DecisionProtocol] = None
         self.llm = model
         self.response_generator: ResponseGenerator = SimpleResponseGenerator(self.llm)
@@ -57,10 +57,10 @@ class Coordinator:
         self,
         task_instruction: str,
         input_str: str,
-        use_moderator: bool,
+        num_neutral_agents: int,
         num_agents: int,
         chain_of_thought: bool,
-        feedback_only: bool,
+        all_agents_drafting: bool,
         sample: InputExample,
     ) -> None:
         """
@@ -74,8 +74,7 @@ class Coordinator:
         self.panelists = []
         self.agents = []
 
-        if use_moderator:
-            num_agents -= 1
+        num_agents -= num_neutral_agents
 
         if self.agent_generator not in PERSONA_GENERATORS:
             logger.error(
@@ -92,28 +91,30 @@ class Coordinator:
         )
         logger.debug(f"Created {len(personas)} personas: \n" + str(personas))
 
-        if use_moderator:
-            self.moderator = Moderator(
-                self.llm, self.client, self, response_generator=self.response_generator
+        for n in range(num_neutral_agents):
+            draft_proposer = DraftProposer(
+                self.llm,
+                self.client,
+                self,
+                response_generator=self.response_generator,
+                persona=f"Moderator {n + 1}" if num_neutral_agents > 1 else "Moderator",
             )
-        for persona in personas:
-            self.panelists.append(
-                Panelist(
-                    llm=self.llm,
-                    client=self.client,
-                    coordinator=self,
-                    response_generator=self.response_generator,
-                    persona=persona["role"],
-                    persona_description=persona["description"],
-                    chain_of_thought=chain_of_thought,
-                    feedback_only=feedback_only,
-                )
-            )
+            self.draft_proposers.append(draft_proposer)
+            self.agents.append(draft_proposer)
 
-        if use_moderator and self.moderator is not None:
-            self.agents = [self.moderator, *self.panelists]
-        else:
-            self.agents = self.panelists
+        for persona in personas:
+            panelist = Panelist(
+                llm=self.llm,
+                client=self.client,
+                coordinator=self,
+                response_generator=self.response_generator,
+                persona=persona["role"],
+                persona_description=persona["description"],
+                chain_of_thought=chain_of_thought,
+                drafting_agent=all_agents_drafting,
+            )
+            self.panelists.append(panelist)
+            self.agents.append(panelist)
 
         if len(self.agents) == 1:
             logger.warning(
@@ -166,7 +167,7 @@ class Coordinator:
 
         Returns final response, global memory, agent specific memory, turns needed, last agreements of agents, discussion time in seconds, boolean if agreement was reached
         """
-        sample_instruction = config.instruction_prompt
+        sample_instruction = config.task_instruction_prompt
         if sample.context:
             sample_instruction += "\nContext:"
             for c in sample.context:
@@ -190,10 +191,10 @@ class Coordinator:
         self.init_agents(
             sample_instruction,
             input_str,
-            use_moderator=config.use_moderator,
+            num_neutral_agents=config.num_neutral_agents,
             num_agents=config.num_agents,
-            chain_of_thought=config.chain_of_thought,
-            feedback_only=config.feedback_only,
+            chain_of_thought=config.use_chain_of_thought,
+            all_agents_drafting=config.all_agents_drafting,
             sample=sample,
         )
 
@@ -203,22 +204,25 @@ class Coordinator:
                 f"No valid decision protocol for {config.decision_protocol}"
             )
         self.decision_protocol = DECISION_PROTOCOLS[config.decision_protocol](
-            self.panelists, config.use_moderator
+            self.panelists, config.num_neutral_agents
         )
 
         start_time = time.perf_counter()
 
-        if config.paradigm not in DISCUSSION_PARADIGMS:
-            logger.error(f"No valid discourse policy for paradigm {config.paradigm}")
-            raise Exception(f"No valid discourse policy for paradigm {config.paradigm}")
-        policy: DiscoursePolicy = DISCUSSION_PARADIGMS[config.paradigm]()
+        if config.discussion_paradigm not in DISCUSSION_PARADIGMS:
+            logger.error(
+                f"No valid discourse policy for paradigm {config.discussion_paradigm}"
+            )
+            raise Exception(
+                f"No valid discourse policy for paradigm {config.discussion_paradigm}"
+            )
+        policy: DiscoursePolicy = DISCUSSION_PARADIGMS[config.discussion_paradigm]()
 
         logger.info(
             f"""Starting discussion with coordinator {self.id}...
 -------------
 [bold blue]Instruction:[/] {sample_instruction}
 [bold blue]Input:[/] {input_str}
-[bold blue]Feedback sentences:[/] {config.feedback_sentences!s}
 [bold blue]Maximum turns:[/] {config.max_turns}
 [bold blue]Agents:[/] {[a.persona for a in self.agents]!s}
 [bold blue]Paradigm:[/] {policy.__class__.__name__}
@@ -231,13 +235,7 @@ class Coordinator:
                 coordinator=self,
                 task_instruction=sample_instruction,
                 input_str=input_str,
-                use_moderator=config.use_moderator,
-                feedback_sentences=config.feedback_sentences,
-                max_turns=config.max_turns,
-                force_all_turns=config.force_all_turns,
-                context_length=config.context_length,
-                include_current_turn_in_memory=config.include_current_turn_in_memory,
-                debate_rounds=config.debate_rounds,
+                config=config,
                 console=self.console,
             )
         )
@@ -246,7 +244,9 @@ class Coordinator:
             seconds=time.perf_counter() - start_time
         ).total_seconds()
 
-        self.console.save_html(str(Path(config.out).with_suffix(".html")), clear=False)
+        self.console.save_html(
+            str(Path(config.output_json_file_path).with_suffix(".html")), clear=False
+        )
 
         return (
             answer,

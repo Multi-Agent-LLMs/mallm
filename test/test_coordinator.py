@@ -19,8 +19,8 @@ def test_coordinator_initialization():
     assert coordinator.personas is None
     assert coordinator.panelists == []
     assert coordinator.agents == []
-    assert coordinator.use_moderator is False
-    assert coordinator.moderator is None
+    assert coordinator.num_neutral_agents == 0
+    assert coordinator.draft_proposers == []
     assert coordinator.decision_protocol is None
 
 
@@ -41,10 +41,10 @@ def test_init_agents_with_persona_generator():
     coordinator.init_agents(
         "task_instruction",
         "input_str",
-        use_moderator=False,
+        num_neutral_agents=0,
         num_agents=3,
         chain_of_thought=False,
-        feedback_only=False,
+        all_agents_drafting=True,
         sample=sample,
     )
     assert len(coordinator.agents) == 3  # TODO This hardcoded value is not good
@@ -69,10 +69,10 @@ def test_init_agents_with_wrong_persona_generator():
         coordinator.init_agents(
             "task_instruction",
             "input_str",
-            use_moderator=False,
+            num_neutral_agents=0,
             num_agents=3,
             chain_of_thought=False,
-            feedback_only=False,
+            all_agents_drafting=True,
             sample=sample,
         )
 
@@ -121,10 +121,10 @@ def test_update_memories():
     coordinator.init_agents(
         task_instruction="task_instruction",
         input_str="input_str",
-        use_moderator=False,
+        num_neutral_agents=0,
         num_agents=3,
         chain_of_thought=False,
-        feedback_only=False,
+        all_agents_drafting=True,
         sample=sample,
     )
     memories = [
@@ -168,10 +168,10 @@ def test_discuss_with_invalid_paradigm():
     ):
         coordinator.discuss(
             Config(
-                data="",
-                out="",
-                instruction_prompt="task_instruction",
-                paradigm="invalid_paradigm",
+                input_json_file_path="",
+                output_json_file_path="",
+                task_instruction_prompt="task_instruction",
+                discussion_paradigm="invalid_paradigm",
                 decision_protocol="majority_consensus",
                 num_agents=3,
             ),
@@ -198,10 +198,10 @@ def test_discuss_with_invalid_decision_protocol():
     ):
         coordinator.discuss(
             Config(
-                data="",
-                out="",
-                instruction_prompt="task_instruction",
-                paradigm="memory",
+                input_json_file_path="",
+                output_json_file_path="",
+                task_instruction_prompt="task_instruction",
+                discussion_paradigm="memory",
                 decision_protocol="invalid_protocol",
                 num_agents=3,
             ),

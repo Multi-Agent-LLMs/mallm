@@ -8,12 +8,13 @@ from rich.panel import Panel
 from rich.progress import Console  # type: ignore
 from rich.text import Text
 
-from mallm.agents.moderator import Moderator
+from mallm.agents.draftProposer import DraftProposer
 from mallm.agents.panelist import Panelist
 from mallm.utils.types import Agreement, Memory, TemplateFilling, VotingResults
 
 if TYPE_CHECKING:
     from mallm.coordinator import Coordinator
+    from mallm.utils.config import Config
 logger = logging.getLogger("mallm")
 
 
@@ -32,13 +33,7 @@ class DiscoursePolicy(ABC):
         coordinator: Coordinator,
         task_instruction: str,
         input_str: str,
-        use_moderator: bool = False,
-        feedback_sentences: Optional[tuple[int, int]] = None,
-        max_turns: int = 10,
-        force_all_turns: bool = False,
-        context_length: int = 1,
-        include_current_turn_in_memory: bool = False,
-        debate_rounds: int = 2,
+        config: Config,
         console: Optional[Console] = None,
     ) -> tuple[Optional[str], int, list[Agreement], bool, Optional[VotingResults]]:
         logger.info(self.paradigm_str)
@@ -46,18 +41,22 @@ class DiscoursePolicy(ABC):
         additional_voting_results: Optional[VotingResults] = None
         if console is None:
             console = Console()
-        while (not self.decision or force_all_turns) and self.turn < max_turns:
+        while (
+            not self.decision or config.skip_decision_making
+        ) and self.turn < config.max_turns:
             self.turn += 1
             logger.info(f"Ongoing. Current turn: {self.turn}")
 
             for i, agent in enumerate(coordinator.agents):
-                debate_history, memory_ids, current_draft = (
+                discussion_history, memory_ids, current_draft = (
                     agent.get_discussion_history(
-                        context_length=context_length,
+                        context_length=config.visible_turns_in_memory,
                         turn=self.turn,
-                        include_this_turn=include_current_turn_in_memory,
                     )
                 )
+                if self.turn == 1 and config.all_agents_generate_first_draft:
+                    current_draft = None
+                    discussion_history = None
 
                 template_filling = TemplateFilling(
                     task_instruction=task_instruction,
@@ -65,14 +64,13 @@ class DiscoursePolicy(ABC):
                     current_draft=current_draft,
                     persona=agent.persona,
                     persona_description=agent.persona_description,
-                    agent_memory=debate_history,
-                    feedback_sentences=feedback_sentences,
+                    agent_memory=discussion_history,
                 )
 
-                if isinstance(agent, Moderator):
+                if isinstance(agent, DraftProposer):
                     template_filling.feedback_sentences = None
-                    self.moderator_call(
-                        moderator=agent,
+                    self.draft_proposer_call(
+                        draft_proposer=agent,
                         template_filling=template_filling,
                         memory_ids=memory_ids,
                         agent_index=i,
@@ -155,7 +153,7 @@ class DiscoursePolicy(ABC):
             + f"\n-----------\nDecision Success: {self.decision} \n\nAccepted solution: {self.draft}"
             + (f"\n\n{voting_process_string}" if voting_process_string else "")
         )
-        discussion_text.highlight_regex(r"Agent .*\):", style="bold blue")
+        discussion_text.highlight_regex(r"Agent .*\):", style="bold green")
         discussion_text.highlight_regex(r"Task instruction:", style="bold green")
         discussion_text.highlight_regex(r"Input:", style="bold green")
         discussion_text.highlight_regex(r"Decision Success:", style="bold green")
@@ -180,9 +178,9 @@ class DiscoursePolicy(ABC):
         console.print(panel)
 
     @abstractmethod
-    def moderator_call(
+    def draft_proposer_call(
         self,
-        moderator: Moderator,
+        draft_proposer: DraftProposer,
         coordinator: Coordinator,
         agent_index: int,
         memory_ids: list[int],

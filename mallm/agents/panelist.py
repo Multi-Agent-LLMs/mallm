@@ -7,7 +7,6 @@ from mallm.utils.types import Agreement, Memory, TemplateFilling
 class Panelist(Agent):
     def participate(
         self,
-        use_moderator: bool,
         memories: list[Memory],
         unique_id: int,
         turn: int,
@@ -17,10 +16,10 @@ class Panelist(Agent):
         agreements: list[Agreement],
     ) -> list[Agreement]:
         """
-        Either calls feedback() or improve() depending on whether a moderator is present
+        Either calls feedback() or improve().
         """
-        if self.feedback_only:
-            _res, memory, agreements = self.feedback(
+        if self.drafting_agent:
+            _res, memory, agreements = self.improve(
                 unique_id=unique_id,
                 turn=turn,
                 memory_ids=memory_ids,
@@ -28,7 +27,7 @@ class Panelist(Agent):
                 agreements=agreements,
             )
         else:
-            _res, memory, agreements = self.improve(
+            _res, memory, agreements = self.feedback(
                 unique_id=unique_id,
                 turn=turn,
                 memory_ids=memory_ids,

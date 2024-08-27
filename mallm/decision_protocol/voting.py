@@ -18,9 +18,9 @@ class Voting(DecisionProtocol):
     """
 
     def __init__(
-        self, panelists: list[Panelist], use_moderator: bool, vote_turn: int = 3
+        self, panelists: list[Panelist], num_neutral_agents: int, vote_turn: int = 3
     ) -> None:
-        super().__init__(panelists, use_moderator)
+        super().__init__(panelists, num_neutral_agents)
         self.vote_turn = vote_turn
 
     def make_decision(
