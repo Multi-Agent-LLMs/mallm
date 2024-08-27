@@ -82,7 +82,7 @@ class DiscourseDebate(DiscoursePolicy):
 
             # ---- Agent A1
             if config.use_moderator and coordinator.moderator is not None:
-                debate_history, memory_ids, current_draft = (
+                discussion_history, memory_ids, current_draft = (
                     coordinator.moderator.get_discussion_history(
                         context_length=config.context_length,
                         turn=self.turn,
@@ -91,14 +91,14 @@ class DiscourseDebate(DiscoursePolicy):
                 )
                 if self.turn == 1 and config.all_agents_generate_first_draft:
                     current_draft = None
-                    debate_history = None
+                    discussion_history = None
                 template_filling = TemplateFilling(
                     task_instruction=task_instruction,
                     input_str=input_str,
                     current_draft=current_draft,
                     persona=coordinator.moderator.persona,
                     persona_description=coordinator.moderator.persona_description,
-                    agent_memory=debate_history,
+                    agent_memory=discussion_history,
                 )
                 _res, memory, self.agreements = coordinator.moderator.draft(
                     unique_id=unique_id,
@@ -113,7 +113,7 @@ class DiscourseDebate(DiscoursePolicy):
                 memories = []
                 unique_id += 1
             else:
-                debate_history, memory_ids, current_draft = coordinator.panelists[
+                discussion_history, memory_ids, current_draft = coordinator.panelists[
                     0
                 ].get_discussion_history(
                     context_length=config.context_length,
@@ -122,14 +122,14 @@ class DiscourseDebate(DiscoursePolicy):
                 )
                 if self.turn == 1 and config.all_agents_generate_first_draft:
                     current_draft = None
-                    debate_history = None
+                    discussion_history = None
                 template_filling = TemplateFilling(
                     task_instruction=task_instruction,
                     input_str=input_str,
                     current_draft=current_draft,
                     persona=coordinator.panelists[0].persona,
                     persona_description=coordinator.panelists[0].persona_description,
-                    agent_memory=debate_history,
+                    agent_memory=discussion_history,
                 )
                 _res, memory, self.agreements = coordinator.panelists[0].draft(
                     unique_id=unique_id,
@@ -154,7 +154,7 @@ class DiscourseDebate(DiscoursePolicy):
                     # We call participate() below, which is a method of Panelist
                     assert isinstance(a, Panelist)
 
-                    debate_history, memory_ids, current_draft = (
+                    discussion_history, memory_ids, current_draft = (
                         a.get_discussion_history(
                             context_length=config.context_length,
                             turn=self.turn,
@@ -164,16 +164,20 @@ class DiscourseDebate(DiscoursePolicy):
                     next_a = i + 2
                     if i == len(coordinator.agents[1:]) - 1:
                         next_a = 1  # start again with agent 1 (loop)
-                    if self.turn == 1 and config.all_agents_generate_first_draft:
+                    if (
+                        self.turn == 1
+                        and r == 1
+                        and config.all_agents_generate_first_draft
+                    ):
                         current_draft = None
-                        debate_history = None
+                        discussion_history = None
                     template_filling = TemplateFilling(
                         task_instruction=task_instruction,
                         input_str=input_str,
                         current_draft=current_draft,
                         persona=a.persona,
                         persona_description=a.persona_description,
-                        agent_memory=debate_history,
+                        agent_memory=discussion_history,
                         feedback_sentences=config.feedback_sentences,
                     )
 

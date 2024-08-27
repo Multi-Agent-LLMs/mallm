@@ -47,7 +47,7 @@ class DiscoursePolicy(ABC):
             logger.info(f"Ongoing. Current turn: {self.turn}")
 
             for i, agent in enumerate(coordinator.agents):
-                debate_history, memory_ids, current_draft = (
+                discussion_history, memory_ids, current_draft = (
                     agent.get_discussion_history(
                         context_length=config.context_length,
                         turn=self.turn,
@@ -56,7 +56,7 @@ class DiscoursePolicy(ABC):
                 )
                 if self.turn == 1 and config.all_agents_generate_first_draft:
                     current_draft = None
-                    debate_history = None
+                    discussion_history = None
 
                 template_filling = TemplateFilling(
                     task_instruction=task_instruction,
@@ -64,7 +64,7 @@ class DiscoursePolicy(ABC):
                     current_draft=current_draft,
                     persona=agent.persona,
                     persona_description=agent.persona_description,
-                    agent_memory=debate_history,
+                    agent_memory=discussion_history,
                     feedback_sentences=config.feedback_sentences,
                 )
 
