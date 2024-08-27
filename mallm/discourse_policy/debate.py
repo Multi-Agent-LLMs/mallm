@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Optional
 
 from rich.progress import Console  # type: ignore
 
-from mallm.agents.moderator import Moderator
+from mallm.agents.draftProposer import DraftProposer
 from mallm.agents.panelist import Panelist
 from mallm.discourse_policy.policy import DiscoursePolicy
 from mallm.utils.types import Agreement, TemplateFilling
@@ -18,9 +18,9 @@ logger = logging.getLogger("mallm")
 
 
 class DiscourseDebate(DiscoursePolicy):
-    def moderator_call(
+    def draft_proposer_call(
         self,
-        moderator: Moderator,
+        draft_proposer: DraftProposer,
         coordinator: Coordinator,
         agent_index: int,
         memory_ids: list[int],
@@ -75,90 +75,58 @@ class DiscourseDebate(DiscoursePolicy):
         )
 
         while (
-            not self.decision or config.force_all_turns
+            not self.decision or config.skip_decision_making
         ) and self.turn < config.max_turns:
             self.turn += 1
             logger.info("Ongoing. Current turn: " + str(self.turn))
 
             # ---- Agent A1
-            if config.use_moderator and coordinator.moderator is not None:
-                discussion_history, memory_ids, current_draft = (
-                    coordinator.moderator.get_discussion_history(
-                        context_length=config.context_length,
-                        turn=self.turn,
-                        include_this_turn=config.include_current_turn_in_memory,
-                    )
-                )
-                if self.turn == 1 and config.all_agents_generate_first_draft:
-                    current_draft = None
-                    discussion_history = None
-                template_filling = TemplateFilling(
-                    task_instruction=task_instruction,
-                    input_str=input_str,
-                    current_draft=current_draft,
-                    persona=coordinator.moderator.persona,
-                    persona_description=coordinator.moderator.persona_description,
-                    agent_memory=discussion_history,
-                )
-                _res, memory, self.agreements = coordinator.moderator.draft(
-                    unique_id=unique_id,
-                    turn=self.turn,
-                    memory_ids=memory_ids,
-                    template_filling=template_filling,
-                    agreements=self.agreements,
-                    is_moderator=True,
-                )
-                memories.append(memory)
-                coordinator.update_memories(memories, coordinator.agents)
-                memories = []
-                unique_id += 1
-            else:
-                discussion_history, memory_ids, current_draft = coordinator.panelists[
-                    0
-                ].get_discussion_history(
-                    context_length=config.context_length,
-                    turn=self.turn,
-                    include_this_turn=config.include_current_turn_in_memory,
-                )
-                if self.turn == 1 and config.all_agents_generate_first_draft:
-                    current_draft = None
-                    discussion_history = None
-                template_filling = TemplateFilling(
-                    task_instruction=task_instruction,
-                    input_str=input_str,
-                    current_draft=current_draft,
-                    persona=coordinator.panelists[0].persona,
-                    persona_description=coordinator.panelists[0].persona_description,
-                    agent_memory=discussion_history,
-                )
-                _res, memory, self.agreements = coordinator.panelists[0].draft(
-                    unique_id=unique_id,
-                    turn=self.turn,
-                    memory_ids=memory_ids,
-                    template_filling=template_filling,
-                    agreements=self.agreements,
-                    is_moderator=True,
-                )
-                memories.append(memory)
-                coordinator.update_memories(memories, coordinator.agents)
-                memories = []
-                unique_id += 1
+            discussion_history, memory_ids, current_draft = coordinator.agents[
+                0
+            ].get_discussion_history(
+                context_length=config.visible_turns_in_memory,
+                turn=self.turn,
+            )
+            if self.turn == 1 and config.all_agents_generate_first_draft:
+                current_draft = None
+                discussion_history = None
+            template_filling = TemplateFilling(
+                task_instruction=task_instruction,
+                input_str=input_str,
+                current_draft=current_draft,
+                persona=coordinator.agents[0].persona,
+                persona_description=coordinator.agents[0].persona_description,
+                agent_memory=discussion_history,
+            )
+            _res, memory, self.agreements = coordinator.agents[0].draft(
+                unique_id=unique_id,
+                turn=self.turn,
+                memory_ids=memory_ids,
+                template_filling=template_filling,
+                agreements=self.agreements,
+                is_neutral=True,
+            )
+            memories.append(memory)
+            coordinator.update_memories(memories, coordinator.agents)
+            memories = []
+            unique_id += 1
 
-            for r in range(config.debate_rounds):  # ---- Agents A2, A3, ...
-                logger.debug("Debate round: " + str(r))
+            # ---- Agents A2, A3, ...
+            for r in range(config.debate_rounds):
+                logger.debug(
+                    f"Discussion {coordinator.id} goes into debate round: {r!s}"
+                )
                 debate_agreements: list[Agreement] = []
                 for i, a in enumerate(
                     coordinator.agents[1:]
                 ):  # similar to relay paradigm
                     # Because we should only iterate over Panelists with [1:]
                     # We call participate() below, which is a method of Panelist
-                    assert isinstance(a, Panelist)
 
                     discussion_history, memory_ids, current_draft = (
                         a.get_discussion_history(
-                            context_length=config.context_length,
+                            context_length=config.visible_turns_in_memory,
                             turn=self.turn,
-                            include_this_turn=config.include_current_turn_in_memory,
                         )
                     )
                     next_a = i + 2
@@ -178,7 +146,6 @@ class DiscourseDebate(DiscoursePolicy):
                         persona=a.persona,
                         persona_description=a.persona_description,
                         agent_memory=discussion_history,
-                        feedback_sentences=config.feedback_sentences,
                     )
 
                     if r == config.debate_rounds - 1:  # last debate round
@@ -189,16 +156,27 @@ class DiscourseDebate(DiscoursePolicy):
                         ]
                     else:
                         agents_to_update = [a, coordinator.agents[next_a]]
-                    debate_agreements = a.participate(
-                        use_moderator=True,  # only feedback makes sense with the debate paradigm
-                        memories=memories,
-                        unique_id=unique_id,
-                        turn=self.turn,
-                        memory_ids=memory_ids,
-                        template_filling=template_filling,
-                        agents_to_update=agents_to_update,
-                        agreements=debate_agreements,
-                    )
+
+                    if isinstance(a, DraftProposer):
+                        _res, _debate_memory, debate_agreements = a.draft(
+                            unique_id=unique_id,
+                            turn=self.turn,
+                            memory_ids=memory_ids,
+                            template_filling=template_filling,
+                            agreements=debate_agreements,
+                            is_neutral=True,
+                        )
+                    elif isinstance(a, Panelist):
+                        debate_agreements = a.participate(
+                            memories=memories,
+                            unique_id=unique_id,
+                            turn=self.turn,
+                            memory_ids=memory_ids,
+                            template_filling=template_filling,
+                            agents_to_update=agents_to_update,
+                            agreements=debate_agreements,
+                        )
+
                     if len(debate_agreements) > len(coordinator.agents) - 1:
                         debate_agreements = debate_agreements[
                             1 - len(coordinator.agents) :

@@ -29,8 +29,6 @@ def generate_chat_prompt_baseline(
 
 def base_prompt(data: TemplateFilling) -> list[dict[str, str]]:
     appendix = ""
-    if data.feedback_sentences is not None:
-        appendix += f"\nExplain your reasoning in {data.feedback_sentences[0]} to {data.feedback_sentences[1]} sentences!"
     if data.current_draft is not None:
         appendix += f"\nHere is the current solution to the task: {data.current_draft}"
     else:

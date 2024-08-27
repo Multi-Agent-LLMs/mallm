@@ -50,27 +50,27 @@ class Scheduler:
         config.check_config()
 
         # Cleaning other files
-        if os.path.exists(config.out):
-            os.remove(config.out)
-            logger.info(f"""The file {config.out} has been deleted.""")
+        if os.path.exists(config.output_json_file_path):
+            os.remove(config.output_json_file_path)
+            logger.info(f"""The file {config.output_json_file_path} has been deleted.""")
 
         # Read input data (format: json lines)
         try:
-            logger.info(f"""Trying to read {config.data} from file...""")
-            with open(config.data) as f:
+            logger.info(f"""Trying to read {config.input_json_file_path} from file...""")
+            with open(config.input_json_file_path) as f:
                 self.dataset_name = f.name
                 json_data = json.loads(f.readline())
                 self.data = [InputExample(**data) for data in json_data]
         except Exception as e:
             logger.warning(
-                f"""Could not read {config.data} from file: {e}. Trying Hugging Face"""
+                f"""Could not read {config.input_json_file_path} from file: {e}. Trying Hugging Face"""
             )
 
         if not self.data:
             try:
                 # Read input data (format: huggingface dataset)
-                logger.info(f"""Trying to read {config.data} from Hugging Face...""")
-                self.dataset_name = config.data
+                logger.info(f"""Trying to read {config.input_json_file_path} from Hugging Face...""")
+                self.dataset_name = config.input_json_file_path
                 # Load from Hugging Face
                 dataset = load_dataset(
                     self.dataset_name,
@@ -107,7 +107,7 @@ class Scheduler:
                 self.data = [x for x in self.data if x.inputs and x.references]
 
             except Exception as e:
-                logger.error(f"""Error reading {config.data} from Hugging Face: {e}""")
+                logger.error(f"""Error reading {config.input_json_file_path} from Hugging Face: {e}""")
                 sys.exit(1)
 
         try:
@@ -128,7 +128,7 @@ class Scheduler:
             client=OpenAI(
                 base_url=self.config.endpoint_url, api_key=self.config.api_key
             ),
-            model=self.config.model,
+            model=self.config.model_name,
         )
 
         if config.response_generator not in RESPONSE_GENERATORS:
@@ -165,7 +165,7 @@ class Scheduler:
         logger.info(f"""Starting discussion of sample {sample.example_id}""")
         try:
             coordinator = Coordinator(
-                use_moderator=self.config.use_moderator,
+                num_neutral_agents=self.config.num_neutral_agents,
                 model=self.llm,
                 agent_generator=self.config.agent_generator,
                 client=client,
@@ -206,10 +206,10 @@ class Scheduler:
                 "dataset": self.dataset_name,
                 "exampleId": sample.example_id,
                 "datasetId": sample.dataset_id,
-                "instruction": self.config.instruction_prompt,
+                "instruction": self.config.task_instruction_prompt,
                 "coordinatorId": coordinator.id,
                 "personas": coordinator.get_agents(),
-                "paradigm": self.config.paradigm,
+                "paradigm": self.config.discussion_paradigm,
                 "input": sample.inputs,
                 "context": sample.context,
                 "answer": answer or None,
@@ -229,7 +229,7 @@ class Scheduler:
             }
         )
         try:
-            with open(self.config.out, "w") as file:
+            with open(self.config.output_json_file_path, "w") as file:
                 file.write(
                     json.dumps(self.output_dicts)
                 )  # TODO: ensure correct json formatting (sometimes there is an invalid escape sequence warning)
@@ -247,7 +247,7 @@ class Scheduler:
         del coordinator
         gc.collect()
 
-        if self.config.ablation:
+        if self.config.use_ablation:
             self.run_ablation(
                 client, sample, len(self.output_dicts[-1]["globalMemory"])
             )
@@ -275,7 +275,7 @@ class Scheduler:
             )
             while True:
                 logger.info(f"Processing {len(processing_data)} samples.")
-                pool = ThreadPool(processes=self.config.max_concurrent_requests)
+                pool = ThreadPool(processes=self.config.concurrent_api_requests)
                 results = []
 
                 for sample in processing_data:
@@ -322,7 +322,7 @@ class Scheduler:
         )
         start_time = time.perf_counter()
 
-        sample_instruction = self.config.instruction_prompt
+        sample_instruction = self.config.task_instruction_prompt
         if sample.context:
             sample_instruction += "\nContext:"
             for c in sample.context:
@@ -348,7 +348,7 @@ class Scheduler:
                     task_instruction=sample_instruction,
                     input_str=input_str,
                     current_solution=answer.solution,
-                    chain_of_thought=self.config.chain_of_thought,
+                    chain_of_thought=self.config.use_chain_of_thought,
                 )
                 globalMemory.append(
                     {
@@ -377,7 +377,7 @@ class Scheduler:
                 "dataset": self.dataset_name,
                 "exampleId": sample.example_id,
                 "datasetId": sample.dataset_id,
-                "instruction": self.config.instruction_prompt,
+                "instruction": self.config.task_instruction_prompt,
                 "coordinatorId": None,
                 "personas": None,
                 "paradigm": None,
@@ -394,7 +394,7 @@ class Scheduler:
             }
         )
         try:
-            out_path = Path(self.config.out)
+            out_path = Path(self.config.output_json_file_path)
             with open(
                 out_path.with_name(out_path.stem + "-ablation.json"), "w"
             ) as file:
@@ -416,7 +416,7 @@ class Scheduler:
         """
         Task a single LM to solve a sample.
         """
-        sample_instruction = self.config.instruction_prompt
+        sample_instruction = self.config.task_instruction_prompt
         if sample.context:
             sample_instruction += "\nContext:"
             for c in sample.context:
@@ -434,7 +434,7 @@ class Scheduler:
             answer = self.response_generator.generate_baseline(
                 task_instruction=sample_instruction,
                 input_str=input_str,
-                chain_of_thought=self.config.chain_of_thought,
+                chain_of_thought=self.config.use_chain_of_thought,
             )
             discussion_time = timedelta(
                 seconds=time.perf_counter() - start_time
@@ -455,7 +455,7 @@ class Scheduler:
                 "dataset": self.dataset_name,
                 "exampleId": sample.example_id,
                 "datasetId": sample.dataset_id,
-                "instruction": self.config.instruction_prompt,
+                "instruction": self.config.task_instruction_prompt,
                 "coordinatorId": None,
                 "personas": None,
                 "paradigm": None,
@@ -472,7 +472,7 @@ class Scheduler:
             }
         )
         try:
-            with open(self.config.out, "w") as file:
+            with open(self.config.output_json_file_path, "w") as file:
                 file.write(
                     json.dumps(self.output_dicts)
                 )  # TODO: ensure correct json formatting (sometimes there is an invalid escape sequence warning)
@@ -504,7 +504,7 @@ class Scheduler:
 
         while True:
             logger.info(f"Processing {len(processing_data)} samples.")
-            pool = ThreadPool(processes=self.config.max_concurrent_requests)
+            pool = ThreadPool(processes=self.config.concurrent_api_requests)
             results = []
             for sample in processing_data:
                 try:
@@ -544,7 +544,7 @@ class Scheduler:
         The routine that runs the discussions between LLM agents on the provided data.
         """
         with httpx.Client() as client:
-            if self.config.baseline:
+            if self.config.use_baseline:
                 self.manage_baseline(client)  # baseline (single LM)
             else:
                 self.manage_discussions(client)  # multi-agent discussion

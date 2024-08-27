@@ -8,7 +8,7 @@ from rich.panel import Panel
 from rich.progress import Console  # type: ignore
 from rich.text import Text
 
-from mallm.agents.moderator import Moderator
+from mallm.agents.draftProposer import DraftProposer
 from mallm.agents.panelist import Panelist
 from mallm.utils.types import Agreement, Memory, TemplateFilling
 
@@ -41,7 +41,7 @@ class DiscoursePolicy(ABC):
         if console is None:
             console = Console()
         while (
-            not self.decision or config.force_all_turns
+            not self.decision or config.skip_decision_making
         ) and self.turn < config.max_turns:
             self.turn += 1
             logger.info(f"Ongoing. Current turn: {self.turn}")
@@ -49,9 +49,8 @@ class DiscoursePolicy(ABC):
             for i, agent in enumerate(coordinator.agents):
                 discussion_history, memory_ids, current_draft = (
                     agent.get_discussion_history(
-                        context_length=config.context_length,
+                        context_length=config.visible_turns_in_memory,
                         turn=self.turn,
-                        include_this_turn=config.include_current_turn_in_memory,
                     )
                 )
                 if self.turn == 1 and config.all_agents_generate_first_draft:
@@ -65,13 +64,12 @@ class DiscoursePolicy(ABC):
                     persona=agent.persona,
                     persona_description=agent.persona_description,
                     agent_memory=discussion_history,
-                    feedback_sentences=config.feedback_sentences,
                 )
 
-                if isinstance(agent, Moderator):
+                if isinstance(agent, DraftProposer):
                     template_filling.feedback_sentences = None
-                    self.moderator_call(
-                        moderator=agent,
+                    self.draft_proposer_call(
+                        draft_proposer=agent,
                         template_filling=template_filling,
                         memory_ids=memory_ids,
                         agent_index=i,
@@ -144,7 +142,7 @@ class DiscoursePolicy(ABC):
             + f"\n-----------\nDecision Success: {self.decision} \n\nAccepted solution: {self.draft}"
             + (f"\n\n{voting_process_string}" if voting_process_string else "")
         )
-        discussion_text.highlight_regex(r"Agent .*\):", style="bold blue")
+        discussion_text.highlight_regex(r"Agent .*\):", style="bold green")
         discussion_text.highlight_regex(r"Task instruction:", style="bold green")
         discussion_text.highlight_regex(r"Input:", style="bold green")
         discussion_text.highlight_regex(r"Decision Success:", style="bold green")
@@ -164,9 +162,9 @@ class DiscoursePolicy(ABC):
         console.print(panel)
 
     @abstractmethod
-    def moderator_call(
+    def draft_proposer_call(
         self,
-        moderator: Moderator,
+        draft_proposer: DraftProposer,
         coordinator: Coordinator,
         agent_index: int,
         memory_ids: list[int],

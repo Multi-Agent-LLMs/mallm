@@ -98,27 +98,24 @@ Use "tgi" as a model for Text Generation Inference by HuggingFace or one of thes
 
 ### Config Arguments:
 ```py
-data: str = None
-out: str = None
-instruction_prompt: str = None
-instruction_prompt_template: Optional[str] = None
+input_json_file_path: str = None
+output_json_file_path: str = None
+task_instruction_prompt: str = None
+task_instruction_prompt_template: Optional[str] = None
 endpoint_url: str = "https://api.openai.com/v1"
-model: str = "gpt-3.5-turbo"
+model_name: str = "gpt-3.5-turbo"
 api_key: str = "-"
-use_moderator: bool = False
+num_neutral_agents: int = 0
 max_turns: int = 10
-force_all_turns: bool = False
-feedback_sentences: Optional[tuple[int, int]] = None
-paradigm: str = "memory"
+skip_decision_making: bool = False
+discussion_paradigm: str = "memory"
 response_generator: str = "simple"
 decision_protocol: str = "hybrid_consensus"
-context_length: int = 3
-include_current_turn_in_memory: bool = True
-extract_all_drafts: bool = True
+visible_turns_in_memory: int = 2
 debate_rounds: int = 2
-max_concurrent_requests: int = 100
-baseline: bool = False
-chain_of_thought: bool = True
+concurrent_api_requests: int = 100
+use_baseline: bool = False
+use_chain_of_thought: bool = True
 num_agents: int = 3
 agent_generator: str = "expert"
 trust_remote_code: bool = False
@@ -129,8 +126,8 @@ hf_dataset_version: Optional[str] = None
 hf_dataset_input_column: Optional[str] = None
 hf_dataset_reference_column: Optional[str] = None
 hf_dataset_context_column: Optional[str] = None
-feedback_only: bool = False
-ablation: bool = False
+all_agents_drafting: bool = True
+use_ablation: bool = False
 shuffle_input_samples: bool = False
 all_agents_generate_first_draft: bool = False
 ```

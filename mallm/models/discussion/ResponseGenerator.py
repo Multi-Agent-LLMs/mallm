@@ -125,8 +125,6 @@ Current Solution: {data.current_draft}
 """  # input has context appended
 
         appendix = ""
-        if data.feedback_sentences is not None:
-            appendix += f"\nExplain your feedback and solution in {data.feedback_sentences[0]} to {data.feedback_sentences[1]} sentences!"
         if data.current_draft is None:
             appendix += (
                 "\nNobody proposed a solution yet. Please provide the first one."
