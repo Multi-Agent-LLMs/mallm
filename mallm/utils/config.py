@@ -14,27 +14,24 @@ logger = logging.getLogger("mallm")
 @dataclass
 class Config:
     # DO NOT overwrite these values once assigned.
-    data: str
-    out: str
-    instruction_prompt: str = ""
-    instruction_prompt_template: Optional[str] = None
+    input_json_file_path: str
+    output_json_file_path: str
+    task_instruction_prompt: str = ""
+    task_instruction_prompt_template: Optional[str] = None
     endpoint_url: str = "https://api.openai.com/v1"
-    model: str = "gpt-3.5-turbo"
+    model_name: str = "gpt-3.5-turbo"
     api_key: str = "-"
-    use_moderator: bool = False
+    num_neutral_agents: int = 0
     max_turns: int = 10
-    force_all_turns: bool = False
-    feedback_sentences: Optional[tuple[int, int]] = None
-    paradigm: str = "memory"
+    skip_decision_making: bool = False
+    discussion_paradigm: str = "memory"
     response_generator: str = "simple"
     decision_protocol: str = "hybrid_consensus"
-    context_length: int = 3
-    include_current_turn_in_memory: bool = True
-    extract_all_drafts: bool = True
+    visible_turns_in_memory: int = 2
     debate_rounds: int = 2
-    max_concurrent_requests: int = 100
-    baseline: bool = False
-    chain_of_thought: bool = True
+    concurrent_api_requests: int = 100
+    use_baseline: bool = False
+    use_chain_of_thought: bool = True
     num_agents: int = 3
     agent_generator: str = "expert"
     trust_remote_code: bool = False
@@ -45,39 +42,39 @@ class Config:
     hf_dataset_input_column: Optional[str] = None
     hf_dataset_reference_column: Optional[str] = None
     hf_dataset_context_column: Optional[str] = None
-    feedback_only: bool = False
-    ablation: bool = False
+    all_agents_drafting: bool = True    # make sure to swap in code
+    use_ablation: bool = False
     shuffle_input_samples: bool = False
 
     def __post_init__(self) -> None:
         if (
-            not self.instruction_prompt
-            and self.instruction_prompt_template in PROMPT_TEMPLATES
+            not self.task_instruction_prompt
+            and self.task_instruction_prompt_template in PROMPT_TEMPLATES
         ):
-            self.instruction_prompt = PROMPT_TEMPLATES[self.instruction_prompt_template]
+            self.task_instruction_prompt = PROMPT_TEMPLATES[self.task_instruction_prompt_template]
 
     def check_config(self) -> None:
         # TODO: make this more robust and conclusive. All arguments should be checked for validity, making the use of MALLM as fool-proof as possible.
-        if not self.instruction_prompt:
+        if not self.task_instruction_prompt:
             logger.error(
                 "Please provide an instruction using the --instruction_prompt argument or a template using --instruction_prompt_template."
             )
             sys.exit(1)
-        if os.path.isfile(self.data):
-            if not self.data.endswith(".json"):
+        if os.path.isfile(self.input_json_file_path):
+            if not self.input_json_file_path.endswith(".json"):
                 logger.error("The dataset path does not seem to be a json file.")
                 sys.exit(1)
         else:
             headers = {"Authorization": f"Bearer {self.hf_token}"}
             response = requests.get(
-                f"https://datasets-server.huggingface.co/is-valid?dataset={self.data}",
+                f"https://datasets-server.huggingface.co/is-valid?dataset={self.input_json_file_path}",
                 headers=headers,
             )
             if not response.json()["preview"]:
                 logger.error("The huggingface dataset cannot be loaded.")
                 sys.exit(1)
 
-        if not self.out.endswith(".json"):
+        if not self.output_json_file_path.endswith(".json"):
             logger.error(
                 "The output file does not seem to be a json file. Please specify a file path using --out."
             )
@@ -88,10 +85,13 @@ class Config:
                 "When using the OpenAI API, you need to provide a key with the argument: --api_key=<your key>"
             )
             sys.exit(1)
+        if self.num_neutral_agents >= self.num_agents and not self.skip_decision_making:
+            logger.error("You need at least one non-neutral agent to allow for decision-making. Set num_neutral_agents < num_agents.")
+            sys.exit(1)
         if self.endpoint_url.endswith("/"):
             logger.warning("Removing trailing / from the endpoint url.")
             self.endpoint_url = self.endpoint_url[:-1]
-        if not self.use_moderator and self.feedback_only:
+        if not self.num_neutral_agents and not self.all_agents_drafting:
             logger.warning(
                 "Setting feedback_only=True without a moderator does not make sense. No solutions will be drafted."
             )
@@ -104,8 +104,7 @@ class Config:
             logger.error("HTTP Error: Could not connect to the provided endpoint url.")
             logger.error(e)
             sys.exit(1)
-        if self.max_concurrent_requests > 250:
-            logger.error(
+        if self.concurrent_api_requests > 250:
+            logger.warning(
                 "max_concurrent_requests is very large. Please make sure the API endpoint you are using can handle that many simultaneous requests."
             )
-            sys.exit(1)

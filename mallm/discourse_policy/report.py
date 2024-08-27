@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from mallm.agents.moderator import Moderator
+from mallm.agents.draftProposer import DraftProposer
 from mallm.agents.panelist import Panelist
 from mallm.discourse_policy.policy import DiscoursePolicy
 from mallm.utils.types import TemplateFilling
@@ -29,21 +29,21 @@ class DiscourseReport(DiscoursePolicy):
         """
         )
 
-    def moderator_call(
+    def draft_proposer_call(
         self,
-        moderator: Moderator,
+        draft_proposer: DraftProposer,
         coordinator: Coordinator,
         agent_index: int,
         memory_ids: list[int],
         template_filling: TemplateFilling,
     ) -> None:
-        _res, memory, self.agreements = moderator.draft(
+        _res, memory, self.agreements = draft_proposer.draft(
             unique_id=self.unique_id,
             turn=self.turn,
             memory_ids=memory_ids,
             template_filling=template_filling,
             agreements=self.agreements,
-            is_moderator=True,
+            is_neutral=True,
         )
         self.memories.append(memory)
         coordinator.update_memories(self.memories, coordinator.agents)
@@ -71,7 +71,6 @@ class DiscourseReport(DiscoursePolicy):
             self.memories = []
         else:
             self.agreements = agent.participate(
-                use_moderator=True,
                 memories=self.memories,
                 unique_id=self.unique_id,
                 turn=self.turn,

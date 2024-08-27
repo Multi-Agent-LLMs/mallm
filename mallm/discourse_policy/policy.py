@@ -8,7 +8,7 @@ from rich.panel import Panel
 from rich.progress import Console  # type: ignore
 from rich.text import Text
 
-from mallm.agents.moderator import Moderator
+from mallm.agents.draftProposer import DraftProposer
 from mallm.agents.panelist import Panelist
 from mallm.utils.types import Agreement, Memory, TemplateFilling
 
@@ -32,7 +32,7 @@ class DiscoursePolicy(ABC):
         coordinator: Coordinator,
         task_instruction: str,
         input_str: str,
-        use_moderator: bool = False,
+        num_neutral_agents: int = 0,
         feedback_sentences: Optional[tuple[int, int]] = None,
         max_turns: int = 10,
         force_all_turns: bool = False,
@@ -65,13 +65,12 @@ class DiscoursePolicy(ABC):
                     persona=agent.persona,
                     persona_description=agent.persona_description,
                     agent_memory=debate_history,
-                    feedback_sentences=feedback_sentences,
                 )
 
-                if isinstance(agent, Moderator):
+                if isinstance(agent, DraftProposer):
                     template_filling.feedback_sentences = None
-                    self.moderator_call(
-                        moderator=agent,
+                    self.draft_proposer_call(
+                        draft_proposer=agent,
                         template_filling=template_filling,
                         memory_ids=memory_ids,
                         agent_index=i,
@@ -144,7 +143,7 @@ class DiscoursePolicy(ABC):
             + f"\n-----------\nDecision Success: {self.decision} \n\nAccepted solution: {self.draft}"
             + (f"\n\n{voting_process_string}" if voting_process_string else "")
         )
-        discussion_text.highlight_regex(r"Agent .*\):", style="bold blue")
+        discussion_text.highlight_regex(r"Agent .*\):", style="bold green")
         discussion_text.highlight_regex(r"Task instruction:", style="bold green")
         discussion_text.highlight_regex(r"Input:", style="bold green")
         discussion_text.highlight_regex(r"Decision Success:", style="bold green")
@@ -164,9 +163,9 @@ class DiscoursePolicy(ABC):
         console.print(panel)
 
     @abstractmethod
-    def moderator_call(
+    def draft_proposer_call(
         self,
-        moderator: Moderator,
+        draft_proposer: DraftProposer,
         coordinator: Coordinator,
         agent_index: int,
         memory_ids: list[int],

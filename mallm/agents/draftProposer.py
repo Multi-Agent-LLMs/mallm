@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from mallm.coordinator import Coordinator
 
 
-class Moderator(Agent):
+class DraftProposer(Agent):
     def __init__(
         self,
         llm: Chat,

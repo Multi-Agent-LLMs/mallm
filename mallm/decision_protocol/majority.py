@@ -12,12 +12,12 @@ class ThresholdConsensus(DecisionProtocol):
     def __init__(
         self,
         panelists: list[Panelist],
-        use_moderator: bool,
+        num_neutral_agents: int,
         threshold_percent: float = 0.5,
         threshold_turn: Optional[int] = None,
         threshold_agents: Optional[int] = None,
     ) -> None:
-        super().__init__(panelists, use_moderator)
+        super().__init__(panelists, num_neutral_agents)
         self.threshold_turn = threshold_turn
         self.threshold_agents = threshold_agents
         self.threshold_percent = threshold_percent
@@ -45,11 +45,11 @@ class ThresholdConsensus(DecisionProtocol):
 
         # so we have at least some output if the discussion does not converge
         if not current_agreement or not num_agreements:
-            moderator_agreement = next(
+            draftProposer_agreement = next(
                 (a for a in reversed_agreements if a.agreement is None), None
             )
-            if moderator_agreement:
-                return moderator_agreement.solution, False, agreements, ""
+            if draftProposer_agreement:
+                return draftProposer_agreement.solution, False, agreements, ""
             recent_panelist_agreement = next(
                 (a for a in reversed_agreements if not a.agreement), None
             )
@@ -84,27 +84,27 @@ class MajorityConsensus(ThresholdConsensus):
     def __init__(
         self,
         panelists: list[Panelist],
-        use_moderator: bool,
+        num_neutral_agents: int,
     ):
-        super().__init__(panelists, use_moderator, 0.5, None, None)
+        super().__init__(panelists, num_neutral_agents, 0.5, None, None)
 
 
 class UnanimityConsensus(ThresholdConsensus):
     def __init__(
         self,
         panelists: list[Panelist],
-        use_moderator: bool,
+        num_neutral_agents: int,
     ):
-        super().__init__(panelists, use_moderator, 1.0, None, None)
+        super().__init__(panelists, num_neutral_agents, 1.0, None, None)
 
 
 class SupermajorityConsensus(ThresholdConsensus):
     def __init__(
         self,
         panelists: list[Panelist],
-        use_moderator: bool,
+        num_neutral_agents: int,
     ):
-        super().__init__(panelists, use_moderator, 0.66, None, None)
+        super().__init__(panelists, num_neutral_agents, 0.66, None, None)
 
 
 class HybridMajorityConsensus(ThresholdConsensus):
@@ -116,6 +116,6 @@ class HybridMajorityConsensus(ThresholdConsensus):
     def __init__(
         self,
         panelists: list[Panelist],
-        use_moderator: bool,
+        num_neutral_agents: int,
     ):
-        super().__init__(panelists, use_moderator, 0.75, 5, 3)
+        super().__init__(panelists, num_neutral_agents, 0.75, 5, 3)

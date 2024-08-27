@@ -1,4 +1,4 @@
-from mallm.agents.moderator import Moderator
+from mallm.agents.draftProposer import DraftProposer
 from mallm.agents.panelist import Panelist
 from mallm.coordinator import Coordinator
 from mallm.models.discussion.FreeTextResponseGenerator import FreeTextResponseGenerator
@@ -13,5 +13,5 @@ def test_panelist_initialization():
 
 
 def test_moderator_initialization():
-    agent = Moderator(None, None, coordinator, response_generator, None, None)
-    assert isinstance(agent, Moderator), "Moderator instance is not created properly."
+    agent = DraftProposer(None, None, coordinator, response_generator, None, None)
+    assert isinstance(agent, DraftProposer), "Moderator instance is not created properly."

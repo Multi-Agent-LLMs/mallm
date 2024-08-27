@@ -1,4 +1,4 @@
-from mallm.agents.moderator import Moderator
+from mallm.agents.draftProposer import DraftProposer
 from mallm.agents.panelist import Panelist
 from mallm.coordinator import Coordinator
 from mallm.decision_protocol.majority import HybridMajorityConsensus, UnanimityConsensus
@@ -11,11 +11,11 @@ panelists = [
     Panelist(None, None, coordinator, response_generator, f"Person{i}", "")
     for i in range(5)
 ]
-moderator = Moderator(None, None, coordinator, response_generator)
+draft_proposer = DraftProposer(None, None, coordinator, response_generator)
 
 
 def test_unanimous_decision():
-    mc = UnanimityConsensus(panelists[:3], use_moderator=False)
+    mc = UnanimityConsensus(panelists[:3], num_neutral_agents=0)
     agreements = [
         Agreement(
             agreement=False,
@@ -46,7 +46,7 @@ def test_unanimous_decision():
 
 
 def test_unanimous_decision_in_first_five_turns():
-    mc = HybridMajorityConsensus(panelists[:3], use_moderator=False)
+    mc = HybridMajorityConsensus(panelists[:3], num_neutral_agents=0)
     agreements = [
         Agreement(
             agreement=False,
@@ -76,8 +76,8 @@ def test_unanimous_decision_in_first_five_turns():
     assert is_consensus
 
 
-def test_unanimous_decision_in_first_five_turns_with_moderator():
-    mc = HybridMajorityConsensus(panelists[:3], use_moderator=True)
+def test_unanimous_decision_in_first_five_turns_with_draft_proposer():
+    mc = HybridMajorityConsensus(panelists[:3], num_neutral_agents=0)
     agreements = [
         Agreement(
             agreement=False,
@@ -106,7 +106,7 @@ def test_unanimous_decision_in_first_five_turns_with_moderator():
                 response="",
                 message_id="",
             )
-            for _ in range(3)
+            for _ in range(2)
         ]
     )
     decision, is_consensus, agreements, voting_string = mc.make_decision(
@@ -116,7 +116,7 @@ def test_unanimous_decision_in_first_five_turns_with_moderator():
 
 
 def test_no_unanimous_decision_in_first_five_turns():
-    mc = HybridMajorityConsensus(panelists[:3], use_moderator=False)
+    mc = HybridMajorityConsensus(panelists[:3], num_neutral_agents=0)
     agreements = [
         Agreement(
             agreement=False,
@@ -149,8 +149,8 @@ def test_no_unanimous_decision_in_first_five_turns():
     assert not is_consensus
 
 
-def test_no_unanimous_decision_in_first_five_turns_with_moderator():
-    mc = HybridMajorityConsensus(panelists[:2], use_moderator=True)
+def test_no_unanimous_decision_in_first_five_turns_with_draft_proposer():
+    mc = HybridMajorityConsensus(panelists[:2], num_neutral_agents=1)
     agreements = [
         Agreement(
             agreement=None,
@@ -182,9 +182,8 @@ def test_no_unanimous_decision_in_first_five_turns_with_moderator():
     )
     assert not is_consensus
 
-
 def test_majority_decision_after_five_turns():
-    mc = HybridMajorityConsensus(panelists, use_moderator=False)
+    mc = HybridMajorityConsensus(panelists, num_neutral_agents=0)
     agreements = [
         Agreement(
             agreement=False,
@@ -216,7 +215,7 @@ def test_majority_decision_after_five_turns():
 
 
 def test_no_majority_decision_after_five_turns():
-    mc = HybridMajorityConsensus(panelists, use_moderator=False)
+    mc = HybridMajorityConsensus(panelists, num_neutral_agents=0)
     agreements = [
         Agreement(
             agreement=False,
