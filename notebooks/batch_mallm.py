@@ -31,10 +31,10 @@ def create_config(config_dict: Any) -> Optional[Config]:
 def run_configuration(
     config: Config, name: Optional[str], run_name: str, repeat: int
 ) -> None:
-    original_out = ".".join(config.out.split(".")[:-1])
-    config.out = f"{original_out}_repeat{repeat}.json"
+    original_out = ".".join(config.output_json_file_path.split(".")[:-1])
+    config.output_json_file_path = f"{original_out}_repeat{repeat}.json"
     if name:
-        config.out = f"{original_out}_{name}_repeat{repeat}.json"
+        config.output_json_file_path = f"{original_out}_{name}_repeat{repeat}.json"
 
     try:
         print(f"Running {run_name} (Repeat {repeat})")
