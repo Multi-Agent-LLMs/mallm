@@ -292,7 +292,7 @@ def generate_voting_prompt(
     prompts.append(
         {
             "role": "user",
-            "content": "Based on the above solutions, please provide the number of the solution you are voting for. Answer only with the number.",
+            "content": "Based on the above solutions, please provide the number of the solution you are voting for. Answer only with the number starting from 0.",
         }
     )
 
