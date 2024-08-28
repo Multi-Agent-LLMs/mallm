@@ -68,9 +68,9 @@ def summarize_runs(valid_configs: List[Config], repeats: int) -> None:
     print("\nValid Runs:")
     for i, config in enumerate(valid_configs, 1):
         print(f"Run {i}:")
-        print(f"  Data: {config.data}")
-        print(f"  Out: {config.out}")
-        print(f"  Model: {config.model}")
+        print(f"  Data: {config.input_json_file_path}")
+        print(f"  Out: {config.output_json_file_path}")
+        print(f"  Model: {config.model_name}")
         print(f"  Max Turns: {config.max_turns}")
         print()
 
