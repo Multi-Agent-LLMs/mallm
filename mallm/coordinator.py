@@ -30,6 +30,12 @@ logger = logging.getLogger("mallm")
 
 
 class Coordinator:
+    """
+    The Coordinator is responsible for managing the discussion process between agents.
+    It initializes agents based on the provided configuration.
+    The coordinator facilitates the discussion by allowing agents to draft, improve, and provide feedback on solutions.
+    It also keeps track of the discussion history and agreements reached during the process.
+    """
     def __init__(
         self,
         model: Chat,
@@ -67,7 +73,7 @@ class Coordinator:
     ) -> None:
         """
         Instantiates the agents by
-        1) identify helpful personas
+        1) identify helpful personas depending on the agent_generator
         2) create agents with the personas
         """
         logger.debug(

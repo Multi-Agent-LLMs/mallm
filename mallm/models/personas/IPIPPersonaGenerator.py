@@ -9,6 +9,9 @@ logger = logging.getLogger("mallm")
 
 
 class IPIPPersonaGenerator(PersonaGenerator):
+    """
+    The IPIPPersonaGenerator class is a specialized PersonaGenerator designed to generate personas based on the Big Five personality traits. It is capable of identifying the necessary participants, their roles, and characteristics to foster a rich and diverse discussion.
+    """
     def __init__(self, llm: Chat):
         self.llm = llm
         self.base_prompt = {

@@ -8,6 +8,10 @@ logger = logging.getLogger("mallm")
 
 
 class SimpleResponseGenerator(FreeTextResponseGenerator):
+    """
+    The SimpleResponseGenerator class is designed to generate simple, straightforward responses based on the input prompts and tasks.
+    Its prompts are simplified to mitigate bloating the context length and not distacting the LLM from what is important.
+    """
 
     _name = "simple"
 

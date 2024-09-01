@@ -9,7 +9,12 @@ logger = logging.getLogger("mallm")
 
 
 class FreeTextResponseGenerator(ResponseGenerator):
+    """
+    The FreeTextResponseGenerator class is designed to generate free-form text responses based on the input prompts and tasks.
+    It utilizes a chat interface to interact with the language model and generate responses that are not limited by specific templates or structures.
+    """
 
+    
     _name = "freetext"
 
     def __init__(self, llm: Chat):

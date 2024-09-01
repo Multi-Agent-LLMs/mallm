@@ -4,6 +4,9 @@ from mallm.utils.types import InputExample
 
 
 class MockGenerator(PersonaGenerator):
+    """
+    The MockGenerator class is a placeholder PersonaGenerator that generates a simple persona based on the number of already generated personas..
+    """
     def __init__(self, llm: Chat):
         pass
 

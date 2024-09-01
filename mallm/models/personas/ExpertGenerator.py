@@ -11,6 +11,9 @@ logger = logging.getLogger("mallm")
 
 
 class ExpertGenerator(PersonaGenerator):
+    """
+    The ExpertGenerator class is a specialized PersonaGenerator designed to generate expert personas for a given task or discussion. It is capable of identifying the necessary participants, their roles, and descriptions to foster a rich and informative discussion.
+    """
     def __init__(self, llm: Chat):
         self.llm = llm
         self.base_prompt = {

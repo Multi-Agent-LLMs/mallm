@@ -8,6 +8,9 @@ logger = logging.getLogger("mallm")
 
 
 class NoPersonaGenerator(PersonaGenerator):
+    """
+    The NoPersonaGenerator class is used to create agents without a persona.
+    """
     def __init__(self, llm: Chat):
         self.llm = llm
 
