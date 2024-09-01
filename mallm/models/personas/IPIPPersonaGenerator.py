@@ -55,6 +55,12 @@ New Participant:
                 "content": f"\nNow generate a participant to discuss the following task:\nTask: {task_description}\n",
             },
         ]
+        if already_generated_personas:
+            current_prompt.append({
+                "role": "system",
+                "content": "Already Generated Participants:\n" + '\n'.join([str(generated_persona) for generated_persona in already_generated_personas]),
+            }
+            )
 
         retry = 0
         while retry < 5:

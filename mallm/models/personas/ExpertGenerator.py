@@ -57,7 +57,7 @@ New Participant:
         if already_generated_personas:
             current_prompt.append({
                 "role": "system",
-                "content": f"Already Generated Participants:\n{'\n'.join([str(generated_persona) for generated_persona in already_generated_personas])}",
+                "content": "Already Generated Participants:\n" + '\n'.join([str(generated_persona) for generated_persona in already_generated_personas]),
             }
             )
 
