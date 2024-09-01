@@ -24,7 +24,7 @@ from mallm.models.discussion.SplitFreeTextResponseGenerator import (
 from mallm.models.personas.ExpertGenerator import ExpertGenerator
 from mallm.models.personas.IPIPPersonaGenerator import IPIPPersonaGenerator
 from mallm.models.personas.MockGenerator import MockGenerator
-from mallm.models.personas.ParaphraseTypesGenerator import ParaphraseTypesGenerator
+from mallm.models.personas.NoPersonaGenerator import NoPersonaGenerator
 from mallm.models.personas.PersonaGenerator import PersonaGenerator
 
 DECISION_PROTOCOLS: dict[str, type[DecisionProtocol]] = {
@@ -48,7 +48,7 @@ DISCUSSION_PARADIGMS: dict[str, type[DiscoursePolicy]] = {
 PERSONA_GENERATORS: dict[str, type[PersonaGenerator]] = {
     "expert": ExpertGenerator,
     "ipip": IPIPPersonaGenerator,
-    "paraphrasetypes": ParaphraseTypesGenerator,
+    "nopersona": NoPersonaGenerator,
     "mock": MockGenerator,
 }
 

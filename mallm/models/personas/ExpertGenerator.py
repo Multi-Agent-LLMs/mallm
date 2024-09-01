@@ -41,20 +41,25 @@ New Participant:
         """,
         }
 
-    def generate_personas(
-        self, task_description: str, num_agents: int, sample: InputExample
-    ) -> list[dict[str, str]]:
+    def generate_persona(
+        self, task_description: str, already_generated_personas: list[dict[str, str]], sample: InputExample
+    ) -> dict[str, str]:
         current_prompt = [
             self.base_prompt,
             {
                 "role": "user",
                 "content": f"\nNow generate a participant to discuss the following task:\nTask: {task_description}\n",
-            },
+            }
         ]
+        if already_generated_personas:
+            current_prompt.append({
+                "role": "system",
+                "content": f"Already Generated Participants:\n{'\n'.join([str(generated_persona) for generated_persona in already_generated_personas])}",
+            }
+            )
 
-        agents: list[dict[str, str]] = []
         retry = 0
-        while len(agents) < num_agents:
+        while retry < 5:
             # Send the prompt to the InferenceClient
             response = self.llm.invoke(
                 [
@@ -76,7 +81,8 @@ New Participant:
                     or not new_agent["description"]
                 ):
                     continue
-                agents.append(new_agent)
+                agent : dict[str, str] = new_agent
+                break
             except json.decoder.JSONDecodeError as e:
                 retry += 1
                 logger.debug(
@@ -86,13 +92,4 @@ New Participant:
                     + str(response)
                 )
                 continue
-
-            # Update the prompt with the newly generated persona for the next iteration
-            current_prompt.append(
-                {
-                    "role": "system",
-                    "content": f"Already Generated Participants:\n{response}",
-                }
-            )
-
-        return agents
+        return agent

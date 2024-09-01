@@ -162,12 +162,15 @@ class Scheduler:
         Runs a single discussion between agents on a sample.
         """
 
+        if not self.config.agent_generators_list:
+            self.config.agent_generators_list = [self.config.agent_generator for i in range(self.config.num_agents)]
+
         logger.info(f"""Starting discussion of sample {sample.example_id}""")
         try:
             coordinator = Coordinator(
                 num_neutral_agents=self.config.num_neutral_agents,
                 model=self.llm,
-                agent_generator=self.config.agent_generator,
+                agent_generators=self.config.agent_generators_list,
                 client=client,
                 console=console,
             )

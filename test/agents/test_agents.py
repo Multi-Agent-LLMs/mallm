@@ -12,6 +12,6 @@ def test_panelist_initialization():
     assert isinstance(agent, Panelist), "Panelist instance is not created properly."
 
 
-def test_moderator_initialization():
+def test_draft_proposer_initialization():
     agent = DraftProposer(None, None, coordinator, response_generator, None, None)
-    assert isinstance(agent, DraftProposer), "Moderator instance is not created properly."
+    assert isinstance(agent, DraftProposer), "DraftProposer instance is not created properly."
