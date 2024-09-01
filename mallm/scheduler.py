@@ -49,7 +49,7 @@ class Scheduler:
     """
     The Scheduler is responsible for managing the flow of all discussions.
     It oversees the reading and processing of input data and initializes the coordinator for each discussion.
-    The Scheduler is capable of managing many discussions simultaneously through parallelized API requests. 
+    The Scheduler is capable of managing many discussions simultaneously through parallelized API requests.
     """
     def __init__(self, config: Config) -> None:
         config.check_config()

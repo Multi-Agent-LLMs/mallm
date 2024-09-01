@@ -14,7 +14,6 @@ class FreeTextResponseGenerator(ResponseGenerator):
     It utilizes a chat interface to interact with the language model and generate responses that are not limited by specific templates or structures.
     """
 
-    
     _name = "freetext"
 
     def __init__(self, llm: Chat):
