@@ -42,7 +42,7 @@ class Config:
     hf_dataset_input_column: Optional[str] = None
     hf_dataset_reference_column: Optional[str] = None
     hf_dataset_context_column: Optional[str] = None
-    all_agents_drafting: bool = True  # make sure to swap in code
+    all_agents_drafting: bool = True 
     use_ablation: bool = False
     shuffle_input_samples: bool = False
     all_agents_generate_first_draft: bool = False
