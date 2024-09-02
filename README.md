@@ -129,6 +129,7 @@ hf_dataset_context_column: Optional[str] = None
 all_agents_drafting: bool = True
 use_ablation: bool = False
 shuffle_input_samples: bool = False
+all_agents_generate_first_draft: bool = False
 ```
 
 ### Discussion Parameters:

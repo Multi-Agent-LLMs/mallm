@@ -42,16 +42,19 @@ class Config:
     hf_dataset_input_column: Optional[str] = None
     hf_dataset_reference_column: Optional[str] = None
     hf_dataset_context_column: Optional[str] = None
-    all_agents_drafting: bool = True    # make sure to swap in code
+    all_agents_drafting: bool = True 
     use_ablation: bool = False
     shuffle_input_samples: bool = False
+    all_agents_generate_first_draft: bool = False
 
     def __post_init__(self) -> None:
         if (
             not self.task_instruction_prompt
             and self.task_instruction_prompt_template in PROMPT_TEMPLATES
         ):
-            self.task_instruction_prompt = PROMPT_TEMPLATES[self.task_instruction_prompt_template]
+            self.task_instruction_prompt = PROMPT_TEMPLATES[
+                self.task_instruction_prompt_template
+            ]
 
     def check_config(self) -> None:
         # TODO: make this more robust and conclusive. All arguments should be checked for validity, making the use of MALLM as fool-proof as possible.
@@ -86,7 +89,9 @@ class Config:
             )
             sys.exit(1)
         if self.num_neutral_agents >= self.num_agents and not self.skip_decision_making:
-            logger.error("You need at least one non-neutral agent to allow for decision-making. Set num_neutral_agents < num_agents.")
+            logger.error(
+                "You need at least one non-neutral agent to allow for decision-making. Set num_neutral_agents < num_agents."
+            )
             sys.exit(1)
         if self.endpoint_url.endswith("/"):
             logger.warning("Removing trailing / from the endpoint url.")

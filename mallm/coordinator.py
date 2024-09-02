@@ -68,7 +68,11 @@ class Coordinator:
         1) identify helpful personas
         2) create agents with the personas
         """
-        logger.debug(f"Coordinator {self.id} creates {num_agents} agents ({self.agent_generator})...")
+        logger.debug(
+            f"Coordinator {self.id} creates {num_agents} agents ({self.agent_generator})..."
+        )
+        self.panelists = []
+        self.agents = []
 
         num_agents -= num_neutral_agents
 
@@ -89,27 +93,27 @@ class Coordinator:
 
         for n in range(num_neutral_agents):
             draft_proposer = DraftProposer(
-                    self.llm, self.client, self, response_generator=self.response_generator, persona=f"Moderator {n + 1}" if num_neutral_agents > 1 else "Moderator"
-                )
-            self.draft_proposers.append(
-                draft_proposer
+                self.llm,
+                self.client,
+                self,
+                response_generator=self.response_generator,
+                persona=f"Moderator {n + 1}" if num_neutral_agents > 1 else "Moderator",
             )
+            self.draft_proposers.append(draft_proposer)
             self.agents.append(draft_proposer)
 
         for persona in personas:
             panelist = Panelist(
-                    llm=self.llm,
-                    client=self.client,
-                    coordinator=self,
-                    response_generator=self.response_generator,
-                    persona=persona["role"],
-                    persona_description=persona["description"],
-                    chain_of_thought=chain_of_thought,
-                    drafting_agent=all_agents_drafting,
-                )
-            self.panelists.append(
-                panelist
+                llm=self.llm,
+                client=self.client,
+                coordinator=self,
+                response_generator=self.response_generator,
+                persona=persona["role"],
+                persona_description=persona["description"],
+                chain_of_thought=chain_of_thought,
+                drafting_agent=all_agents_drafting,
             )
+            self.panelists.append(panelist)
             self.agents.append(panelist)
 
         if len(self.agents) == 1:
@@ -205,8 +209,12 @@ class Coordinator:
         start_time = time.perf_counter()
 
         if config.discussion_paradigm not in DISCUSSION_PARADIGMS:
-            logger.error(f"No valid discourse policy for paradigm {config.discussion_paradigm}")
-            raise Exception(f"No valid discourse policy for paradigm {config.discussion_paradigm}")
+            logger.error(
+                f"No valid discourse policy for paradigm {config.discussion_paradigm}"
+            )
+            raise Exception(
+                f"No valid discourse policy for paradigm {config.discussion_paradigm}"
+            )
         policy: DiscoursePolicy = DISCUSSION_PARADIGMS[config.discussion_paradigm]()
 
         logger.info(
@@ -225,11 +233,7 @@ class Coordinator:
             coordinator=self,
             task_instruction=sample_instruction,
             input_str=input_str,
-            num_neutral_agents=config.num_neutral_agents,
-            max_turns=config.max_turns,
-            force_all_turns=config.skip_decision_making,
-            context_length=config.visible_turns_in_memory,
-            debate_rounds=config.debate_rounds,
+            config=config,
             console=self.console,
         )
 
@@ -237,7 +241,9 @@ class Coordinator:
             seconds=time.perf_counter() - start_time
         ).total_seconds()
 
-        self.console.save_html(str(Path(config.output_json_file_path).with_suffix(".html")), clear=False)
+        self.console.save_html(
+            str(Path(config.output_json_file_path).with_suffix(".html")), clear=False
+        )
 
         return (
             answer,
