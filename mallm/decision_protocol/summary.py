@@ -1,21 +1,20 @@
 import logging
-from collections import Counter
 from typing import Any, Optional
 
 from mallm.agents.panelist import Panelist
 from mallm.decision_protocol.protocol import DecisionAlteration, DecisionProtocol
 from mallm.utils.config import Config
 from mallm.utils.prompts import (
-    generate_voting_prompt,
+    generate_summary_prompt,
 )
 from mallm.utils.types import Agreement, VotingResult, VotingResults
 
 logger = logging.getLogger("mallm")
 
 
-class Voting(DecisionProtocol):
+class Summary(DecisionProtocol):
     """
-    The Voting decision protocol allows panelists to vote for the best answer after a certain number of turns.
+    The Summary decision protocol creates a summary of all answers after a certain number of turns.
     """
 
     def __init__(
@@ -49,9 +48,10 @@ class Voting(DecisionProtocol):
                 question,
                 task,
                 voting_process_string,
-                "voting",
-                generate_voting_prompt,
+                "summary",
+                generate_summary_prompt,
                 config.voting_protocols_with_alterations,
+                panelists=[self.panelists[0]],
             )
         )
         return (
@@ -62,36 +62,22 @@ class Voting(DecisionProtocol):
             results,
         )
 
-    def process_results(
+    def process_results(  # noqa: PLR6301
         self,
         all_votes: dict[str, VotingResult],
         alteration: DecisionAlteration,
         final_answers: list[str],
-        votes: list[int],
+        votes: Any,
     ) -> dict[str, VotingResult]:
-        if votes:
-            vote_counts = Counter(votes)
-            most_voted = vote_counts.most_common(1)[0][0]
-            all_votes[alteration.value] = VotingResult(
-                votes=votes,
-                most_voted=most_voted,
-                final_answer=final_answers[most_voted],
-                agreed=True,
-            )
-            logger.info(
-                f"Voted for answer from agent {self.panelists[most_voted].persona}"
-            )
-        else:
-            all_votes[alteration.value] = VotingResult(
-                votes=votes,
-                most_voted=-1,
-                final_answer="",
-                agreed=False,
-            )
-            logger.info("No votes were cast")
+        all_votes[alteration.value] = VotingResult(
+            votes=None,
+            most_voted=-1,
+            final_answer=votes,
+            agreed=True,
+        )
         return all_votes
 
-    def process_votes(
+    def process_votes(  # noqa: PLR6301
         self,
         final_answers: list[str],
         panelist: Panelist,
@@ -99,13 +85,6 @@ class Voting(DecisionProtocol):
         vote: Any,
         voting_process_string: str,
     ) -> tuple[str, Any, bool, str]:
-        success = False
-        vote_int = int("".join([x for x in vote_str if x.isnumeric()]))
-        if 0 <= vote_int < len(final_answers):
-            vote.append(vote_int)
-            logger.info(
-                f"{panelist.persona} voted for answer from {self.panelists[vote_int].persona}"
-            )
-            voting_process_string += f"{panelist.persona} voted for answer from {self.panelists[vote_int].persona}\n"
-            success = True
-        return vote_str, vote, success, voting_process_string
+        logger.info(f"Created summary of all answers: {vote_str}")
+        voting_process_string += f"Created summary of all answers: {vote_str}\n"
+        return vote_str, vote_str, True, voting_process_string

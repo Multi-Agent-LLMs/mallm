@@ -23,6 +23,7 @@ logger = logging.getLogger("mallm")
 class DecisionAlteration(Enum):
     PUBLIC = "public"
     FACTS = "facts"
+    HISTORY = "history"
     CONFIDENCE = "confidence"
     CONFIDENCE_LOG_PROBS = "confidence_log_probs"
     CONFIDENCE_PROMPTED = "confidence_prompted"
@@ -96,7 +97,10 @@ class DecisionProtocol(ABC):
         decision_protocol_name: str,
         voting_prompt_function: VotingPromptFunction,
         alterations_enabled: bool = False,
+        panelists: Optional[list[Panelist]] = None,
     ) -> tuple[bool, str, VotingResults, str]:
+        if panelists is None:
+            panelists = self.panelists
         all_votes: dict[str, VotingResult] = {}
         facts = None
         final_answers = [answer for answer, _ in final_answers_with_confidence]
@@ -130,7 +134,7 @@ class DecisionProtocol(ABC):
                 confidences_consistency = self.get_consistency_confidences()
                 voting_process_string += f"\nConfidence: {confidences_consistency}\n"
             votes: Any = []
-            for panelist in self.panelists:
+            for panelist in panelists:
                 retries = 0
                 while retries < 10:
                     # Creates a prompt with all the answers and asks the agent to vote for the best one, 0 indexed inorder
@@ -210,6 +214,17 @@ class DecisionProtocol(ABC):
                                 anonymous=False,
                             )
                         )
+                    elif alteration == DecisionAlteration.HISTORY:
+                        vote = panelist.llm.invoke(
+                            voting_prompt_function(
+                                panelist=panelist,
+                                panelists=self.panelists,
+                                task=task,
+                                question=question,
+                                solutions=final_answers,
+                                history=True,
+                            )
+                        )
                     else:
                         raise ValueError(
                             f"Unknown DecisionAlteration type: {alteration.value}"
@@ -246,9 +261,7 @@ class DecisionProtocol(ABC):
             alterations=all_votes,
             type=decision_protocol_name,
         )
-        final_answer: str = final_answers[
-            all_votes[DecisionAlteration.ANONYMOUS.value].most_voted
-        ]
+        final_answer: str = all_votes[DecisionAlteration.ANONYMOUS.value].final_answer
         decision: bool = all_votes[DecisionAlteration.ANONYMOUS.value].agreed
         return decision, final_answer, results, voting_process_string
 

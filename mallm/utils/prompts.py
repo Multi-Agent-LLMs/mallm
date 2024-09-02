@@ -399,3 +399,60 @@ def generate_ranking_prompt(
     )
 
     return prompts
+
+
+def generate_summary_prompt(
+    panelist: Panelist,
+    panelists: list[Panelist],
+    task: str,
+    question: str,
+    solutions: list[str],
+    additional_context: Optional[str] = None,
+    anonymous: bool = True,
+    confidence: Optional[list[int]] = None,
+    history: bool = False,
+) -> list[dict[str, str]]:
+    prompts = []
+
+    # Add discussion history if available
+    if history:
+        discussion_history = panelist.get_discussion_history()[0]
+        if discussion_history:
+            prompts.append(
+                {
+                    "role": "user",
+                    "content": "Here is the discussion history to help you make a decision:",
+                }
+            )
+            prompts.extend(discussion_history)
+
+    # Prepare the main content for the summary request
+    additional_context_str = (
+        f"\nAdditional Context: {additional_context}" if additional_context else ""
+    )
+
+    content_str = (
+        f"Task: {task}\n"
+        f"Question: {question}"
+        f"{additional_context_str}\n\n"
+        "Please provide a summary of the following solutions and combine them in a single answer to solve the task. Only answer with the solution:"
+    )
+
+    # Add each solution to the content string
+    for i, solution in enumerate(solutions):
+        confidence_str = (
+            "" if confidence is None else f" (Confidence: {round(confidence[i])}%)"
+        )
+        panelist_label = f"Solution {i}" if anonymous else f"{panelists[i].persona}"
+        content_str += f"\n\n{panelist_label}: {solution}{confidence_str}"
+
+    # Append the final content as a user message
+    prompts.append(
+        {
+            "role": "user",
+            "content": content_str,
+        }
+    )
+
+    # Return the prompts list
+    return prompts

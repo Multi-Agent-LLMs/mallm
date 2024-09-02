@@ -8,6 +8,7 @@ from mallm.decision_protocol.majority import (
 )
 from mallm.decision_protocol.protocol import DecisionProtocol
 from mallm.decision_protocol.ranked import RankedVoting
+from mallm.decision_protocol.summary import Summary
 from mallm.decision_protocol.voting import Voting
 from mallm.discourse_policy.debate import DiscourseDebate
 from mallm.discourse_policy.memory import DiscourseMemory
@@ -36,6 +37,7 @@ DECISION_PROTOCOLS: dict[str, type[DecisionProtocol]] = {
     "approval": ApprovalVoting,
     "cumulative": CumulativeVoting,
     "ranked": RankedVoting,
+    "summary": Summary,
 }
 
 DISCUSSION_PARADIGMS: dict[str, type[DiscoursePolicy]] = {
