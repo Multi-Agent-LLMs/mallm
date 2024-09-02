@@ -108,7 +108,7 @@ class DecisionProtocol(ABC):
         confidences_consistency = []
 
         for alteration in (
-            DecisionAlteration
+            list(DecisionAlteration)
             if alterations_enabled
             else [DecisionAlteration.ANONYMOUS]
         ):
