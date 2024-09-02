@@ -10,6 +10,7 @@ from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 
 from mallm.agents.panelist import Panelist
+from mallm.utils.config import Config
 from mallm.utils.prompts import (
     generate_answer_confidence_prompt,
     generate_final_answer_prompt,
@@ -94,6 +95,7 @@ class DecisionProtocol(ABC):
         voting_process_string: str,
         decision_protocol_name: str,
         voting_prompt_function: VotingPromptFunction,
+        alterations_enabled: bool = False,
     ) -> tuple[bool, str, VotingResults, str]:
         all_votes: dict[str, VotingResult] = {}
         facts = None
@@ -105,7 +107,11 @@ class DecisionProtocol(ABC):
         confidences_prompted = []
         confidences_consistency = []
 
-        for alteration in DecisionAlteration:
+        for alteration in (
+            DecisionAlteration
+            if alterations_enabled
+            else [DecisionAlteration.ANONYMOUS]
+        ):
             voting_process_string += f"\nVoting with alteration: {alteration.value}\n"
             if alteration == DecisionAlteration.FACTS:
                 facts = context(question)
@@ -297,6 +303,7 @@ class DecisionProtocol(ABC):
         agent_index: int,
         task: str,
         question: str,
+        config: Config,
     ) -> tuple[str, bool, list[Agreement], str, Optional[VotingResults]]:
         """
         Abstract method to make a decision based on agreements, the current turn number, and the list of panelists.

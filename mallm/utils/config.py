@@ -6,7 +6,7 @@ from typing import Optional
 
 import requests
 
-from mallm.utils.dicts import PROMPT_TEMPLATES
+from mallm.utils.prompt_templates import PROMPT_TEMPLATES
 
 logger = logging.getLogger("mallm")
 
@@ -46,6 +46,7 @@ class Config:
     use_ablation: bool = False
     shuffle_input_samples: bool = False
     all_agents_generate_first_draft: bool = False
+    voting_protocols_with_alterations: bool = False
 
     def __post_init__(self) -> None:
         if (

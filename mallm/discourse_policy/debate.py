@@ -202,6 +202,7 @@ class DiscourseDebate(DiscoursePolicy):
                 len(coordinator.agents),
                 task_instruction,
                 input_str,
+                config,
             )
             if self.decision:
                 break

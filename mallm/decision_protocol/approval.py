@@ -4,6 +4,7 @@ from typing import Any, Optional
 
 from mallm.agents.panelist import Panelist
 from mallm.decision_protocol.protocol import DecisionAlteration, DecisionProtocol
+from mallm.utils.config import Config
 from mallm.utils.prompts import (
     generate_approval_voting_prompt,
 )
@@ -30,6 +31,7 @@ class ApprovalVoting(DecisionProtocol):
         agent_index: int,
         task: str,
         question: str,
+        config: Config,
     ) -> tuple[str, bool, list[Agreement], str, Optional[VotingResults]]:
         if len(agreements) > self.total_agents:
             agreements = agreements[-self.total_agents :]
@@ -48,6 +50,7 @@ class ApprovalVoting(DecisionProtocol):
                 voting_process_string,
                 "approval",
                 generate_approval_voting_prompt,
+                config.voting_protocols_with_alterations,
             )
         )
         return (

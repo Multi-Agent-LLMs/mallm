@@ -101,7 +101,7 @@ class DiscoursePolicy(ABC):
                     voting_process_string,
                     additional_voting_results,
                 ) = coordinator.decision_protocol.make_decision(
-                    self.agreements, self.turn, i, task_instruction, input_str
+                    self.agreements, self.turn, i, task_instruction, input_str, config
                 )
 
                 if self.decision:

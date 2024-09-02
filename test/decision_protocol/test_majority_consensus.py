@@ -3,6 +3,7 @@ from mallm.agents.panelist import Panelist
 from mallm.coordinator import Coordinator
 from mallm.decision_protocol.majority import HybridMajorityConsensus, UnanimityConsensus
 from mallm.models.discussion.FreeTextResponseGenerator import FreeTextResponseGenerator
+from mallm.utils.config import Config
 from mallm.utils.types import Agreement
 
 coordinator = Coordinator(None, None)
@@ -12,6 +13,7 @@ panelists = [
     for i in range(5)
 ]
 draft_proposer = DraftProposer(None, None, coordinator, response_generator)
+config = Config("", "")
 
 
 def test_unanimous_decision():
@@ -40,7 +42,7 @@ def test_unanimous_decision():
         ]
     )
     decision, is_consensus, agreements, voting_string, _ = mc.make_decision(
-        agreements, 4, 0, "", ""
+        agreements, 4, 0, "", "", config
     )
     assert is_consensus
 
@@ -71,7 +73,7 @@ def test_unanimous_decision_in_first_five_turns():
         ]
     )
     decision, is_consensus, agreements, voting_string, _ = mc.make_decision(
-        agreements, 4, 0, "", ""
+        agreements, 4, 0, "", "", config
     )
     assert is_consensus
 
@@ -110,7 +112,7 @@ def test_unanimous_decision_in_first_five_turns_with_draft_proposer():
         ]
     )
     decision, is_consensus, agreements, voting_string, _ = mc.make_decision(
-        agreements, 4, 0, "", ""
+        agreements, 4, 0, "", "", config
     )
     assert is_consensus
 
@@ -144,7 +146,7 @@ def test_no_unanimous_decision_in_first_five_turns():
         ),
     ]
     decision, is_consensus, agreements, voting_string, _ = mc.make_decision(
-        agreements, 4, 0, "", ""
+        agreements, 4, 0, "", "", config
     )
     assert not is_consensus
 
@@ -178,7 +180,7 @@ def test_no_unanimous_decision_in_first_five_turns_with_draft_proposer():
         ),
     ]
     decision, is_consensus, agreements, voting_string, _ = mc.make_decision(
-        agreements, 4, 0, "", ""
+        agreements, 4, 0, "", "", config
     )
     assert not is_consensus
 
@@ -210,7 +212,7 @@ def test_majority_decision_after_five_turns():
         ]
     )
     decision, is_consensus, agreements, voting_string, _ = mc.make_decision(
-        agreements, 6, 0, "", ""
+        agreements, 6, 0, "", "", config
     )
     assert is_consensus
 
@@ -242,6 +244,6 @@ def test_no_majority_decision_after_five_turns():
         ]
     )
     decision, is_consensus, agreements, voting_string, _ = mc.make_decision(
-        agreements, 6, 0, "", ""
+        agreements, 6, 0, "", "", config
     )
     assert not is_consensus
