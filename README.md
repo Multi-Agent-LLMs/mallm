@@ -136,7 +136,7 @@ voting_protocols_with_alterations: bool = False
 ### Discussion Parameters:
 Response Generators: `freetext`, `json`, `simple`, `splitfreetext`
 
-Decision Protocols: `approval`, `cumulative`, `hybrid_consensus`, `majority_consensus`, `ranked`, `supermajority_consensus`, `unanimity_consensus`, `voting`
+Decision Protocols: `approval`, `cumulative`, `hybrid_consensus`, `majority_consensus`, `ranked`, `summary`, `supermajority_consensus`, `unanimity_consensus`, `voting`
 
 Persona Generators: `expert`, `ipip`, `mock`, `paraphrasetypes`
 
