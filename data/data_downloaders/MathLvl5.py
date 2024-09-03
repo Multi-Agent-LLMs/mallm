@@ -13,7 +13,7 @@ class MathLvl5Downloader(DatasetDownloader):
         self, sample_size: Optional[int] = None, hf_token: Optional[str] = None
     ):
         super().__init__(
-            name="math-lvl-5",
+            name="math_lvl5",
             dataset_name="AI-MO/aimo-validation-math-level-5",
             sample_size=sample_size,
             version="default",
