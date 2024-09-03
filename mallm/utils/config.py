@@ -1,7 +1,7 @@
 import logging
 import os
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 
 import requests
@@ -21,7 +21,6 @@ class Config:
     endpoint_url: str = "https://api.openai.com/v1"
     model_name: str = "gpt-3.5-turbo"
     api_key: str = "-"
-    num_neutral_agents: int = 0
     max_turns: int = 10
     skip_decision_making: bool = False
     discussion_paradigm: str = "memory"
@@ -33,7 +32,9 @@ class Config:
     use_baseline: bool = False
     use_chain_of_thought: bool = True
     num_agents: int = 3
+    num_neutral_agents: int = 0
     agent_generator: str = "expert"
+    agent_generators_list: list[str] = field(default_factory=list[str])
     trust_remote_code: bool = False
     num_samples: Optional[int] = None
     hf_dataset_split: Optional[str] = "test"
@@ -42,7 +43,7 @@ class Config:
     hf_dataset_input_column: Optional[str] = None
     hf_dataset_reference_column: Optional[str] = None
     hf_dataset_context_column: Optional[str] = None
-    all_agents_drafting: bool = True 
+    all_agents_drafting: bool = True
     use_ablation: bool = False
     shuffle_input_samples: bool = False
     all_agents_generate_first_draft: bool = False
@@ -88,11 +89,11 @@ class Config:
                 "When using the OpenAI API, you need to provide a key with the argument: --api_key=<your key>"
             )
             sys.exit(1)
-        if self.num_neutral_agents >= self.num_agents and not self.skip_decision_making:
-            logger.error(
-                "You need at least one non-neutral agent to allow for decision-making. Set num_neutral_agents < num_agents."
-            )
-            sys.exit(1)
+        if not self.agent_generators_list:
+            self.agent_generators_list = [self.agent_generator for i in range(self.num_agents)]
+        if self.agent_generators_list and len(self.agent_generators_list) != self.num_agents:
+            logger.warning(f"The length of the provided agent generators ({self.agent_generators_list}) does not match the number of agents (3). Setting num_agents={len(self.agent_generators_list)}.")
+            self.num_agents = len(self.agent_generators_list)
         if self.endpoint_url.endswith("/"):
             logger.warning("Removing trailing / from the endpoint url.")
             self.endpoint_url = self.endpoint_url[:-1]

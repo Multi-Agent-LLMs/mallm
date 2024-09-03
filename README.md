@@ -105,7 +105,6 @@ task_instruction_prompt_template: Optional[str] = None
 endpoint_url: str = "https://api.openai.com/v1"
 model_name: str = "gpt-3.5-turbo"
 api_key: str = "-"
-num_neutral_agents: int = 0
 max_turns: int = 10
 skip_decision_making: bool = False
 discussion_paradigm: str = "memory"
@@ -117,7 +116,9 @@ concurrent_api_requests: int = 100
 use_baseline: bool = False
 use_chain_of_thought: bool = True
 num_agents: int = 3
+num_neutral_agents: int = 0
 agent_generator: str = "expert"
+agent_generators_list: list = []
 trust_remote_code: bool = False
 num_samples: Optional[int] = None
 hf_dataset_split: Optional[str] = "test"
@@ -137,7 +138,7 @@ Response Generators: `freetext`, `json`, `simple`, `splitfreetext`
 
 Decision Protocols: `approval`, `cumulative`, `hybrid_consensus`, `majority_consensus`, `ranked`, `supermajority_consensus`, `unanimity_consensus`, `voting`
 
-Persona Generators: `expert`, `ipip`, `mock`, `paraphrasetypes`
+Persona Generators: `expert`, `ipip`, `mock`, `nopersona`
 
 Discussion Paradigms: `debate`, `memory`, `relay`, `report`
 

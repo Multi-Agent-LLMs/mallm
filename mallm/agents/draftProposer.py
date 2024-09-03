@@ -13,6 +13,10 @@ if TYPE_CHECKING:
 
 
 class DraftProposer(Agent):
+    """
+    Represents a DraftProposer agent, a type of Agent that specializes in proposing drafts for discussions.
+    It is prompted to remain neutral and will not be included in the decision-making.
+    """
     def __init__(
         self,
         llm: Chat,
@@ -22,6 +26,9 @@ class DraftProposer(Agent):
         persona: str = "Moderator",
         persona_description: str = "A super-intelligent individual with critical thinking who has a neutral position at all times. He acts as a mediator between other discussion participants.",
     ) -> None:
+        """
+        Initializes a DraftProposer agent with the necessary components for facilitating discussions.
+        """
         super().__init__(
             llm, client, coordinator, response_generator, persona, persona_description
         )

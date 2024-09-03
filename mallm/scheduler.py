@@ -46,6 +46,11 @@ logging.basicConfig(filename="log.txt", filemode="w")
 
 
 class Scheduler:
+    """
+    The Scheduler is responsible for managing the flow of all discussions.
+    It oversees the reading and processing of input data and initializes the coordinator for each discussion.
+    The Scheduler is capable of managing many discussions simultaneously through parallelized API requests.
+    """
     def __init__(self, config: Config) -> None:
         config.check_config()
 
@@ -167,7 +172,7 @@ class Scheduler:
             coordinator = Coordinator(
                 num_neutral_agents=self.config.num_neutral_agents,
                 model=self.llm,
-                agent_generator=self.config.agent_generator,
+                agent_generators=self.config.agent_generators_list,
                 client=client,
                 console=console,
             )

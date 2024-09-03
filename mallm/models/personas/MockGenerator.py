@@ -4,14 +4,14 @@ from mallm.utils.types import InputExample
 
 
 class MockGenerator(PersonaGenerator):
+    """
+    The MockGenerator class is a placeholder PersonaGenerator that generates a simple persona based on the number of already generated personas..
+    """
     def __init__(self, llm: Chat):
         pass
 
     @staticmethod
-    def generate_personas(
-        task_description: str, num_agents: int, sample: InputExample
-    ) -> list[dict[str, str]]:
-        return [
-            {"role": f"Panelist {i}", "description": "generic"}
-            for i in range(1, num_agents + 1)
-        ]
+    def generate_persona(
+        task_description: str, already_generated_personas: list[dict[str, str]], sample: InputExample
+    ) -> dict[str, str]:
+        return {"role": f"Participant {len(already_generated_personas) + 1}", "description": "generic"}
