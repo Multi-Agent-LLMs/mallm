@@ -15,7 +15,7 @@ class MMLUProDownloader(DatasetDownloader):
         self, sample_size: Optional[int] = None, hf_token: Optional[str] = None
     ):
         super().__init__(
-            name="mmlu-pro",
+            name="mmlu_pro",
             dataset_name="TIGER-Lab/MMLU-Pro",
             version="default",
             sample_size=sample_size,
