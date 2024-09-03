@@ -66,5 +66,5 @@ PROMPT_TEMPLATES: dict[str, str] = {
     "squad_v2": "Answer the following question. If the question is not answerable with the provided information, write '[UNKNOWN]'.",
     "strategyqa": "Answer the following question with A) Yes or B) No. Include the letter corresponding to your answer in the solution.",
     "xsum": "Summarize the provided text into one sentence.",
-    "mmlu-pro": "Answer the following question. Include the letter corresponding to your answer in the solution.",
+    "mmlu_pro": "Answer the following question. Include the letter corresponding to your answer in the solution.",
 }
