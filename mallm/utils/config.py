@@ -89,9 +89,11 @@ class Config:
                 "When using the OpenAI API, you need to provide a key with the argument: --api_key=<your key>"
             )
             sys.exit(1)
+        if not self.agent_generators_list:
+            self.agent_generators_list = [self.agent_generator for i in range(self.num_agents)]
         if self.agent_generators_list and len(self.agent_generators_list) != self.num_agents:
-            logger.error("The length of the provided agent generators list does not match the number of agents.")
-            sys.exit(1)
+            logger.warning(f"The length of the provided agent generators ({self.agent_generators_list}) does not match the number of agents (3). Setting num_agents={len(self.agent_generators_list)}.")
+            self.num_agents = len(self.agent_generators_list)
         if self.endpoint_url.endswith("/"):
             logger.warning("Removing trailing / from the endpoint url.")
             self.endpoint_url = self.endpoint_url[:-1]
