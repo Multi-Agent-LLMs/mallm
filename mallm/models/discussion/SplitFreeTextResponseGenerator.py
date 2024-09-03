@@ -8,6 +8,11 @@ logger = logging.getLogger("mallm")
 
 
 class SplitFreeTextResponseGenerator(FreeTextResponseGenerator):
+    """
+    The SplitFreeTextResponseGenerator class is designed to generate free-form text responses based on the input prompts and tasks.
+    It makes two queries instead of one: 1) generate the agreement 2) generate the corresponding message depending on the agreement
+    With this split-up method, the agreement extraction can work reliably.
+    """
 
     _name = "splitfreetext"
 

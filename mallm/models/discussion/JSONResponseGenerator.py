@@ -12,6 +12,11 @@ logger = logging.getLogger("mallm")
 
 
 class JSONResponseGenerator(ResponseGenerator):
+    """
+    The JSONResponseGenerator is responsible for generating responses in JSON format for discussions.
+    The responses are formatted according to a specific JSON schema, ensuring consistency and structure in the output.
+    With this split-up method, the agreement extraction can work reliably.
+    """
 
     _name = "json"
 
