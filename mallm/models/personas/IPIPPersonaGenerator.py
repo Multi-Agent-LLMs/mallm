@@ -9,6 +9,9 @@ logger = logging.getLogger("mallm")
 
 
 class IPIPPersonaGenerator(PersonaGenerator):
+    """
+    The IPIPPersonaGenerator class is a specialized PersonaGenerator designed to generate personas based on the Big Five personality traits. It is capable of identifying the necessary participants, their roles, and characteristics to foster a rich and diverse discussion.
+    """
     def __init__(self, llm: Chat):
         self.llm = llm
         self.base_prompt = {
@@ -42,9 +45,9 @@ New Participant:
         """,
         }
 
-    def generate_personas(
-        self, task_description: str, num_agents: int, sample: InputExample
-    ) -> list[dict[str, str]]:
+    def generate_persona(
+        self, task_description: str, already_generated_personas: list[dict[str, str]], sample: InputExample
+    ) -> dict[str, str]:
         current_prompt = [
             self.base_prompt,
             {
@@ -52,10 +55,15 @@ New Participant:
                 "content": f"\nNow generate a participant to discuss the following task:\nTask: {task_description}\n",
             },
         ]
+        if already_generated_personas:
+            current_prompt.append({
+                "role": "system",
+                "content": "Already Generated Participants:\n" + '\n'.join([str(generated_persona) for generated_persona in already_generated_personas]),
+            }
+            )
 
-        logger.debug("Creating " + str(num_agents) + " agents...")
-        agents: list[dict[str, str]] = []
-        while len(agents) < num_agents:
+        retry = 0
+        while retry < 5:
             # Send the prompt to the InferenceClient
             response = self.llm.invoke(
                 [
@@ -67,46 +75,39 @@ New Participant:
                 ]
             )
 
-            logger.debug("Persona Response: " + response)
             try:
                 new_agent = json.loads(response)
 
                 # Check if all the required fields are present AND contain the valid options
                 if "role" not in new_agent:
-                    logger.debug("Role not in new_agent")
                     continue
 
                 if "extraversion" not in new_agent or new_agent["extraversion"] not in {
                     "high",
                     "low",
                 }:
-                    logger.debug("Extraversion not in new_agent")
                     continue
 
                 if "agreeableness" not in new_agent or new_agent[
                     "agreeableness"
                 ] not in {"high", "low"}:
-                    logger.debug("Agreeableness not in new_agent")
                     continue
 
                 if "conscientiousness" not in new_agent or new_agent[
                     "conscientiousness"
                 ] not in {"high", "low"}:
-                    logger.debug("Conscientiousness not in new_agent")
                     continue
 
                 if "neuroticism" not in new_agent or new_agent["neuroticism"] not in {
                     "high",
                     "low",
                 }:
-                    logger.debug("Neuroticism not in new_agent")
                     continue
 
                 if "openness" not in new_agent or new_agent["openness"] not in {
                     "high",
                     "low",
                 }:
-                    logger.debug("Openness not in new_agent")
                     continue
 
                 if "experience" not in new_agent or new_agent["experience"] not in {
@@ -114,7 +115,6 @@ New Participant:
                     "Neutral",
                     "Non-Expert",
                 }:
-                    logger.debug("Experience not in new_agent")
                     continue
 
                 if "gender" not in new_agent or new_agent["gender"] not in {
@@ -122,7 +122,6 @@ New Participant:
                     "female",
                     "non-binary",
                 }:
-                    logger.debug("Gender not in new_agent")
                     continue
 
                 # Compose description for the agent using the attributes
@@ -299,8 +298,8 @@ New Participant:
 
                 desc += f" You are a {new_agent['experience']} in the field and identify as {new_agent['gender']}."
 
-                my_agent = {"role": new_agent["role"], "description": desc}
-                agents.append(my_agent)
+                agent : dict[str, str] = {"role": new_agent["role"], "description": desc}
+                break
             except json.decoder.JSONDecodeError as e:
                 logger.debug(
                     "Could not decode json (will attempt retry): "
@@ -308,14 +307,7 @@ New Participant:
                     + "\nResponse string: "
                     + str(response)
                 )
+                retry += 1
                 continue
 
-            # Update the prompt with the newly generated persona for the next iteration
-            current_prompt.append(
-                {
-                    "role": "system",
-                    "content": f"Already Generated Participants:\n{response}",
-                }
-            )
-
-        return agents
+        return agent

@@ -5,6 +5,10 @@ from mallm.utils.types import Agreement, Memory, TemplateFilling
 
 
 class Panelist(Agent):
+    """
+    Represents a Panelist agent, a type of Agent that specializes in participating in discussions.
+    It is prompted to either improve the current solution or provide feedback.
+    """
     def participate(
         self,
         memories: list[Memory],
@@ -16,7 +20,7 @@ class Panelist(Agent):
         agreements: list[Agreement],
     ) -> list[Agreement]:
         """
-        Either calls feedback() or improve().
+        Either calls feedback() or improve(), depending on whether this panelist is allowed to draft solutions or not.
         """
         if self.drafting_agent:
             _res, memory, agreements = self.improve(

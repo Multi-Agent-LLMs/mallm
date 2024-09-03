@@ -30,14 +30,23 @@ logger = logging.getLogger("mallm")
 
 
 class Coordinator:
+    """
+    The Coordinator is responsible for managing the discussion process between agents.
+    It initializes agents based on the provided configuration.
+    The coordinator facilitates the discussion by allowing agents to draft, improve, and provide feedback on solutions.
+    It also keeps track of the discussion history and agreements reached during the process.
+    """
+
     def __init__(
         self,
         model: Chat,
         client: httpx.Client,
-        agent_generator: str = "expert",
+        agent_generators: Optional[list[str]] = None,
         num_neutral_agents: int = 0,
         console: Optional[Console] = None,
     ):
+        if agent_generators is None:
+            agent_generators = ["expert", "expert", "expert"]
         self.personas = None
         self.id = str(uuid.uuid4())
         self.short_id = self.id[:4]
@@ -49,7 +58,7 @@ class Coordinator:
         self.llm = model
         self.response_generator: ResponseGenerator = SimpleResponseGenerator(self.llm)
         self.client = client
-        self.agent_generator = agent_generator
+        self.agent_generators = agent_generators
         self.memory: list[Memory] = []
         self.console = console or Console()
 
@@ -65,32 +74,35 @@ class Coordinator:
     ) -> None:
         """
         Instantiates the agents by
-        1) identify helpful personas
+        1) identify helpful personas depending on the agent_generator
         2) create agents with the personas
         """
         logger.debug(
-            f"Coordinator {self.id} creates {num_agents} agents ({self.agent_generator})..."
+            f"Coordinator {self.id} creates {num_agents} agents ({self.agent_generators})..."
         )
         self.panelists = []
         self.agents = []
 
         num_agents -= num_neutral_agents
+        personas: list[dict[str, str]] = []
 
-        if self.agent_generator not in PERSONA_GENERATORS:
-            logger.error(
-                f"Invalid persona generator: {self.agent_generator}. Please choose one of: {', '.join(PERSONA_GENERATORS.keys())}"
+        for agent_generator in self.agent_generators:
+            if agent_generator not in PERSONA_GENERATORS:
+                logger.error(
+                    f"Invalid persona generator: {agent_generator}. Please choose one of: {', '.join(PERSONA_GENERATORS.keys())}"
+                )
+                raise Exception("Invalid persona generator.")
+
+            persona = PERSONA_GENERATORS[agent_generator](
+                llm=self.llm
+            ).generate_persona(
+                task_description=f"{task_instruction} {input_str}",
+                already_generated_personas=personas,
+                sample=sample,
             )
-            raise Exception("Invalid persona generator.")
+            personas.append(persona)
 
-        personas = PERSONA_GENERATORS[self.agent_generator](
-            llm=self.llm
-        ).generate_personas(
-            task_description=f"{task_instruction} {input_str}",
-            num_agents=num_agents,
-            sample=sample,
-        )
         logger.debug(f"Created {len(personas)} personas: \n" + str(personas))
-
         for n in range(num_neutral_agents):
             draft_proposer = DraftProposer(
                 self.llm,

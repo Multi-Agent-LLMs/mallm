@@ -19,6 +19,10 @@ logger = logging.getLogger("mallm")
 
 
 class Agent:
+    """
+    Represents an Agent in the discussion, capable of improving, drafting, and providing feedback.
+    """
+
     def __init__(
         self,
         llm: Chat,
@@ -30,6 +34,9 @@ class Agent:
         chain_of_thought: bool = False,
         drafting_agent: bool = False,
     ):
+        """
+        Initializes an Agent with the necessary components for facilitating discussions.
+        """
         self.id = str(uuid.uuid4())
         self.short_id = self.id[:4]
         self.persona = persona
@@ -53,6 +60,9 @@ class Agent:
         template_filling: TemplateFilling,
         agreements: list[Agreement],
     ) -> tuple[str, Memory, list[Agreement]]:
+        """
+        Agent improves a solution based on the current state of the discussion.
+        """
         logger.debug(f"Agent [bold blue]{self.short_id}[/] is improving the solution.")
         response = self.response_generator.generate_improve(
             template_filling, self.chain_of_thought
@@ -95,6 +105,9 @@ class Agent:
         agreements: list[Agreement],
         is_neutral: bool = False,
     ) -> tuple[str, Memory, list[Agreement]]:
+        """
+        Agent drafts a solution based on the current state of the discussion.
+        """
         logger.debug(f"Agent [bold blue]{self.short_id}[/] is drafting a solution.")
         response = self.response_generator.generate_draft(
             template_filling, self.chain_of_thought
@@ -133,6 +146,9 @@ class Agent:
         template_filling: TemplateFilling,
         agreements: list[Agreement],
     ) -> tuple[str, Memory, list[Agreement]]:
+        """
+        Agent provides feedback to a solution based on the current state of the discussion.
+        """
         logger.debug(
             f"Agent [bold blue]{self.short_id}[/] provides feedback to a solution."
         )
@@ -171,7 +187,7 @@ class Agent:
 
     def update_memory(self, memory: Memory) -> None:
         """
-        Updates the memory with another discussion entry.
+        Updates the memory of this agent with another discussion entry.
         """
         self.memory[str(memory.message_id)] = memory
 
@@ -182,8 +198,7 @@ class Agent:
         include_this_turn: bool = True,
     ) -> tuple[Optional[list[Memory]], list[int], Optional[str]]:
         """
-        Retrieves memory from the agents memory bucket as a Memory
-        Returns: Memory
+        Retrieves memory data from the agents memory
         """
         memory_ids = []
         current_draft = None
@@ -237,9 +252,8 @@ class Agent:
         include_this_turn: bool = True,
     ) -> tuple[Optional[list[dict[str, str]]], list[int], Optional[str]]:
         """
-        Retrieves memory from the agents memory bucket as a string
-        context_length refers to the amount of turns the agent can use as rationale
-        Returns: string
+        Retrieves memory from the agents memory as a string
+        context_length refers to the amount of turns the agent can memorize the previous discussion
         """
         memories, memory_ids, current_draft = self.get_memories(
             context_length=context_length,
