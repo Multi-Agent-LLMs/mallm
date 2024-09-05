@@ -12,7 +12,7 @@ from datetime import timedelta
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from threading import Lock
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import fire
 import httpx
@@ -21,7 +21,6 @@ import langchain_core
 import openai
 from contextplus import context
 from datasets import load_dataset
-from numpy import ndarray
 from openai import OpenAI
 from rich import print
 from rich.logging import RichHandler
@@ -303,20 +302,18 @@ class Scheduler:
 
         def worker_paraphrase_function(
             input_data: list[str],
-        ) -> Union[list[Tensor], ndarray, Tensor]:
+        ) -> list[Tensor]:
             # Acquire the lock before using the model
+            embedding: list[Tensor]
             with paraphrase_lock:
-                print("Paraphrase")
                 embedding = paraphrase_model.encode(input_data)
-                print("finished paraphrase")
             return embedding
 
         def worker_context_function(input_data: str) -> str:
             # Acquire the lock before using the model
+            text: str
             with context_lock:
-                print("Context")
                 text = context(input_data)
-                print("finished context")
             return text
 
         worker_functions = WorkerFunctions(

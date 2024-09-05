@@ -1,7 +1,6 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional
 
-from numpy import ndarray
 from torch import Tensor
 
 
@@ -97,7 +96,5 @@ class InputExample:
 
 @dataclass
 class WorkerFunctions:
-    worker_paraphrase_function: Callable[
-        [list[str]], Union[list[Tensor], ndarray, Tensor]
-    ]
+    worker_paraphrase_function: Callable[[list[str]], list[Tensor]]
     worker_context_function: Callable[[str], str]
