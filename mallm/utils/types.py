@@ -1,5 +1,7 @@
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any, Callable, Optional
+
+from torch import Tensor
 
 
 @dataclass
@@ -90,3 +92,9 @@ class InputExample:
         # Confirm type of references
         for r in self.references:
             assert isinstance(r, str), "References is not a list of only strings"
+
+
+@dataclass
+class WorkerFunctions:
+    worker_paraphrase_function: Callable[[list[str]], list[Tensor]]
+    worker_context_function: Callable[[str], str]

@@ -4,7 +4,7 @@ from typing import Any, Optional
 from mallm.agents.panelist import Panelist
 from mallm.decision_protocol.protocol import DecisionAlteration, DecisionProtocol
 from mallm.utils.config import Config
-from mallm.utils.types import Agreement, VotingResult, VotingResults
+from mallm.utils.types import Agreement, VotingResult, VotingResults, WorkerFunctions
 
 logger = logging.getLogger("mallm")
 
@@ -33,11 +33,12 @@ class ThresholdConsensus(DecisionProtocol):
         self,
         panelists: list[Panelist],
         num_neutral_agents: int,
+        worker_functions: WorkerFunctions,
         threshold_percent: float = 0.5,
         threshold_turn: Optional[int] = None,
         threshold_agents: Optional[int] = None,
     ) -> None:
-        super().__init__(panelists, num_neutral_agents)
+        super().__init__(panelists, num_neutral_agents, worker_functions)
         self.threshold_turn = threshold_turn
         self.threshold_agents = threshold_agents
         self.threshold_percent = threshold_percent
@@ -108,8 +109,11 @@ class MajorityConsensus(ThresholdConsensus):
         self,
         panelists: list[Panelist],
         num_neutral_agents: int,
+        worker_functions: WorkerFunctions,
     ):
-        super().__init__(panelists, num_neutral_agents, 0.5, None, None)
+        super().__init__(
+            panelists, num_neutral_agents, worker_functions, 0.5, None, None
+        )
 
 
 class UnanimityConsensus(ThresholdConsensus):
@@ -117,8 +121,11 @@ class UnanimityConsensus(ThresholdConsensus):
         self,
         panelists: list[Panelist],
         num_neutral_agents: int,
+        worker_functions: WorkerFunctions,
     ):
-        super().__init__(panelists, num_neutral_agents, 1.0, None, None)
+        super().__init__(
+            panelists, num_neutral_agents, worker_functions, 1.0, None, None
+        )
 
 
 class SupermajorityConsensus(ThresholdConsensus):
@@ -126,8 +133,11 @@ class SupermajorityConsensus(ThresholdConsensus):
         self,
         panelists: list[Panelist],
         num_neutral_agents: int,
+        worker_functions: WorkerFunctions,
     ):
-        super().__init__(panelists, num_neutral_agents, 0.66, None, None)
+        super().__init__(
+            panelists, num_neutral_agents, worker_functions, 0.66, None, None
+        )
 
 
 class HybridMajorityConsensus(ThresholdConsensus):
@@ -140,5 +150,6 @@ class HybridMajorityConsensus(ThresholdConsensus):
         self,
         panelists: list[Panelist],
         num_neutral_agents: int,
+        worker_functions: WorkerFunctions,
     ):
-        super().__init__(panelists, num_neutral_agents, 0.75, 5, 3)
+        super().__init__(panelists, num_neutral_agents, worker_functions, 0.75, 5, 3)

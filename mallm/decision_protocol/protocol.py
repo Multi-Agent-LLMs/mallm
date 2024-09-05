@@ -5,7 +5,6 @@ from enum import Enum
 from typing import Any, Optional, Protocol
 
 import numpy as np
-from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 
 from mallm.agents.panelist import Panelist
@@ -14,7 +13,7 @@ from mallm.utils.prompts import (
     generate_answer_confidence_prompt,
     generate_final_answer_prompt,
 )
-from mallm.utils.types import Agreement, VotingResult, VotingResults
+from mallm.utils.types import Agreement, VotingResult, VotingResults, WorkerFunctions
 
 logger = logging.getLogger("mallm")
 
@@ -51,11 +50,16 @@ class DecisionProtocol(ABC):
     Any concrete decision protocol must implement the make_decision method.
     """
 
-    def __init__(self, panelists: list[Panelist], num_neutral_agents: int) -> None:
+    def __init__(
+        self,
+        panelists: list[Panelist],
+        num_neutral_agents: int,
+        worker_functions: WorkerFunctions,
+    ) -> None:
         self.panelists: list[Panelist] = panelists
         self.num_neutral_agents: int = num_neutral_agents
         self.total_agents: int = len(panelists) + num_neutral_agents
-        self._paraphrase_model = None
+        self.worker_functions = worker_functions
 
     def generate_final_answers(
         self, agreements: list[Agreement], question: str, task: str
@@ -117,10 +121,7 @@ class DecisionProtocol(ABC):
         ):
             voting_process_string += f"\nVoting with alteration: {alteration.value}\n"
             if alteration == DecisionAlteration.FACTS:
-                # import contextplus inline to avoid high memory usage when not needed
-                from contextplus import context  # noqa: PLC0415
-
-                facts = context(question)
+                facts = self.worker_functions.worker_context_function(question)
                 voting_process_string += f"\nFacts: {facts}\n\n"
             if alteration == DecisionAlteration.CONFIDENCE:
                 confidences_static = [100 for _ in self.panelists]
@@ -268,12 +269,10 @@ class DecisionProtocol(ABC):
         return decision, final_answer, results, voting_process_string
 
     def get_consistency_confidences(self) -> list[int]:
-        if self._paraphrase_model is None:
-            self._paraphrase_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
         confidences_consistency = []
         for panelist in self.panelists:
             answers = panelist.get_own_messages()
-            embeddings = self._paraphrase_model.encode(answers)
+            embeddings = self.worker_functions.worker_paraphrase_function(answers)
 
             cosine_sim_matrix = cosine_similarity(embeddings)
 

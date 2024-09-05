@@ -8,7 +8,7 @@ from mallm.utils.config import Config
 from mallm.utils.prompts import (
     generate_approval_voting_prompt,
 )
-from mallm.utils.types import Agreement, VotingResult, VotingResults
+from mallm.utils.types import Agreement, VotingResult, VotingResults, WorkerFunctions
 
 logger = logging.getLogger("mallm")
 
@@ -19,9 +19,13 @@ class ApprovalVoting(DecisionProtocol):
     """
 
     def __init__(
-        self, panelists: list[Panelist], num_neutral_agents: int, vote_turn: int = 3
+        self,
+        panelists: list[Panelist],
+        num_neutral_agents: int,
+        worker_functions: WorkerFunctions,
+        vote_turn: int = 3,
     ) -> None:
-        super().__init__(panelists, num_neutral_agents)
+        super().__init__(panelists, num_neutral_agents, worker_functions)
         self.vote_turn = vote_turn
 
     def make_decision(

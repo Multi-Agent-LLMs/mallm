@@ -11,6 +11,7 @@ import uuid
 from datetime import timedelta
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
+from threading import Lock
 from typing import Any, Optional
 
 import fire
@@ -18,17 +19,20 @@ import httpx
 import langchain
 import langchain_core
 import openai
+from contextplus import context
 from datasets import load_dataset
 from openai import OpenAI
 from rich import print
 from rich.logging import RichHandler
 from rich.progress import Console, Progress, TaskID  # type: ignore
+from sentence_transformers import SentenceTransformer
+from torch import Tensor
 
 from mallm.coordinator import Coordinator
 from mallm.models.Chat import Chat
 from mallm.utils.config import Config
 from mallm.utils.dicts import RESPONSE_GENERATORS
-from mallm.utils.types import InputExample, Response
+from mallm.utils.types import InputExample, Response, WorkerFunctions
 
 FORMAT = "%(message)s"
 
@@ -171,6 +175,7 @@ class Scheduler:
         console: Optional[Console],
         progress: Progress,
         task: TaskID,
+        worker_functions: WorkerFunctions,
     ) -> Optional[str]:
         """
         Runs a single discussion between agents on a sample.
@@ -200,7 +205,9 @@ class Scheduler:
                 discussion_time,
                 decision_success,
                 additional_voting_results,
-            ) = coordinator.discuss(config=self.config, sample=sample)
+            ) = coordinator.discuss(
+                config=self.config, sample=sample, worker_functions=worker_functions
+            )
         except Exception:
             # More extensive error logging to ease debugging during async execution
             logger.error(f"Failed discussion of sample {sample.example_id}.")
@@ -289,6 +296,31 @@ class Scheduler:
             self.data = self.data[self.config.num_samples :]
         else:
             processing_data = self.data
+        context_lock = Lock()
+        paraphrase_lock = Lock()
+        paraphrase_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
+
+        def worker_paraphrase_function(
+            input_data: list[str],
+        ) -> list[Tensor]:
+            # Acquire the lock before using the model
+            embedding: list[Tensor]
+            with paraphrase_lock:
+                embedding = paraphrase_model.encode(input_data)
+            return embedding
+
+        def worker_context_function(input_data: str) -> str:
+            # Acquire the lock before using the model
+            text: str
+            with context_lock:
+                text = context(input_data)
+            return text
+
+        worker_functions = WorkerFunctions(
+            worker_paraphrase_function=worker_paraphrase_function,
+            worker_context_function=worker_context_function,
+        )
+
         with Progress() as progress:
             task = progress.add_task(
                 "[cyan]Finished discussions...", total=len(processing_data)
@@ -303,7 +335,14 @@ class Scheduler:
                         results.append(
                             pool.apply_async(
                                 self.run_discussion,
-                                (client, sample, console, progress, task),
+                                (
+                                    client,
+                                    sample,
+                                    console,
+                                    progress,
+                                    task,
+                                    worker_functions,
+                                ),
                             )
                         )
                     except Exception as e:
