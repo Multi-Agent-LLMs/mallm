@@ -24,7 +24,13 @@ from mallm.utils.dicts import (
     PERSONA_GENERATORS,
     RESPONSE_GENERATORS,
 )
-from mallm.utils.types import Agreement, InputExample, Memory, VotingResults
+from mallm.utils.types import (
+    Agreement,
+    InputExample,
+    Memory,
+    VotingResults,
+    WorkerFunctions,
+)
 
 logger = logging.getLogger("mallm")
 
@@ -159,6 +165,7 @@ class Coordinator:
         self,
         config: Config,
         sample: InputExample,
+        worker_functions: WorkerFunctions,
     ) -> tuple[
         Optional[str],
         list[Memory],
@@ -216,7 +223,7 @@ class Coordinator:
                 f"No valid decision protocol for {config.decision_protocol}"
             )
         self.decision_protocol = DECISION_PROTOCOLS[config.decision_protocol](
-            self.panelists, config.num_neutral_agents
+            self.panelists, config.num_neutral_agents, worker_functions
         )
 
         start_time = time.perf_counter()

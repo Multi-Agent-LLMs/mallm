@@ -17,7 +17,7 @@ config = Config("", "")
 
 
 def test_unanimous_decision():
-    mc = UnanimityConsensus(panelists[:3], num_neutral_agents=0)
+    mc = UnanimityConsensus(panelists[:3], num_neutral_agents=0, worker_functions=None)
     agreements = [
         Agreement(
             agreement=False,
@@ -48,7 +48,9 @@ def test_unanimous_decision():
 
 
 def test_unanimous_decision_in_first_five_turns():
-    mc = HybridMajorityConsensus(panelists[:3], num_neutral_agents=0)
+    mc = HybridMajorityConsensus(
+        panelists[:3], num_neutral_agents=0, worker_functions=None
+    )
     agreements = [
         Agreement(
             agreement=False,
@@ -79,7 +81,9 @@ def test_unanimous_decision_in_first_five_turns():
 
 
 def test_unanimous_decision_in_first_five_turns_with_draft_proposer():
-    mc = HybridMajorityConsensus(panelists[:3], num_neutral_agents=0)
+    mc = HybridMajorityConsensus(
+        panelists[:3], num_neutral_agents=0, worker_functions=None
+    )
     agreements = [
         Agreement(
             agreement=False,
@@ -118,7 +122,9 @@ def test_unanimous_decision_in_first_five_turns_with_draft_proposer():
 
 
 def test_no_unanimous_decision_in_first_five_turns():
-    mc = HybridMajorityConsensus(panelists[:3], num_neutral_agents=0)
+    mc = HybridMajorityConsensus(
+        panelists[:3], num_neutral_agents=0, worker_functions=None
+    )
     agreements = [
         Agreement(
             agreement=False,
@@ -152,7 +158,9 @@ def test_no_unanimous_decision_in_first_five_turns():
 
 
 def test_no_unanimous_decision_in_first_five_turns_with_draft_proposer():
-    mc = HybridMajorityConsensus(panelists[:2], num_neutral_agents=1)
+    mc = HybridMajorityConsensus(
+        panelists[:2], num_neutral_agents=1, worker_functions=None
+    )
     agreements = [
         Agreement(
             agreement=None,
@@ -186,7 +194,7 @@ def test_no_unanimous_decision_in_first_five_turns_with_draft_proposer():
 
 
 def test_majority_decision_after_five_turns():
-    mc = HybridMajorityConsensus(panelists, num_neutral_agents=0)
+    mc = HybridMajorityConsensus(panelists, num_neutral_agents=0, worker_functions=None)
     agreements = [
         Agreement(
             agreement=False,
@@ -218,7 +226,7 @@ def test_majority_decision_after_five_turns():
 
 
 def test_no_majority_decision_after_five_turns():
-    mc = HybridMajorityConsensus(panelists, num_neutral_agents=0)
+    mc = HybridMajorityConsensus(panelists, num_neutral_agents=0, worker_functions=None)
     agreements = [
         Agreement(
             agreement=False,
