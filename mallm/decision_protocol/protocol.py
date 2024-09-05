@@ -269,7 +269,7 @@ class DecisionProtocol(ABC):
 
     def get_consistency_confidences(self) -> list[int]:
         if self._paraphrase_model is None:
-            SentenceTransformer("paraphrase-MiniLM-L6-v2")
+            self._paraphrase_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
         confidences_consistency = []
         for panelist in self.panelists:
             answers = panelist.get_own_messages()
