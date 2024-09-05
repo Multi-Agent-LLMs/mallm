@@ -55,7 +55,7 @@ class DecisionProtocol(ABC):
         self.panelists: list[Panelist] = panelists
         self.num_neutral_agents: int = num_neutral_agents
         self.total_agents: int = len(panelists) + num_neutral_agents
-        self._paraphrase_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
+        self._paraphrase_model = None
 
     def generate_final_answers(
         self, agreements: list[Agreement], question: str, task: str
@@ -253,6 +253,8 @@ class DecisionProtocol(ABC):
         return decision, final_answer, results, voting_process_string
 
     def get_consistency_confidences(self) -> list[int]:
+        if self._paraphrase_model is None:
+            SentenceTransformer("paraphrase-MiniLM-L6-v2")
         confidences_consistency = []
         for panelist in self.panelists:
             answers = panelist.get_own_messages()
