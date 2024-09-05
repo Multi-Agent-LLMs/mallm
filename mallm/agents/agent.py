@@ -234,7 +234,7 @@ class Agent:
         """
         Retrieves memory from the agents memory bucket as a string
         context_length refers to the amount of turns the agent can use as rationale
-        Returns: string
+        Returns: list of strings
         """
         memories, _, _ = self.get_memories(context_length=context_length)
         if memories:
