@@ -202,7 +202,7 @@ def generate_answer_confidence_prompt(
     prompts.append(
         {
             "role": "user",
-            "content": f"The task is: {task}. The question is: {question}. This is the final answer you provided: '{final_answer}'. Based on this information, please generate a confidence score between 0 and 100 for the final answer. Be critical abd only answer with the number.",
+            "content": f"The task is: {task}. The question is: {question}. This is the final answer you provided: '{final_answer}'. Based on this information, please generate a confidence score between 0 and 100 for the final answer. Be critical and only answer with the number.",
         }
     )
     return prompts
