@@ -5,7 +5,6 @@ from enum import Enum
 from typing import Any, Optional, Protocol
 
 import numpy as np
-from contextplus import context
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -118,6 +117,9 @@ class DecisionProtocol(ABC):
         ):
             voting_process_string += f"\nVoting with alteration: {alteration.value}\n"
             if alteration == DecisionAlteration.FACTS:
+                # import contextplus inline to avoid high memory usage when not needed
+                from contextplus import context  # noqa: PLC0415
+
                 facts = context(question)
                 voting_process_string += f"\nFacts: {facts}\n\n"
             if alteration == DecisionAlteration.CONFIDENCE:
