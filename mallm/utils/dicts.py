@@ -67,4 +67,7 @@ PROMPT_TEMPLATES: dict[str, str] = {
     "strategyqa": "Answer the following question with A) Yes or B) No. Include the letter corresponding to your answer in the solution.",
     "xsum": "Summarize the provided text into one sentence.",
     "mmlu_pro": "Answer the following question. Include the letter corresponding to your answer in the solution.",
+    "musr": "Solve the mystery.",
+    "gpqa": "Answer the following question by choosing option A, B, C, or D. Include the letter corresponding to your answer in the solution.",
+    "math_lvl5": "Solve the following math problem.",
 }
