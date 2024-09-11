@@ -139,12 +139,6 @@ Current Solution: {data.current_draft}
         ]
         if data.agent_memory is not None and data.agent_memory != []:
             prompt += data.agent_memory
-        prompt += [
-            {
-                "role": "user",
-                "content": "Please make your answer concise and to the point.",
-            }
-        ]
         return prompt
 
     @staticmethod
@@ -171,12 +165,6 @@ Current Solution: {data.current_draft}
         ]
         if data.agent_memory is not None and data.agent_memory != []:
             prompt += data.agent_memory
-        prompt += [
-            {
-                "role": "user",
-                "content": "Please make your answer concise and to the point.",
-            }
-        ]
         return prompt
 
     @staticmethod
