@@ -121,6 +121,7 @@ class Chat(LLM):
                     stream=True,
                     stop=self.stop_tokens,
                     max_tokens=self.max_tokens,
+                    temperature=1.2,
                 )
                 # iterate and print stream
                 collected_messages = []
