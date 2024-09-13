@@ -135,16 +135,12 @@ Input: {input_str}
     """
 
         if data.agent_memory:
-            conversation_history = "\n**Conversation History:**\n"
-            for entry in data.agent_memory:
-                role = entry["role"].capitalize()
-                content = entry["content"]
-                conversation_history += f"{role}: {content}\n"
-            prompt_str += conversation_history
+            prompt_str += "\n**Conversation History:**\n"
 
         return [
             {
                 "role": "system",
                 "content": prompt_str,
-            }
+            },
+            *data.agent_memory,
         ]
