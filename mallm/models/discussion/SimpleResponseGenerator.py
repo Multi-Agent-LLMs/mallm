@@ -36,7 +36,9 @@ Input: {input_str}
                 "content": prompt_content,
             },
         ]
-        return self.generate_response(prompt, task_instruction, input_str, chain_of_thought, None, True, True)
+        return self.generate_response(
+            prompt, task_instruction, input_str, chain_of_thought, None, True, True
+        )
 
     def generate_feedback(
         self, data: TemplateFilling, chain_of_thought: bool
@@ -55,7 +57,13 @@ Input: {input_str}
             instr_prompt,
         ]
         return self.generate_response(
-            current_prompt, data.task_instruction, data.input_str, chain_of_thought, None, False, False
+            current_prompt,
+            data.task_instruction,
+            data.input_str,
+            chain_of_thought,
+            None,
+            False,
+            False,
         )
 
     def generate_improve(
@@ -75,7 +83,13 @@ Input: {input_str}
             instr_prompt,
         ]
         return self.generate_response(
-            current_prompt, data.task_instruction, data.input_str, chain_of_thought, None, False, False
+            current_prompt,
+            data.task_instruction,
+            data.input_str,
+            chain_of_thought,
+            None,
+            False,
+            False,
         )
 
     def generate_draft(self, data: TemplateFilling, chain_of_thought: bool) -> Response:
@@ -93,17 +107,20 @@ Input: {input_str}
             instr_prompt,
         ]
         return self.generate_response(
-            current_prompt, data.task_instruction, data.input_str, chain_of_thought, None, False, True
+            current_prompt,
+            data.task_instruction,
+            data.input_str,
+            chain_of_thought,
+            None,
+            False,
+            True,
         )
 
     @staticmethod
     def get_filled_template(data: TemplateFilling) -> list[dict[str, str]]:
-        prompt_str = f"""You take part in a discussion to solve a task.
-Task: {data.task_instruction}
-Input: {data.input_str}
-Your role: {data.persona} ({data.persona_description})
-Current Solution: {data.current_draft}
-"""  # input has context appended
+        prompt_str = f"""Task: {data.task_instruction}
+Question: {data.input_str}
+"""
 
         appendix = ""
         if data.current_draft is None:
@@ -115,8 +132,12 @@ Current Solution: {data.current_draft}
         prompt = [
             {
                 "role": "system",
+                "content": f"You are a participant in a discussion to solve a task. Your role is to provide a solution. Do not ask back questions. You are a {data.persona} more specifically {data.persona_description}.",
+            },
+            {
+                "role": "user",
                 "content": prompt_str + appendix,
-            }
+            },
         ]
         if data.agent_memory is not None and data.agent_memory != []:
             prompt += data.agent_memory
