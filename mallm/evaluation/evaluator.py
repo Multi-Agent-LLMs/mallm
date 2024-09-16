@@ -268,7 +268,7 @@ def run_evaluator(
         evaluator.process()
 
 
-def main():
+def main() -> None:
     fire.Fire(run_evaluator)
 
 
