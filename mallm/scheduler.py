@@ -67,6 +67,7 @@ class Scheduler:
             )
 
         # Read input data (format: json lines)
+        self.data = []
         try:
             logger.info(
                 f"""Trying to read {config.input_json_file_path} from file..."""

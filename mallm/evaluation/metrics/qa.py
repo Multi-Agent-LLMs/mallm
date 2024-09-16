@@ -15,8 +15,8 @@ class MultiChoiceBoolean(Metric):
     """
 
     _name = "multichoice"
-    ANSWER_PATTERN_MULTICHOICE = r"(?i)Final Solution\s*:\s*([A-E])"
-    ANSWER_PATTERN_MULTICHOICE_BACKUP = r"([A-E])([)\]:]|$)"
+    ANSWER_PATTERN_MULTICHOICE = r"(?i)Final Solution\s*:\s*([A-Z])"
+    ANSWER_PATTERN_MULTICHOICE_BACKUP = r"([A-Z])([)\]:]|$)"
 
     @staticmethod
     def evaluate(generated_text: str, reference_texts: list[str]) -> dict[str, Any]:
