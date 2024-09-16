@@ -51,17 +51,23 @@ class Scheduler:
     It oversees the reading and processing of input data and initializes the coordinator for each discussion.
     The Scheduler is capable of managing many discussions simultaneously through parallelized API requests.
     """
+
     def __init__(self, config: Config) -> None:
         config.check_config()
 
         # Cleaning other files
         if os.path.exists(config.output_json_file_path):
             os.remove(config.output_json_file_path)
-            logger.info(f"""The file {config.output_json_file_path} has been deleted.""")
+            logger.info(
+                f"""The file {config.output_json_file_path} has been deleted."""
+            )
 
         # Read input data (format: json lines)
+        self.data = None
         try:
-            logger.info(f"""Trying to read {config.input_json_file_path} from file...""")
+            logger.info(
+                f"""Trying to read {config.input_json_file_path} from file..."""
+            )
             with open(config.input_json_file_path) as f:
                 self.dataset_name = f.name
                 json_data = json.loads(f.readline())
@@ -74,7 +80,9 @@ class Scheduler:
         if not self.data:
             try:
                 # Read input data (format: huggingface dataset)
-                logger.info(f"""Trying to read {config.input_json_file_path} from Hugging Face...""")
+                logger.info(
+                    f"""Trying to read {config.input_json_file_path} from Hugging Face..."""
+                )
                 self.dataset_name = config.input_json_file_path
                 # Load from Hugging Face
                 dataset = load_dataset(
@@ -112,7 +120,9 @@ class Scheduler:
                 self.data = [x for x in self.data if x.inputs and x.references]
 
             except Exception as e:
-                logger.error(f"""Error reading {config.input_json_file_path} from Hugging Face: {e}""")
+                logger.error(
+                    f"""Error reading {config.input_json_file_path} from Hugging Face: {e}"""
+                )
                 sys.exit(1)
 
         try:
