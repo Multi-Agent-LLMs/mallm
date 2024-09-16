@@ -256,6 +256,7 @@ class Coordinator:
                 input_str=input_str,
                 config=config,
                 console=self.console,
+                solution=str(sample.references),
             )
         )
 
