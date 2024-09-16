@@ -88,7 +88,9 @@ class Evaluator:
         logger.info(f"Metrics to calculate: {[m.name for m in selected_metrics]}")
         return selected_metrics
 
-    def calculate_scores(self, answer: str, references: list[str]) -> dict[str, Any]:
+    def calculate_scores(
+        self, answer: str, references: list[str], metric_alteration: str = ""
+    ) -> dict[str, Any]:
         metrics = []
         if references:
             metrics.extend(self.metrics)
@@ -102,7 +104,7 @@ class Evaluator:
             return {}
 
         return {
-            k: v
+            f"{k}{f'-{metric_alteration}' if metric_alteration else ''}": v
             for metric in metrics
             for k, v in metric.evaluate(answer, references).items()
         }
@@ -113,6 +115,18 @@ class Evaluator:
             references = item.get("references", [])
             if answer:
                 item["scores"] = self.calculate_scores(answer, references)
+            additional_voting_results = item.get("additional_voting_results", None)
+            if additional_voting_results:
+                alterations: dict[str, Any] = additional_voting_results.get(
+                    "alterations", None
+                )
+                if alterations:
+                    for alteration in list(alterations.keys()):
+                        answer = alterations[alteration].get("final_answer", "")
+                        if answer:
+                            item["scores"].update(
+                                self.calculate_scores(answer, references, alteration)
+                            )
 
     def add_scores_extensive(self) -> None:
         for item in tqdm(self.data):
@@ -254,7 +268,7 @@ def run_evaluator(
         evaluator.process()
 
 
-def main():
+def main() -> None:
     fire.Fire(run_evaluator)
 
 

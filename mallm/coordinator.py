@@ -36,6 +36,7 @@ class Coordinator:
     The coordinator facilitates the discussion by allowing agents to draft, improve, and provide feedback on solutions.
     It also keeps track of the discussion history and agreements reached during the process.
     """
+
     def __init__(
         self,
         model: Chat,
@@ -246,6 +247,7 @@ class Coordinator:
             input_str=input_str,
             config=config,
             console=self.console,
+            solution=str(sample.references),
         )
 
         discussion_time = timedelta(

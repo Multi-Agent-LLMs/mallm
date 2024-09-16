@@ -47,6 +47,7 @@ class DiscourseDebate(DiscoursePolicy):
         coordinator: Coordinator,
         task_instruction: str,
         input_str: str,
+        solution: str,
         config: Config,
         console: Optional[Console] = None,
     ) -> tuple[Optional[str], int, list[Agreement], bool]:
@@ -206,6 +207,7 @@ class DiscourseDebate(DiscoursePolicy):
             input_str,
             task_instruction,
             False,
+            solution,
             voting_process_string,
             console=console,
         )

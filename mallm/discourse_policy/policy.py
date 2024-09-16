@@ -33,6 +33,7 @@ class DiscoursePolicy(ABC):
         coordinator: Coordinator,
         task_instruction: str,
         input_str: str,
+        solution: str,
         config: Config,
         console: Optional[Console] = None,
     ) -> tuple[Optional[str], int, list[Agreement], bool]:
@@ -109,6 +110,7 @@ class DiscoursePolicy(ABC):
             input_str,
             task_instruction,
             False,
+            solution,
             voting_process_string,
             console,
         )
@@ -120,6 +122,7 @@ class DiscoursePolicy(ABC):
         input_str: str,
         task_instruction: str,
         only_current_turn: bool = True,
+        solution: str = "",
         voting_process_string: str = "",
         console: Optional[Console] = None,
     ) -> None:
@@ -139,7 +142,7 @@ class DiscoursePolicy(ABC):
                     for m in global_memories
                 ]
             )
-            + f"\n-----------\nDecision Success: {self.decision} \n\nAccepted solution: {self.draft}"
+            + f"\n-----------\nDecision Success: {self.decision} \n\nReal Solution: {solution}\nDiscussion solution: {self.draft}"
             + (f"\n\n{voting_process_string}" if voting_process_string else "")
         )
         discussion_text.highlight_regex(r"Agent .*\):", style="bold green")
