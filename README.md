@@ -32,7 +32,7 @@ Install as a package:
 ### Test Data
 Download and create the test data: `python data/data_downloader.py --datasets=[SQuAD2,ETPC] --sample_size=100`
 
-You can use any dataset for this project as long as it follows [this basic format](https://github.com/Multi-Agent-LLMs/mallm/blob/main/data/datasets/etpc_debugging.json). These datasets are supported by our automated formatting pipeline: `BTVote`, `ETPC`, `Europarl`, `GPQA`, `GSM8K`, `MUSR`, `MMLUPro`, `MathLvl5`, `Multi-News`, `SQuAD2`, `SimpleEthicalQuestions`, `StrategyQA`, `WMT19_de_en`, `XSum`
+You can use any dataset for this project as long as it follows [this basic format](https://github.com/Multi-Agent-LLMs/mallm/blob/main/data/datasets/etpc_debugging.json). These datasets are supported by our automated formatting pipeline: `BTVote`, `ETPC`, `Europarl`, `GPQA`, `GSM8K`, `MMLUPro`, `MUSR`, `MathLvl5`, `Multi-News`, `SQuAD2`, `SimpleEthicalQuestions`, `StrategyQA`, `WMT19_de_en`, `XSum`
 
 ### Run from Terminal
 MALLM relies on an external API like OpenAI or Text Generation Inference by Huggingface.
@@ -46,6 +46,15 @@ Once the endpoint is available, you can initiate all discussions by a single scr
 Or with OpenAI:
 
 `python mallm/scheduler.py --data=data/datasets/etpc_debugging.json --out=test_out.json --instruction="Paraphrase the input text." --endpoint_url="https://api.openai.com/v1" --model="gpt-3.5-turbo" --api_key="<your-key>"`
+
+## Run command line scripts
+You can run the command line scripts from the terminal. The following command will run the scheduler with the given parameters:
+
+`mallm-run --data=data/datasets/etpc_debugging.json --out=test_out.json --instruction="Paraphrase the input text." --endpoint_url="http://127.0.0.1:8080/v1" --model="tgi"`
+
+or use the evaluation script:
+
+`mallm-evaluate --input_file_path="test_out.json" --output_file_path="test_out_evaluated.json" --metrics=[bleu,rouge]`
 
 ## Run as Module
 If installed, you can use MALLM from anywhere on your system:

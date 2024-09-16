@@ -65,7 +65,9 @@ class Evaluator:
 
     def _load_data(self) -> list[dict[str, Any]]:
         data_str = Path(self.input_file_path).read_text()
-        data: list[dict[str, Any]] = json_repair.repair_json(data_str, return_objects=True)
+        data: list[dict[str, Any]] = json_repair.repair_json(
+            data_str, return_objects=True
+        )
         return data
 
     @staticmethod
@@ -237,7 +239,7 @@ def batch_process_dir_path(
     logger.info("Plots created.")
 
 
-def main(
+def run_evaluator(
     input_json_file_path: str,
     output_dir_path: Optional[str] = None,
     metrics: Optional[list[str]] = None,
@@ -252,5 +254,9 @@ def main(
         evaluator.process()
 
 
+def main():
+    fire.Fire(run_evaluator)
+
+
 if __name__ == "__main__":
-    fire.Fire(main)
+    main()
