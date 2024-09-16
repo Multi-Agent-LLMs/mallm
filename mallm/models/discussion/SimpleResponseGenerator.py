@@ -71,7 +71,7 @@ Input: {input_str}
     ) -> Response:
         instr_prompt = {
             "role": "user",
-            "content": "Improve the current solution. If you agree with the current solution, answer with [AGREE], else answer with [DISAGREE] and explain why and provide an improved solution.",
+            "content": "Critically evaluate the current solution. Scrutinize every aspect and look for any flaws, inefficiencies, or areas for improvement. If no improvements can be made, respond with [AGREE] and justify why. If there are any shortcomings, respond with [DISAGREE], explain why, and provide a better solution.",
         }
         if not data.current_draft:
             instr_prompt = {
