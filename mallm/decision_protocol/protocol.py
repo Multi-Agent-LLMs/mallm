@@ -85,6 +85,7 @@ class DecisionProtocol(ABC):
                     prev_answer.response,
                 ),
                 confidence_callback=confidence_callback,
+                temperature=1.0,
             )
             prev_answer.solution = response
             final_answers_with_confidence.append((response, int(confidence * 100)))

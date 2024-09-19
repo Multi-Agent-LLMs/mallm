@@ -165,15 +165,18 @@ def generate_final_answer_prompt(
     return [
         {
             "role": "system",
-            "content": f"Your role: {persona} ({persona_description})",
+            "content": f"You are {persona}, {persona_description}. Use your unique perspective to provide a concise solution.",
         },
         {
             "role": "user",
-            "content": f"You are tasked with creating a final solution based on the given question and your previous response.\nTask: {task}\nQuestion: {question}\nYour previous solution: {previous_answer}",
-        },
-        {
-            "role": "user",
-            "content": "Extract the final solution to the task from the provided text. Remove statements of agreement, disagreement, and explanations. Do not modify the text. Do not output any text besides the solution.",
+            "content": (
+                f"As {persona}, you are tasked with creating a final solution based on the given question and your previous response.\n\n"
+                f"Task: {task}\n"
+                f"Question: {question}\n"
+                f"Your previous solution: {previous_answer}\n\n"
+                f"As {persona}, please provide a concise final solution to the task based on your unique insights. "
+                "Ensure your answer is original and directly addresses the question without additional explanations."
+            ),
         },
     ]
 

@@ -121,6 +121,9 @@ class Chat(LLM):
                     stop=self.stop_tokens,
                     max_tokens=self.max_tokens,
                     logprobs=True,
+                    temperature=(
+                        0.7 if "temperature" not in kwargs else kwargs["temperature"]
+                    ),
                 )
                 # iterate and print stream
                 collected_messages = []
