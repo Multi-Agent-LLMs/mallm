@@ -71,7 +71,7 @@ Input: {input_str}
     ) -> Response:
         instr_prompt = {
             "role": "user",
-            "content": "Improve the current steps of the argument by referring to the other participants in the discussion. Be critical. Repeat only the reasoning steps that you think are the most important. If you think there is enough information to create a final answer also answer with [AGREE] else answer with [DISAGREE]. Don't provide a final solution yet.",
+            "content": "Improve the current steps of the argument by referring to the other participants in the discussion. Be critical and answer short and concise. Repeat only the reasoning steps that you think are the most important. If you think there is enough information to create a final answer also answer with [AGREE] else answer with [DISAGREE]. Don't provide a final solution yet.",
         }
         if not data.current_draft:
             instr_prompt = {
@@ -118,7 +118,7 @@ Input: {input_str}
 
     @staticmethod
     def get_filled_template(data: TemplateFilling) -> list[dict[str, str]]:
-        prompt_str = f"""You take part in a discussion to solve a task.
+        prompt_str = f"""You take part in a discussion to solve a task. Don't answer with too much information at once. Be concise and clear.
 Task: {data.task_instruction}
 Question: {data.input_str}
 Your role: {data.persona} ({data.persona_description})
