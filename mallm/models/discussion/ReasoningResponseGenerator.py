@@ -71,7 +71,7 @@ Input: {input_str}
     ) -> Response:
         instr_prompt = {
             "role": "user",
-            "content": "Improve the current reasoning steps. Mention the steps that are missing or incorrect. If you think there is enough information to create a final answer also answer with [ACCEPT] else answer with [DISAGREE]. Don't provide a final solution yet.",
+            "content": "Improve the current steps of the argument by referring to the other participants in the discussion. Be critical. Repeat only the reasoning steps that you think are the most important. If you think there is enough information to create a final answer also answer with [AGREE] else answer with [DISAGREE]. Don't provide a final solution yet.",
         }
         if not data.current_draft:
             instr_prompt = {
