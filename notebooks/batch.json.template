@@ -20,11 +20,11 @@
   "runs": [
     {
       "output_json_file_path": "test_output1.json",
-      "task_instruction": "Instruction for run 1"
+      "task_instruction_prompt": "Instruction for run 1"
     },
     {
       "output_json_file_path": "test_output2.json",
-      "task_instruction": "Instruction for run 2",
+      "task_instruction_prompt": "Instruction for run 2",
       "model_name": "gpt-4",
       "max_turns": 15,
       "num_agents": 5
