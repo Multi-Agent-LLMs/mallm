@@ -98,3 +98,17 @@ class SquadScore(Metric):
                 scores[key] /= 100
 
         return scores
+
+
+class IncludesAnswer(Metric):
+    """
+    A class to evaluate the accuracy on squad like tasks that include non-answerable questions (i.e., no reference).
+    """
+
+    _name = "includes_answer"
+
+    @staticmethod
+    def evaluate(generated_text: str, reference_texts: list[str]) -> dict[str, Any]:
+        if any(ref in generated_text.lower() for ref in reference_texts):
+            return {"includes_answer": 1}
+        return {"includes_answer": 0}

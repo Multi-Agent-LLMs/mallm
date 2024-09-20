@@ -14,6 +14,7 @@ from mallm.evaluation.metrics.distinct import Distinct
 from mallm.evaluation.metrics.meteor import METEOR
 from mallm.evaluation.metrics.qa import (
     AnswerabilityBoolean,
+    IncludesAnswer,
     MultiChoiceBoolean,
     SquadScore,
 )
@@ -29,6 +30,7 @@ ALL_METRICS = [
     ROUGE(),
     SquadScore(),
     Distinct(),
+    IncludesAnswer(),
 ]
 
 logger = logging.getLogger("mallm")
