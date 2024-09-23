@@ -1,8 +1,11 @@
+import atexit
 import json
 import sys
 import traceback
 from copy import deepcopy
 from typing import Any, Optional, List, Dict
+
+import requests
 
 from mallm.scheduler import Scheduler
 from mallm.utils.config import Config
@@ -75,7 +78,7 @@ def summarize_runs(valid_configs: List[Config], repeats: int) -> None:
         print()
 
 
-def run_batch(config_path: str) -> None:
+def run_batch(config_path: str, webhook_url: Optional[str] = None) -> None:
     config_data = load_config(config_path)
     if not config_data:
         print("No valid configuration found. Exiting.")
@@ -100,21 +103,36 @@ def run_batch(config_path: str) -> None:
     # Summarize the runs
     summarize_runs(valid_configs, repeats)
 
+    def try_send_webhook_message(message: str) -> None:
+        if webhook_url:
+            try:
+                requests.post(webhook_url, json={"content": message})
+            except requests.RequestException as e:
+                print(f"Error sending webhook message: {e}")
+
+    def exit_hook():
+        try_send_webhook_message("Batch processing interrupted.")
+
+    atexit.register(exit_hook)
+
     print("Starting batch processing.")
+    try_send_webhook_message("Starting batch processing.")
 
     # Run valid configurations
     for i, config in enumerate(valid_configs, 1):
         print(f"\nProcessing run {i}/{len(valid_configs)}")
+        try_send_webhook_message(f"Processing run {i}/{len(valid_configs)}")
         for repeat in range(1, repeats + 1):
             run_configuration(deepcopy(config), name, f"Run {i}", repeat)
 
     print("\nBatch processing completed.")
+    try_send_webhook_message("Batch processing completed.")
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python batch_mallm.py <config_file.json>")
+    if len(sys.argv) != 2 and len(sys.argv) != 3:
+        print("Usage: python batch_mallm.py <config_file.json> [discord_webhook_url]")
         sys.exit(1)
 
     config_file = sys.argv[1]
-    run_batch(config_file)
+    run_batch(config_file, sys.argv[2] if len(sys.argv) == 3 else None)
