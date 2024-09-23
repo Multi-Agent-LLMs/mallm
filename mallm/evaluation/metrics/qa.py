@@ -109,6 +109,6 @@ class IncludesAnswer(Metric):
 
     @staticmethod
     def evaluate(generated_text: str, reference_texts: list[str]) -> dict[str, Any]:
-        if any(ref in generated_text.lower() for ref in reference_texts):
+        if any(ref.lower() in generated_text.lower() for ref in reference_texts):
             return {"includes_answer": 1}
         return {"includes_answer": 0}
