@@ -83,7 +83,13 @@ class InspirationDebate(DiscoursePolicy):
                 discussion_history = ""
                 if self.memories:
                     other_memories = self.memories[:index] + self.memories[index + 1 :]
-                    discussion_history = f"Your previous answer was:\n\n {self.memories[index].message}\n\nHere are the answers of the other agents:\n\n{'\n\n'.join([f'({memory.persona}) {memory.message}' for memory in other_memories])}"
+                    previous_answers = "\n\n".join(
+                        [
+                            f"({memory.persona}) {memory.message}"
+                            for memory in other_memories
+                        ]
+                    )
+                    discussion_history = f"Your previous answer was:\n\n {self.memories[index].message}\n\nHere are the answers of the other agents:\n\n{previous_answers}"
 
                 template_filling = TemplateFilling(
                     task_instruction=task_instruction,
