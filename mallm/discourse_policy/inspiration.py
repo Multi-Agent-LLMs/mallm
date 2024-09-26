@@ -144,6 +144,9 @@ class InspirationDebate(DiscoursePolicy):
             self.memories.extend(round_memories)
 
             coordinator.update_memories(self.memories, coordinator.agents)
+            if coordinator.decision_protocol is None:
+                logger.error("No decision protocol module found.")
+                raise Exception("No decision protocol module found.")
             (
                 self.draft,
                 self.decision,
