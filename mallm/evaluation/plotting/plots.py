@@ -30,8 +30,8 @@ def aggregate_data(
 
     for file in tqdm(files):
         try:
-            option, *dataset, repeat_info = file.split("_")
-            dataset = "_".join(dataset)
+            *option, dataset, repeat_info = file.split("_")
+            option = "_".join(option)
             repeat = repeat_info.split("-")[0]
             file_type = repeat_info.split("-")[1].split(".")[0]
         except IndexError:
@@ -199,12 +199,18 @@ def plot_score_distributions_with_std(df: pd.DataFrame, input_path: str) -> None
         .reset_index()
     )
 
+    # Safe grouped data to a CSV file
+
     # Create a separate plot for each Score Type
     for score_type in grouped["Score Type"].unique():
         plt.figure(figsize=(10, 6))
 
         # Filter data for the current score type
         score_data = grouped[grouped["Score Type"] == score_type]
+        score_data.to_csv(
+            f"{input_path}/{score_type.replace(" ", "_").lower()}_score.csv",
+            index=False,
+        )
 
         # Create bar plot
         x = range(len(score_data))
