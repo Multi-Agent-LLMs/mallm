@@ -150,7 +150,7 @@ Decision Protocols: `approval`, `cumulative`, `hybrid_consensus`, `majority_cons
 
 Persona Generators: `expert`, `ipip`, `mock`, `nopersona`
 
-Discussion Paradigms: `debate`, `memory`, `relay`, `report`
+Discussion Paradigms: `debate`, `inspiration`, `memory`, `relay`, `report`
 
 ## Evaluation
 
