@@ -77,10 +77,12 @@ class InspirationDebate(DiscoursePolicy):
             self.turn += 1
             logger.info("Ongoing. Current turn: " + str(self.turn))
 
-            for agent in coordinator.agents:
-                discussion_history = None
+            round_memories: list[Memory] = []
+            for index, agent in enumerate(coordinator.agents):
+                discussion_history = ""
                 if self.memories:
-                    discussion_history = f"Your previous answer was:\n\n {self.memories[0].message}\n\nHere are the answers of the other agents:\n\n{"\n\n".join([f'({memory.persona}) {memory.message}' for memory in self.memories[1:]])}"
+                    other_memories = self.memories[:index] + self.memories[index + 1 :]
+                    discussion_history = f"Your previous answer was:\n\n {self.memories[index].message}\n\nHere are the answers of the other agents:\n\n{"\n\n".join([f'({memory.persona}) {memory.message}' for memory in other_memories])}"
 
                 template_filling = TemplateFilling(
                     task_instruction=task_instruction,
@@ -88,7 +90,7 @@ class InspirationDebate(DiscoursePolicy):
                     current_draft="",
                     persona=agent.persona,
                     persona_description=agent.persona_description,
-                    agent_memory=discussion_history,
+                    agent_memory=None,
                 )
 
                 prompt = [
@@ -103,7 +105,13 @@ class InspirationDebate(DiscoursePolicy):
                 ]
 
                 response = agent.response_generator.generate_response(
-                    prompt, task_instruction, input_str, False, None, False, False
+                    prompt,
+                    task_instruction,
+                    input_str,
+                    config.use_chain_of_thought,
+                    None,
+                    False,
+                    False,
                 )
 
                 agreement = Agreement(
@@ -129,15 +137,17 @@ class InspirationDebate(DiscoursePolicy):
                     additional_args=dataclasses.asdict(template_filling),
                 )
                 unique_id += 1
-                self.memories.append(memory)
+                round_memories.append(memory)
+            coordinator.memory.extend(round_memories)
+            self.memories = []
+            self.memories.extend(round_memories)
 
             coordinator.update_memories(self.memories, coordinator.agents)
-            self.memories = []
             self.draft, self.decision, self.agreements, voting_process_string = (
                 coordinator.decision_protocol.make_decision(
                     self.agreements,
                     self.turn,
-                    len(coordinator.agents),
+                    len(coordinator.agents) - 1,
                     task_instruction,
                     input_str,
                 )
