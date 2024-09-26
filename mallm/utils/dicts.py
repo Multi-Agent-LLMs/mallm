@@ -11,6 +11,7 @@ from mallm.decision_protocol.ranked import RankedVoting
 from mallm.decision_protocol.summary import Summary
 from mallm.decision_protocol.voting import Voting
 from mallm.discourse_policy.debate import DiscourseDebate
+from mallm.discourse_policy.inspiration import InspirationDebate
 from mallm.discourse_policy.memory import DiscourseMemory
 from mallm.discourse_policy.policy import DiscoursePolicy
 from mallm.discourse_policy.relay import DiscourseRelay
@@ -45,6 +46,7 @@ DISCUSSION_PARADIGMS: dict[str, type[DiscoursePolicy]] = {
     "report": DiscourseReport,
     "relay": DiscourseRelay,
     "debate": DiscourseDebate,
+    "inspiration": InspirationDebate,
 }
 
 PERSONA_GENERATORS: dict[str, type[PersonaGenerator]] = {

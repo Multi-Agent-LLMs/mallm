@@ -39,7 +39,6 @@ class Voting(DecisionProtocol):
     ) -> tuple[str, bool, list[Agreement], str, Optional[VotingResults]]:
         if len(agreements) > self.total_agents:
             agreements = agreements[-self.total_agents :]
-
         if turn < self.vote_turn or agent_index != self.total_agents - 1:
             return "", False, agreements, "", None
 
