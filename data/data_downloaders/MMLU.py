@@ -42,18 +42,3 @@ class MMLUDownloader(DatasetDownloader):
                 )
             )
         return input_examples
-
-    def _format_answer_choices(self, answers):
-        return [
-            f" {chr(65 + i)}) {self._clean_text(answers[i])}"
-            for i in range(len(answers))
-        ]
-
-    @staticmethod
-    def _clean_text(text):
-        return (
-            text.replace("\n", " ")
-            .replace("\r", " ")
-            .replace('"', "")
-            .replace("\\n", " ")
-        )

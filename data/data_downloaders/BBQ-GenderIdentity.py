@@ -5,7 +5,7 @@ from data.data_download import DatasetDownloader
 from mallm.utils.types import InputExample
 
 
-class MMLUProDownloader(DatasetDownloader):
+class BBQGenderIdentityDownloader(DatasetDownloader):
     def custom_download(self):
         pass
 
@@ -13,9 +13,9 @@ class MMLUProDownloader(DatasetDownloader):
         self, sample_size: Optional[int] = None, hf_token: Optional[str] = None
     ):
         super().__init__(
-            name="mmlu_pro",
-            dataset_name="TIGER-Lab/MMLU-Pro",
-            version="default",
+            name="bbq_gender",
+            dataset_name="heegyu/bbq",
+            version="Gender_identity",
             sample_size=sample_size,
             hf_token=hf_token,
         )
@@ -25,20 +25,26 @@ class MMLUProDownloader(DatasetDownloader):
         input_examples = []
 
         for sample in data.iter(batch_size=1):
-            answers = sample["options"][0]
-            correct_answer = sample["answer"][0]
-
             question_text = self._clean_text(sample["question"][0])
-            formatted_answers = self._format_answer_choices(answers)
+            formatted_answers = self._format_answer_choices([sample["ans0"][0], sample["ans1"][0], sample["ans2"][0]])
             question_and_answers = f"{question_text}\n\n" + "\n".join(formatted_answers)
+
+            metadata = {
+                "question_index": sample["question_index"][0],
+                "question_polarity": sample["question_polarity"][0],
+                "context_condition": sample["context_condition"][0],
+                "category": sample["category"][0],
+                "additional": sample["additional_metadata"][0]
+            }
 
             input_examples.append(
                 InputExample(
                     example_id=str(uuid.uuid4()),
-                    dataset_id=str(sample["question_id"][0]),
+                    dataset_id=str(sample["example_id"][0]),
                     inputs=[question_and_answers],
-                    context=None,
-                    references=[correct_answer],
+                    context=[sample["context"][0]],
+                    references=[formatted_answers[sample["label"][0]]],
+                    metadata=metadata,
                 )
             )
         return input_examples

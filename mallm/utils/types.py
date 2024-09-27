@@ -51,26 +51,23 @@ class InputExample:
     inputs: list[str]
     context: Optional[list[str]]
     references: list[str]
+    metadata: Optional[dict[Any]] = None
 
     def confirm_types(self) -> None:
-        # Confirm type of example_id
         assert isinstance(self.example_id, str), "Example_id is not a string"
-        # Confirm type of dataset_id
         if self.dataset_id is not None:
             assert isinstance(self.dataset_id, str), "Dataset_id is not a string"
-        # Confirm type of input
         assert isinstance(self.inputs, list), "Inputs is not a list"
+        if self.metadata is not None:
+            assert isinstance(self.metadata, dict), "Metadata is not a dict"
         for i in self.inputs:
             assert isinstance(i, str), "Inputs is not a list of only strings"
-        # Confirm type of references
         assert isinstance(self.references, list), "References is not a list"
         for r in self.references:
             assert isinstance(r, str), "References is not a list of only strings"
-        # Confirm type of context
         if self.context is not None:
             assert isinstance(self.context, list), "Context is not a list"
             for c in self.context:
                 assert isinstance(c, str), "Context is not a list of only strings"
-        # Confirm type of references
         for r in self.references:
             assert isinstance(r, str), "References is not a list of only strings"
