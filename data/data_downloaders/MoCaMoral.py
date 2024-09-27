@@ -39,8 +39,8 @@ class MoCaMoralDownloader(DatasetDownloader):
             question_and_answers = f"{sample["question"]}\n\n" + "\n".join(formatted_answers)
 
             metadata = {
-                "answer_dist": sample["answer_dist"],
-                "annotated_sentences": sample["annotated_sentences"],
+                "answerDist": sample["answer_dist"],
+                "annotatedSentences": sample["annotated_sentences"],
             }
 
             input_examples.append(

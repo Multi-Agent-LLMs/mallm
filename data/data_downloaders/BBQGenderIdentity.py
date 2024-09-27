@@ -30,9 +30,9 @@ class BBQGenderIdentityDownloader(DatasetDownloader):
             question_and_answers = f"{question_text}\n\n" + "\n".join(formatted_answers)
 
             metadata = {
-                "question_index": sample["question_index"][0],
-                "question_polarity": sample["question_polarity"][0],
-                "context_condition": sample["context_condition"][0],
+                "questionIndex": sample["question_index"][0],
+                "questionPolarity": sample["question_polarity"][0],
+                "contextCondition": sample["context_condition"][0],
                 "category": sample["category"][0],
                 "additional": sample["additional_metadata"][0]
             }
