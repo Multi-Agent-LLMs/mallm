@@ -51,7 +51,7 @@ class InputExample:
     inputs: list[str]
     context: Optional[list[str]]
     references: list[str]
-    metadata: Optional[dict[Any]] = None
+    metadata: Optional[dict[Any,Any]] = None
 
     def confirm_types(self) -> None:
         assert isinstance(self.example_id, str), "Example_id is not a string"
