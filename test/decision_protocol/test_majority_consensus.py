@@ -19,7 +19,7 @@ def test_unanimous_decision():
     agreements = [
         Agreement(
             agreement=False,
-            solution="",
+            solution="Test",
             agent_id="",
             persona="",
             response="",
@@ -30,7 +30,7 @@ def test_unanimous_decision():
         [
             Agreement(
                 agreement=True,
-                solution="",
+                solution=None,
                 agent_id="",
                 persona="",
                 response="",
@@ -50,7 +50,7 @@ def test_unanimous_decision_in_first_five_turns():
     agreements = [
         Agreement(
             agreement=False,
-            solution="",
+            solution="Test",
             agent_id="",
             persona="",
             response="",
@@ -61,7 +61,7 @@ def test_unanimous_decision_in_first_five_turns():
         [
             Agreement(
                 agreement=True,
-                solution="",
+                solution=None,
                 agent_id="",
                 persona="",
                 response="",
@@ -81,7 +81,7 @@ def test_unanimous_decision_in_first_five_turns_with_draft_proposer():
     agreements = [
         Agreement(
             agreement=False,
-            solution="",
+            solution="Test",
             agent_id="",
             persona="",
             response="",
@@ -89,7 +89,7 @@ def test_unanimous_decision_in_first_five_turns_with_draft_proposer():
         ),
         Agreement(
             agreement=None,
-            solution="",
+            solution="Test",
             agent_id="",
             persona="",
             response="",
@@ -100,7 +100,7 @@ def test_unanimous_decision_in_first_five_turns_with_draft_proposer():
         [
             Agreement(
                 agreement=True,
-                solution="",
+                solution=None,
                 agent_id="",
                 persona="",
                 response="",
@@ -120,7 +120,7 @@ def test_no_unanimous_decision_in_first_five_turns():
     agreements = [
         Agreement(
             agreement=False,
-            solution="",
+            solution="Test",
             agent_id="",
             persona="",
             response="",
@@ -128,7 +128,7 @@ def test_no_unanimous_decision_in_first_five_turns():
         ),
         Agreement(
             agreement=False,
-            solution="",
+            solution="Test",
             agent_id="",
             persona="",
             response="",
@@ -136,7 +136,7 @@ def test_no_unanimous_decision_in_first_five_turns():
         ),
         Agreement(
             agreement=True,
-            solution="",
+            solution=None,
             agent_id="",
             persona="",
             response="",
@@ -154,7 +154,7 @@ def test_no_unanimous_decision_in_first_five_turns_with_draft_proposer():
     agreements = [
         Agreement(
             agreement=None,
-            solution="",
+            solution="Test",
             agent_id="",
             persona="",
             response="",
@@ -162,7 +162,7 @@ def test_no_unanimous_decision_in_first_five_turns_with_draft_proposer():
         ),
         Agreement(
             agreement=False,
-            solution="",
+            solution="Test",
             agent_id="",
             persona="",
             response="",
@@ -170,7 +170,7 @@ def test_no_unanimous_decision_in_first_five_turns_with_draft_proposer():
         ),
         Agreement(
             agreement=True,
-            solution="",
+            solution=None,
             agent_id="",
             persona="",
             response="",
@@ -187,7 +187,7 @@ def test_majority_decision_after_five_turns():
     agreements = [
         Agreement(
             agreement=False,
-            solution="",
+            solution="Test",
             agent_id="",
             persona="",
             response="",
@@ -199,7 +199,7 @@ def test_majority_decision_after_five_turns():
         [
             Agreement(
                 agreement=True,
-                solution="",
+                solution=None,
                 agent_id="",
                 persona="",
                 response="",
@@ -219,7 +219,7 @@ def test_no_majority_decision_after_five_turns():
     agreements = [
         Agreement(
             agreement=False,
-            solution="",
+            solution="Test",
             agent_id="",
             persona="",
             response="",
@@ -231,7 +231,7 @@ def test_no_majority_decision_after_five_turns():
         [
             Agreement(
                 agreement=True,
-                solution="",
+                solution=None,
                 agent_id="",
                 persona="",
                 response="",
