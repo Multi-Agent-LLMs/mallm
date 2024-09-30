@@ -33,7 +33,6 @@ class SimpleEthicalQuestionsDownloader(DatasetDownloader):
         input_examples = []
         for sample in self.dataset[: self.sample_size]:
             ref = [f"{chr(65 + i)}) " + k for i, (k, v) in enumerate(sample["target_scores"].items()) if v == 1]
-            print(ref)
             multiple_choices = []
             for i in sample["target_scores"]:
                 multiple_choices.append(i)
