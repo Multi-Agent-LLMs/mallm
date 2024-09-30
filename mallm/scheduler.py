@@ -230,6 +230,7 @@ class Scheduler:
                 "context": sample.context,
                 "answer": answer or None,
                 "references": sample.references,
+                "metadata": sample.metadata,
                 "decisionSuccess": decision_success,
                 "agreements": [
                     dataclasses.asdict(agreement) for agreement in agreements
@@ -401,6 +402,7 @@ class Scheduler:
                 "context": sample.context,
                 "answer": answer.solution or None,
                 "references": sample.references,
+                "metadata": sample.metadata,
                 "decisionSuccess": None,
                 "agreements": None,
                 "turns": exchanged_messages,
@@ -479,6 +481,7 @@ class Scheduler:
                 "context": sample.context,
                 "answer": answer.solution or None,
                 "references": sample.references,
+                "metadata": sample.metadata,
                 "decisionSuccess": None,
                 "agreements": None,
                 "turns": None,
