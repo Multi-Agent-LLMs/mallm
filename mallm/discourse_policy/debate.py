@@ -7,6 +7,7 @@ from rich.progress import Console  # type: ignore
 
 from mallm.agents.draftProposer import DraftProposer
 from mallm.agents.panelist import Panelist
+from mallm.agents.policyFeedback import PolicyFeedback
 from mallm.discourse_policy.policy import DiscoursePolicy
 from mallm.utils.types import Agreement, TemplateFilling
 
@@ -31,6 +32,16 @@ class DiscourseDebate(DiscoursePolicy):
     def panelist_call(
         self,
         agent: Panelist,
+        coordinator: Coordinator,
+        agent_index: int,
+        memory_ids: list[int],
+        template_filling: TemplateFilling,
+    ) -> None:
+        pass
+
+    def policy_feedback_call(
+        self,
+        policy_feedback: PolicyFeedback,
         coordinator: Coordinator,
         agent_index: int,
         memory_ids: list[int],
@@ -177,6 +188,32 @@ class DiscourseDebate(DiscoursePolicy):
                             agents_to_update=agents_to_update,
                             agreements=debate_agreements,
                         )
+                    elif isinstance(a, PolicyFeedback):
+                        discussion_history, memory_ids, current_draft = (
+                            coordinator.get_discussion_history(
+                                context_length=config.visible_turns_in_memory,
+                                turn=self.turn,
+                            )
+                        )
+                        template_filling = TemplateFilling(
+                            task_instruction=task_instruction,
+                            input_str=input_str,
+                            current_draft=current_draft,
+                            persona=a.persona,
+                            persona_description=a.persona_description,
+                            agent_memory=discussion_history,
+                        )
+                        _res, debate_memory, debate_agreements = a.policy_feedback(
+                            unique_id=unique_id,
+                            turn=self.turn,
+                            memory_ids=memory_ids,
+                            template_filling=template_filling,
+                            agreements=debate_agreements,
+                        )
+                        memories.append(debate_memory)
+                    else:
+                        logger.error("Agent type not recognized.")
+                        raise Exception("Agent type not recognized.")
 
                     if len(debate_agreements) > len(coordinator.agents) - 1:
                         debate_agreements = debate_agreements[

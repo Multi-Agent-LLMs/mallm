@@ -70,11 +70,12 @@ class Agent:
         logger.debug(
             f"Agent [bold blue]{self.short_id}[/] {'agreed' if response.agreement else 'disagreed'} with the solution."
         )
+        agree = False if unique_id == 0 else response.agreement
         agreements.append(
             Agreement(
-                agreement=False if unique_id == 0 else response.agreement,
+                agreement=agree,
                 response=response.message,
-                solution=response.solution,
+                solution=response.solution if not agree else "",
                 agent_id=self.id,
                 persona=self.persona,
                 message_id=unique_id,
@@ -89,7 +90,7 @@ class Agent:
             contribution="improve",
             message=response.message,
             agreement=agreements[-1].agreement,
-            solution=response.solution,
+            solution=response.solution if not agree else "",
             memory_ids=memory_ids,
             additional_args=dataclasses.asdict(template_filling),
         )
@@ -245,19 +246,19 @@ class Agent:
             include_this_turn=include_this_turn,
         )
         if memories:
-            debate_history = []
+            discussion_history = []
             for memory in memories:
                 if memory.agent_id == self.id:
-                    debate_history.append(
+                    discussion_history.append(
                         {"role": "assistant", "content": memory.message}
                     )
                 else:
-                    debate_history.append(
+                    discussion_history.append(
                         {
                             "role": "user",
                             "content": f"{memory.persona}: {memory.message}",
                         }
                     )
         else:
-            debate_history = None
-        return debate_history, memory_ids, current_draft
+            discussion_history = None
+        return discussion_history, memory_ids, current_draft

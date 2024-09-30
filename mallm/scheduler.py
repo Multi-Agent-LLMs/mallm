@@ -183,6 +183,7 @@ class Scheduler:
                 num_neutral_agents=self.config.num_neutral_agents,
                 model=self.llm,
                 agent_generators=self.config.agent_generators_list,
+                policy=self.config.policy,
                 client=client,
                 console=console,
             )

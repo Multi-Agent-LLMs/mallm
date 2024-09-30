@@ -38,7 +38,7 @@ class ThresholdConsensus(DecisionProtocol):
             (
                 (i, agreement)
                 for i, agreement in enumerate(reversed_agreements, 1)
-                if not agreement.agreement
+                if agreement.solution
             ),
             (None, None),
         )

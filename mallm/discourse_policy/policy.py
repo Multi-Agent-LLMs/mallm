@@ -10,6 +10,7 @@ from rich.text import Text
 
 from mallm.agents.draftProposer import DraftProposer
 from mallm.agents.panelist import Panelist
+from mallm.agents.policyFeedback import PolicyFeedback
 from mallm.utils.types import Agreement, Memory, TemplateFilling
 
 if TYPE_CHECKING:
@@ -71,18 +72,40 @@ class DiscoursePolicy(ABC):
                     template_filling.feedback_sentences = None
                     self.draft_proposer_call(
                         draft_proposer=agent,
-                        template_filling=template_filling,
-                        memory_ids=memory_ids,
-                        agent_index=i,
                         coordinator=coordinator,
+                        agent_index=i,
+                        memory_ids=memory_ids,
+                        template_filling=template_filling,
                     )
                 elif isinstance(agent, Panelist):
                     self.panelist_call(
-                        agent_index=i,
-                        template_filling=template_filling,
-                        coordinator=coordinator,
-                        memory_ids=memory_ids,
                         agent=agent,
+                        coordinator=coordinator,
+                        agent_index=i,
+                        memory_ids=memory_ids,
+                        template_filling=template_filling,
+                    )
+                elif isinstance(agent, PolicyFeedback):
+                    discussion_history, memory_ids, current_draft = (
+                        coordinator.get_discussion_history(
+                            context_length=config.visible_turns_in_memory,
+                            turn=self.turn,
+                        )
+                    )
+                    template_filling = TemplateFilling(
+                        task_instruction=task_instruction,
+                        input_str=input_str,
+                        current_draft=current_draft,
+                        persona=agent.persona,
+                        persona_description=agent.persona_description,
+                        agent_memory=discussion_history,
+                    )
+                    self.policy_feedback_call(
+                        policy_feedback=agent,
+                        coordinator=coordinator,
+                        agent_index=i,
+                        memory_ids=memory_ids,
+                        template_filling=template_filling,
                     )
                 else:
                     logger.error("Agent type not recognized.")
@@ -185,3 +208,22 @@ class DiscoursePolicy(ABC):
         template_filling: TemplateFilling,
     ) -> None:
         pass
+
+    def policy_feedback_call(
+        self,
+        policy_feedback: PolicyFeedback,
+        coordinator: Coordinator,
+        agent_index: int,
+        memory_ids: list[int],
+        template_filling: TemplateFilling,
+    ) -> None:
+        _res, memory, self.agreements = policy_feedback.policy_feedback(
+            unique_id=self.unique_id,
+            turn=self.turn,
+            memory_ids=memory_ids,
+            template_filling=template_filling,
+            agreements=self.agreements,
+        )
+        self.memories.append(memory)
+        coordinator.update_memories(self.memories, coordinator.agents)  # policy feedback is visible by everyone
+        self.memories = []

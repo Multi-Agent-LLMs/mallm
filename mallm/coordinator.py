@@ -12,6 +12,7 @@ from rich.progress import Console  # type: ignore
 from mallm.agents.agent import Agent
 from mallm.agents.draftProposer import DraftProposer
 from mallm.agents.panelist import Panelist
+from mallm.agents.policyFeedback import PolicyFeedback
 from mallm.decision_protocol.protocol import DecisionProtocol
 from mallm.discourse_policy.policy import DiscoursePolicy
 from mallm.models.Chat import Chat
@@ -42,6 +43,7 @@ class Coordinator:
         model: Chat,
         client: httpx.Client,
         agent_generators: Optional[list[str]] = None,
+        policy: Optional[str] = None,
         num_neutral_agents: int = 0,
         console: Optional[Console] = None,
     ):
@@ -59,6 +61,7 @@ class Coordinator:
         self.response_generator: ResponseGenerator = SimpleResponseGenerator(self.llm)
         self.client = client
         self.agent_generators = agent_generators
+        self.policy = policy
         self.memory: list[Memory] = []
         self.console = console or Console()
 
@@ -78,7 +81,7 @@ class Coordinator:
         2) create agents with the personas
         """
         logger.debug(
-            f"Coordinator {self.id} creates {num_agents} agents ({self.agent_generators})..."
+            f"Coordinator {self.id} creates {num_agents} agents ({self.agent_generators}). Policy: {self.policy}"
         )
         self.panelists = []
         self.agents = []
@@ -132,6 +135,17 @@ class Coordinator:
             logger.warning(
                 "Created only 1 agent. The discussion will be replaced by a self-improvement mechanism."
             )
+
+        if self.policy:
+            policyFeedback = PolicyFeedback(
+                self.llm,
+                self.client,
+                self,
+                response_generator=self.response_generator,
+                persona="Policy Moderator",
+                policy=self.policy,
+            )
+            self.agents.append(policyFeedback)
 
     def get_agents(self) -> list[dict[str, str]]:
         return [
@@ -267,3 +281,69 @@ class Coordinator:
             discussion_time,
             decision_success,
         )
+
+    def get_memories(
+        self,
+        context_length: Optional[int] = None,
+        turn: Optional[int] = None,
+        include_this_turn: bool = True,
+    ) -> tuple[Optional[list[Memory]], list[int], Optional[str]]:
+        """
+        Retrieves memory data from the agents memory
+        """
+        memories: list[Memory] = []
+        memory_ids = []
+        current_draft = None
+
+        memories = sorted(self.memory, key=lambda x: x.message_id, reverse=False)
+        context_memory = []
+        for memory in memories:
+            if (
+                context_length
+                and turn
+                and memory.turn >= turn - context_length
+                and (turn > memory.turn or include_this_turn)
+            ):
+                context_memory.append(memory)
+                memory_ids.append(int(memory.message_id))
+                if memory.contribution == "draft" or (
+                    memory.contribution == "improve" and memory.agreement is False
+                ):
+                    current_draft = memory.solution
+            else:
+                context_memory.append(memory)
+                memory_ids.append(int(memory.message_id))
+                if memory.contribution == "draft" or (
+                    memory.contribution == "improve" and memory.agreement is False
+                ):
+                    current_draft = memory.solution
+
+        return context_memory, memory_ids, current_draft
+
+    def get_discussion_history(
+        self,
+        context_length: Optional[int] = None,
+        turn: Optional[int] = None,
+        include_this_turn: bool = True,
+    ) -> tuple[Optional[list[dict[str, str]]], list[int], Optional[str]]:
+        """
+        Retrieves memory from the agents memory as a string
+        context_length refers to the amount of turns the agent can memorize the previous discussion
+        """
+        memories, memory_ids, current_draft = self.get_memories(
+            context_length=context_length,
+            turn=turn,
+            include_this_turn=include_this_turn,
+        )
+        if memories:
+            discussion_history = []
+            for memory in memories:
+                discussion_history.extend([
+                    {
+                        "role": "user",
+                        "content": f"{memory.persona}: {memory.message}",
+                    }
+                ])
+        else:
+            discussion_history = None
+        return discussion_history, memory_ids, current_draft
