@@ -53,14 +53,3 @@ class GPQADownloader(DatasetDownloader):
         answers.insert(0, json.dumps(correct_answer))
         random.shuffle(answers)
         return answers, correct_answer
-
-    def _format_answer_choices(self, answers):
-        return [f" {chr(65 + i)}) {self._clean_text(answers[i])}" for i in range(4)]
-
-    def _clean_text(self, text):
-        return (
-            text.replace("\n", " ")
-            .replace("\r", " ")
-            .replace('"', "")
-            .replace("\\n", " ")
-        )
