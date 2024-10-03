@@ -17,6 +17,7 @@ class DraftProposer(Agent):
     Represents a DraftProposer agent, a type of Agent that specializes in proposing drafts for discussions.
     It is prompted to remain neutral and will not be included in the decision-making.
     """
+
     def __init__(
         self,
         llm: Chat,

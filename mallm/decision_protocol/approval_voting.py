@@ -4,10 +4,8 @@ from typing import Any, Optional
 
 from mallm.agents.panelist import Panelist
 from mallm.decision_protocol.protocol import DecisionAlteration, DecisionProtocol
+from mallm.models.discussion.ResponseGenerator import ResponseGenerator
 from mallm.utils.config import Config
-from mallm.utils.prompts import (
-    generate_approval_voting_prompt,
-)
 from mallm.utils.types import Agreement, VotingResult, VotingResults, WorkerFunctions
 
 logger = logging.getLogger("mallm")
@@ -17,6 +15,8 @@ class ApprovalVoting(DecisionProtocol):
     """
     The Approval Voting decision protocol allows panelists to approve any number of solutions after a certain number of turns.
     """
+
+    _name = "approval_voting"
 
     def __init__(
         self,
@@ -52,8 +52,8 @@ class ApprovalVoting(DecisionProtocol):
                 question,
                 task,
                 voting_process_string,
-                "approval",
-                generate_approval_voting_prompt,
+                self._name,
+                ResponseGenerator.generate_approval_voting_prompt,
                 config.voting_protocols_with_alterations,
             )
         )

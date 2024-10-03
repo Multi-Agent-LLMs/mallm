@@ -9,6 +9,7 @@ class Panelist(Agent):
     Represents a Panelist agent, a type of Agent that specializes in participating in discussions.
     It is prompted to either improve the current solution or provide feedback.
     """
+
     def participate(
         self,
         memories: list[Memory],

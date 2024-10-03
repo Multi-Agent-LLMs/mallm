@@ -4,10 +4,8 @@ from typing import Any, Optional
 
 from mallm.agents.panelist import Panelist
 from mallm.decision_protocol.protocol import DecisionAlteration, DecisionProtocol
+from mallm.models.discussion.ResponseGenerator import ResponseGenerator
 from mallm.utils.config import Config
-from mallm.utils.prompts import (
-    generate_cumulative_voting_prompt,
-)
 from mallm.utils.types import Agreement, VotingResult, VotingResults, WorkerFunctions
 
 logger = logging.getLogger("mallm")
@@ -18,6 +16,8 @@ class CumulativeVoting(DecisionProtocol):
     The Cumulative Voting decision protocol allows panelists to distribute 10 points among the solutions.
     The solution with the highest total points is selected as the final decision.
     """
+
+    _name = "cumulative_voting"
 
     def __init__(
         self,
@@ -54,8 +54,8 @@ class CumulativeVoting(DecisionProtocol):
                 question,
                 task,
                 voting_process_string,
-                "cumulative",
-                generate_cumulative_voting_prompt,
+                self._name,
+                ResponseGenerator.generate_cumulative_voting_prompt,
                 config.voting_protocols_with_alterations,
             )
         )

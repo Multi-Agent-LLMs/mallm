@@ -8,11 +8,8 @@ import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
 from mallm.agents.panelist import Panelist
+from mallm.models.discussion.ResponseGenerator import ResponseGenerator
 from mallm.utils.config import Config
-from mallm.utils.prompts import (
-    generate_answer_confidence_prompt,
-    generate_final_answer_prompt,
-)
 from mallm.utils.types import Agreement, VotingResult, VotingResults, WorkerFunctions
 
 logger = logging.getLogger("mallm")
@@ -50,6 +47,8 @@ class DecisionProtocol(ABC):
     Any concrete decision protocol must implement the make_decision method.
     """
 
+    _name = "DecisionProtocol"
+
     def __init__(
         self,
         panelists: list[Panelist],
@@ -77,7 +76,7 @@ class DecisionProtocol(ABC):
                 confidence = confidence_value
 
             response = panelist.llm.invoke(
-                generate_final_answer_prompt(
+                ResponseGenerator.generate_final_answer_prompt(
                     panelist.persona,
                     panelist.persona_description,
                     question,
@@ -294,7 +293,7 @@ class DecisionProtocol(ABC):
             confidence_score = None
             while retries < 10:
                 confidence_prompted = panelist.llm.invoke(
-                    generate_answer_confidence_prompt(
+                    ResponseGenerator.generate_answer_confidence_prompt(
                         panelist, question, task, final_answer
                     )
                 )

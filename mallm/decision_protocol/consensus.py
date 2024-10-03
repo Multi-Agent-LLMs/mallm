@@ -10,6 +10,9 @@ logger = logging.getLogger("mallm")
 
 
 class ThresholdConsensus(DecisionProtocol):
+
+    _name = "threshold_consensus"
+
     def process_votes(
         self,
         final_answers: list[str],
@@ -105,6 +108,9 @@ class ThresholdConsensus(DecisionProtocol):
 
 
 class MajorityConsensus(ThresholdConsensus):
+
+    _name = "majority_consensus"
+
     def __init__(
         self,
         panelists: list[Panelist],
@@ -117,6 +123,9 @@ class MajorityConsensus(ThresholdConsensus):
 
 
 class UnanimityConsensus(ThresholdConsensus):
+
+    _name = "unanimity_consensus"
+
     def __init__(
         self,
         panelists: list[Panelist],
@@ -129,6 +138,9 @@ class UnanimityConsensus(ThresholdConsensus):
 
 
 class SupermajorityConsensus(ThresholdConsensus):
+
+    _name = "supermajority_consensus"
+
     def __init__(
         self,
         panelists: list[Panelist],
@@ -145,6 +157,8 @@ class HybridMajorityConsensus(ThresholdConsensus):
     The Hybrid Majority Consensus imitates the implementation by Yin et. al.
     Paper: https://arxiv.org/abs/2312.01823
     """
+
+    _name = "hybrid_majority_consensus"
 
     def __init__(
         self,

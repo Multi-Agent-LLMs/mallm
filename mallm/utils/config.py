@@ -6,7 +6,7 @@ from typing import Optional
 
 import requests
 
-from mallm.utils.prompt_templates import PROMPT_TEMPLATES
+from mallm.utils.task_instructions import PROMPT_TEMPLATES
 
 logger = logging.getLogger("mallm")
 

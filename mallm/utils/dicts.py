@@ -1,15 +1,15 @@
-from mallm.decision_protocol.approval import ApprovalVoting
-from mallm.decision_protocol.cumulative import CumulativeVoting
-from mallm.decision_protocol.majority import (
+from mallm.decision_protocol.approval_voting import ApprovalVoting
+from mallm.decision_protocol.consensus import (
     HybridMajorityConsensus,
     MajorityConsensus,
     SupermajorityConsensus,
     UnanimityConsensus,
 )
+from mallm.decision_protocol.cumulative_voting import CumulativeVoting
 from mallm.decision_protocol.protocol import DecisionProtocol
-from mallm.decision_protocol.ranked import RankedVoting
+from mallm.decision_protocol.ranked_voting import RankedVoting
+from mallm.decision_protocol.simple_voting import SimpleVoting
 from mallm.decision_protocol.summary import Summary
-from mallm.decision_protocol.voting import Voting
 from mallm.discourse_policy.debate import DiscourseDebate
 from mallm.discourse_policy.inspiration import InspirationDebate
 from mallm.discourse_policy.memory import DiscourseMemory
@@ -34,10 +34,10 @@ DECISION_PROTOCOLS: dict[str, type[DecisionProtocol]] = {
     "supermajority_consensus": SupermajorityConsensus,
     "hybrid_consensus": HybridMajorityConsensus,
     "unanimity_consensus": UnanimityConsensus,
-    "voting": Voting,
-    "approval": ApprovalVoting,
-    "cumulative": CumulativeVoting,
-    "ranked": RankedVoting,
+    "simple_voting": SimpleVoting,
+    "approval_voting": ApprovalVoting,
+    "cumulative_voting": CumulativeVoting,
+    "ranked_voting": RankedVoting,
     "summary": Summary,
 }
 
