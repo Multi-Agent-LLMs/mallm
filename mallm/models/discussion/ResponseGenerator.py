@@ -197,7 +197,7 @@ Current Solution: {data.current_draft}
             },
             {
                 "role": "user",
-                "content": f"You are tasked with creating a final solution based on the given question and your previous response.\nTask: {task}\nQuestion: {question}\nYour previous solution: {previous_answer}",
+                "content": f"You are tasked with creating a final solution based on the given question and your previous response.\nTask: {task}\nQuestion: {question}\nYour previous response: {previous_answer}",
             },
             {
                 "role": "user",
