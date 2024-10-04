@@ -28,7 +28,7 @@ from mallm.utils.types import (
     Agreement,
     InputExample,
     Memory,
-    VotingResults,
+    VotingResultList,
     WorkerFunctions,
 )
 
@@ -174,7 +174,7 @@ class Coordinator:
         list[Agreement],
         float,
         bool,
-        Optional[VotingResults],
+        Optional[VotingResultList],
     ]:
         """
         The routine responsible for the discussion between agents to solve a task.

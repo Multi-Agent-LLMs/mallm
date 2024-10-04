@@ -6,7 +6,7 @@ from mallm.agents.panelist import Panelist
 from mallm.decision_protocol.protocol import DecisionAlteration, DecisionProtocol
 from mallm.models.discussion.ResponseGenerator import ResponseGenerator
 from mallm.utils.config import Config
-from mallm.utils.types import Agreement, VotingResult, VotingResults, WorkerFunctions
+from mallm.utils.types import Agreement, VotingResult, VotingResultList, WorkerFunctions
 
 logger = logging.getLogger("mallm")
 
@@ -36,7 +36,7 @@ class SimpleVoting(DecisionProtocol):
         task: str,
         question: str,
         config: Config,
-    ) -> tuple[str, bool, list[Agreement], str, Optional[VotingResults]]:
+    ) -> tuple[str, bool, list[Agreement], str, Optional[VotingResultList]]:
         if len(agreements) > self.total_agents:
             agreements = agreements[-self.total_agents :]
         if turn < self.vote_turn or agent_index != self.total_agents - 1:

@@ -10,7 +10,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from mallm.agents.panelist import Panelist
 from mallm.models.discussion.ResponseGenerator import ResponseGenerator
 from mallm.utils.config import Config
-from mallm.utils.types import Agreement, VotingResult, VotingResults, WorkerFunctions
+from mallm.utils.types import Agreement, VotingResult, VotingResultList, WorkerFunctions
 
 logger = logging.getLogger("mallm")
 
@@ -100,7 +100,7 @@ class DecisionProtocol(ABC):
         voting_prompt_function: VotingPromptFunction,
         alterations_enabled: bool = False,
         panelists: Optional[list[Panelist]] = None,
-    ) -> tuple[bool, str, VotingResults, str]:
+    ) -> tuple[bool, str, VotingResultList, str]:
         if panelists is None:
             panelists = self.panelists
         all_votes: dict[str, VotingResult] = {}
@@ -257,7 +257,7 @@ class DecisionProtocol(ABC):
             all_votes = self.process_results(
                 all_votes, alteration, final_answers, votes
             )
-        results = VotingResults(
+        results = VotingResultList(
             voting_process_string=voting_process_string,
             final_answers=final_answers,
             alterations=all_votes,
@@ -319,7 +319,7 @@ class DecisionProtocol(ABC):
         task: str,
         question: str,
         config: Config,
-    ) -> tuple[str, bool, list[Agreement], str, Optional[VotingResults]]:
+    ) -> tuple[str, bool, list[Agreement], str, Optional[VotingResultList]]:
         """
         Abstract method to make a decision based on agreements, the current turn number, and the list of panelists.
 

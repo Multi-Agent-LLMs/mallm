@@ -6,7 +6,7 @@ from typing import Optional
 
 import requests
 
-from mallm.utils.task_instructions import PROMPT_TEMPLATES
+from mallm.utils.task_instructions import TASK_INSTRUCTIONS
 
 logger = logging.getLogger("mallm")
 
@@ -52,9 +52,9 @@ class Config:
     def __post_init__(self) -> None:
         if (
             not self.task_instruction_prompt
-            and self.task_instruction_prompt_template in PROMPT_TEMPLATES
+            and self.task_instruction_prompt_template in TASK_INSTRUCTIONS
         ):
-            self.task_instruction_prompt = PROMPT_TEMPLATES[
+            self.task_instruction_prompt = TASK_INSTRUCTIONS[
                 self.task_instruction_prompt_template
             ]
 

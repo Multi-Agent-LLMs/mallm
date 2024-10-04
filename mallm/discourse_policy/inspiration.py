@@ -9,7 +9,7 @@ from rich.progress import Console  # type: ignore
 from mallm.agents.draftProposer import DraftProposer
 from mallm.agents.panelist import Panelist
 from mallm.discourse_policy.policy import DiscoursePolicy
-from mallm.utils.types import Agreement, Memory, TemplateFilling, VotingResults
+from mallm.utils.types import Agreement, Memory, TemplateFilling, VotingResultList
 
 if TYPE_CHECKING:
     from mallm.coordinator import Coordinator
@@ -47,10 +47,10 @@ class InspirationDebate(DiscoursePolicy):
         solution: str,
         config: Config,
         console: Optional[Console] = None,
-    ) -> tuple[Optional[str], int, list[Agreement], bool, Optional[VotingResults]]:
+    ) -> tuple[Optional[str], int, list[Agreement], bool, Optional[VotingResultList]]:
         unique_id = 0
         voting_process_string = ""
-        additional_voting_results: Optional[VotingResults] = None
+        additional_voting_results: Optional[VotingResultList] = None
         self.memories: list[Memory]
         if console is None:
             console = Console()
