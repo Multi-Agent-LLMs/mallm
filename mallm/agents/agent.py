@@ -200,6 +200,7 @@ class Agent:
         """
         Retrieves memory data from the agents memory
         """
+        memories: list[Memory]
         memory_ids = []
         current_draft = None
 

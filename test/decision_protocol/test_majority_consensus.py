@@ -1,7 +1,10 @@
 from mallm.agents.draftProposer import DraftProposer
 from mallm.agents.panelist import Panelist
 from mallm.coordinator import Coordinator
-from mallm.decision_protocol.majority import HybridMajorityConsensus, UnanimityConsensus
+from mallm.decision_protocol.consensus import (
+    HybridMajorityConsensus,
+    UnanimityConsensus,
+)
 from mallm.models.discussion.FreeTextResponseGenerator import FreeTextResponseGenerator
 from mallm.utils.config import Config
 from mallm.utils.types import Agreement

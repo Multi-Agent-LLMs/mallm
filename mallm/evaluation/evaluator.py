@@ -14,6 +14,7 @@ from mallm.evaluation.metrics.distinct import Distinct
 from mallm.evaluation.metrics.meteor import METEOR
 from mallm.evaluation.metrics.qa import (
     AnswerabilityBoolean,
+    IncludesAnswer,
     MultiChoiceBoolean,
     SquadScore,
 )
@@ -29,6 +30,7 @@ ALL_METRICS = [
     ROUGE(),
     SquadScore(),
     Distinct(),
+    IncludesAnswer(),
 ]
 
 logger = logging.getLogger("mallm")
@@ -120,7 +122,7 @@ class Evaluator:
                 alterations: dict[str, Any] = additional_voting_results.get(
                     "alterations", None
                 )
-                if alterations:
+                if alterations and len(alterations) > 1:
                     for alteration in list(alterations.keys()):
                         answer = alterations[alteration].get("final_answer", "")
                         if answer:

@@ -8,12 +8,9 @@ import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
 from mallm.agents.panelist import Panelist
+from mallm.models.discussion.ResponseGenerator import ResponseGenerator
 from mallm.utils.config import Config
-from mallm.utils.prompts import (
-    generate_answer_confidence_prompt,
-    generate_final_answer_prompt,
-)
-from mallm.utils.types import Agreement, VotingResult, VotingResults, WorkerFunctions
+from mallm.utils.types import Agreement, VotingResult, VotingResultList, WorkerFunctions
 
 logger = logging.getLogger("mallm")
 
@@ -50,6 +47,8 @@ class DecisionProtocol(ABC):
     Any concrete decision protocol must implement the make_decision method.
     """
 
+    _name = "DecisionProtocol"
+
     def __init__(
         self,
         panelists: list[Panelist],
@@ -77,7 +76,7 @@ class DecisionProtocol(ABC):
                 confidence = confidence_value
 
             response = panelist.llm.invoke(
-                generate_final_answer_prompt(
+                ResponseGenerator.generate_final_answer_prompt(
                     panelist.persona,
                     panelist.persona_description,
                     question,
@@ -102,7 +101,7 @@ class DecisionProtocol(ABC):
         voting_prompt_function: VotingPromptFunction,
         alterations_enabled: bool = False,
         panelists: Optional[list[Panelist]] = None,
-    ) -> tuple[bool, str, VotingResults, str]:
+    ) -> tuple[bool, str, VotingResultList, str]:
         if panelists is None:
             panelists = self.panelists
         all_votes: dict[str, VotingResult] = {}
@@ -259,7 +258,7 @@ class DecisionProtocol(ABC):
             all_votes = self.process_results(
                 all_votes, alteration, final_answers, votes
             )
-        results = VotingResults(
+        results = VotingResultList(
             voting_process_string=voting_process_string,
             final_answers=final_answers,
             alterations=all_votes,
@@ -295,7 +294,7 @@ class DecisionProtocol(ABC):
             confidence_score = None
             while retries < 10:
                 confidence_prompted = panelist.llm.invoke(
-                    generate_answer_confidence_prompt(
+                    ResponseGenerator.generate_answer_confidence_prompt(
                         panelist, question, task, final_answer
                     )
                 )
@@ -321,7 +320,7 @@ class DecisionProtocol(ABC):
         task: str,
         question: str,
         config: Config,
-    ) -> tuple[str, bool, list[Agreement], str, Optional[VotingResults]]:
+    ) -> tuple[str, bool, list[Agreement], str, Optional[VotingResultList]]:
         """
         Abstract method to make a decision based on agreements, the current turn number, and the list of panelists.
 

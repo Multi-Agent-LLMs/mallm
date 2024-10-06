@@ -32,7 +32,7 @@ Install as a package:
 ### Test Data
 Download and create the test data: `python data/data_downloader.py --datasets=[SQuAD2,ETPC] --sample_size=100`
 
-You can use any dataset for this project as long as it follows [this basic format](https://github.com/Multi-Agent-LLMs/mallm/blob/main/data/datasets/etpc_debugging.json). These datasets are supported by our automated formatting pipeline: `BTVote`, `ETPC`, `Europarl`, `GPQA`, `GSM8K`, `MMLUPro`, `MUSR`, `MathLvl5`, `Multi-News`, `SQuAD2`, `SimpleEthicalQuestions`, `StrategyQA`, `WMT19_de_en`, `XSum`
+You can use any dataset for this project as long as it follows [this basic format](https://github.com/Multi-Agent-LLMs/mallm/blob/main/data/datasets/etpc_debugging.json). These datasets are supported by our automated formatting pipeline: `BBQGenderIdentity`, `BTVote`, `ETPC`, `Europarl`, `GPQA`, `GSM8K`, `MMLU`, `MMLUPro`, `MUSR`, `MathLvl5`, `MoCaMoral`, `MoralExceptQA`, `MultiNews`, `SQuAD2`, `SimpleEthicalQuestions`, `StrategyQA`, `WMT19DeEn`, `XSum`
 
 ### Run from Terminal
 MALLM relies on an external API like OpenAI or Text Generation Inference by Huggingface.
@@ -146,16 +146,16 @@ voting_protocols_with_alterations: bool = False
 ### Discussion Parameters:
 Response Generators: `freetext`, `json`, `simple`, `splitfreetext`
 
-Decision Protocols: `approval`, `cumulative`, `hybrid_consensus`, `majority_consensus`, `ranked`, `summary`, `supermajority_consensus`, `unanimity_consensus`, `voting`
+Decision Protocols: `approval_voting`, `cumulative_voting`, `hybrid_consensus`, `majority_consensus`, `ranked_voting`, `simple_voting`, `summary`, `supermajority_consensus`, `unanimity_consensus`
 
 Persona Generators: `expert`, `ipip`, `mock`, `nopersona`
 
-Discussion Paradigms: `debate`, `memory`, `relay`, `report`
+Discussion Paradigms: `debate`, `inspiration`, `memory`, `relay`, `report`
 
 ## Evaluation
 
 We provide some basic evaluation metrics that can be directly applied to the output json of mallm.
-Supported metrics: `answerability`, `bertscore`, `bleu`, `distinct`, `meteor`, `multichoice`, `rouge`, `squad`
+Supported metrics: `answerability`, `bertscore`, `bleu`, `distinct`, `includes_answer`, `meteor`, `multichoice`, `rouge`, `squad`
 
 From terminal:
 

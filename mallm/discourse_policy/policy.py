@@ -10,7 +10,7 @@ from rich.text import Text
 
 from mallm.agents.draftProposer import DraftProposer
 from mallm.agents.panelist import Panelist
-from mallm.utils.types import Agreement, Memory, TemplateFilling, VotingResults
+from mallm.utils.types import Agreement, Memory, TemplateFilling, VotingResultList
 
 if TYPE_CHECKING:
     from mallm.coordinator import Coordinator
@@ -36,10 +36,10 @@ class DiscoursePolicy(ABC):
         solution: str,
         config: Config,
         console: Optional[Console] = None,
-    ) -> tuple[Optional[str], int, list[Agreement], bool, Optional[VotingResults]]:
+    ) -> tuple[Optional[str], int, list[Agreement], bool, Optional[VotingResultList]]:
         logger.info(self.paradigm_str)
         voting_process_string = ""
-        additional_voting_results: Optional[VotingResults] = None
+        additional_voting_results: Optional[VotingResultList] = None
         if console is None:
             console = Console()
         while (

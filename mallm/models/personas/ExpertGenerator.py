@@ -14,6 +14,7 @@ class ExpertGenerator(PersonaGenerator):
     """
     The ExpertGenerator class is a specialized PersonaGenerator designed to generate expert personas for a given task or discussion. It is capable of identifying the necessary participants, their roles, and descriptions to foster a rich and informative discussion.
     """
+
     def __init__(self, llm: Chat):
         self.llm = llm
         self.base_prompt = {
@@ -45,20 +46,30 @@ New Participant:
         }
 
     def generate_persona(
-        self, task_description: str, already_generated_personas: list[dict[str, str]], sample: InputExample
+        self,
+        task_description: str,
+        already_generated_personas: list[dict[str, str]],
+        sample: InputExample,
     ) -> dict[str, str]:
         current_prompt = [
             self.base_prompt,
             {
                 "role": "user",
                 "content": f"\nNow generate a participant to discuss the following task:\nTask: {task_description}\n",
-            }
+            },
         ]
         if already_generated_personas:
-            current_prompt.append({
-                "role": "system",
-                "content": "Already Generated Participants:\n" + '\n'.join([str(generated_persona) for generated_persona in already_generated_personas]),
-            }
+            current_prompt.append(
+                {
+                    "role": "system",
+                    "content": "Already Generated Participants:\n"
+                    + "\n".join(
+                        [
+                            str(generated_persona)
+                            for generated_persona in already_generated_personas
+                        ]
+                    ),
+                }
             )
 
         retry = 0
@@ -84,7 +95,7 @@ New Participant:
                     or not new_agent["description"]
                 ):
                     continue
-                agent : dict[str, str] = new_agent
+                agent: dict[str, str] = new_agent
                 break
             except json.decoder.JSONDecodeError as e:
                 retry += 1

@@ -4,11 +4,9 @@ from typing import Any, Optional
 
 from mallm.agents.panelist import Panelist
 from mallm.decision_protocol.protocol import DecisionAlteration, DecisionProtocol
+from mallm.models.discussion.ResponseGenerator import ResponseGenerator
 from mallm.utils.config import Config
-from mallm.utils.prompts import (
-    generate_cumulative_voting_prompt,
-)
-from mallm.utils.types import Agreement, VotingResult, VotingResults, WorkerFunctions
+from mallm.utils.types import Agreement, VotingResult, VotingResultList, WorkerFunctions
 
 logger = logging.getLogger("mallm")
 
@@ -18,6 +16,8 @@ class CumulativeVoting(DecisionProtocol):
     The Cumulative Voting decision protocol allows panelists to distribute 10 points among the solutions.
     The solution with the highest total points is selected as the final decision.
     """
+
+    _name = "cumulative_voting"
 
     def __init__(
         self,
@@ -37,7 +37,7 @@ class CumulativeVoting(DecisionProtocol):
         task: str,
         question: str,
         config: Config,
-    ) -> tuple[str, bool, list[Agreement], str, Optional[VotingResults]]:
+    ) -> tuple[str, bool, list[Agreement], str, Optional[VotingResultList]]:
         if len(agreements) > self.total_agents:
             agreements = agreements[-self.total_agents :]
 
@@ -54,8 +54,8 @@ class CumulativeVoting(DecisionProtocol):
                 question,
                 task,
                 voting_process_string,
-                "cumulative",
-                generate_cumulative_voting_prompt,
+                self._name,
+                ResponseGenerator.generate_cumulative_voting_prompt,
                 config.voting_protocols_with_alterations,
             )
         )
@@ -87,16 +87,24 @@ class CumulativeVoting(DecisionProtocol):
             for i, score in enumerate(total_points)
             if score == max_points
         ]
-        agreed = len(best_answers) == 1
-        all_votes[alteration.value] = VotingResult(
-            votes=votes,
-            most_voted=best_solution_index,
-            final_answer=final_answers[best_solution_index],
-            agreed=agreed,
-        )
-        logger.info(
-            f"Selected answer from agent {self.panelists[best_solution_index].short_id} with {max_points} points"
-        )
+        if len(best_answers) == 1:
+            all_votes[alteration.value] = VotingResult(
+                votes=votes,
+                most_voted=best_solution_index,
+                final_answer=final_answers[best_solution_index],
+                agreed=True,
+            )
+            logger.info(
+                f"Selected answer from agent {self.panelists[best_solution_index].short_id} with {max_points} points"
+            )
+        else:
+            all_votes[alteration.value] = VotingResult(
+                votes=votes,
+                most_voted=-1,
+                final_answer="",
+                agreed=False,
+            )
+            logger.info("There was a tie. Going for another round of voting.")
         return all_votes
 
     def process_votes(

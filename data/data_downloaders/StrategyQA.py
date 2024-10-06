@@ -28,27 +28,23 @@ class StrategyGADownloader(DatasetDownloader):
 
     def process_data(self) -> list[InputExample]:
         input_examples = []
-        for s in self.dataset[: self.sample_size]:
-            ref = [k for k, v in s["target_scores"].items() if v == 1]
+        for sample in self.dataset[: self.sample_size]:
+            ref = [f"{chr(65 + i)}) " + k for i, (k, v) in enumerate(sample["target_scores"].items()) if v == 1]
             multiple_choices = []
-            for i, (k, v) in enumerate(s["target_scores"].items()):
-                multiple_choices.append(f"{chr(ord('A') + i)}) " + k)
+            for i in sample["target_scores"]:
+                multiple_choices.append(i)
+            
+            question_text = self._clean_text(sample["input"])
+            formatted_answers = self._format_answer_choices(multiple_choices)
+            question_and_answers = f"{question_text}\n\n" + "\n".join(formatted_answers)
+            
             input_examples.append(
                 InputExample(
                     example_id=str(uuid.uuid4()),
                     dataset_id=None,
-                    inputs=[s["input"]],
-                    context=multiple_choices,
-                    references=[
-                        json.dumps(s["target"])
-                        .replace("Yes.", "A) Yes.")
-                        .replace("No.", "B) No.")
-                        .split(".")[0]
-                        .strip('"'),  # yes/no
-                        ".".join(json.dumps(s["target"]).split(".")[1:])  # explanation
-                        .strip()
-                        .strip('"'),
-                    ],
+                    inputs=[question_and_answers],
+                    context=None,
+                    references=ref,
                 )
             )
         return input_examples
