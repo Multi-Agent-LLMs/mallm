@@ -76,7 +76,7 @@ class DecisionProtocol(ABC):
                 confidence = confidence_value
 
             response = panelist.llm.invoke(
-                ResponseGenerator.generate_final_answer_prompt(
+                panelist.response_generator.generate_final_answer_prompt(
                     panelist.persona,
                     panelist.persona_description,
                     question,

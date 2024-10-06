@@ -136,3 +136,29 @@ Your role: {data.persona} ({data.persona_description})
         if data.agent_memory is not None and data.agent_memory != []:
             prompt += data.agent_memory
         return prompt
+
+    @staticmethod
+    def generate_final_answer_prompt(
+        persona: str,
+        persona_description: str,
+        question: str,
+        task: str,
+        previous_answer: str,
+    ) -> list[dict[str, str]]:
+        return [
+            {
+                "role": "system",
+                "content": f"You are {persona}, {persona_description}. Use your unique perspective to provide a concise solution.",
+            },
+            {
+                "role": "user",
+                "content": (
+                    f"As {persona}, you are tasked with creating a final solution based on the given question and your previous response.\n\n"
+                    f"Task: {task}\n"
+                    f"Question: {question}\n"
+                    f"Your previous solution: {previous_answer}\n\n"
+                    f"As {persona}, please provide a concise final solution to the task based on your unique insights. "
+                    "Ensure your answer is original and directly addresses the question without additional explanations."
+                ),
+            },
+        ]
