@@ -1,8 +1,13 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from mallm.models.Chat import Chat
 from mallm.utils.types import Response, TemplateFilling
+
+if TYPE_CHECKING:
+    from mallm.agents.panelist import Panelist
 
 
 class ResponseGenerator(ABC):
@@ -176,3 +181,308 @@ Current Solution: {data.current_draft}
         if drafting:
             return None
         return "agree" in res.lower() and "disagree" not in res.lower()
+
+    @staticmethod
+    def generate_final_answer_prompt(
+        persona: str,
+        persona_description: str,
+        question: str,
+        task: str,
+        previous_answer: str,
+    ) -> list[dict[str, str]]:
+        return [
+            {
+                "role": "system",
+                "content": f"Your role: {persona} ({persona_description})",
+            },
+            {
+                "role": "user",
+                "content": f"You are tasked with creating a final solution based on the given question and your previous response.\nTask: {task}\nQuestion: {question}\nYour previous response: {previous_answer}",
+            },
+            {
+                "role": "user",
+                "content": "Extract the final solution to the task from the provided text. Remove statements of agreement, disagreement, and explanations. Do not modify the text. Do not output any text besides the solution.",
+            },
+        ]
+
+    @staticmethod
+    def generate_answer_confidence_prompt(
+        panelist: Panelist,
+        question: str,
+        task: str,
+        final_answer: str,
+    ) -> list[dict[str, str]]:
+        prompts = [
+            {
+                "role": "system",
+                "content": f"Your role: {panelist.persona} ({panelist.persona_description})",
+            }
+        ]
+        discussion_history = panelist.get_discussion_history()[0]
+        if discussion_history:
+            prompts.append(
+                {
+                    "role": "user",
+                    "content": "Here is the discussion history to help you make a decision:",
+                }
+            )
+            prompts.extend(discussion_history)
+        prompts.append(
+            {
+                "role": "user",
+                "content": f"The task is: {task}. The question is: {question}. This is the final answer you provided: '{final_answer}'. Based on this information, please generate a confidence score between 0 and 100 for the final answer. Be critical and only answer with the number.",
+            }
+        )
+        return prompts
+
+    @staticmethod
+    def voting_base_prompt(
+        voting_message: str,
+        panelist: Panelist,
+        panelists: list[Panelist],
+        task: str,
+        question: str,
+        solutions: list[str],
+        additional_context: Optional[str] = None,
+        anonymous: bool = True,
+        confidence: Optional[list[int]] = None,
+        history: bool = False,
+    ) -> list[dict[str, str]]:
+        prompts = [
+            {
+                "role": "system",
+                "content": f"Your role: {panelist.persona} ({panelist.persona_description})",
+            }
+        ]
+        if history:
+            discussion_history = panelist.get_discussion_history()[0]
+            if discussion_history:
+                prompts.append(
+                    {
+                        "role": "user",
+                        "content": "Here is the discussion history to help you make a decision:",
+                    }
+                )
+                prompts.extend(discussion_history)
+        additional_context_str = (
+            f"\nAdditional Context: {additional_context}" if additional_context else ""
+        )
+        content_str = (
+            f"{voting_message}\n"
+            f"Task: {task}\n"
+            f"Question: {question}"
+            f"{additional_context_str}\n\n"
+            "Here are the possible solutions:"
+        )
+        prompts.append(
+            {
+                "role": "user",
+                "content": content_str,
+            }
+        )
+        for i, solution in enumerate(solutions):
+            confidence_str = (
+                ""
+                if confidence is None
+                else f"\n\n(Confidence: {round(confidence[i])} %)"
+            )
+            prompts.append(
+                {
+                    "role": "user",
+                    "content": f"Solution {i if anonymous else panelists[i].persona}: {solution}{confidence_str}",
+                }
+            )
+        return prompts
+
+    @staticmethod
+    def generate_voting_prompt(
+        panelist: Panelist,
+        panelists: list[Panelist],
+        task: str,
+        question: str,
+        solutions: list[str],
+        additional_context: Optional[str] = None,
+        anonymous: bool = True,
+        confidence: Optional[list[int]] = None,
+        history: bool = False,
+    ) -> list[dict[str, str]]:
+        prompts = ResponseGenerator.voting_base_prompt(
+            "You are tasked with voting for the best solution from the list provided below based on the given task.",
+            panelist,
+            panelists,
+            task,
+            question,
+            solutions,
+            additional_context,
+            anonymous,
+            confidence,
+            history,
+        )
+
+        prompts.append(
+            {
+                "role": "user",
+                "content": "Based on the above solutions, please provide the number of the solution you are voting for. Answer only with the number.",
+            }
+        )
+
+        return prompts
+
+    @staticmethod
+    def generate_approval_voting_prompt(
+        panelist: Panelist,
+        panelists: list[Panelist],
+        task: str,
+        question: str,
+        solutions: list[str],
+        additional_context: Optional[str] = None,
+        anonymous: bool = True,
+        confidence: Optional[list[int]] = None,
+        history: bool = False,
+    ) -> list[dict[str, str]]:
+        prompts = ResponseGenerator.voting_base_prompt(
+            "You are tasked with approving any number of solutions from the list provided below based on the given task.",
+            panelist,
+            panelists,
+            task,
+            question,
+            solutions,
+            additional_context,
+            anonymous,
+            confidence,
+            history,
+        )
+
+        prompts.append(
+            {
+                "role": "user",
+                "content": "Based on the above solutions, please provide the numbers of the solutions you are approving, separated by commas. Answer only with the numbers.",
+            }
+        )
+
+        return prompts
+
+    @staticmethod
+    def generate_cumulative_voting_prompt(
+        panelist: Panelist,
+        panelists: list[Panelist],
+        task: str,
+        question: str,
+        solutions: list[str],
+        additional_context: Optional[str] = None,
+        anonymous: bool = True,
+        confidence: Optional[list[int]] = None,
+        history: bool = False,
+    ) -> list[dict[str, str]]:
+        prompts = ResponseGenerator.voting_base_prompt(
+            "You are tasked with distributing 10 points among the provided solutions based on the given task.",
+            panelist,
+            panelists,
+            task,
+            question,
+            solutions,
+            additional_context,
+            anonymous,
+            confidence,
+            history,
+        )
+
+        prompts.append(
+            {
+                "role": "user",
+                "content": "Based on the above solutions, please distribute 10 points among the solutions. Provide your points allocation as a JSON dictionary where keys are solution numbers (as int) and values are the points. The total points should sum up to 10. Answer only with the JSON dictionary.",
+            }
+        )
+
+        return prompts
+
+    @staticmethod
+    def generate_ranking_prompt(
+        panelist: Panelist,
+        panelists: list[Panelist],
+        task: str,
+        question: str,
+        solutions: list[str],
+        additional_context: Optional[str] = None,
+        anonymous: bool = True,
+        confidence: Optional[list[int]] = None,
+        history: bool = False,
+    ) -> list[dict[str, str]]:
+        prompts = ResponseGenerator.voting_base_prompt(
+            "You are tasked with ranking the solutions from the most preferred to the least preferred based on the given task.",
+            panelist,
+            panelists,
+            task,
+            question,
+            solutions,
+            additional_context,
+            anonymous,
+            confidence,
+            history,
+        )
+
+        prompts.append(
+            {
+                "role": "user",
+                "content": "Based on the above solutions, please provide the rankings of the solutions separated by spaces. Example: '0 2 1' if you prefer Solution 0 the most, then Solution 2, and finally Solution 1. Provide up to 5 rankings. Only answer with the rankings.",
+            }
+        )
+
+        return prompts
+
+    @staticmethod
+    def generate_summary_prompt(
+        panelist: Panelist,
+        panelists: list[Panelist],
+        task: str,
+        question: str,
+        solutions: list[str],
+        additional_context: Optional[str] = None,
+        anonymous: bool = True,
+        confidence: Optional[list[int]] = None,
+        history: bool = False,
+    ) -> list[dict[str, str]]:
+        prompts = []
+
+        # Add discussion history if available
+        if history:
+            discussion_history = panelist.get_discussion_history()[0]
+            if discussion_history:
+                prompts.append(
+                    {
+                        "role": "user",
+                        "content": "Here is the discussion history to help you make a decision:",
+                    }
+                )
+                prompts.extend(discussion_history)
+
+        # Prepare the main content for the summary request
+        additional_context_str = (
+            f"\nAdditional Context: {additional_context}" if additional_context else ""
+        )
+
+        content_str = (
+            f"Task: {task}\n"
+            f"Question: {question}"
+            f"{additional_context_str}\n\n"
+            "Please provide a summary of the following solutions and combine them in a single answer to solve the task. Only answer with the solution:"
+        )
+
+        # Add each solution to the content string
+        for i, solution in enumerate(solutions):
+            confidence_str = (
+                "" if confidence is None else f" (Confidence: {round(confidence[i])}%)"
+            )
+            panelist_label = f"Solution {i}" if anonymous else f"{panelists[i].persona}"
+            content_str += f"\n\n{panelist_label}: {solution}{confidence_str}"
+
+        # Append the final content as a user message
+        prompts.append(
+            {
+                "role": "user",
+                "content": content_str,
+            }
+        )
+
+        # Return the prompts list
+        return prompts

@@ -122,7 +122,7 @@ class Evaluator:
                 alterations: dict[str, Any] = additional_voting_results.get(
                     "alterations", None
                 )
-                if alterations:
+                if alterations and len(alterations) > 1:
                     for alteration in list(alterations.keys()):
                         answer = alterations[alteration].get("final_answer", "")
                         if answer:

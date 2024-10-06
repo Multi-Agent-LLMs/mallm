@@ -4,11 +4,9 @@ from typing import Any, Optional
 
 from mallm.agents.panelist import Panelist
 from mallm.decision_protocol.protocol import DecisionAlteration, DecisionProtocol
+from mallm.models.discussion.ResponseGenerator import ResponseGenerator
 from mallm.utils.config import Config
-from mallm.utils.prompts import (
-    generate_approval_voting_prompt,
-)
-from mallm.utils.types import Agreement, VotingResult, VotingResults, WorkerFunctions
+from mallm.utils.types import Agreement, VotingResult, VotingResultList, WorkerFunctions
 
 logger = logging.getLogger("mallm")
 
@@ -17,6 +15,8 @@ class ApprovalVoting(DecisionProtocol):
     """
     The Approval Voting decision protocol allows panelists to approve any number of solutions after a certain number of turns.
     """
+
+    _name = "approval_voting"
 
     def __init__(
         self,
@@ -36,7 +36,7 @@ class ApprovalVoting(DecisionProtocol):
         task: str,
         question: str,
         config: Config,
-    ) -> tuple[str, bool, list[Agreement], str, Optional[VotingResults]]:
+    ) -> tuple[str, bool, list[Agreement], str, Optional[VotingResultList]]:
         if len(agreements) > self.total_agents:
             agreements = agreements[-self.total_agents :]
 
@@ -52,8 +52,8 @@ class ApprovalVoting(DecisionProtocol):
                 question,
                 task,
                 voting_process_string,
-                "approval",
-                generate_approval_voting_prompt,
+                self._name,
+                ResponseGenerator.generate_approval_voting_prompt,
                 config.voting_protocols_with_alterations,
             )
         )
@@ -72,19 +72,40 @@ class ApprovalVoting(DecisionProtocol):
         final_answers: list[str],
         votes: list[int],
     ) -> dict[str, VotingResult]:
-        # Count approvals for each answer
-        approval_counts = Counter(votes)
-        most_approved = approval_counts.most_common(1)[0][0]
+        winners = []
+        most_approved = -1
+        if votes:
+            # Count approvals for each answer
+            # Get the most common approval count
+            approval_counts = Counter(votes)
+            most_common = approval_counts.most_common()
+            most_approved = most_common[0][0]
+            most_approved_count = most_common[0][1]
 
-        all_votes[alteration.value] = VotingResult(
-            votes=votes,
-            most_voted=most_approved,
-            final_answer=final_answers[most_approved],
-            agreed=True,
-        )
-        logger.info(
-            f"Most approved answer from agent {self.panelists[most_approved].short_id}"
-        )
+            # Check if there are multiple winners with the same vote count
+            winners = [
+                candidate
+                for candidate, count in approval_counts.items()
+                if count == most_approved_count
+            ]
+        if len(winners) == 1:
+            all_votes[alteration.value] = VotingResult(
+                votes=votes,
+                most_voted=most_approved,
+                final_answer=final_answers[most_approved],
+                agreed=True,
+            )
+            logger.info(
+                f"Most approved answer from agent {self.panelists[most_approved].short_id}"
+            )
+        else:
+            all_votes[alteration.value] = VotingResult(
+                votes=votes,
+                most_voted=-1,
+                final_answer="",
+                agreed=False,
+            )
+            logger.info("There was a tie. Going for another round of voting.")
         return all_votes
 
     def process_votes(

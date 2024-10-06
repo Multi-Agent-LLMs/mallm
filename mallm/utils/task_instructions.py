@@ -1,4 +1,4 @@
-PROMPT_TEMPLATES: dict[str, str] = {
+TASK_INSTRUCTIONS: dict[str, str] = {
     "etpc": "Paraphrase the provided text into a single paraphrase by using all paraphrase types.",
     "wmt19_de_en": "Translate the provided text from German to English.",
     "simple_ethical_questions": "Answer the provided question by choosing option A, B, C, or D. Include the letter corresponding to your answer in the solution.",

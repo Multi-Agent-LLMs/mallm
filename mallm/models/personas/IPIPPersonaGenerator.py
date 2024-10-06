@@ -12,6 +12,7 @@ class IPIPPersonaGenerator(PersonaGenerator):
     """
     The IPIPPersonaGenerator class is a specialized PersonaGenerator designed to generate personas based on the Big Five personality traits. It is capable of identifying the necessary participants, their roles, and characteristics to foster a rich and diverse discussion.
     """
+
     def __init__(self, llm: Chat):
         self.llm = llm
         self.base_prompt = {
@@ -46,7 +47,10 @@ New Participant:
         }
 
     def generate_persona(
-        self, task_description: str, already_generated_personas: list[dict[str, str]], sample: InputExample
+        self,
+        task_description: str,
+        already_generated_personas: list[dict[str, str]],
+        sample: InputExample,
     ) -> dict[str, str]:
         current_prompt = [
             self.base_prompt,
@@ -56,10 +60,17 @@ New Participant:
             },
         ]
         if already_generated_personas:
-            current_prompt.append({
-                "role": "system",
-                "content": "Already Generated Participants:\n" + '\n'.join([str(generated_persona) for generated_persona in already_generated_personas]),
-            }
+            current_prompt.append(
+                {
+                    "role": "system",
+                    "content": "Already Generated Participants:\n"
+                    + "\n".join(
+                        [
+                            str(generated_persona)
+                            for generated_persona in already_generated_personas
+                        ]
+                    ),
+                }
             )
 
         retry = 0
@@ -298,7 +309,7 @@ New Participant:
 
                 desc += f" You are a {new_agent['experience']} in the field and identify as {new_agent['gender']}."
 
-                agent : dict[str, str] = {"role": new_agent["role"], "description": desc}
+                agent: dict[str, str] = {"role": new_agent["role"], "description": desc}
                 break
             except json.decoder.JSONDecodeError as e:
                 logger.debug(
