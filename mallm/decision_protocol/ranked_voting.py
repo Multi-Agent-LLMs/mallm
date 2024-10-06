@@ -89,16 +89,24 @@ class RankedVoting(DecisionProtocol):
 
         # If there's a tie, pick the first answer among the best
         # If all panelists agree on the best answer finished else go for another round
-        agreed = len(best_answers) == 1
-        all_votes[alteration.value] = VotingResult(
-            votes=votes,
-            most_voted=index,
-            final_answer=final_answers[index],
-            agreed=agreed,
-        )
-        logger.info(
-            f"Selected answer from agent {self.panelists[index].short_id} with {highest_score} points"
-        )
+        if len(best_answers) == 1:
+            all_votes[alteration.value] = VotingResult(
+                votes=votes,
+                most_voted=index,
+                final_answer=final_answers[index],
+                agreed=True,
+            )
+            logger.info(
+                f"Selected answer from agent {self.panelists[index].short_id} with {highest_score} points"
+            )
+        else:
+            all_votes[alteration.value] = VotingResult(
+                votes=votes,
+                most_voted=-1,
+                final_answer="",
+                agreed=False,
+            )
+            logger.info("There was a tie. Going for another round of voting.")
         return all_votes
 
     def process_votes(

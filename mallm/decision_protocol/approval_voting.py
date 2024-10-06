@@ -72,19 +72,40 @@ class ApprovalVoting(DecisionProtocol):
         final_answers: list[str],
         votes: list[int],
     ) -> dict[str, VotingResult]:
-        # Count approvals for each answer
-        approval_counts = Counter(votes)
-        most_approved = approval_counts.most_common(1)[0][0]
+        winners = []
+        most_approved = -1
+        if votes:
+            # Count approvals for each answer
+            # Get the most common approval count
+            approval_counts = Counter(votes)
+            most_common = approval_counts.most_common()
+            most_approved = most_common[0][0]
+            most_approved_count = most_common[0][1]
 
-        all_votes[alteration.value] = VotingResult(
-            votes=votes,
-            most_voted=most_approved,
-            final_answer=final_answers[most_approved],
-            agreed=True,
-        )
-        logger.info(
-            f"Most approved answer from agent {self.panelists[most_approved].short_id}"
-        )
+            # Check if there are multiple winners with the same vote count
+            winners = [
+                candidate
+                for candidate, count in approval_counts.items()
+                if count == most_approved_count
+            ]
+        if len(winners) == 1:
+            all_votes[alteration.value] = VotingResult(
+                votes=votes,
+                most_voted=most_approved,
+                final_answer=final_answers[most_approved],
+                agreed=True,
+            )
+            logger.info(
+                f"Most approved answer from agent {self.panelists[most_approved].short_id}"
+            )
+        else:
+            all_votes[alteration.value] = VotingResult(
+                votes=votes,
+                most_voted=-1,
+                final_answer="",
+                agreed=False,
+            )
+            logger.info("There was a tie. Going for another round of voting.")
         return all_votes
 
     def process_votes(

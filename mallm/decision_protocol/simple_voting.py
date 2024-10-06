@@ -72,9 +72,22 @@ class SimpleVoting(DecisionProtocol):
         final_answers: list[str],
         votes: list[int],
     ) -> dict[str, VotingResult]:
+        winners = []
+        most_voted = -1
         if votes:
             vote_counts = Counter(votes)
-            most_voted = vote_counts.most_common(1)[0][0]
+            most_common = vote_counts.most_common()
+            most_voted = most_common[0][0]
+            most_voted_count = most_common[0][1]
+
+            # Check if there are multiple winners with the same vote count
+            winners = [
+                candidate
+                for candidate, count in vote_counts.items()
+                if count == most_voted_count
+            ]
+
+        if len(winners) == 1:
             all_votes[alteration.value] = VotingResult(
                 votes=votes,
                 most_voted=most_voted,
@@ -91,7 +104,7 @@ class SimpleVoting(DecisionProtocol):
                 final_answer="",
                 agreed=False,
             )
-            logger.info("No votes were cast")
+            logger.info("There was a tie. Going for another round of voting.")
         return all_votes
 
     def process_votes(

@@ -87,16 +87,24 @@ class CumulativeVoting(DecisionProtocol):
             for i, score in enumerate(total_points)
             if score == max_points
         ]
-        agreed = len(best_answers) == 1
-        all_votes[alteration.value] = VotingResult(
-            votes=votes,
-            most_voted=best_solution_index,
-            final_answer=final_answers[best_solution_index],
-            agreed=agreed,
-        )
-        logger.info(
-            f"Selected answer from agent {self.panelists[best_solution_index].short_id} with {max_points} points"
-        )
+        if len(best_answers) == 1:
+            all_votes[alteration.value] = VotingResult(
+                votes=votes,
+                most_voted=best_solution_index,
+                final_answer=final_answers[best_solution_index],
+                agreed=True,
+            )
+            logger.info(
+                f"Selected answer from agent {self.panelists[best_solution_index].short_id} with {max_points} points"
+            )
+        else:
+            all_votes[alteration.value] = VotingResult(
+                votes=votes,
+                most_voted=-1,
+                final_answer="",
+                agreed=False,
+            )
+            logger.info("There was a tie. Going for another round of voting.")
         return all_votes
 
     def process_votes(
