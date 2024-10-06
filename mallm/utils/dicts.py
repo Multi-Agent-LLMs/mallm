@@ -16,6 +16,9 @@ from mallm.discourse_policy.memory import DiscourseMemory
 from mallm.discourse_policy.policy import DiscoursePolicy
 from mallm.discourse_policy.relay import DiscourseRelay
 from mallm.discourse_policy.report import DiscourseReport
+from mallm.models.discussion.CriticalResponseGenerator2 import (
+    CriticalResponseGenerator2,
+)
 from mallm.models.discussion.FreeTextResponseGenerator import FreeTextResponseGenerator
 from mallm.models.discussion.JSONResponseGenerator import JSONResponseGenerator
 from mallm.models.discussion.ResponseGenerator import ResponseGenerator
@@ -47,6 +50,7 @@ DISCUSSION_PARADIGMS: dict[str, type[DiscoursePolicy]] = {
     "relay": DiscourseRelay,
     "debate": DiscourseDebate,
     "inspiration": InspirationDebate,
+    "critical2": CriticalResponseGenerator2,
 }
 
 PERSONA_GENERATORS: dict[str, type[PersonaGenerator]] = {
