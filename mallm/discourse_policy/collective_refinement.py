@@ -18,7 +18,16 @@ if TYPE_CHECKING:
 logger = logging.getLogger("mallm")
 
 
-class InspirationDebate(DiscoursePolicy):
+class CollectiveRefinement(DiscoursePolicy):
+    """
+    A discussion protocol where agents improve their answers through multiple rounds of feedback.
+
+    In this protocol, each agent first generates an answer independently. In each following round,
+    every agent receives the answers from all other agents at the same time. Using this shared information,
+    each agent refines their own answer. This process continues over several rounds, helping agents
+    gradually reach a shared or improved solution.
+    """
+
     def draft_proposer_call(
         self,
         draft_proposer: DraftProposer,
