@@ -1,7 +1,6 @@
 import json
 import logging
 from abc import ABC, abstractmethod
-from enum import Enum
 from typing import Any, Optional, Protocol
 
 import numpy as np
@@ -10,20 +9,10 @@ from sklearn.metrics.pairwise import cosine_similarity
 from mallm.agents.panelist import Panelist
 from mallm.models.discussion.ResponseGenerator import ResponseGenerator
 from mallm.utils.config import Config
+from mallm.utils.enums import DecisionAlteration
 from mallm.utils.types import Agreement, VotingResult, VotingResultList, WorkerFunctions
 
 logger = logging.getLogger("mallm")
-
-
-class DecisionAlteration(Enum):
-    PUBLIC = "public"
-    FACTS = "facts"
-    HISTORY = "history"
-    CONFIDENCE = "confidence"
-    CONFIDENCE_LOG_PROBS = "confidence_log_probs"
-    CONFIDENCE_PROMPTED = "confidence_prompted"
-    CONFIDENCE_CONSISTENCY = "confidence_consistency"
-    ANONYMOUS = "anonymous"
 
 
 class VotingPromptFunction(Protocol):
