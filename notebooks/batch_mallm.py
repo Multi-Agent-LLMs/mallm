@@ -56,7 +56,7 @@ def validate_all_configs(
     for i, run_config in enumerate(runs, 1):
         merged_config = {**common_config, **run_config}
         config = create_config(merged_config)
-        if config and config.check_config():
+        if config:
             print(f"Checking configuration for Run {i}...")
             config.check_config()
             valid_configs.append(config)
