@@ -63,7 +63,7 @@ class CollectiveRefinement(DiscoursePolicy):
         self.memories: list[Memory]
         if console is None:
             console = Console()
-        logger.warning("Inspiration Debate cant use different response generators")
+        logger.warning("Collective Refinement cant use different response generators")
         logger.warning(
             "Inspiration Debate only works with voting based decision protocols"
         )
