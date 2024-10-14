@@ -68,7 +68,7 @@ class CollectiveRefinement(DiscoursePolicy):
             "Inspiration Debate only works with voting based decision protocols"
         )
         logger.info(
-            """Paradigm: Inspiration
+            """Paradigm: Collective Refinement
                 ┌───┐       ┌───┐       ┌───┐
                 │A 3│       │A 1│       │A 2│
                 └─│─┘       └─│─┘       └─│─┘
