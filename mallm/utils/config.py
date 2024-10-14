@@ -49,6 +49,7 @@ class Config:
     all_agents_generate_first_draft: bool = False
     policy: Optional[str] = None
     voting_protocols_with_alterations: bool = False
+    calculate_persona_diversity: bool = True
 
     def __post_init__(self) -> None:
         if (

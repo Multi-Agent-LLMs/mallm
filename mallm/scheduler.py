@@ -27,6 +27,7 @@ from rich.logging import RichHandler
 from rich.progress import Console, Progress, TaskID  # type: ignore
 from sentence_transformers import SentenceTransformer
 from torch import Tensor
+from torch.nn.functional import cosine_similarity
 
 from mallm.coordinator import Coordinator
 from mallm.models.Chat import Chat
@@ -225,6 +226,12 @@ class Scheduler:
         logger.info(f"""Reference answer: {sample.references}""")
         logger.info(f"""Decision successful: {decision_success}""")
 
+        persona_diversity = None
+        personas = coordinator.get_agents()
+        if self.config.calculate_persona_diversity:
+            persona_descriptions = [persona["description"] for persona in personas]
+            persona_diversity = worker_functions.worker_persona_diversity_function(persona_descriptions)
+
         self.output_dicts.append(
             {
                 "dataset": self.dataset_name,
@@ -232,7 +239,8 @@ class Scheduler:
                 "datasetId": sample.dataset_id,
                 "instruction": self.config.task_instruction_prompt,
                 "coordinatorId": coordinator.id,
-                "personas": coordinator.get_agents(),
+                "personas": personas,
+                "persona_diversity": persona_diversity,
                 "paradigm": self.config.discussion_paradigm,
                 "input": sample.inputs,
                 "context": sample.context,
@@ -301,7 +309,9 @@ class Scheduler:
             processing_data = self.data
         context_lock = Lock()
         paraphrase_lock = Lock()
+        persona_diversity_lock = Lock()
         paraphrase_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
+        all_model = SentenceTransformer("all-MiniLM-L6-v2")
 
         def worker_paraphrase_function(
             input_data: list[str],
@@ -319,9 +329,25 @@ class Scheduler:
                 text = context(input_data)
             return text
 
+        def worker_persona_diversity_function(
+            input_data: list[str],
+        ) -> float:
+            # Acquire the lock before using the model
+            embedding: list[Tensor]
+            with persona_diversity_lock:
+                embedding = all_model.encode(input_data)
+            similarities = []
+            for t1 in embedding:
+                for t2 in embedding:
+                    if t1 == t2:
+                        continue
+                    similarities.append(cosine_similarity(embedding[0], embedding[1], dim=1).item())
+            return sum(similarities) / len(similarities)
+
         worker_functions = WorkerFunctions(
             worker_paraphrase_function=worker_paraphrase_function,
             worker_context_function=worker_context_function,
+            worker_persona_diversity_function=worker_persona_diversity_function,
         )
 
         with Progress() as progress:
