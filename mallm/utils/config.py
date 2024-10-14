@@ -47,6 +47,7 @@ class Config:
     use_ablation: bool = False
     shuffle_input_samples: bool = False
     all_agents_generate_first_draft: bool = False
+    policy: Optional[str] = None
     voting_protocols_with_alterations: bool = False
 
     def __post_init__(self) -> None:
@@ -107,7 +108,7 @@ class Config:
             self.endpoint_url = self.endpoint_url[:-1]
         if not self.num_neutral_agents and not self.all_agents_drafting:
             logger.warning(
-                "Setting feedback_only=True without a moderator does not make sense. No solutions will be drafted."
+                "Setting feedback_only=True without a draft proposer does not make sense. No solutions will be drafted."
             )
         try:
             logger.info("Testing availability of the endpoint...")
