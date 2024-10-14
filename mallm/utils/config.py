@@ -6,7 +6,7 @@ from typing import Optional
 
 import requests
 
-from mallm.utils.dicts import PROMPT_TEMPLATES
+from mallm.utils.task_instructions import TASK_INSTRUCTIONS
 
 logger = logging.getLogger("mallm")
 
@@ -48,13 +48,14 @@ class Config:
     shuffle_input_samples: bool = False
     all_agents_generate_first_draft: bool = False
     policy: Optional[str] = None
+    voting_protocols_with_alterations: bool = False
 
     def __post_init__(self) -> None:
         if (
             not self.task_instruction_prompt
-            and self.task_instruction_prompt_template in PROMPT_TEMPLATES
+            and self.task_instruction_prompt_template in TASK_INSTRUCTIONS
         ):
-            self.task_instruction_prompt = PROMPT_TEMPLATES[
+            self.task_instruction_prompt = TASK_INSTRUCTIONS[
                 self.task_instruction_prompt_template
             ]
 
@@ -91,9 +92,16 @@ class Config:
             )
             sys.exit(1)
         if not self.agent_generators_list:
-            self.agent_generators_list = [self.agent_generator for i in range(self.num_agents)]
-        if self.agent_generators_list and len(self.agent_generators_list) != self.num_agents:
-            logger.warning(f"The length of the provided agent generators ({self.agent_generators_list}) does not match the number of agents (3). Setting num_agents={len(self.agent_generators_list)}.")
+            self.agent_generators_list = [
+                self.agent_generator for i in range(self.num_agents)
+            ]
+        if (
+            self.agent_generators_list
+            and len(self.agent_generators_list) != self.num_agents
+        ):
+            logger.warning(
+                f"The length of the provided agent generators ({self.agent_generators_list}) does not match the number of agents (3). Setting num_agents={len(self.agent_generators_list)}."
+            )
             self.num_agents = len(self.agent_generators_list)
         if self.endpoint_url.endswith("/"):
             logger.warning("Removing trailing / from the endpoint url.")
@@ -115,3 +123,25 @@ class Config:
             logger.warning(
                 "max_concurrent_requests is very large. Please make sure the API endpoint you are using can handle that many simultaneous requests."
             )
+        # import here to avoid circular imports
+        from mallm.utils.dicts import (  # noqa PLC0415
+            DECISION_PROTOCOLS,
+            DISCUSSION_PARADIGMS,
+            RESPONSE_GENERATORS,
+        )
+
+        if self.response_generator not in RESPONSE_GENERATORS:
+            logger.error(
+                f"Invalid response generator: {self.response_generator}. Available options are: {RESPONSE_GENERATORS.keys()}."
+            )
+            sys.exit(1)
+        if self.discussion_paradigm not in DISCUSSION_PARADIGMS:
+            logger.error(
+                f"Invalid discussion paradigm: {self.discussion_paradigm}. Available options are: {DISCUSSION_PARADIGMS.keys()}."
+            )
+            sys.exit(1)
+        if self.decision_protocol not in DECISION_PROTOCOLS:
+            logger.error(
+                f"Invalid decision protocol: {self.decision_protocol}. Available options are: {DECISION_PROTOCOLS.keys()}."
+            )
+            sys.exit(1)

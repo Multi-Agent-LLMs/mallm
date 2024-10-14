@@ -47,7 +47,7 @@ class Agent:
         self.client = client
         self.chain_of_thought = chain_of_thought
         self.drafting_agent = drafting_agent
-        self.memory : dict[str, Memory] = {}
+        self.memory: dict[str, Memory] = {}
         logger.info(
             f"Creating agent [bold blue]{self.short_id}[/] with personality [bold blue]{self.persona}[/]: {self.persona_description}"
         )
@@ -201,11 +201,13 @@ class Agent:
         """
         Retrieves memory data from the agents memory
         """
-        memories: list[Memory] = []
+        memories: list[Memory]
         memory_ids = []
         current_draft = None
 
-        memories = sorted(self.memory.values(), key=lambda x: x.message_id, reverse=False)
+        memories = sorted(
+            self.memory.values(), key=lambda x: x.message_id, reverse=False
+        )
         context_memory = []
         for memory in memories:
             if (
@@ -229,6 +231,21 @@ class Agent:
                     current_draft = memory.solution
 
         return context_memory, memory_ids, current_draft
+
+    def get_own_messages(self, context_length: Optional[int] = None) -> list[str]:
+        """
+        Retrieves memory from the agents memory bucket as a string
+        context_length refers to the amount of turns the agent can use as rationale
+        Returns: list of strings
+        """
+        memories, _, _ = self.get_memories(context_length=context_length)
+        if memories:
+            own_messages = [
+                memory.message for memory in memories if memory.agent_id == self.id
+            ]
+        else:
+            own_messages = []
+        return own_messages
 
     def get_discussion_history(
         self,

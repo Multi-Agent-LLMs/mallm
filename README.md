@@ -140,17 +140,18 @@ all_agents_drafting: bool = True
 use_ablation: bool = False
 shuffle_input_samples: bool = False
 all_agents_generate_first_draft: bool = False
+voting_protocols_with_alterations: bool = False
 policy: Optional[str] = None
 ```
 
 ### Discussion Parameters:
 Response Generators: `freetext`, `json`, `simple`, `splitfreetext`
 
-Decision Protocols: `approval`, `cumulative`, `hybrid_consensus`, `majority_consensus`, `ranked`, `supermajority_consensus`, `unanimity_consensus`, `voting`
+Decision Protocols: `approval_voting`, `cumulative_voting`, `hybrid_consensus`, `majority_consensus`, `ranked_voting`, `simple_voting`, `summary`, `supermajority_consensus`, `unanimity_consensus`
 
 Persona Generators: `expert`, `ipip`, `mock`, `nopersona`
 
-Discussion Paradigms: `debate`, `memory`, `relay`, `report`
+Discussion Paradigms: `collective_refinement`, `debate`, `memory`, `relay`, `report`
 
 ## Evaluation
 

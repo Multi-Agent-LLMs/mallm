@@ -1,14 +1,16 @@
-from mallm.decision_protocol.approval import ApprovalVoting
-from mallm.decision_protocol.cumulative import CumulativeVoting
-from mallm.decision_protocol.majority import (
+from mallm.decision_protocol.approval_voting import ApprovalVoting
+from mallm.decision_protocol.consensus import (
     HybridMajorityConsensus,
     MajorityConsensus,
     SupermajorityConsensus,
     UnanimityConsensus,
 )
+from mallm.decision_protocol.cumulative_voting import CumulativeVoting
 from mallm.decision_protocol.protocol import DecisionProtocol
-from mallm.decision_protocol.ranked import RankedVoting
-from mallm.decision_protocol.voting import Voting
+from mallm.decision_protocol.ranked_voting import RankedVoting
+from mallm.decision_protocol.simple_voting import SimpleVoting
+from mallm.decision_protocol.summary import Summary
+from mallm.discourse_policy.collective_refinement import CollectiveRefinement
 from mallm.discourse_policy.debate import DiscourseDebate
 from mallm.discourse_policy.memory import DiscourseMemory
 from mallm.discourse_policy.policy import DiscoursePolicy
@@ -32,10 +34,11 @@ DECISION_PROTOCOLS: dict[str, type[DecisionProtocol]] = {
     "supermajority_consensus": SupermajorityConsensus,
     "hybrid_consensus": HybridMajorityConsensus,
     "unanimity_consensus": UnanimityConsensus,
-    "voting": Voting,
-    "approval": ApprovalVoting,
-    "cumulative": CumulativeVoting,
-    "ranked": RankedVoting,
+    "simple_voting": SimpleVoting,
+    "approval_voting": ApprovalVoting,
+    "cumulative_voting": CumulativeVoting,
+    "ranked_voting": RankedVoting,
+    "summary": Summary,
 }
 
 DISCUSSION_PARADIGMS: dict[str, type[DiscoursePolicy]] = {
@@ -43,6 +46,7 @@ DISCUSSION_PARADIGMS: dict[str, type[DiscoursePolicy]] = {
     "report": DiscourseReport,
     "relay": DiscourseRelay,
     "debate": DiscourseDebate,
+    "collective_refinement": CollectiveRefinement,
 }
 
 PERSONA_GENERATORS: dict[str, type[PersonaGenerator]] = {
@@ -57,17 +61,4 @@ RESPONSE_GENERATORS: dict[str, type[ResponseGenerator]] = {
     "freetext": FreeTextResponseGenerator,
     "splitfreetext": SplitFreeTextResponseGenerator,
     "simple": SimpleResponseGenerator,
-}
-
-PROMPT_TEMPLATES: dict[str, str] = {
-    "etpc": "Paraphrase the provided text into a single paraphrase by using all paraphrase types.",
-    "wmt19_de_en": "Translate the provided text from German to English.",
-    "simple_ethical_questions": "Answer the provided question by choosing option A, B, C, or D. Include the letter corresponding to your answer in the solution.",
-    "squad_v2": "Answer the following question. If the question is not answerable with the provided information, write '[UNKNOWN]'.",
-    "strategyqa": "Answer the following question with A) Yes or B) No. Include the letter corresponding to your answer in the solution.",
-    "xsum": "Summarize the provided text into one sentence.",
-    "mmlu_pro": "Answer the following question. Include the letter corresponding to your answer in the solution.",
-    "musr": "Solve the mystery.",
-    "gpqa": "Answer the following question by choosing option A, B, C, or D. Include the letter corresponding to your answer in the solution.",
-    "math_lvl5": "Solve the following math problem.",
 }

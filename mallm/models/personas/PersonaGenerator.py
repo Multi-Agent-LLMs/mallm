@@ -11,7 +11,10 @@ class PersonaGenerator(ABC):
 
     @abstractmethod
     def generate_persona(
-        self, task_description: str, already_generated_personas: list[dict[str, str]], sample: InputExample
+        self,
+        task_description: str,
+        already_generated_personas: list[dict[str, str]],
+        sample: InputExample,
     ) -> dict[str, str]:
         """
         Abstract method to generate a list of persona descriptions based on the given task.
