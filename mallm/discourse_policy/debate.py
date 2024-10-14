@@ -8,7 +8,7 @@ from rich.progress import Console  # type: ignore
 from mallm.agents.draftProposer import DraftProposer
 from mallm.agents.panelist import Panelist
 from mallm.discourse_policy.policy import DiscoursePolicy
-from mallm.utils.types import Agreement, TemplateFilling
+from mallm.utils.types import Agreement, TemplateFilling, VotingResultList
 
 if TYPE_CHECKING:
     from mallm.coordinator import Coordinator
@@ -50,10 +50,11 @@ class DiscourseDebate(DiscoursePolicy):
         solution: str,
         config: Config,
         console: Optional[Console] = None,
-    ) -> tuple[Optional[str], int, list[Agreement], bool]:
+    ) -> tuple[Optional[str], int, list[Agreement], bool, Optional[VotingResultList]]:
         unique_id = 0
         memories = []
         voting_process_string = ""
+        additional_voting_results: Optional[VotingResultList] = None
         if console is None:
             console = Console()
 
@@ -190,14 +191,19 @@ class DiscourseDebate(DiscoursePolicy):
                 logger.error("No decision protocol module found.")
                 raise Exception("No decision protocol module found.")
 
-            self.draft, self.decision, self.agreements, voting_process_string = (
-                coordinator.decision_protocol.make_decision(
-                    self.agreements,
-                    self.turn,
-                    len(coordinator.agents),
-                    task_instruction,
-                    input_str,
-                )
+            (
+                self.draft,
+                self.decision,
+                self.agreements,
+                voting_process_string,
+                additional_voting_results,
+            ) = coordinator.decision_protocol.make_decision(
+                self.agreements,
+                self.turn,
+                len(coordinator.agents),
+                task_instruction,
+                input_str,
+                config,
             )
             if self.decision:
                 break
@@ -211,4 +217,10 @@ class DiscourseDebate(DiscoursePolicy):
             voting_process_string,
             console=console,
         )
-        return self.draft, self.turn, self.agreements, self.decision
+        return (
+            self.draft,
+            self.turn,
+            self.agreements,
+            self.decision,
+            additional_voting_results,
+        )

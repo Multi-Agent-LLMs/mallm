@@ -24,7 +24,13 @@ from mallm.utils.dicts import (
     PERSONA_GENERATORS,
     RESPONSE_GENERATORS,
 )
-from mallm.utils.types import Agreement, InputExample, Memory
+from mallm.utils.types import (
+    Agreement,
+    InputExample,
+    Memory,
+    VotingResultList,
+    WorkerFunctions,
+)
 
 logger = logging.getLogger("mallm")
 
@@ -159,6 +165,7 @@ class Coordinator:
         self,
         config: Config,
         sample: InputExample,
+        worker_functions: WorkerFunctions,
     ) -> tuple[
         Optional[str],
         list[Memory],
@@ -167,6 +174,7 @@ class Coordinator:
         list[Agreement],
         float,
         bool,
+        Optional[VotingResultList],
     ]:
         """
         The routine responsible for the discussion between agents to solve a task.
@@ -215,7 +223,7 @@ class Coordinator:
                 f"No valid decision protocol for {config.decision_protocol}"
             )
         self.decision_protocol = DECISION_PROTOCOLS[config.decision_protocol](
-            self.panelists, config.num_neutral_agents
+            self.panelists, config.num_neutral_agents, worker_functions
         )
 
         start_time = time.perf_counter()
@@ -241,13 +249,15 @@ class Coordinator:
 -------------"""
         )
 
-        answer, turn, agreements, decision_success = policy.discuss(
-            coordinator=self,
-            task_instruction=sample_instruction,
-            input_str=input_str,
-            config=config,
-            console=self.console,
-            solution=str(sample.references),
+        answer, turn, agreements, decision_success, additional_voting_results = (
+            policy.discuss(
+                coordinator=self,
+                task_instruction=sample_instruction,
+                input_str=input_str,
+                config=config,
+                console=self.console,
+                solution=str(sample.references),
+            )
         )
 
         discussion_time = timedelta(
@@ -266,4 +276,5 @@ class Coordinator:
             agreements,
             discussion_time,
             decision_success,
+            additional_voting_results,
         )

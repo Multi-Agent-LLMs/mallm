@@ -10,7 +10,7 @@ from rich.text import Text
 
 from mallm.agents.draftProposer import DraftProposer
 from mallm.agents.panelist import Panelist
-from mallm.utils.types import Agreement, Memory, TemplateFilling
+from mallm.utils.types import Agreement, Memory, TemplateFilling, VotingResultList
 
 if TYPE_CHECKING:
     from mallm.coordinator import Coordinator
@@ -36,9 +36,10 @@ class DiscoursePolicy(ABC):
         solution: str,
         config: Config,
         console: Optional[Console] = None,
-    ) -> tuple[Optional[str], int, list[Agreement], bool]:
+    ) -> tuple[Optional[str], int, list[Agreement], bool, Optional[VotingResultList]]:
         logger.info(self.paradigm_str)
         voting_process_string = ""
+        additional_voting_results: Optional[VotingResultList] = None
         if console is None:
             console = Console()
         while (
@@ -94,10 +95,14 @@ class DiscoursePolicy(ABC):
                     logger.error("No decision protocol module found.")
                     raise Exception("No decision protocol module found.")
 
-                self.draft, self.decision, self.agreements, voting_process_string = (
-                    coordinator.decision_protocol.make_decision(
-                        self.agreements, self.turn, i, task_instruction, input_str
-                    )
+                (
+                    self.draft,
+                    self.decision,
+                    self.agreements,
+                    voting_process_string,
+                    additional_voting_results,
+                ) = coordinator.decision_protocol.make_decision(
+                    self.agreements, self.turn, i, task_instruction, input_str, config
                 )
 
                 if self.decision:
@@ -114,7 +119,13 @@ class DiscoursePolicy(ABC):
             voting_process_string,
             console,
         )
-        return self.draft, self.turn, self.agreements, self.decision
+        return (
+            self.draft,
+            self.turn,
+            self.agreements,
+            self.decision,
+            additional_voting_results,
+        )
 
     def print_messages(
         self,
@@ -150,7 +161,12 @@ class DiscoursePolicy(ABC):
         discussion_text.highlight_regex(r"Input:", style="bold green")
         discussion_text.highlight_regex(r"Decision Success:", style="bold green")
         discussion_text.highlight_regex(r"Accepted solution:", style="bold green")
+        discussion_text.highlight_regex(r"Voting with alteration:", style="bold green")
+        discussion_text.highlight_regex(r".* final answer:", style="bold green")
+        discussion_text.highlight_regex(r"Facts:", style="bold green")
         discussion_text.highlight_regex(r"####.*", style="bold green")
+        for panelist in coordinator.panelists:
+            discussion_text.highlight_regex(panelist.persona, style="bold blue")
         panel = Panel(
             discussion_text,
             title=(

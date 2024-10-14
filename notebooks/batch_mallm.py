@@ -57,7 +57,10 @@ def validate_all_configs(
         merged_config = {**common_config, **run_config}
         config = create_config(merged_config)
         if config:
+            print(f"Checking configuration for Run {i}...")
+            config.check_config()
             valid_configs.append(config)
+            print(f"Configuration for Run {i} is valid.")
         else:
             print(f"Configuration for Run {i} is invalid.")
     return valid_configs

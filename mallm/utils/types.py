@@ -1,5 +1,7 @@
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any, Callable, Optional
+
+from torch import Tensor
 
 
 @dataclass
@@ -45,13 +47,29 @@ class TemplateFilling:
 
 
 @dataclass
+class VotingResult:
+    votes: Any
+    final_answer: str
+    most_voted: int
+    agreed: bool
+
+
+@dataclass
+class VotingResultList:
+    final_answers: list[str]
+    type: str
+    voting_process_string: str
+    alterations: dict[str, VotingResult]
+
+
+@dataclass
 class InputExample:
     example_id: str
     dataset_id: Optional[str]
     inputs: list[str]
     context: Optional[list[str]]
     references: list[str]
-    metadata: Optional[dict[Any,Any]] = None
+    metadata: Optional[dict[Any, Any]] = None
 
     def confirm_types(self) -> None:
         assert isinstance(self.example_id, str), "Example_id is not a string"
@@ -71,3 +89,9 @@ class InputExample:
                 assert isinstance(c, str), "Context is not a list of only strings"
         for r in self.references:
             assert isinstance(r, str), "References is not a list of only strings"
+
+
+@dataclass
+class WorkerFunctions:
+    worker_paraphrase_function: Callable[[list[str]], list[Tensor]]
+    worker_context_function: Callable[[str], str]
