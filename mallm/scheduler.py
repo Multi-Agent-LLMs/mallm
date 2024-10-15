@@ -212,7 +212,6 @@ class Scheduler:
                 config=self.config, sample=sample, worker_functions=worker_functions
             )
             personas, persona_diversity = coordinator.get_agents(self.config, worker_functions)
-            logger.info("Persona Diversity: " + str(persona_diversity))
         except Exception:
             # More extensive error logging to ease debugging during async execution
             logger.error(f"Failed discussion of sample {sample.example_id}.")
@@ -227,9 +226,6 @@ class Scheduler:
         )
         logger.info(f"""Reference answer: {sample.references}""")
         logger.info(f"""Decision successful: {decision_success}""")
-
-        # personas, persona_diversity = coordinator.get_agents(worker_functions)
-        # logger.info("Persona Diversity: " + str(persona_diversity))
 
         self.output_dicts.append(
             {
