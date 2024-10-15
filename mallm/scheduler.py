@@ -26,8 +26,8 @@ from rich import print
 from rich.logging import RichHandler
 from rich.progress import Console, Progress, TaskID  # type: ignore
 from sentence_transformers import SentenceTransformer
+from sentence_transformers.util import cos_sim
 from torch import Tensor
-from torch.nn.functional import cosine_similarity
 
 from mallm.coordinator import Coordinator
 from mallm.models.Chat import Chat
@@ -211,6 +211,8 @@ class Scheduler:
             ) = coordinator.discuss(
                 config=self.config, sample=sample, worker_functions=worker_functions
             )
+            personas, persona_diversity = coordinator.get_agents(self.config, worker_functions)
+            logger.info("Persona Diversity: " + str(persona_diversity))
         except Exception:
             # More extensive error logging to ease debugging during async execution
             logger.error(f"Failed discussion of sample {sample.example_id}.")
@@ -226,11 +228,8 @@ class Scheduler:
         logger.info(f"""Reference answer: {sample.references}""")
         logger.info(f"""Decision successful: {decision_success}""")
 
-        persona_diversity = None
-        personas = coordinator.get_agents()
-        if self.config.calculate_persona_diversity:
-            persona_descriptions = [persona["description"] for persona in personas]
-            persona_diversity = worker_functions.worker_persona_diversity_function(persona_descriptions)
+        # personas, persona_diversity = coordinator.get_agents(worker_functions)
+        # logger.info("Persona Diversity: " + str(persona_diversity))
 
         self.output_dicts.append(
             {
@@ -333,16 +332,14 @@ class Scheduler:
             input_data: list[str],
         ) -> float:
             # Acquire the lock before using the model
-            embedding: list[Tensor]
+            persona_diversity: float
             with persona_diversity_lock:
-                embedding = all_model.encode(input_data)
-            similarities = []
-            for t1 in embedding:
-                for t2 in embedding:
-                    if t1 == t2:
-                        continue
-                    similarities.append(cosine_similarity(embedding[0], embedding[1], dim=1).item())
-            return sum(similarities) / len(similarities)
+                similarities = []
+                embeddings = all_model.encode(input_data, convert_to_tensor=True)
+                cos_sims = cos_sim(embeddings, embeddings)
+                similarities = [cos_sims[i][j].item() for i in range(len(input_data)) for j in range(i)]
+                persona_diversity = sum(similarities) / len(similarities)
+            return round(persona_diversity, 4)
 
         worker_functions = WorkerFunctions(
             worker_paraphrase_function=worker_paraphrase_function,
