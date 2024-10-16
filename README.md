@@ -32,7 +32,7 @@ Install as a package:
 ### Test Data
 Download and create the test data: `python data/data_downloader.py --datasets=[SQuAD2,ETPC] --sample_size=100`
 
-You can use any dataset for this project as long as it follows [this basic format](https://github.com/Multi-Agent-LLMs/mallm/blob/main/data/datasets/etpc_debugging.json). These datasets are supported by our automated formatting pipeline: `BBQGenderIdentity`, `BTVote`, `ETPC`, `Europarl`, `GPQA`, `GSM8K`, `MMLU`, `MMLUPro`, `MUSR`, `MathLvl5`, `MoCaMoral`, `MoralExceptQA`, `MultiNews`, `SQuAD2`, `SimpleEthicalQuestions`, `StrategyQA`, `WMT19DeEn`, `XSum`
+You can use any dataset for this project as long as it follows [this basic format](https://github.com/Multi-Agent-LLMs/mallm/blob/main/data/datasets/etpc_debugging.json). These datasets are supported by our automated formatting pipeline: `BBQGenderIdentity`, `BTVote`, `ETHICS`, `ETPC`, `Europarl`, `GPQA`, `GSM8K`, `MMLU`, `MMLUPro`, `MUSR`, `MathLvl5`, `MoCaMoral`, `MoralExceptQA`, `MultiNews`, `SQuAD2`, `SimpleEthicalQuestions`, `StrategyQA`, `WMT19DeEn`, `WinoGrande`, `XSum`
 
 ### Run from Terminal
 MALLM relies on an external API like OpenAI or Text Generation Inference by Huggingface.
