@@ -4,7 +4,7 @@ import uuid
 from collections.abc import Sequence
 from datetime import timedelta
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import httpx
 from rich.progress import Console  # type: ignore
@@ -29,7 +29,6 @@ from mallm.utils.types import (
     Agreement,
     InputExample,
     Memory,
-    VotingResultList,
     WorkerFunctions,
 )
 
@@ -188,7 +187,7 @@ class Coordinator:
         list[Agreement],
         float,
         bool,
-        Optional[VotingResultList],
+        dict[int, Any],
     ]:
         """
         The routine responsible for the discussion between agents to solve a task.
@@ -263,7 +262,7 @@ class Coordinator:
 -------------"""
         )
 
-        answer, turn, agreements, decision_success, additional_voting_results = (
+        answer, turn, agreements, decision_success, voting_results_per_turn = (
             policy.discuss(
                 coordinator=self,
                 task_instruction=sample_instruction,
@@ -290,7 +289,7 @@ class Coordinator:
             agreements,
             discussion_time,
             decision_success,
-            additional_voting_results,
+            voting_results_per_turn,
         )
 
     def get_memories(

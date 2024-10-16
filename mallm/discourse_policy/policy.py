@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import dataclasses
 import logging
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from rich.panel import Panel
 from rich.progress import Console  # type: ignore
@@ -37,10 +38,12 @@ class DiscoursePolicy(ABC):
         solution: str,
         config: Config,
         console: Optional[Console] = None,
-    ) -> tuple[Optional[str], int, list[Agreement], bool, Optional[VotingResultList]]:
+    ) -> tuple[Optional[str], int, list[Agreement], bool, dict[int, Any]]:
         logger.info(self.paradigm_str)
         voting_process_string = ""
         additional_voting_results: Optional[VotingResultList] = None
+        voting_results_per_turn: dict[int, Any] = {}
+
         if console is None:
             console = Console()
         while (
@@ -127,6 +130,10 @@ class DiscoursePolicy(ABC):
                 ) = coordinator.decision_protocol.make_decision(
                     self.agreements, self.turn, i, task_instruction, input_str, config
                 )
+                if additional_voting_results:
+                    voting_results_per_turn[self.turn] = dataclasses.asdict(additional_voting_results)
+                else:
+                    voting_results_per_turn[self.turn] = None
 
                 if self.decision:
                     break
@@ -147,7 +154,7 @@ class DiscoursePolicy(ABC):
             self.turn,
             self.agreements,
             self.decision,
-            additional_voting_results,
+            voting_results_per_turn,
         )
 
     def print_messages(

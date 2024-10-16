@@ -75,7 +75,7 @@ class Agent:
             Agreement(
                 agreement=agree,
                 response=response.message,
-                solution=response.solution if not agree else "",
+                solution=response.solution if not agree else agreements[-1].solution,
                 agent_id=self.id,
                 persona=self.persona,
                 message_id=unique_id,
@@ -90,7 +90,7 @@ class Agent:
             contribution="improve",
             message=response.message,
             agreement=agreements[-1].agreement,
-            solution=response.solution if not agree else "",
+            solution=response.solution if not agree else agreements[-2].solution,
             memory_ids=memory_ids,
             additional_args=dataclasses.asdict(template_filling),
         )

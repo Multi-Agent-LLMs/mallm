@@ -5,6 +5,7 @@ from mallm.decision_protocol.consensus import (
     SupermajorityConsensus,
     UnanimityConsensus,
 )
+from mallm.decision_protocol.consensus_voting import ConsensusVoting
 from mallm.decision_protocol.cumulative_voting import CumulativeVoting
 from mallm.decision_protocol.protocol import DecisionProtocol
 from mallm.decision_protocol.ranked_voting import RankedVoting
@@ -38,6 +39,7 @@ DECISION_PROTOCOLS: dict[str, type[DecisionProtocol]] = {
     "approval_voting": ApprovalVoting,
     "cumulative_voting": CumulativeVoting,
     "ranked_voting": RankedVoting,
+    "consensus_voting": ConsensusVoting,
     "summary": Summary,
 }
 
