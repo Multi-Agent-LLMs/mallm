@@ -10,7 +10,7 @@ class MMLUProDownloader(DatasetDownloader):
         pass
 
     def __init__(
-        self, sample_size: Optional[int] = None, hf_token: Optional[str] = None
+        self, sample_size: Optional[int] = None, hf_token: Optional[str] = None, trust_remote_code: bool = False
     ):
         super().__init__(
             name="moralexceptqa",
@@ -18,6 +18,7 @@ class MMLUProDownloader(DatasetDownloader):
             version="all",
             sample_size=sample_size,
             hf_token=hf_token,
+            trust_remote_code=trust_remote_code
         )
 
     def process_data(self) -> list[InputExample]:

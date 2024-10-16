@@ -10,9 +10,9 @@ class GSM8KDownloader(DatasetDownloader):
         pass
 
     def __init__(
-        self, sample_size: Optional[int] = None, hf_token: Optional[str] = None
+        self, sample_size: Optional[int] = None, hf_token: Optional[str] = None, trust_remote_code: bool = False
     ):
-        super().__init__(name="gsm8k", sample_size=sample_size)
+        super().__init__(name="gsm8k", sample_size=sample_size, trust_remote_code=trust_remote_code)
 
     def process_data(self) -> list[InputExample]:
         data = self.shuffle_and_select("test")
