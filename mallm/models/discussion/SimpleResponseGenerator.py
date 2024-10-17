@@ -121,14 +121,16 @@ Input: {input_str}
         prompt_str = f"""You take part in a discussion to solve a task.
 Task: {data.task_instruction}
 Input: {data.input_str}
-Your role: {data.persona} ({data.persona_description})
-Current Solution: {data.current_draft}
-"""  # input has context appended
+Your role: {data.persona} ({data.persona_description})"""
 
         appendix = ""
         if data.current_draft is None:
             appendix += (
-                "\nNobody proposed a solution yet. Please provide the first one."
+                "\nPlease provide a solution."
+            )
+        else:
+            appendix += (
+                f"\nCurrent Solution: {data.current_draft}"
             )
         if data.agent_memory is not None and data.agent_memory != []:
             appendix += "\nThis is the discussion to the current point: \n"

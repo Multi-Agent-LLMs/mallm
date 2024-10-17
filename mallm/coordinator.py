@@ -77,7 +77,6 @@ class Coordinator:
         num_neutral_agents: int,
         num_agents: int,
         chain_of_thought: bool,
-        all_agents_drafting: bool,
         sample: InputExample,
     ) -> None:
         """
@@ -131,7 +130,7 @@ class Coordinator:
                 persona=persona["role"],
                 persona_description=persona["description"],
                 chain_of_thought=chain_of_thought,
-                drafting_agent=all_agents_drafting,
+                drafting_agent=True,
             )
             self.panelists.append(panelist)
             self.agents.append(panelist)
@@ -226,7 +225,6 @@ class Coordinator:
             num_neutral_agents=config.num_neutral_agents,
             num_agents=config.num_agents,
             chain_of_thought=config.use_chain_of_thought,
-            all_agents_drafting=config.all_agents_drafting,
             sample=sample,
         )
 

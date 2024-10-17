@@ -59,7 +59,7 @@ class DiscoursePolicy(ABC):
                         turn=self.turn,
                     )
                 )
-                if self.turn == 1 and config.all_agents_generate_first_draft:
+                if (self.turn == 1 and config.all_agents_generate_first_draft) or config.all_agents_generate_draft:
                     current_draft = None
                     discussion_history = None
 
