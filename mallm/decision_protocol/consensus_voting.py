@@ -95,7 +95,7 @@ class ConsensusVoting(DecisionProtocol):
             )
         results = VotingResultList(
             voting_process_string=voting_process_string,
-            final_answers=final_answers,
+            answers=final_answers,
             alterations=all_votes,
             type=self._name,
         )

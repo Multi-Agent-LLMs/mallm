@@ -56,7 +56,7 @@ class VotingResult:
 
 @dataclass
 class VotingResultList:
-    final_answers: list[str]
+    answers: list[str]
     type: str
     voting_process_string: str
     alterations: dict[str, VotingResult]
