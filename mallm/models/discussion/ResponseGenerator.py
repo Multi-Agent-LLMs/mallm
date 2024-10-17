@@ -184,24 +184,22 @@ Current Solution: {data.current_draft}
 
     @staticmethod
     def generate_final_answer_prompt(
-        persona: str,
-        persona_description: str,
-        question: str,
+        input_sample: str,
         task: str,
-        previous_answer: str,
+        previous_answer: Optional[str],
     ) -> list[dict[str, str]]:
         return [
             {
                 "role": "system",
-                "content": f"Your role: {persona} ({persona_description})",
+                "content": "You are tasked with creating a final solution based on the given input and your previous response.",
             },
             {
                 "role": "user",
-                "content": f"You are tasked with creating a final solution based on the given question and your previous response.\nTask: {task}\nQuestion: {question}\nYour previous response: {previous_answer}",
+                "content": f"Task: {task}\nInput: {input_sample}\nYour previous response: {previous_answer}",
             },
             {
                 "role": "user",
-                "content": "Extract the final solution to the task from the provided text. Remove statements of agreement, disagreement, and explanations. Do not modify the text. Do not output any text besides the solution.",
+                "content": "Extract the final solution to the task from the provided text. Remove statements of agreement, disagreement, and explanations. Do not modify the text. Do not output any text besides the solution. If there is no solution provided, just copy the previous response.",
             },
         ]
 

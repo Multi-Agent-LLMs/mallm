@@ -66,8 +66,6 @@ class DecisionProtocol(ABC):
 
             response = panelist.llm.invoke(
                 ResponseGenerator.generate_final_answer_prompt(
-                    panelist.persona,
-                    panelist.persona_description,
                     question,
                     task,
                     prev_answer.solution,

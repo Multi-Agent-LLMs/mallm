@@ -124,11 +124,7 @@ Input: {data.input_str}
 Your role: {data.persona} ({data.persona_description})"""
 
         appendix = ""
-        if data.current_draft is None:
-            appendix += (
-                "\nPlease provide a solution."
-            )
-        else:
+        if data.current_draft:
             appendix += (
                 f"\nCurrent Solution: {data.current_draft}"
             )

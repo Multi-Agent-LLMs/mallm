@@ -170,16 +170,11 @@ Input: {input_str}
     def extract_result(
         self, result: Optional[str], task_instruction: str, input_text: str
     ) -> str:
-        current_prompt = [
-            {
-                "role": "system",
-                "content": "Extract the final solution to the task from the output text. Remove statements of agreement, disagreement, and explanations. Do not modify the text. Do not output any text besides the solution. Include the letter (A, B, C, D) in the solution if it exists. If there is no solution provided, just copy the output text.",
-            },
-            {
-                "role": "user",
-                "content": f"Task: {task_instruction}\nInput Text: {input_text}\nOutput Text: {result}\nFinal solution:",
-            },
-        ]
+        current_prompt = self.generate_final_answer_prompt(
+            input_sample=input_text,
+            task=task_instruction,
+            previous_answer=result
+        )
         return self.llm.invoke(current_prompt)
 
     def generate_ablation(
