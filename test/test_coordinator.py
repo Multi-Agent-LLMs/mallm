@@ -40,7 +40,6 @@ def test_init_agents_with_persona_generator():
         num_neutral_agents=0,
         num_agents=3,
         chain_of_thought=False,
-        all_agents_drafting=True,
         sample=sample,
     )
     assert len(coordinator.agents) == 3  # TODO This hardcoded value is not good
@@ -65,7 +64,6 @@ def test_init_agents_with_wrong_persona_generator():
             num_neutral_agents=0,
             num_agents=3,
             chain_of_thought=False,
-            all_agents_drafting=True,
             sample=sample,
         )
 
@@ -113,7 +111,6 @@ def test_update_memories():
         num_neutral_agents=0,
         num_agents=3,
         chain_of_thought=False,
-        all_agents_drafting=True,
         sample=sample,
     )
     memories = [
