@@ -136,10 +136,10 @@ hf_dataset_version: Optional[str] = None
 hf_dataset_input_column: Optional[str] = None
 hf_dataset_reference_column: Optional[str] = None
 hf_dataset_context_column: Optional[str] = None
-all_agents_drafting: bool = True
 use_ablation: bool = False
 shuffle_input_samples: bool = False
 all_agents_generate_first_draft: bool = False
+all_agents_generate_draft: bool = False
 policy: Optional[str] = None
 voting_protocols_with_alterations: bool = False
 ```
@@ -147,7 +147,7 @@ voting_protocols_with_alterations: bool = False
 ### Discussion Parameters:
 Response Generators: `freetext`, `json`, `simple`, `splitfreetext`
 
-Decision Protocols: `approval_voting`, `cumulative_voting`, `hybrid_consensus`, `majority_consensus`, `ranked_voting`, `simple_voting`, `summary`, `supermajority_consensus`, `unanimity_consensus`
+Decision Protocols: `approval_voting`, `consensus_voting`, `cumulative_voting`, `hybrid_consensus`, `majority_consensus`, `ranked_voting`, `simple_voting`, `summary`, `supermajority_consensus`, `unanimity_consensus`
 
 Persona Generators: `expert`, `ipip`, `mock`, `nopersona`
 
