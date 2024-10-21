@@ -10,13 +10,14 @@ class EuroparlDownloader(DatasetDownloader):
         pass
 
     def __init__(
-        self, sample_size: Optional[int] = None, hf_token: Optional[str] = None
+        self, sample_size: Optional[int] = None, hf_token: Optional[str] = None, trust_remote_code: bool = False
     ):
         super().__init__(
             name="europarl",
             version="de-en",
             dataset_name="Helsinki-NLP/europarl",
             sample_size=sample_size,
+            trust_remote_code=trust_remote_code
         )
 
     def process_data(self) -> list[InputExample]:

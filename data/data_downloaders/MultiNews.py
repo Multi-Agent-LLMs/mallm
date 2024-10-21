@@ -10,7 +10,7 @@ class MultiNewsDownloader(DatasetDownloader):
         pass
 
     def __init__(
-        self, sample_size: Optional[int] = None, hf_token: Optional[str] = None
+        self, sample_size: Optional[int] = None, hf_token: Optional[str] = None, trust_remote_code: bool = False
     ):
         super().__init__(
             name="multi_news",
@@ -18,6 +18,7 @@ class MultiNewsDownloader(DatasetDownloader):
             dataset_name="multi_news",
             trust_remote_code=True,
             sample_size=sample_size,
+            trust_remote_code=trust_remote_code
         )
 
     def process_data(self) -> list[InputExample]:
