@@ -151,8 +151,8 @@ class Coordinator:
             )
             self.agents.append(policyFeedback)
 
-    def get_agents(self) -> list[dict[str, str]]:
-        return [
+    def get_agents(self, config: Config, worker_functions: WorkerFunctions) -> tuple[list[dict[str, str]], Optional[float]]:
+        personas = [
             {
                 "agentId": a.id,
                 "model": a.llm.model,
@@ -161,6 +161,12 @@ class Coordinator:
             }
             for a in self.agents
         ]
+
+        persona_diversity = None
+        if config.calculate_persona_diversity:
+            persona_descriptions = [persona["personaDescription"] for persona in personas]
+            persona_diversity = worker_functions.worker_persona_diversity_function(persona_descriptions)
+        return personas, persona_diversity
 
     @staticmethod
     def update_memories(

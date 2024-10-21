@@ -142,6 +142,7 @@ shuffle_input_samples: bool = False
 all_agents_generate_first_draft: bool = False
 policy: Optional[str] = None
 voting_protocols_with_alterations: bool = False
+calculate_persona_diversity: bool = False
 ```
 
 ### Discussion Parameters:

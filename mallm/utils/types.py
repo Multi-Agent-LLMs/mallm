@@ -95,3 +95,4 @@ class InputExample:
 class WorkerFunctions:
     worker_paraphrase_function: Callable[[list[str]], list[Tensor]]
     worker_context_function: Callable[[str], str]
+    worker_persona_diversity_function: Callable[[list[str]], float]
