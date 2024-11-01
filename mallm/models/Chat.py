@@ -150,7 +150,7 @@ class Chat(LLM):
                 if e.status_code == 429:
                     retry_after = e.response.headers.get("Retry-After")
                     if retry_after:
-                        time.sleep(int(retry_after))
+                        time.sleep(min(int(retry_after), 60))
                 continue
         confidence = math.exp(log_prob_sum)
         if "confidence_callback" in kwargs:
