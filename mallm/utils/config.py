@@ -49,6 +49,7 @@ class Config:
     all_agents_generate_first_draft: bool = False
     policy: Optional[str] = None
     voting_protocols_with_alterations: bool = False
+    calculate_persona_diversity: bool = False
 
     def __post_init__(self) -> None:
         if (
@@ -76,7 +77,7 @@ class Config:
                 f"https://datasets-server.huggingface.co/is-valid?dataset={self.input_json_file_path}",
                 headers=headers,
             )
-            if not response.json()["preview"]:
+            if "preview" not in response.json() or not response.json()["preview"]:
                 logger.error("The huggingface dataset cannot be loaded.")
                 sys.exit(1)
 

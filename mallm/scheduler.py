@@ -26,6 +26,7 @@ from rich import print
 from rich.logging import RichHandler
 from rich.progress import Console, Progress, TaskID  # type: ignore
 from sentence_transformers import SentenceTransformer
+from sentence_transformers.util import cos_sim
 from torch import Tensor
 
 from mallm.coordinator import Coordinator
@@ -210,6 +211,7 @@ class Scheduler:
             ) = coordinator.discuss(
                 config=self.config, sample=sample, worker_functions=worker_functions
             )
+            personas, persona_diversity = coordinator.get_agents(self.config, worker_functions)
         except Exception:
             # More extensive error logging to ease debugging during async execution
             logger.error(f"Failed discussion of sample {sample.example_id}.")
@@ -232,7 +234,8 @@ class Scheduler:
                 "datasetId": sample.dataset_id,
                 "instruction": self.config.task_instruction_prompt,
                 "coordinatorId": coordinator.id,
-                "personas": coordinator.get_agents(),
+                "personas": personas,
+                "persona_diversity": persona_diversity,
                 "paradigm": self.config.discussion_paradigm,
                 "input": sample.inputs,
                 "context": sample.context,
@@ -305,7 +308,9 @@ class Scheduler:
             processing_data = self.data
         context_lock = Lock()
         paraphrase_lock = Lock()
+        persona_diversity_lock = Lock()
         paraphrase_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
+        all_model = SentenceTransformer("all-MiniLM-L6-v2")
 
         def worker_paraphrase_function(
             input_data: list[str],
@@ -323,9 +328,23 @@ class Scheduler:
                 text = context(input_data)
             return text
 
+        def worker_persona_diversity_function(
+            input_data: list[str],
+        ) -> float:
+            # Acquire the lock before using the model
+            persona_diversity: float
+            with persona_diversity_lock:
+                similarities = []
+                embeddings = all_model.encode(input_data, convert_to_tensor=True)
+                cos_sims = cos_sim(embeddings, embeddings)
+                similarities = [cos_sims[i][j].item() for i in range(len(input_data)) for j in range(i)]
+                persona_diversity = sum(similarities) / len(similarities)
+            return round(persona_diversity, 4)
+
         worker_functions = WorkerFunctions(
             worker_paraphrase_function=worker_paraphrase_function,
             worker_context_function=worker_context_function,
+            worker_persona_diversity_function=worker_persona_diversity_function,
         )
 
         with Progress() as progress:
@@ -446,6 +465,7 @@ class Scheduler:
                 "instruction": self.config.task_instruction_prompt,
                 "coordinatorId": None,
                 "personas": None,
+                "persona_diversity": None,
                 "paradigm": None,
                 "input": sample.inputs,
                 "context": sample.context,
@@ -525,6 +545,7 @@ class Scheduler:
                 "instruction": self.config.task_instruction_prompt,
                 "coordinatorId": None,
                 "personas": None,
+                "persona_diversity": None,
                 "paradigm": None,
                 "input": sample.inputs,
                 "context": sample.context,
