@@ -39,22 +39,22 @@ MALLM relies on an external API like OpenAI or Text Generation Inference by Hugg
 Check the information [here (tg-hpc)](https://github.com/Multi-Agent-LLMs/tgi-hpc) or [here (tgi-scc)](https://github.com/Multi-Agent-LLMs/tgi-scc) about how to host a model yourself.
 For self-hosting you need the checkpoints for the instruction-tuned model you want to use.
 
-Once the endpoint is available, you can initiate all discussions by a single script. Example with TGI:
+Once the endpoint is available, you can initiate all discussions with a single script. Example with TGI:
 
-`python mallm/scheduler.py --data=data/datasets/etpc_debugging.json --out=test_out.json --instruction="Paraphrase the input text." --endpoint_url="http://127.0.0.1:8080/v1" --model="tgi"`
+`python mallm/scheduler.py --input_json_file_path=data/datasets/etpc_debugging.json --output_json_file_path=test_out.json --task_instruction_prompt="Paraphrase the input text." --endpoint_url="http://127.0.0.1:8080/v1" --model_name="tgi"`
 
 Or with OpenAI:
 
-`python mallm/scheduler.py --data=data/datasets/etpc_debugging.json --out=test_out.json --instruction="Paraphrase the input text." --endpoint_url="https://api.openai.com/v1" --model="gpt-3.5-turbo" --api_key="<your-key>"`
+`python mallm/scheduler.py --input_json_file_path=data/datasets/etpc_debugging.json --output_json_file_path=test_out.json --task_instruction_prompt="Paraphrase the input text." --endpoint_url="https://api.openai.com/v1" --model_name="gpt-3.5-turbo" --api_key="<your-key>"`
 
 ## Run command line scripts
 You can run the command line scripts from the terminal. The following command will run the scheduler with the given parameters:
 
-`mallm-run --data=data/datasets/etpc_debugging.json --out=test_out.json --instruction="Paraphrase the input text." --endpoint_url="http://127.0.0.1:8080/v1" --model="tgi"`
+`mallm-run --input_json_file_path=data/datasets/etpc_debugging.json --output_json_file_path=test_out.json --task_instruction_prompt="Paraphrase the input text." --endpoint_url="http://127.0.0.1:8080/v1" --model_name="tgi"`
 
 or use the evaluation script:
 
-`mallm-evaluate --input_file_path="test_out.json" --output_file_path="test_out_evaluated.json" --metrics=[bleu,rouge]`
+`mallm-evaluate --input_json_file_path=test_out.json --output_json_file_path=test_out_evaluated.json --metrics=[bleu,rouge]`
 
 ## Run as Module
 If installed, you can use MALLM from anywhere on your system:
@@ -98,7 +98,7 @@ The framework follows this structure and can be found in the `mallm` directory.
 2) Discourse Policy (subdirectory: `mallm/discourse_policy/`)
 3) Decision Protocol (subdirectory: `mallm/decision_protocol/`)
 
-Experiments can be implemented as a seperate repository, loading MALLM as a package.
+Experiments can be implemented as a separate repository, loading MALLM as a package.
 You can test stuff in the `notebooks` directory.
 
 ## Arguments
@@ -219,28 +219,28 @@ The batch executor allows you to run multiple configurations of the MALLM (Multi
      "name": "test",
      "repeats": 2,
      "common": {
-       "model": "gpt-3.5-turbo",
+       "model_name": "gpt-3.5-turbo",
        "max_turns": 10,
        "num_agents": 3
      },
      "runs": [
        {
-         "data": "path/to/data1.json",
-         "out": "path/to/output1.json",
-         "instruction": "Instruction for run 1"
+         "input_json_file_path": "path/to/data1.json",
+         "output_json_file_path": "path/to/output1.json",
+         "task_instruction_prompt": "Instruction for run 1"
        },
        {
-         "data": "path/to/data2.json",
-         "out": "path/to/output2.json",
-         "instruction": "Instruction for run 2",
-         "model": "gpt-4",
+         "input_json_file_path": "path/to/data2.json",
+         "output_json_file_path": "path/to/output2.json",
+         "task_instruction_prompt": "Instruction for run 2",
+         "model_name": "gpt-4",
          "max_turns": 15
        }
      ]
    }
    ```
 
-   In this example, the second run overrides the `model` and `max_turns` settings from the common configuration.
+   In this example, the second run overrides the `model_name` and `max_turns` settings from the common configuration.
 
 2. **Ensure all required dependencies are installed.**
 
@@ -251,8 +251,6 @@ To run the batch executor, use the following command from the terminal:
 ```
 python notebook/batch_mallm.py path/to/your/config_file.json
 ```
-
-Replace `path/to/your/config_file.json` with the actual path to your JSON configuration file.
 
 ### Behavior
 
