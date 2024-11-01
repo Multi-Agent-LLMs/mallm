@@ -16,9 +16,8 @@ class MultiNewsDownloader(DatasetDownloader):
             name="multi_news",
             version="default",
             dataset_name="multi_news",
-            trust_remote_code=True,
+            trust_remote_code=trust_remote_code,
             sample_size=sample_size,
-            trust_remote_code=trust_remote_code
         )
 
     def process_data(self) -> list[InputExample]:
