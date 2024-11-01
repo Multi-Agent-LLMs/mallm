@@ -118,6 +118,7 @@ def load_and_execute_downloaders(
     datasets: list[str] = None,
     sample_size: Optional[int] = None,
     hf_token: Optional[str] = None,
+    trust_remote_code: bool = False
 ):
     # Path to the directory containing downloader modules
     base_path = Path(__file__).parent / directory
@@ -137,7 +138,7 @@ def load_and_execute_downloaders(
         downloader_class = find_downloader_classes(module)
         if downloader_class:
             # Instantiate and execute the downloader
-            downloader = downloader_class(sample_size=sample_size, hf_token=hf_token)
+            downloader = downloader_class(sample_size=sample_size, hf_token=hf_token, trust_remote_code=trust_remote_code)
             try:
                 if downloader.download():
                     input_examples = downloader.process_data()

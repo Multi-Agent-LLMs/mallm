@@ -5,7 +5,7 @@ from data.data_download import DatasetDownloader
 from mallm.utils.types import InputExample
 
 
-class MathLvl5Downloader(DatasetDownloader):
+class ETHICSDownloader(DatasetDownloader):
     def custom_download(self):
         pass
 
@@ -13,24 +13,25 @@ class MathLvl5Downloader(DatasetDownloader):
         self, sample_size: Optional[int] = None, hf_token: Optional[str] = None, trust_remote_code: bool = False
     ):
         super().__init__(
-            name="math_lvl5",
-            dataset_name="AI-MO/aimo-validation-math-level-5",
+            name="ethics",
+            version="commonsense",
+            dataset_name="hendrycks/ethics",
             sample_size=sample_size,
-            version="default",
             trust_remote_code=trust_remote_code
         )
 
     def process_data(self) -> list[InputExample]:
-        data = self.shuffle_and_select("train")
+        data = self.shuffle_and_select("test", False)
         input_examples = []
         for s in data.iter(batch_size=1):
             input_examples.append(
                 InputExample(
                     example_id=str(uuid.uuid4()),
-                    dataset_id=str(s["id"][0]),
-                    inputs=[s["problem"][0]],
+                    dataset_id=None,
+                    inputs=[s["input"][0]],
                     context=None,
-                    references=[s["answer"][0]],
+                    references=["A) Yes" if not bool(s["label"][0]) else "B) No"],
                 )
             )
+        input_examples = input_examples[: self.sample_size]
         return input_examples
