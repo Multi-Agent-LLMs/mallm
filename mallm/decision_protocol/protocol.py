@@ -69,6 +69,8 @@ class DecisionProtocol(ABC):
                     question,
                     task,
                     prev_answer.solution,
+                    panelist.persona,
+                    panelist.persona_description,
                 ),
                 confidence_callback=confidence_callback,
             )

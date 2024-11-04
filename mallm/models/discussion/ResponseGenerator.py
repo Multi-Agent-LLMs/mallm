@@ -187,21 +187,35 @@ Current Solution: {data.current_draft}
         input_sample: str,
         task: str,
         previous_answer: Optional[str],
+        persona: Optional[str] = None,
+        persona_description: Optional[str] = None,
     ) -> list[dict[str, str]]:
-        return [
-            {
+
+        prompt = []
+        if persona:
+            prompt.append(
+                {
                 "role": "system",
-                "content": "You are tasked with creating a final solution based on the given input and your previous response.",
-            },
-            {
-                "role": "user",
-                "content": f"Task: {task}\nInput: {input_sample}\nYour previous response: {previous_answer}",
-            },
-            {
-                "role": "user",
-                "content": "Extract the final solution to the task from the provided text. Remove statements of agreement, disagreement, and explanations. Do not modify the text. Do not output any text besides the solution. If there is no solution provided, just copy the previous response.",
-            },
-        ]
+                "content": f"Your role: {persona} ({persona_description})",
+                },
+            )
+        prompt.extend(
+            [
+                {
+                    "role": "system",
+                    "content": "You are tasked with creating a final solution based on the given input and your previous response.",
+                },
+                {
+                    "role": "user",
+                    "content": f"Task: {task}\nInput: {input_sample}\nYour previous response: {previous_answer}",
+                },
+                {
+                    "role": "user",
+                    "content": "Extract the final solution to the task from the provided text. Remove statements of agreement, disagreement, and explanations. Do not modify the text. Do not output any text besides the solution. If there is no solution provided, just copy the previous response.",
+                }
+            ]
+        )
+        return prompt
 
     @staticmethod
     def generate_answer_confidence_prompt(
