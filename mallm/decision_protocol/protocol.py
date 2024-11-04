@@ -231,7 +231,7 @@ class DecisionProtocol(ABC):
                         if success:
                             break
                         raise ValueError
-                    except (ValueError, json.JSONDecodeError):
+                    except (ValueError, json.JSONDecodeError, SyntaxError, TypeError):
                         retries += 1
                         logger.debug(
                             f"{panelist.short_id} provided an invalid vote: {vote}. Asking to re-vote."

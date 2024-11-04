@@ -274,8 +274,12 @@ class Scheduler:
             self.failed_example_ids.append(sample.example_id)
 
         self.completed_samples += 1
+        samples_left = min(
+            self.total_samples,
+            self.config.num_samples or self.total_samples,
+        )
         logger.info(
-            f"""Completed samples: {self.completed_samples}. Samples left: {self.total_samples - self.completed_samples}."""
+            f"""Completed samples: {self.completed_samples}. Samples left: {samples_left - self.completed_samples}."""
         )
         progress.update(task, advance=1)
         del coordinator
