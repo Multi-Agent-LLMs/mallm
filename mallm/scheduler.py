@@ -207,7 +207,7 @@ class Scheduler:
                 agreements,
                 discussion_time,
                 decision_success,
-                additional_voting_results,
+                voting_results_per_turn,
             ) = coordinator.discuss(
                 config=self.config, sample=sample, worker_functions=worker_functions
             )
@@ -239,7 +239,8 @@ class Scheduler:
                 "paradigm": self.config.discussion_paradigm,
                 "input": sample.inputs,
                 "context": sample.context,
-                "answer": answer or None,
+                "finalAnswer": answer or None,
+                "votesEachTurn": voting_results_per_turn,
                 "references": sample.references,
                 "metadata": sample.metadata,
                 "decisionSuccess": decision_success,
@@ -254,11 +255,11 @@ class Scheduler:
                     for agent in agent_mems
                     if agent
                 ],
-                "additional_voting_results": (
-                    dataclasses.asdict(additional_voting_results)
-                    if additional_voting_results
-                    else None
-                ),
+                # "additional_voting_results": (
+                #    dataclasses.asdict(additional_voting_results)
+                #    if additional_voting_results
+                #    else None
+                # ),
             }
         )
         try:
@@ -469,7 +470,7 @@ class Scheduler:
                 "paradigm": None,
                 "input": sample.inputs,
                 "context": sample.context,
-                "answer": answer.solution or None,
+                "finalAnswer": answer.solution or None,
                 "references": sample.references,
                 "metadata": sample.metadata,
                 "decisionSuccess": None,
@@ -549,7 +550,7 @@ class Scheduler:
                 "paradigm": None,
                 "input": sample.inputs,
                 "context": sample.context,
-                "answer": answer.solution or None,
+                "finalAnswer": answer.solution or None,
                 "references": sample.references,
                 "metadata": sample.metadata,
                 "decisionSuccess": None,

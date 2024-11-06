@@ -66,11 +66,11 @@ class DecisionProtocol(ABC):
 
             response = panelist.llm.invoke(
                 ResponseGenerator.generate_final_answer_prompt(
-                    panelist.persona,
-                    panelist.persona_description,
                     question,
                     task,
                     prev_answer.solution,
+                    panelist.persona,
+                    panelist.persona_description,
                 ),
                 confidence_callback=confidence_callback,
             )
@@ -248,7 +248,7 @@ class DecisionProtocol(ABC):
             )
         results = VotingResultList(
             voting_process_string=voting_process_string,
-            final_answers=final_answers,
+            answers=final_answers,
             alterations=all_votes,
             type=decision_protocol_name,
         )

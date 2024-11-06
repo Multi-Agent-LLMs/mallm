@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from rich.progress import Console  # type: ignore
 
@@ -56,10 +56,11 @@ class CollectiveRefinement(DiscoursePolicy):
         solution: str,
         config: Config,
         console: Optional[Console] = None,
-    ) -> tuple[Optional[str], int, list[Agreement], bool, Optional[VotingResultList]]:
+    ) -> tuple[Optional[str], int, list[Agreement], bool, dict[int, Any]]:
         unique_id = 0
         voting_process_string = ""
         additional_voting_results: Optional[VotingResultList] = None
+        voting_results_per_turn: dict[int, Any] = {}
         self.memories: list[Memory]
         if console is None:
             console = Console()
@@ -178,6 +179,11 @@ class CollectiveRefinement(DiscoursePolicy):
             )
             self.print_messages(coordinator, input_str, task_instruction)
 
+            if additional_voting_results:
+                voting_results_per_turn[self.turn] = dataclasses.asdict(additional_voting_results)
+            else:
+                voting_results_per_turn[self.turn] = None
+
         self.print_messages(
             coordinator,
             input_str,
@@ -192,5 +198,5 @@ class CollectiveRefinement(DiscoursePolicy):
             self.turn,
             self.agreements,
             self.decision,
-            additional_voting_results,
+            voting_results_per_turn,
         )

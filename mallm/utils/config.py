@@ -43,10 +43,10 @@ class Config:
     hf_dataset_input_column: Optional[str] = None
     hf_dataset_reference_column: Optional[str] = None
     hf_dataset_context_column: Optional[str] = None
-    all_agents_drafting: bool = True
     use_ablation: bool = False
     shuffle_input_samples: bool = False
     all_agents_generate_first_draft: bool = False
+    all_agents_generate_draft: bool = False
     policy: Optional[str] = None
     voting_protocols_with_alterations: bool = False
     calculate_persona_diversity: bool = False
@@ -107,10 +107,6 @@ class Config:
         if self.endpoint_url.endswith("/"):
             logger.warning("Removing trailing / from the endpoint url.")
             self.endpoint_url = self.endpoint_url[:-1]
-        if not self.num_neutral_agents and not self.all_agents_drafting:
-            logger.warning(
-                "Setting feedback_only=True without a draft proposer does not make sense. No solutions will be drafted."
-            )
         try:
             logger.info("Testing availability of the endpoint...")
             page = requests.head(self.endpoint_url.replace("/v1", ""))

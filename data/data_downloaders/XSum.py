@@ -16,8 +16,8 @@ class XSUMDownloader(DatasetDownloader):
             name="xsum",
             version="xsum",
             dataset_name="GEM/xsum",
-            trust_remote_code=True,
-            sample_size=sample_size, trust_remote_code = trust_remote_code
+            trust_remote_code=trust_remote_code,
+            sample_size=sample_size
         )
 
     def process_data(self) -> list[InputExample]:

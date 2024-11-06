@@ -16,9 +16,8 @@ class EuroparlDownloader(DatasetDownloader):
             name="squad_v2",
             version="squad_v2",
             dataset_name="rajpurkar/squad_v2",
-            trust_remote_code=True,
-            sample_size=sample_size,
-            trust_remote_code=trust_remote_code
+            trust_remote_code=trust_remote_code,
+            sample_size=sample_size
         )
 
     def process_data(self) -> list[InputExample]:
