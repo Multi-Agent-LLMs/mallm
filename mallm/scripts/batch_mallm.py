@@ -3,7 +3,7 @@ import json
 import sys
 import traceback
 from copy import deepcopy
-from typing import Any, Optional, List, Dict
+from typing import Any, Optional
 
 import requests
 
@@ -13,7 +13,7 @@ from mallm.utils.config import Config
 
 def load_config(config_path: str) -> Any:
     try:
-        with open(config_path, "r") as f:
+        with open(config_path) as f:
             return json.load(f)
     except json.JSONDecodeError as e:
         print(f"Error: {config_path} is not a valid JSON file.\n{e}")
@@ -50,8 +50,8 @@ def run_configuration(
 
 
 def validate_all_configs(
-    common_config: Dict[str, Any], runs: List[Dict[str, Any]]
-) -> List[Config]:
+    common_config: dict[str, Any], runs: list[dict[str, Any]]
+) -> list[Config]:
     valid_configs = []
     for i, run_config in enumerate(runs, 1):
         merged_config = {**common_config, **run_config}
@@ -66,7 +66,7 @@ def validate_all_configs(
     return valid_configs
 
 
-def summarize_runs(valid_configs: List[Config], repeats: int) -> None:
+def summarize_runs(valid_configs: list[Config], repeats: int) -> None:
     print("\nRun Summary:")
     print(f"Total valid runs: {len(valid_configs)}")
     print(f"Repeats per run: {repeats}")
@@ -113,7 +113,7 @@ def run_batch(config_path: str, webhook_url: Optional[str] = None) -> None:
             except requests.RequestException as e:
                 print(f"Error sending webhook message: {e}")
 
-    def exit_hook():
+    def exit_hook() -> None:
         try_send_webhook_message("Batch processing interrupted.")
 
     atexit.register(exit_hook)
@@ -132,10 +132,14 @@ def run_batch(config_path: str, webhook_url: Optional[str] = None) -> None:
     try_send_webhook_message("Batch processing completed.")
 
 
-if __name__ == "__main__":
+def main() -> None:
     if len(sys.argv) != 2 and len(sys.argv) != 3:
         print("Usage: python batch_mallm.py <config_file.json> [discord_webhook_url]")
         sys.exit(1)
 
     config_file = sys.argv[1]
     run_batch(config_file, sys.argv[2] if len(sys.argv) == 3 else None)
+
+
+if __name__ == "__main__":
+    main()
