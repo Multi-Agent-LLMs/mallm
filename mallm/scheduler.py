@@ -208,10 +208,52 @@ class Scheduler:
                 discussion_time,
                 decision_success,
                 voting_results_per_turn,
+                challenged_answers,
             ) = coordinator.discuss(
                 config=self.config, sample=sample, worker_functions=worker_functions
             )
-            personas, persona_diversity = coordinator.get_agents(self.config, worker_functions)
+            personas, persona_diversity = coordinator.get_agents(
+                self.config, worker_functions
+            )
+            self.output_dicts.append(
+                {
+                    "dataset": self.dataset_name,
+                    "exampleId": sample.example_id,
+                    "datasetId": sample.dataset_id,
+                    "instruction": self.config.task_instruction_prompt,
+                    "coordinatorId": coordinator.id,
+                    "personas": personas,
+                    "persona_diversity": persona_diversity,
+                    "paradigm": self.config.discussion_paradigm,
+                    "input": sample.inputs,
+                    "context": sample.context,
+                    "finalAnswer": answer or None,
+                    "votesEachTurn": {
+                        voting_round: dataclasses.asdict(
+                            voting_results_per_turn[voting_round]
+                        )
+                        for voting_round in voting_results_per_turn
+                        if voting_results_per_turn[voting_round]
+                    },
+                    "challengedAnswers": challenged_answers,
+                    "references": sample.references,
+                    "metadata": sample.metadata,
+                    "decisionSuccess": decision_success,
+                    "agreements": [
+                        dataclasses.asdict(agreement) for agreement in agreements
+                    ],
+                    "turns": turn,
+                    "clockSeconds": float(f"{discussion_time:.2f}"),
+                    "globalMemory": [
+                        dataclasses.asdict(memory) for memory in global_mem
+                    ],
+                    "agentMemory": [
+                        [dataclasses.asdict(memory) for memory in agent]
+                        for agent in agent_mems
+                        if agent
+                    ],
+                }
+            )
         except Exception:
             # More extensive error logging to ease debugging during async execution
             logger.error(f"Failed discussion of sample {sample.example_id}.")
@@ -227,41 +269,6 @@ class Scheduler:
         logger.info(f"""Reference answer: {sample.references}""")
         logger.info(f"""Decision successful: {decision_success}""")
 
-        self.output_dicts.append(
-            {
-                "dataset": self.dataset_name,
-                "exampleId": sample.example_id,
-                "datasetId": sample.dataset_id,
-                "instruction": self.config.task_instruction_prompt,
-                "coordinatorId": coordinator.id,
-                "personas": personas,
-                "persona_diversity": persona_diversity,
-                "paradigm": self.config.discussion_paradigm,
-                "input": sample.inputs,
-                "context": sample.context,
-                "finalAnswer": answer or None,
-                "votesEachTurn": voting_results_per_turn,
-                "references": sample.references,
-                "metadata": sample.metadata,
-                "decisionSuccess": decision_success,
-                "agreements": [
-                    dataclasses.asdict(agreement) for agreement in agreements
-                ],
-                "turns": turn,
-                "clockSeconds": float(f"{discussion_time:.2f}"),
-                "globalMemory": [dataclasses.asdict(memory) for memory in global_mem],
-                "agentMemory": [
-                    [dataclasses.asdict(memory) for memory in agent]
-                    for agent in agent_mems
-                    if agent
-                ],
-                # "additional_voting_results": (
-                #    dataclasses.asdict(additional_voting_results)
-                #    if additional_voting_results
-                #    else None
-                # ),
-            }
-        )
         try:
             with open(self.config.output_json_file_path, "w") as file:
                 file.write(
@@ -338,7 +345,11 @@ class Scheduler:
                 similarities = []
                 embeddings = all_model.encode(input_data, convert_to_tensor=True)
                 cos_sims = cos_sim(embeddings, embeddings)
-                similarities = [cos_sims[i][j].item() for i in range(len(input_data)) for j in range(i)]
+                similarities = [
+                    cos_sims[i][j].item()
+                    for i in range(len(input_data))
+                    for j in range(i)
+                ]
                 persona_diversity = sum(similarities) / len(similarities)
             return round(persona_diversity, 4)
 
