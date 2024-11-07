@@ -199,7 +199,7 @@ class Coordinator:
         list[Agreement],
         float,
         bool,
-        dict[int, VotingResultList],
+        dict[int, Optional[VotingResultList]],
         dict[str, Optional[str]],
     ]:
         """
@@ -285,13 +285,16 @@ class Coordinator:
             )
         )
 
-        challenged_answers = {}
+        challenged_answers: dict[str, Optional[str]] = {}
         if config.challenge_final_results:
             logger.info("Challenging final results...")
             for panelist in self.panelists:
                 challenge_result = panelist.llm.invoke(
                     panelist.response_generator.generate_challenge_prompt(
-                        panelist, input_str, sample_instruction, answer
+                        panelist,
+                        input_str,
+                        sample_instruction,
+                        (answer or "No answer was provided."),
                     )
                 )
                 if "agree" in challenge_result.lower():

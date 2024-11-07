@@ -37,7 +37,9 @@ class DiscoursePolicy(ABC):
         solution: str,
         config: Config,
         console: Optional[Console] = None,
-    ) -> tuple[Optional[str], int, list[Agreement], bool, dict[int, VotingResultList]]:
+    ) -> tuple[
+        Optional[str], int, list[Agreement], bool, dict[int, Optional[VotingResultList]]
+    ]:
         logger.info(self.paradigm_str)
         voting_process_string = ""
         voting_results_per_turn: dict[int, Optional[VotingResultList]] = {}

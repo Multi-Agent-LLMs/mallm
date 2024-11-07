@@ -229,11 +229,9 @@ class Scheduler:
                     "context": sample.context,
                     "finalAnswer": answer or None,
                     "votesEachTurn": {
-                        voting_round: dataclasses.asdict(
-                            voting_results_per_turn[voting_round]
-                        )
-                        for voting_round in voting_results_per_turn
-                        if voting_results_per_turn[voting_round]
+                        voting_round: dataclasses.asdict(voting_result)
+                        for voting_round, voting_result in voting_results_per_turn.items()
+                        if voting_result is not None
                     },
                     "challengedAnswers": challenged_answers,
                     "references": sample.references,
