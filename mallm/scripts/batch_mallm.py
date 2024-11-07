@@ -113,7 +113,7 @@ def run_batch(config_path: str, webhook_url: Optional[str] = None) -> None:
             except requests.RequestException as e:
                 print(f"Error sending webhook message: {e}")
 
-    def exit_hook():
+    def exit_hook() -> None:
         try_send_webhook_message("Batch processing interrupted.")
 
     atexit.register(exit_hook)
@@ -132,7 +132,7 @@ def run_batch(config_path: str, webhook_url: Optional[str] = None) -> None:
     try_send_webhook_message("Batch processing completed.")
 
 
-def main():
+def main() -> None:
     if len(sys.argv) != 2 and len(sys.argv) != 3:
         print("Usage: python batch_mallm.py <config_file.json> [discord_webhook_url]")
         sys.exit(1)
