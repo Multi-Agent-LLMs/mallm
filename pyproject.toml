@@ -24,6 +24,7 @@ readme = "README.md"
 
 [tool.poetry.scripts]
 mallm-run = "mallm.scheduler:main"
+mallm-batch = "mallm.scripts.batch_mallm:main"
 mallm-evaluate = "mallm.evaluation.evaluator:main"
 
 [tool.poetry.dependencies]

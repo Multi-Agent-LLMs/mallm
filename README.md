@@ -200,8 +200,7 @@ library_logger.addHandler(stream_handler)
 The batch executor allows you to run multiple configurations of the MALLM (Multi-Agent Language Model) scheduler in sequence. This is useful for running experiments with different parameters or processing multiple datasets.
 
 ### Location
-- The batch executor script is located in the `notebook` folder and is named `batch_mallm.py`.
-- A template for the batch configuration file is provided as `batch.json.template` in the same folder.
+- A template for the batch configuration file is provided as `batch.json.template` in the `notebook` folder.
 
 ### Setup
 
@@ -249,7 +248,7 @@ The batch executor allows you to run multiple configurations of the MALLM (Multi
 To run the batch executor, use the following command from the terminal:
 
 ```
-python notebook/batch_mallm.py path/to/your/config_file.json
+mallm-batch path/to/your/config_file.json
 ```
 
 ### Behavior
