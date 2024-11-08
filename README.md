@@ -5,9 +5,10 @@
   <p align="center">
     Multi-Agent LLMs For Conversational Task-Solving: Framework<br />
     <p align="center">
-  <a href="https://github.com/Multi-Agent-LLMs/mallm/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Multi-Agent-LLMs/mallm" alt="License"></a>
+  <a href="https://arxiv.org/abs/2410.22932"><img src="https://img.shields.io/badge/arXiv-2410.22932-red
+  " alt="arXiv"></a>
   <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="Black"></a>
-  <a href="https://codecov.io/gh/Multi-Agent-LLMs/mallm"><img src="https://codecov.io/gh/Multi-Agent-LLMs/mallm/graph/badge.svg?token=CBUZTPV5KA" alt="Coverage"></a>
+  <a href="https://github.com/Multi-Agent-LLMs/mallm/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Multi-Agent-LLMs/mallm" alt="License"></a>
   <a href="https://github.com/Multi-Agent-LLMs/mallm/actions/workflows/python-package.yml"><img src="https://github.com/Multi-Agent-LLMs/mallm/actions/workflows/python-package.yml/badge.svg" alt="Pipeline"></a>
   <a href="https://github.com/Multi-Agent-LLMs/mallm/network/members"><img src="https://img.shields.io/github/forks/Multi-Agent-LLMs/mallm?style=social" alt="GitHub forks"></a>
   <a href="https://github.com/Multi-Agent-LLMs/mallm/stargazers"><img src="https://img.shields.io/github/stars/Multi-Agent-LLMs/mallm?style=social" alt="GitHub stars"></a>
@@ -29,23 +30,21 @@ Create an environment with:
 Install as a package:
 `pip install -e .`
 
-### Test Data
-Download and create the test data: `python data/data_downloader.py --datasets=[SQuAD2,ETPC] --sample_size=100`
+### Create Data
+Download and create the test data: `python data/data_downloader.py --datasets=[SQuAD2,ETPC]`
 
 You can use any dataset for this project as long as it follows [this basic format](https://github.com/Multi-Agent-LLMs/mallm/blob/main/data/datasets/etpc_debugging.json). These datasets are supported by our automated formatting pipeline: `BBQGenderIdentity`, `BTVote`, `ETHICS`, `ETPC`, `Europarl`, `GPQA`, `GSM8K`, `IFEval`, `MMLU`, `MMLUPro`, `MUSR`, `MathLvl5`, `MoCaMoral`, `MoralExceptQA`, `MultiNews`, `SQuAD2`, `SimpleEthicalQuestions`, `StrategyQA`, `WMT19DeEn`, `WinoGrande`, `XSum`
 
 ### Run from Terminal
 MALLM relies on an external API like OpenAI or Text Generation Inference by Huggingface.
-Check the information [here (tg-hpc)](https://github.com/Multi-Agent-LLMs/tgi-hpc) or [here (tgi-scc)](https://github.com/Multi-Agent-LLMs/tgi-scc) about how to host a model yourself.
-For self-hosting you need the checkpoints for the instruction-tuned model you want to use.
 
 Once the endpoint is available, you can initiate all discussions with a single script. Example with TGI:
 
-`python mallm/scheduler.py --input_json_file_path=data/datasets/etpc_debugging.json --output_json_file_path=test_out.json --task_instruction_prompt="Paraphrase the input text." --endpoint_url="http://127.0.0.1:8080/v1" --model_name="tgi"`
+`python mallm/scheduler.py --input_json_file_path=data/datasets/etpc_debugging.json --output_json_file_path=test_out.json --task_instruction_prompt="Paraphrase the input text." --endpoint_url="http://127.0.0.1:8080/v1"`
 
 Or with OpenAI:
 
-`python mallm/scheduler.py --input_json_file_path=data/datasets/etpc_debugging.json --output_json_file_path=test_out.json --task_instruction_prompt="Paraphrase the input text." --endpoint_url="https://api.openai.com/v1" --model_name="gpt-3.5-turbo" --api_key="<your-key>"`
+`python mallm/scheduler.py --input_json_file_path=data/datasets/etpc_debugging.json --output_json_file_path=test_out.json --task_instruction_prompt="Paraphrase the input text." --endpoint_url="https://api.openai.com/v1" --api_key="<your-key>"`
 
 ## Run command line scripts
 You can run the command line scripts from the terminal. The following command will run the scheduler with the given parameters:
@@ -57,7 +56,7 @@ or use the evaluation script:
 `mallm-evaluate --input_json_file_path=test_out.json --output_json_file_path=test_out_evaluated.json --metrics=[bleu,rouge]`
 
 ## Run as Module
-If installed, you can use MALLM from anywhere on your system:
+If installed, you can use MALLM in code:
 
 ```py
 from mallm import scheduler
@@ -65,33 +64,18 @@ from mallm.utils.config import Config
 
 mallm_scheduler = scheduler.Scheduler(
     Config(
-        data="data/datasets/etpc_debugging.json",
-        out="test_out.json",
-        instruction_prompt="Paraphrase the input text.",
-        endpoint_url="http://127.0.0.1:8080/v1",
-        model="tgi"
+        input_json_file_path="data/datasets/etpc_debugging.json",
+        output_json_file_path="test_out.json",
+        task_instruction_prompt="Paraphrase the input text.",
+        endpoint_url="http://127.0.0.1:8080/v1"
     )
 )
 mallm_scheduler.run()
 ```
 
-You can also call the API from OpenAI:
-```py
-mallm_scheduler = scheduler.Scheduler(
-  Config(
-    data="data/datasets/etpc_debugging.json",
-    out="test_out.json",
-    instruction="Paraphrase the input text.",
-    endpoint_url="https://api.openai.com/v1",
-    model="gpt-3.5-turbo", # or another model from this list: https://platform.openai.com/docs/models
-    api_key="<your-key>"
-  )
-)
-```
+## Code Structure
 
-## Project Structure
-
-MALLM is composed of three parts:
+MALLM is composed of three parts.
 The framework follows this structure and can be found in the `mallm` directory.
 
 1) Agents (subdirectory: `mallm/agents/`)
@@ -99,11 +83,8 @@ The framework follows this structure and can be found in the `mallm` directory.
 3) Decision Protocol (subdirectory: `mallm/decision_protocol/`)
 
 Experiments can be implemented as a separate repository, loading MALLM as a package.
-You can test stuff in the `notebooks` directory.
 
 ## Arguments
-
-Use "tgi" as a model for Text Generation Inference by HuggingFace or one of these: https://platform.openai.com/docs/models
 
 ### Config Arguments:
 ```py
@@ -161,15 +142,14 @@ Supported metrics: `answerability`, `bertscore`, `bleu`, `distinct`, `includes_a
 
 From terminal:
 
-`python mallm/evaluation/evaluator.py --input_file_path="test_out.json" --output_file_path="test_out_evaluated.json" --metrics=[bleu,rouge]`
+`mallm-evaluate --input_json_file_path=test_out.json --output_json_file_path=test_out_evaluated.json --metrics=[bleu,rouge]`
 
 From script:
 
 ```py
 from mallm.evaluation.evaluator import Evaluator
 
-evaluator = Evaluator(input_file_path="test_out.json", output_dir_path="test_out_evaluated.json",
-                      metrics=["bleu", "rouge"])
+evaluator = Evaluator(input_file_path="test_out.json", metrics=["bleu", "rouge"], extensive=False)
 evaluator.process()
 ```
 
@@ -200,7 +180,8 @@ library_logger.addHandler(stream_handler)
 The batch executor allows you to run multiple configurations of the MALLM (Multi-Agent Language Model) scheduler in sequence. This is useful for running experiments with different parameters or processing multiple datasets.
 
 ### Location
-- A template for the batch configuration file is provided as `batch.json.template` in the `notebook` folder.
+- The batch executor [script](https://github.com/Multi-Agent-LLMs/mallm/blob/main/mallm/scripts/batch_mallm.py) is located in the `mallm/scripts` folder and is named `batch_mallm.py`.
+- A [template](https://github.com/Multi-Agent-LLMs/mallm/tree/main/mallm/scripts/batch.json.template) for the batch configuration file is provided as `batch.json.template` in the same folder.
 
 ### Setup
 
@@ -247,9 +228,7 @@ The batch executor allows you to run multiple configurations of the MALLM (Multi
 
 To run the batch executor, use the following command from the terminal:
 
-```
-mallm-batch path/to/your/config_file.json
-```
+`mallm-batch path/to/your/batch_config.json`
 
 ### Behavior
 
@@ -261,14 +240,6 @@ mallm-batch path/to/your/config_file.json
 - If a configuration is invalid or encounters an error during execution, the batch processor will skip to the next run.
 - The process continues until all runs have been attempted.
 
-### Error Handling
-
-- The batch executor is designed to be robust against various types of errors:
-  - Invalid JSON configuration files
-  - Missing required fields in a configuration
-  - Errors during the execution of individual runs
-- Any errors encountered will be reported in the console output, but will not stop the entire batch process.
-
 ### Tips
 
 - Place settings that are common to most or all runs in the `common` section to reduce repetition.
@@ -278,6 +249,7 @@ mallm-batch path/to/your/config_file.json
 - Monitor the console output for any error messages or skipped configurations.
 
 By using the batch executor with common settings, you can easily manage multiple experiments or process various datasets with shared parameters, saving time and reducing the chance of configuration errors.
+
 ## Contributing
 If you want to contribute, please use this pre-commit hook to ensure the same formatting for everyone.
 ```bash
@@ -288,3 +260,18 @@ pre-commit install
 ### Testing
 You can run unit tests locally:
 `pytest ./test/`
+
+## Citation
+If you use this repository or the [paper](https://arxiv.org/abs/2410.22932) for your research work, please cite it in the following way.
+
+```
+@misc{becker2024multiagentlargelanguagemodels,
+      title={Multi-Agent Large Language Models for Conversational Task-Solving}, 
+      author={Jonas Becker},
+      year={2024},
+      eprint={2410.22932},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2410.22932}, 
+}
+```
