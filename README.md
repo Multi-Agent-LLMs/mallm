@@ -143,6 +143,7 @@ all_agents_generate_draft: bool = False
 policy: Optional[str] = None
 voting_protocols_with_alterations: bool = False
 calculate_persona_diversity: bool = False
+challenge_final_results: bool = False
 ```
 
 ### Discussion Parameters:
