@@ -53,6 +53,8 @@ class ConsensusVoting(DecisionProtocol):
             voting_process_string += f"{agreement.persona} final answer: {agreement.solution}\n"
             final_answers.append(agreement.solution)
 
+        final_answers = self.remove_duplicate_answers(final_answers)
+
         for panelist in self.panelists:
             retries = 0
             while retries < 10:
