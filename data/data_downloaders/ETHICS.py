@@ -30,7 +30,7 @@ class ETHICSDownloader(DatasetDownloader):
                     dataset_id=None,
                     inputs=[s["input"][0]],
                     context=None,
-                    references=["A) Yes" if not bool(s["label"][0]) else "B) No"],
+                    references=["A) Reasonable" if not bool(s["label"][0]) else "B) Unreasonable"],
                 )
             )
         input_examples = input_examples[: self.sample_size]
