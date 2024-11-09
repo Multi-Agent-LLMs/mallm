@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import dataclasses
 import logging
 from typing import TYPE_CHECKING, Any, Optional
 
@@ -66,8 +65,7 @@ class DiscourseDebate(DiscoursePolicy):
         unique_id = 0
         memories = []
         voting_process_string = ""
-        additional_voting_results: Optional[VotingResultList] = None
-        voting_results_per_turn: dict[int, Any] = {}
+        voting_results_per_turn: dict[int, Optional[VotingResultList]] = {}
         if console is None:
             console = Console()
         logger.info(
@@ -101,7 +99,9 @@ class DiscourseDebate(DiscoursePolicy):
                 context_length=config.visible_turns_in_memory,
                 turn=self.turn,
             )
-            if (self.turn == 1 and config.all_agents_generate_first_draft) or config.all_agents_generate_draft:
+            if (
+                self.turn == 1 and config.all_agents_generate_first_draft
+            ) or config.all_agents_generate_draft:
                 current_draft = None
                 discussion_history = None
             template_filling = TemplateFilling(
@@ -244,7 +244,7 @@ class DiscourseDebate(DiscoursePolicy):
                 config,
             )
             if additional_voting_results:
-                voting_results_per_turn[self.turn] = dataclasses.asdict(additional_voting_results)
+                voting_results_per_turn[self.turn] = additional_voting_results
             else:
                 voting_results_per_turn[self.turn] = None
 

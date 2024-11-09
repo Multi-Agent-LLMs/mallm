@@ -4,7 +4,7 @@ import uuid
 from collections.abc import Sequence
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 import httpx
 from rich.progress import Console  # type: ignore
@@ -29,6 +29,7 @@ from mallm.utils.types import (
     Agreement,
     InputExample,
     Memory,
+    VotingResultList,
     WorkerFunctions,
 )
 
@@ -151,7 +152,9 @@ class Coordinator:
             )
             self.agents.append(policyFeedback)
 
-    def get_agents(self, config: Config, worker_functions: WorkerFunctions) -> tuple[list[dict[str, str]], Optional[float]]:
+    def get_agents(
+        self, config: Config, worker_functions: WorkerFunctions
+    ) -> tuple[list[dict[str, str]], Optional[float]]:
         personas = [
             {
                 "agentId": a.id,
@@ -164,8 +167,12 @@ class Coordinator:
 
         persona_diversity = None
         if config.calculate_persona_diversity:
-            persona_descriptions = [persona["personaDescription"] for persona in personas]
-            persona_diversity = worker_functions.worker_persona_diversity_function(persona_descriptions)
+            persona_descriptions = [
+                persona["personaDescription"] for persona in personas
+            ]
+            persona_diversity = worker_functions.worker_persona_diversity_function(
+                persona_descriptions
+            )
         return personas, persona_diversity
 
     @staticmethod
@@ -192,7 +199,8 @@ class Coordinator:
         list[Agreement],
         float,
         bool,
-        dict[int, Any],
+        dict[int, Optional[VotingResultList]],
+        dict[str, Optional[str]],
     ]:
         """
         The routine responsible for the discussion between agents to solve a task.
@@ -277,6 +285,27 @@ class Coordinator:
             )
         )
 
+        challenged_answers: dict[str, Optional[str]] = {}
+        if config.challenge_final_results:
+            logger.info("Challenging final results...")
+            for panelist in self.panelists:
+                challenge_result = panelist.llm.invoke(
+                    panelist.response_generator.generate_challenge_prompt(
+                        panelist,
+                        input_str,
+                        sample_instruction,
+                        (answer or "No answer was provided."),
+                    )
+                )
+                if "agree" in challenge_result.lower():
+                    logger.info(f"{panelist.persona} agrees with the final result.")
+                    challenged_answers[panelist.id] = None
+                else:
+                    logger.info(
+                        f"{panelist.persona} disagrees with the final result and proposes a new solution:\n{challenge_result}"
+                    )
+                    challenged_answers[panelist.id] = challenge_result
+
         discussion_time = timedelta(
             seconds=time.perf_counter() - start_time
         ).total_seconds()
@@ -294,6 +323,7 @@ class Coordinator:
             discussion_time,
             decision_success,
             voting_results_per_turn,
+            challenged_answers,
         )
 
     def get_memories(
@@ -352,12 +382,14 @@ class Coordinator:
         if memories:
             discussion_history = []
             for memory in memories:
-                discussion_history.extend([
-                    {
-                        "role": "user",
-                        "content": f"{memory.persona}: {memory.message}",
-                    }
-                ])
+                discussion_history.extend(
+                    [
+                        {
+                            "role": "user",
+                            "content": f"{memory.persona}: {memory.message}",
+                        }
+                    ]
+                )
         else:
             discussion_history = None
         return discussion_history, memory_ids, current_draft
