@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 from nltk import download, word_tokenize
 from nltk.translate.meteor_score import meteor_score
@@ -21,7 +21,7 @@ class METEOR(Metric):
         METEOR._downloaded = True
 
     @staticmethod
-    def evaluate(generated_text: str, reference_texts: list[str]) -> dict[str, Any]:
+    def evaluate(generated_text: str, reference_texts: list[str], dataset_id: Optional[str]) -> dict[str, Any]:
         if not METEOR._downloaded:
             METEOR().download_and_prepare()
         # Tokenize the input texts

@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 from bert_score import score as bert_score
 
@@ -14,7 +14,7 @@ class BERTScore(Metric):
     _name = "BERTScore"
 
     @staticmethod
-    def evaluate(generated_text: str, reference_texts: list[str]) -> dict[str, Any]:
+    def evaluate(generated_text: str, reference_texts: list[str], dataset_id: Optional[str]) -> dict[str, Any]:
         # Calculate BERTScore
         _P, _R, F1 = bert_score(
             cands=[generated_text],

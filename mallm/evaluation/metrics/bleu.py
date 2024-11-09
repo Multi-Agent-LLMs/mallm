@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 from evaluate import load
 
@@ -15,7 +15,7 @@ class BLEU(Metric):
     _name = "BLEU"
 
     @staticmethod
-    def evaluate(generated_text: str, reference_texts: list[str]) -> dict[str, Any]:
+    def evaluate(generated_text: str, reference_texts: list[str], dataset_id: Optional[str]) -> dict[str, Any]:
         # Calculate BLEU score
         score = load("bleu", trust_remote_code=True).compute(
             references=[reference_texts], predictions=[generated_text]
