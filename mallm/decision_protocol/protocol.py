@@ -62,7 +62,6 @@ class DecisionProtocol(ABC):
                 unique_final_answers.append(final_answer)
         final_answers = unique_final_answers
 
-        # Remove duplicates based on regex matching (multiple choice answers)
         unique_items = []
         seen_prefixes = set()
 
