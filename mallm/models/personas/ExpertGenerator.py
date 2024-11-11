@@ -97,7 +97,7 @@ New Participant:
                     continue
                 agent: dict[str, str] = new_agent
                 break
-            except json.decoder.JSONDecodeError as e:
+            except (json.decoder.JSONDecodeError, TypeError) as e:
                 retry += 1
                 logger.debug(
                     f"Could not decode json (will attempt retry no. {retry!s}): "
