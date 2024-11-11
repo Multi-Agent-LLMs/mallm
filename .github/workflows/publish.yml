@@ -15,7 +15,7 @@ jobs:
         with:
           ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PUBLISH_REGISTRY_PASSWORD: ${{ secrets.PUBLISH_REGISTRY_PASSWORD }}
-          PACKAGE_DIRECTORY: "./reflectdetect/"
+          PACKAGE_DIRECTORY: "./mallm/"
           PYTHON_VERSION: "3.10.14"
           BRANCH: "main"
           POETRY_VERSION: "1.8.3"
