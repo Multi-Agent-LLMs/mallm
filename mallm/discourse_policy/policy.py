@@ -50,7 +50,7 @@ class DiscoursePolicy(ABC):
             not self.decision or config.skip_decision_making
         ) and self.turn < config.max_turns:
             self.turn += 1
-            logger.info(f"Ongoing. Current turn: {self.turn}")
+            logger.debug(f"Ongoing. Current turn: {self.turn}")
 
             for i, agent in enumerate(coordinator.agents):
                 discussion_history, memory_ids, current_draft = (

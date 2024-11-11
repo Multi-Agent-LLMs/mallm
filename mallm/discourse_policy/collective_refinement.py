@@ -86,7 +86,7 @@ class CollectiveRefinement(DiscoursePolicy):
             not self.decision or config.skip_decision_making
         ) and self.turn < config.max_turns:
             self.turn += 1
-            logger.info("Ongoing. Current turn: " + str(self.turn))
+            logger.debug("Ongoing. Current turn: " + str(self.turn))
 
             round_memories: list[Memory] = []
             for index, agent in enumerate(coordinator.agents):
