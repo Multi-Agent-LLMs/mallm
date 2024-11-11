@@ -1,0 +1,22 @@
+name: Build and publish python package
+
+on:
+  release:
+    types: [ published ]
+
+jobs:
+  publish-service-client-package:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Publish PyPi package
+        uses: code-specialist/pypi-poetry-publish@v1
+        with:
+          ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PUBLISH_REGISTRY_PASSWORD: ${{ secrets.PUBLISH_REGISTRY_PASSWORD }}
+          PACKAGE_DIRECTORY: "./reflectdetect/"
+          PYTHON_VERSION: "3.10.14"
+          BRANCH: "main"
+          POETRY_VERSION: "1.8.3"
+          POETRY_CORE_VERSION: "1.9.0"
