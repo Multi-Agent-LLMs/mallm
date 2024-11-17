@@ -51,6 +51,7 @@ class Config:
     voting_protocols_with_alterations: bool = False
     calculate_persona_diversity: bool = False
     challenge_final_results: bool = False
+    voting_protocols_vote_turn: int = 3
 
     def __post_init__(self) -> None:
         if (

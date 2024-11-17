@@ -251,6 +251,9 @@ class Coordinator:
             self.panelists, config.num_neutral_agents, worker_functions
         )
 
+        if hasattr(self.decision_protocol, "vote_turn"):
+            self.decision_protocol.vote_turn = config.voting_protocols_vote_turn
+
         start_time = time.perf_counter()
 
         if config.discussion_paradigm not in DISCUSSION_PARADIGMS:
