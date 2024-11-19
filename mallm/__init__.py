@@ -1,3 +1,1 @@
-import logging
-
-logging.getLogger("mallm").addHandler(logging.NullHandler())
+__version__='v1.0.1'

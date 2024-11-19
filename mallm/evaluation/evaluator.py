@@ -123,34 +123,41 @@ class Evaluator:
                 item["scores"] = self.calculate_scores(answer, references, "", dataset_id)
             votes_each_turn = item.get("votesEachTurn", None)
             if votes_each_turn:
-                alterations: dict[str, Any] = votes_each_turn[max(votes_each_turn.keys())].get(
-                    "alterations", ""
-                )
+                alterations: dict[str, Any] = votes_each_turn[
+                    max(votes_each_turn.keys())
+                ].get("alterations", "")
                 if alterations and len(alterations) >= 1:
-                    item["scores"] = {}
                     for alteration in list(alterations.keys()):
                         answer = alterations[alteration].get("final_answer", "")
                         if answer and "scores" not in item:
-                            item["scores"] = self.calculate_scores(answer, references, alteration, dataset_id)
+                            item["scores"] = self.calculate_scores(
+                                answer, references, alteration
+                            )
                         elif answer:
-                            item["scores"].update(self.calculate_scores(answer, references, alteration, dataset_id))
+                            item["scores"].update(
+                                self.calculate_scores(answer, references, alteration)
+                            )
 
     def add_scores_extensive(self) -> None:
         for item in tqdm(self.data, desc="Extensive scores: "):
             references = item.get("references", [])
             dataset_id = item.get("datasetId", None)
             votes_each_turn = item.get("votesEachTurn", None)
-            alterations: dict[str, Any] = votes_each_turn[max(votes_each_turn.keys())].get(
-                "alterations", None
-            )
+            alterations: dict[str, Any] = votes_each_turn[
+                max(votes_each_turn.keys())
+            ].get("alterations", None)
             for mem in item.get("globalMemory", []):
                 solution = mem.get("solution", "")
                 if solution and alterations:
                     for alteration in list(alterations.keys()):
                         if "scores" not in mem:
-                            mem["scores"] = self.calculate_scores(solution, references, alteration, dataset_id)
+                            mem["scores"] = self.calculate_scores(
+                                solution, references, alteration
+                            )
                         else:
-                            mem["scores"].update(self.calculate_scores(solution, references, alteration, dataset_id))
+                            mem["scores"].update(
+                                self.calculate_scores(solution, references, alteration)
+                            )
                 elif solution:
                     score = self.calculate_scores(solution, references, "", dataset_id)
                     mem["scores"] = score
@@ -159,7 +166,15 @@ class Evaluator:
                 for turn in votes_each_turn:
                     if alterations:
                         for alteration in list(alterations.keys()):
-                            item["votesEachTurn"][turn]["alterations"][alteration]["score"] = self.calculate_scores(item["votesEachTurn"][turn]["alterations"][alteration]["final_answer"], references, alteration, dataset_id)
+                            item["votesEachTurn"][turn]["alterations"][alteration][
+                                "score"
+                            ] = self.calculate_scores(
+                                item["votesEachTurn"][turn]["alterations"][alteration][
+                                    "final_answer"
+                                ],
+                                references,
+                                alteration,
+                            )
 
     def calculate_statistics(self) -> dict[str, Any]:
         reported_metrics = set()
