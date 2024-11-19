@@ -288,6 +288,10 @@ class Coordinator:
         challenged_answers: dict[str, Optional[str]] = {}
         if config.challenge_final_results:
             logger.info("Challenging final results...")
+            facts = None
+            if config.challenge_final_results == "facts":
+                facts = worker_functions.worker_context_function(input_str)
+
             for panelist in self.panelists:
                 challenge_result = panelist.llm.invoke(
                     panelist.response_generator.generate_challenge_prompt(
@@ -295,6 +299,8 @@ class Coordinator:
                         input_str,
                         sample_instruction,
                         (answer or "No answer was provided."),
+                        config.challenge_final_results == "history",
+                        facts,
                     )
                 )
                 if "agree" in challenge_result.lower():

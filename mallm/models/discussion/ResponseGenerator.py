@@ -253,12 +253,32 @@ Current Solution: {data.current_draft}
         question: str,
         task: str,
         final_answer: str,
+        history: bool = False,
+        facts: Optional[str] = None,
     ) -> list[dict[str, str]]:
-        return [
+        agent_history = panelist.get_discussion_history()[0] if history else []
+        prompts = [
             {
                 "role": "system",
                 "content": f"You are a participant in a group discussion. Your role: {panelist.persona} ({panelist.persona_description})",
-            },
+            }
+        ]
+        if history:
+            prompts.append(
+                {
+                    "role": "system",
+                    "content": "This is the discussion to the current point:",
+                }
+            )
+            prompts.extend(agent_history)
+        if facts:
+            prompts.append(
+                {
+                    "role": "system",
+                    "content": f"Here is some helpful additional information to improve your answer quality: {facts}",
+                }
+            )
+        prompts.append(
             {
                 "role": "user",
                 "content": (
@@ -267,7 +287,8 @@ Current Solution: {data.current_draft}
                     "Please critically evaluate this answer. If you do not agree, provide a new solution based on the task and question. If you agree with the final answer, respond with the exact word 'AGREE' to confirm."
                 ),
             },
-        ]
+        )
+        return prompts
 
     @staticmethod
     def voting_base_prompt(
