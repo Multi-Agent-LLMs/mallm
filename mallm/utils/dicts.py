@@ -17,8 +17,12 @@ from mallm.discourse_policy.memory import DiscourseMemory
 from mallm.discourse_policy.policy import DiscoursePolicy
 from mallm.discourse_policy.relay import DiscourseRelay
 from mallm.discourse_policy.report import DiscourseReport
+from mallm.models.discussion.CriticalResponseGenerator import CriticalResponseGenerator
 from mallm.models.discussion.FreeTextResponseGenerator import FreeTextResponseGenerator
 from mallm.models.discussion.JSONResponseGenerator import JSONResponseGenerator
+from mallm.models.discussion.ReasoningResponseGenerator import (
+    ReasoningResponseGenerator,
+)
 from mallm.models.discussion.ResponseGenerator import ResponseGenerator
 from mallm.models.discussion.SimpleResponseGenerator import SimpleResponseGenerator
 from mallm.models.discussion.SplitFreeTextResponseGenerator import (
@@ -63,4 +67,6 @@ RESPONSE_GENERATORS: dict[str, type[ResponseGenerator]] = {
     "freetext": FreeTextResponseGenerator,
     "splitfreetext": SplitFreeTextResponseGenerator,
     "simple": SimpleResponseGenerator,
+    "critical": CriticalResponseGenerator,
+    "reasoning": ReasoningResponseGenerator,
 }
