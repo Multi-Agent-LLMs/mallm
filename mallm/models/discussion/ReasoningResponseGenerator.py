@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 from mallm.models.Chat import Chat
 from mallm.models.discussion.FreeTextResponseGenerator import FreeTextResponseGenerator
@@ -140,11 +141,11 @@ Your role: {data.persona} ({data.persona_description})
 
     @staticmethod
     def generate_final_answer_prompt(
-        persona: str,
-        persona_description: str,
-        question: str,
+        input_sample: str,
         task: str,
-        previous_answer: str,
+        previous_answer: Optional[str],
+        persona: Optional[str] = None,
+        persona_description: Optional[str] = None,
     ) -> list[dict[str, str]]:
         return [
             {
@@ -156,7 +157,7 @@ Your role: {data.persona} ({data.persona_description})
                 "content": (
                     f"As {persona}, you are tasked with creating a final solution based on the given question and your previous response.\n\n"
                     f"Task: {task}\n"
-                    f"Question: {question}\n"
+                    f"Question: {input_sample}\n"
                     f"Your previous solution: {previous_answer}\n\n"
                     f"As {persona}, please provide a concise final solution to the task based on your unique insights. "
                     "Ensure your answer is original and directly addresses the question without additional explanations."
