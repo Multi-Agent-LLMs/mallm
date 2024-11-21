@@ -140,35 +140,35 @@ class Evaluator:
                     continue
                 if "correct" not in item["scores"] and "f1" not in item["scores"]:
                     continue
-                if "challenged_answers" in challenged_answers:
+                if challenged_answers["challenged_answers"]:
                     self.analyze_challenged_answers(
                         "normal",
                         challenged_answers["challenged_answers"],
                         item,
                         references,
                     )
-                if "challenged_answers_wrong" in challenged_answers:
+                if challenged_answers["challenged_answers_wrong"]:
                     self.analyze_challenged_answers(
                         "wrong",
                         challenged_answers["challenged_answers_wrong"],
                         item,
                         references,
                     )
-                if "challenged_answers_irrelevant" in challenged_answers:
+                if challenged_answers["challenged_answers_irrelevant"]:
                     self.analyze_challenged_answers(
                         "irrelevant",
                         challenged_answers["challenged_answers_irrelevant"],
                         item,
                         references,
                     )
-                if "challenged_answers_history" in challenged_answers:
+                if challenged_answers["challenged_answers_history"]:
                     self.analyze_challenged_answers(
                         "history",
                         challenged_answers["challenged_answers_history"],
                         item,
                         references,
                     )
-                if "challenged_answers_additional_information" in challenged_answers:
+                if challenged_answers["challenged_answers_additional_information"]:
                     self.analyze_challenged_answers(
                         "information",
                         challenged_answers["challenged_answers_additional_information"],
@@ -199,14 +199,14 @@ class Evaluator:
                 score = self.calculate_scores(answer, references)
                 current_score = score.get("f1", None) or score.get("correct", None)
                 if current_score is None:
-                    new_answer["challenge_failed"] = True
+                    new_answer[f"{name}_challenge_failed"] = True
                 elif current_score > previous_score:
-                    new_answer["challenge_higher"] = True
+                    new_answer[f"{name}_challenge_higher"] = True
                 elif current_score < previous_score:
-                    new_answer["challenge_lower"] = True
+                    new_answer[f"{name}_challenge_lower"] = True
                 elif current_score == previous_score:
-                    new_answer["challenge_same"] = True
-                new_answer["no_challenge"] = False
+                    new_answer[f"{name}_challenge_same"] = True
+                new_answer[f"{name}_no_challenge"] = False
             item["scores"].update(new_answer)
 
     def add_scores_extensive(self) -> None:
