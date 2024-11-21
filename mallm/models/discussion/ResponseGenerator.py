@@ -551,7 +551,7 @@ Current Solution: {data.current_draft}
             },
             {
                 "role": "user",
-                "content": f"Task: {task}\nQuestion: {question}. Please provide an answer that is deliberately incorrect or inaccurate.",
+                "content": f"Task: {task}\nQuestion: {question}. Please provide an answer that is deliberately incorrect or inaccurate. Only answer with the incorrect response.",
             },
         ]
 
@@ -564,6 +564,6 @@ Current Solution: {data.current_draft}
             },
             {
                 "role": "user",
-                "content": f"Question: {question} \n\nPlease provide an answer that is irrelevant to the question.",
+                "content": f"Question: {question} \n\nPlease provide an answer that is irrelevant to the question. Only answer with the irrelevant response.",
             },
         ]
