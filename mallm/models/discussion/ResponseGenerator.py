@@ -541,3 +541,39 @@ Current Solution: {data.current_draft}
 
         # Return the prompts list
         return prompts
+
+    @staticmethod
+    def generate_wrong_answer_prompt(task: str, question: str) -> list[dict[str, str]]:
+        return [
+            {
+                "role": "system",
+                "content": "You are tasked with providing an incorrect or wrong response to the given task and question.",
+            },
+            {
+                "role": "user",
+                "content": f"Task: {task}\nQuestion: {question}",
+            },
+            {
+                "role": "user",
+                "content": "Please provide an answer that is deliberately incorrect or inaccurate.",
+            },
+        ]
+
+    @staticmethod
+    def generate_irrelevant_answer_prompt(
+        task: str, question: str
+    ) -> list[dict[str, str]]:
+        return [
+            {
+                "role": "system",
+                "content": "You are tasked with providing a completely unrelated response to the given task and question.",
+            },
+            {
+                "role": "user",
+                "content": f"Task: {task}\nQuestion: {question}",
+            },
+            {
+                "role": "user",
+                "content": "Please provide an answer that is irrelevant to the task or question.",
+            },
+        ]

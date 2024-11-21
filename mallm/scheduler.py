@@ -233,7 +233,7 @@ class Scheduler:
                         for voting_round, voting_result in voting_results_per_turn.items()
                         if voting_result is not None
                     },
-                    "challengedAnswers": challenged_answers,
+                    "challengedAnswers": dataclasses.asdict(challenged_answers),
                     "references": sample.references,
                     "metadata": sample.metadata,
                     "decisionSuccess": decision_success,
