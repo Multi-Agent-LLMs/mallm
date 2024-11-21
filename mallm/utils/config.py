@@ -50,7 +50,7 @@ class Config:
     policy: Optional[str] = None
     voting_protocols_with_alterations: bool = False
     calculate_persona_diversity: bool = False
-    challenge_final_results: Optional[str] = None
+    challenge_final_results: bool = False
 
     def __post_init__(self) -> None:
         if (
