@@ -551,29 +551,19 @@ Current Solution: {data.current_draft}
             },
             {
                 "role": "user",
-                "content": f"Task: {task}\nQuestion: {question}",
-            },
-            {
-                "role": "user",
-                "content": "Please provide an answer that is deliberately incorrect or inaccurate.",
+                "content": f"Task: {task}\nQuestion: {question}. Please provide an answer that is deliberately incorrect or inaccurate.",
             },
         ]
 
     @staticmethod
-    def generate_irrelevant_answer_prompt(
-        task: str, question: str
-    ) -> list[dict[str, str]]:
+    def generate_irrelevant_answer_prompt(question: str) -> list[dict[str, str]]:
         return [
             {
                 "role": "system",
-                "content": "You are tasked with providing a completely unrelated response to the given task and question.",
+                "content": "You are tasked with providing a completely unrelated response to the given question.",
             },
             {
                 "role": "user",
-                "content": f"Task: {task}\nQuestion: {question}",
-            },
-            {
-                "role": "user",
-                "content": "Please provide an answer that is irrelevant to the task or question.",
+                "content": f"Question: {question} \n\nPlease provide an answer that is irrelevant to the question.",
             },
         ]

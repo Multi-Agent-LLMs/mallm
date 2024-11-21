@@ -299,7 +299,7 @@ class Coordinator:
             )
             challenged_answers.irrelevant_answer = self.llm.invoke(
                 self.response_generator.generate_irrelevant_answer_prompt(
-                    sample_instruction, input_str
+                    sample_instruction
                 )
             )
 
