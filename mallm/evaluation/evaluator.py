@@ -213,12 +213,12 @@ class Evaluator:
                     avg_scores_per_turn[turn] = round(avg_scores_per_turn[turn], 4)
 
             stats[metric] = {
-                "data_size": len(self.data),
-                "sample_size": len(scores),
+                "dataSize": len(self.data),
+                "sampleSize": len(scores),
                 "scores": scores,
-                "average_score": round(average_score, 4),
-                "std_dev_score": round(std_dev_score, 4),
-                "average_scores_per_turn": avg_scores_per_turn,
+                "averageScore": round(average_score, 4),
+                "stdDevScore": round(std_dev_score, 4),
+                "averageScoresPerTurnAggregated": avg_scores_per_turn,
             }
 
         return stats
