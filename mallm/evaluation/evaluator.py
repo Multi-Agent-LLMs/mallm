@@ -10,7 +10,6 @@ from tqdm import tqdm
 import mallm.scheduler  # noqa
 from mallm.evaluation.metrics.bertscore import BERTScore
 from mallm.evaluation.metrics.bleu import BLEU
-from mallm.evaluation.metrics.distinct import Distinct
 from mallm.evaluation.metrics.meteor import METEOR
 from mallm.evaluation.metrics.qa import (
     AnswerabilityBoolean,
@@ -29,7 +28,6 @@ ALL_METRICS = [
     MultiChoiceBoolean(),
     ROUGE(),
     SquadScore(),
-    Distinct(),
     IncludesAnswer(),
 ]
 
