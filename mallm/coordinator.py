@@ -371,7 +371,7 @@ class Coordinator:
             )
             if "disagree" in agreement.lower():
                 challenge_result = panelist.llm.invoke(
-                    panelist.response_generator.generate_challenge_prompt(
+                    panelist.response_generator.generate_challenge_new_answer_prompt(
                         panelist,
                         input_str,
                         sample_instruction,

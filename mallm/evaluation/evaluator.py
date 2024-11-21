@@ -193,21 +193,20 @@ class Evaluator:
         previous_score = item["scores"].get("f1", None) or item["scores"].get(
             "correct", None
         )
-        for challenged_answer in list(challenged_answers.keys()):
-            answer = challenged_answers[challenged_answer]
-            if answer:
-                score = self.calculate_scores(answer, references)
-                current_score = score.get("f1", None) or score.get("correct", None)
-                if current_score is None or previous_score is None:
-                    new_answer[f"{name}_challenge_failed"] = True
-                elif current_score > previous_score:
-                    new_answer[f"{name}_challenge_higher"] = True
-                elif current_score < previous_score:
-                    new_answer[f"{name}_challenge_lower"] = True
-                elif current_score == previous_score:
-                    new_answer[f"{name}_challenge_same"] = True
-                new_answer[f"{name}_no_challenge"] = False
-            item["scores"].update(new_answer)
+        answer = next(iter(challenged_answers.values()))
+        if answer:
+            score = self.calculate_scores(answer, references)
+            current_score = score.get("f1", None) or score.get("correct", None)
+            if current_score is None or previous_score is None:
+                new_answer[f"{name}_challenge_failed"] = True
+            elif current_score > previous_score:
+                new_answer[f"{name}_challenge_higher"] = True
+            elif current_score < previous_score:
+                new_answer[f"{name}_challenge_lower"] = True
+            elif current_score == previous_score:
+                new_answer[f"{name}_challenge_same"] = True
+            new_answer[f"{name}_no_challenge"] = False
+        item["scores"].update(new_answer)
 
     def add_scores_extensive(self) -> None:
         for item in tqdm(self.data):
