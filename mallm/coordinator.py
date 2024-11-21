@@ -289,9 +289,9 @@ class Coordinator:
         challenged_answers: ChallengeResult = ChallengeResult(answer)
         if config.challenge_final_results:
             logger.info("Challenging final results...")
-            challenged_answers.additional_information = (
-                worker_functions.worker_context_function(input_str)
-            )
+            # challenged_answers.additional_information = (
+            #     worker_functions.worker_context_function(input_str)
+            # )
             challenged_answers.wrong_answer = self.llm.invoke(
                 self.response_generator.generate_wrong_answer_prompt(
                     sample_instruction, input_str
@@ -319,15 +319,15 @@ class Coordinator:
             challenged_answers.challenged_answers_history = self.challenge_solution(
                 answer, input_str, sample_instruction, None, True
             )
-            challenged_answers.challenged_answers_additional_information = (
-                self.challenge_solution(
-                    answer,
-                    input_str,
-                    sample_instruction,
-                    challenged_answers.additional_information,
-                    False,
-                )
-            )
+            # challenged_answers.challenged_answers_additional_information = (
+            #     self.challenge_solution(
+            #         answer,
+            #         input_str,
+            #         sample_instruction,
+            #         challenged_answers.additional_information,
+            #         False,
+            #     )
+            # )
 
         discussion_time = timedelta(
             seconds=time.perf_counter() - start_time
@@ -359,7 +359,7 @@ class Coordinator:
     ) -> dict[str, Optional[str]]:
         challenged_answers: dict[str, Optional[str]] = {}
         for panelist in self.panelists:
-            challenge_result = panelist.llm.invoke(
+            agreement = panelist.llm.invoke(
                 panelist.response_generator.generate_challenge_prompt(
                     panelist,
                     input_str,
@@ -369,10 +369,20 @@ class Coordinator:
                     additional_information,
                 )
             )
-            if "agree" in challenge_result.lower():
+            if "agree" in agreement.lower():
                 logger.info(f"{panelist.persona} agrees with the final result.")
                 challenged_answers[panelist.id] = None
             else:
+                challenge_result = panelist.llm.invoke(
+                    panelist.response_generator.generate_challenge_prompt(
+                        panelist,
+                        input_str,
+                        sample_instruction,
+                        (answer or "No answer was provided."),
+                        history,
+                        additional_information,
+                    )
+                )
                 logger.info(
                     f"{panelist.persona} disagrees with the final result and proposes a new solution:\n{challenge_result}"
                 )

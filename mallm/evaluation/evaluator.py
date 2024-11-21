@@ -134,41 +134,80 @@ class Evaluator:
                                 self.calculate_scores(answer, references, alteration)
                             )
 
-            challenged_answers: Optional[dict[str, Optional[str]]] = item.get(
-                "challengedAnswers", ""
-            )
+            challenged_answers: Any = item.get("challengedAnswers", None)
             if challenged_answers:
                 if "scores" not in item:
                     continue
                 if "correct" not in item["scores"] and "f1" not in item["scores"]:
                     continue
-                new_answer = {
-                    "no_challenge": True,
-                    "challenge_failed": False,
-                    "challenge_higher": False,
-                    "challenge_lower": False,
-                    "challenge_same": False,
-                }
-                previous_score = item["scores"].get("f1", None) or item["scores"].get(
-                    "correct", None
-                )
-                for challenged_answer in challenged_answers:
-                    answer = challenged_answers[challenged_answer]
-                    if answer:
-                        score = self.calculate_scores(answer, references)
-                        current_score = score.get("f1", None) or score.get(
-                            "correct", None
-                        )
-                        if current_score is None:
-                            new_answer["challenge_failed"] = True
-                        elif current_score > previous_score:
-                            new_answer["challenge_higher"] = True
-                        elif current_score < previous_score:
-                            new_answer["challenge_lower"] = True
-                        elif current_score == previous_score:
-                            new_answer["challenge_same"] = True
-                        new_answer["no_challenge"] = False
-                    item["scores"].update(new_answer)
+                if "challenged_answers" in challenged_answers:
+                    self.analyze_challenged_answers(
+                        "normal",
+                        challenged_answers["challenged_answers"],
+                        item,
+                        references,
+                    )
+                if "challenged_answers_wrong" in challenged_answers:
+                    self.analyze_challenged_answers(
+                        "wrong",
+                        challenged_answers["challenged_answers_wrong"],
+                        item,
+                        references,
+                    )
+                if "challenged_answers_irrelevant" in challenged_answers:
+                    self.analyze_challenged_answers(
+                        "irrelevant",
+                        challenged_answers["challenged_answers_irrelevant"],
+                        item,
+                        references,
+                    )
+                if "challenged_answers_history" in challenged_answers:
+                    self.analyze_challenged_answers(
+                        "history",
+                        challenged_answers["challenged_answers_history"],
+                        item,
+                        references,
+                    )
+                if "challenged_answers_additional_information" in challenged_answers:
+                    self.analyze_challenged_answers(
+                        "information",
+                        challenged_answers["challenged_answers_additional_information"],
+                        item,
+                        references,
+                    )
+
+    def analyze_challenged_answers(
+        self,
+        name: str,
+        challenged_answers: dict[str, Optional[str]],
+        item: Any,
+        references: list[str],
+    ) -> None:
+        new_answer = {
+            f"{name}_no_challenge": True,
+            f"{name}_challenge_failed": False,
+            f"{name}_challenge_higher": False,
+            f"{name}_challenge_lower": False,
+            f"{name}_challenge_same": False,
+        }
+        previous_score = item["scores"].get("f1", None) or item["scores"].get(
+            "correct", None
+        )
+        for challenged_answer in list(challenged_answers.keys()):
+            answer = challenged_answers[challenged_answer]
+            if answer:
+                score = self.calculate_scores(answer, references)
+                current_score = score.get("f1", None) or score.get("correct", None)
+                if current_score is None:
+                    new_answer["challenge_failed"] = True
+                elif current_score > previous_score:
+                    new_answer["challenge_higher"] = True
+                elif current_score < previous_score:
+                    new_answer["challenge_lower"] = True
+                elif current_score == previous_score:
+                    new_answer["challenge_same"] = True
+                new_answer["no_challenge"] = False
+            item["scores"].update(new_answer)
 
     def add_scores_extensive(self) -> None:
         for item in tqdm(self.data):
