@@ -369,10 +369,7 @@ class Coordinator:
                     additional_information,
                 )
             )
-            if "agree" in agreement.lower():
-                logger.info(f"{panelist.persona} agrees with the final result.")
-                challenged_answers[panelist.id] = None
-            else:
+            if "disagree" in agreement.lower():
                 challenge_result = panelist.llm.invoke(
                     panelist.response_generator.generate_challenge_prompt(
                         panelist,
@@ -387,6 +384,12 @@ class Coordinator:
                     f"{panelist.persona} disagrees with the final result and proposes a new solution:\n{challenge_result}"
                 )
                 challenged_answers[panelist.id] = challenge_result
+            elif "agree" in agreement.lower():
+                logger.info(f"{panelist.persona} agrees with the final result.")
+                challenged_answers[panelist.id] = None
+            else:
+                logger.info(f"{panelist.persona} failed to challenge the final result.")
+                challenged_answers[panelist.id] = None
         return challenged_answers
 
     def get_memories(
