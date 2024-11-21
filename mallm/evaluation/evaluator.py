@@ -198,7 +198,7 @@ class Evaluator:
             if answer:
                 score = self.calculate_scores(answer, references)
                 current_score = score.get("f1", None) or score.get("correct", None)
-                if current_score is None:
+                if current_score is None or previous_score is None:
                     new_answer[f"{name}_challenge_failed"] = True
                 elif current_score > previous_score:
                     new_answer[f"{name}_challenge_higher"] = True
