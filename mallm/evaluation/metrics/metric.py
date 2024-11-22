@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Optional
 
 
 class Metric(ABC):
@@ -12,7 +12,7 @@ class Metric(ABC):
 
     @staticmethod
     @abstractmethod
-    def evaluate(generated_text: str, reference_texts: list[str]) -> dict[str, Any]:
+    def evaluate(generated_text: str, reference_texts: list[str], dataset_id: Optional[str]) -> dict[str, Any]:
         """
         Evaluate the generated text against a reference text.
 

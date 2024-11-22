@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 from rouge_score import rouge_scorer
 
@@ -13,7 +13,7 @@ class ROUGE(Metric):
     _name = "ROUGE"
 
     @staticmethod
-    def evaluate(generated_text: str, reference_texts: list[str]) -> dict[str, Any]:
+    def evaluate(generated_text: str, reference_texts: list[str], dataset_id: Optional[str]) -> dict[str, Any]:
         scorer = rouge_scorer.RougeScorer(
             rouge_types=["rouge1", "rouge2", "rouge3", "rougeL"], use_stemmer=True
         )

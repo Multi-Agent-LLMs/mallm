@@ -65,7 +65,7 @@ class Config:
         # TODO: make this more robust and conclusive. All arguments should be checked for validity, making the use of MALLM as fool-proof as possible.
         if not self.task_instruction_prompt:
             logger.error(
-                "Please provide an instruction using the --instruction_prompt argument or a template using --instruction_prompt_template."
+                "Please provide an instruction using the --task_instruction_prompt argument or a template using --task_instruction_prompt_template."
             )
             sys.exit(1)
         if os.path.isfile(self.input_json_file_path):
@@ -84,7 +84,7 @@ class Config:
 
         if not self.output_json_file_path.endswith(".json"):
             logger.error(
-                "The output file does not seem to be a json file. Please specify a file path using --out."
+                "The output file does not seem to be a json file. Please specify a file path using --output_json_file_path."
             )
             sys.exit(1)
 
@@ -119,7 +119,7 @@ class Config:
             sys.exit(1)
         if self.concurrent_api_requests > 250:
             logger.warning(
-                "max_concurrent_requests is very large. Please make sure the API endpoint you are using can handle that many simultaneous requests."
+                "concurrent_api_requests is very large. Please make sure the API endpoint you are using can handle that many simultaneous requests."
             )
         # import here to avoid circular imports
         from mallm.utils.dicts import (  # noqa PLC0415
