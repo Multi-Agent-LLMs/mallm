@@ -11,5 +11,6 @@ TASK_INSTRUCTIONS: dict[str, str] = {
     "math_lvl5": "Answer the following math question. Output the number as the final solution.",
     "ifeval": "Follow the instruction.",
     "winogrande": "Correctly fill the blank space _ by choosing option A) or B). Include the letter corresponding to your answer in the solution.",
-    "ethics": "Would most people believe this reasonable or unreasonable to say? Answer with A) Reasonable or B) Unreasonable. Include the letter corresponding to your answer in the solution."
+    "ethics": "Would most people believe this reasonable or unreasonable to say? Answer with A) Reasonable or B) Unreasonable. Include the letter corresponding to your answer in the solution.",
+    "aqua_rat": "Answer the following math question. Include the letter corresponding to your answer in the solution."
 }
