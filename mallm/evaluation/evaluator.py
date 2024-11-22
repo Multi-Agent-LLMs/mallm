@@ -146,6 +146,7 @@ class Evaluator:
                         challenged_answers["challenged_answers"],
                         item,
                         references,
+                        item["scores"],
                     )
                 if challenged_answers["challenged_answers_wrong"]:
                     self.analyze_challenged_answers(
@@ -153,6 +154,9 @@ class Evaluator:
                         challenged_answers["challenged_answers_wrong"],
                         item,
                         references,
+                        self.calculate_scores(
+                            challenged_answers["wrong_answer"], references
+                        ),
                     )
                 if challenged_answers["challenged_answers_irrelevant"]:
                     self.analyze_challenged_answers(
@@ -160,6 +164,9 @@ class Evaluator:
                         challenged_answers["challenged_answers_irrelevant"],
                         item,
                         references,
+                        self.calculate_scores(
+                            challenged_answers["irrelevant_answer"], references
+                        ),
                     )
                 if challenged_answers["challenged_answers_history"]:
                     self.analyze_challenged_answers(
@@ -167,6 +174,7 @@ class Evaluator:
                         challenged_answers["challenged_answers_history"],
                         item,
                         references,
+                        item["scores"],
                     )
                 if challenged_answers["challenged_answers_additional_information"]:
                     self.analyze_challenged_answers(
@@ -174,6 +182,7 @@ class Evaluator:
                         challenged_answers["challenged_answers_additional_information"],
                         item,
                         references,
+                        item["scores"],
                     )
 
     def analyze_challenged_answers(
@@ -182,6 +191,7 @@ class Evaluator:
         challenged_answers: dict[str, Optional[str]],
         item: Any,
         references: list[str],
+        previous_score: Any,
     ) -> None:
         new_answer = {
             f"{name}_no_challenge": True,
@@ -190,7 +200,7 @@ class Evaluator:
             f"{name}_challenge_lower": False,
             f"{name}_challenge_same": False,
         }
-        previous_score = item["scores"].get("f1", None) or item["scores"].get(
+        previous_score = previous_score.get("f1", None) or previous_score.get(
             "correct", None
         )
         answer = next(iter(challenged_answers.values()))
