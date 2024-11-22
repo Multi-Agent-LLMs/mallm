@@ -289,9 +289,9 @@ class Coordinator:
         challenged_answers: ChallengeResult = ChallengeResult(answer)
         if config.challenge_final_results:
             logger.info("Challenging final results...")
-            # challenged_answers.additional_information = (
-            #     worker_functions.worker_context_function(input_str)
-            # )
+            challenged_answers.additional_information = (
+                worker_functions.worker_context_function(input_str)
+            )
             challenged_answers.wrong_answer = self.llm.invoke(
                 self.response_generator.generate_wrong_answer_prompt(
                     sample_instruction, input_str
@@ -319,15 +319,15 @@ class Coordinator:
             challenged_answers.challenged_answers_history = self.challenge_solution(
                 answer, input_str, sample_instruction, None, True
             )
-            # challenged_answers.challenged_answers_additional_information = (
-            #     self.challenge_solution(
-            #         answer,
-            #         input_str,
-            #         sample_instruction,
-            #         challenged_answers.additional_information,
-            #         False,
-            #     )
-            # )
+            challenged_answers.challenged_answers_additional_information = (
+                self.challenge_solution(
+                    answer,
+                    input_str,
+                    sample_instruction,
+                    challenged_answers.additional_information,
+                    False,
+                )
+            )
 
         discussion_time = timedelta(
             seconds=time.perf_counter() - start_time
