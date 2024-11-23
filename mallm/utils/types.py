@@ -63,6 +63,19 @@ class VotingResultList:
 
 
 @dataclass
+class ChallengeResult:
+    answer: str
+    additional_information: Optional[str] = None
+    wrong_answer: Optional[str] = None
+    irrelevant_answer: Optional[str] = None
+    challenged_answers: Optional[dict[str, Optional[str]]] = None
+    challenged_answers_history: Optional[dict[str, Optional[str]]] = None
+    challenged_answers_wrong: Optional[dict[str, Optional[str]]] = None
+    challenged_answers_irrelevant: Optional[dict[str, Optional[str]]] = None
+    challenged_answers_additional_information: Optional[dict[str, Optional[str]]] = None
+
+
+@dataclass
 class InputExample:
     example_id: str
     dataset_id: Optional[str]

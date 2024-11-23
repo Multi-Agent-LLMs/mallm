@@ -27,6 +27,7 @@ from mallm.utils.dicts import (
 )
 from mallm.utils.types import (
     Agreement,
+    ChallengeResult,
     InputExample,
     Memory,
     VotingResultList,
@@ -200,7 +201,7 @@ class Coordinator:
         float,
         bool,
         dict[int, Optional[VotingResultList]],
-        dict[str, Optional[str]],
+        ChallengeResult,
     ]:
         """
         The routine responsible for the discussion between agents to solve a task.
@@ -285,26 +286,50 @@ class Coordinator:
             )
         )
 
-        challenged_answers: dict[str, Optional[str]] = {}
+        challenged_answers: ChallengeResult = ChallengeResult(
+            answer or "No answer was provided."
+        )
         if config.challenge_final_results:
             logger.info("Challenging final results...")
-            for panelist in self.panelists:
-                challenge_result = panelist.llm.invoke(
-                    panelist.response_generator.generate_challenge_prompt(
-                        panelist,
-                        input_str,
-                        sample_instruction,
-                        (answer or "No answer was provided."),
-                    )
+            challenged_answers.additional_information = (
+                worker_functions.worker_context_function(input_str)
+            )
+            challenged_answers.wrong_answer = self.llm.invoke(
+                self.response_generator.generate_wrong_answer_prompt(
+                    sample_instruction, input_str
                 )
-                if "agree" in challenge_result.lower():
-                    logger.info(f"{panelist.persona} agrees with the final result.")
-                    challenged_answers[panelist.id] = None
-                else:
-                    logger.info(
-                        f"{panelist.persona} disagrees with the final result and proposes a new solution:\n{challenge_result}"
-                    )
-                    challenged_answers[panelist.id] = challenge_result
+            )
+            challenged_answers.irrelevant_answer = "I) I don't know."
+
+            challenged_answers.challenged_answers = self.challenge_solution(
+                answer, input_str, sample_instruction, None, False
+            )
+            challenged_answers.challenged_answers_wrong = self.challenge_solution(
+                challenged_answers.wrong_answer,
+                input_str,
+                sample_instruction,
+                None,
+                False,
+            )
+            challenged_answers.challenged_answers_irrelevant = self.challenge_solution(
+                challenged_answers.irrelevant_answer,
+                input_str,
+                sample_instruction,
+                None,
+                False,
+            )
+            challenged_answers.challenged_answers_history = self.challenge_solution(
+                answer, input_str, sample_instruction, None, True
+            )
+            challenged_answers.challenged_answers_additional_information = (
+                self.challenge_solution(
+                    answer,
+                    input_str,
+                    sample_instruction,
+                    challenged_answers.additional_information,
+                    False,
+                )
+            )
 
         discussion_time = timedelta(
             seconds=time.perf_counter() - start_time
@@ -325,6 +350,49 @@ class Coordinator:
             voting_results_per_turn,
             challenged_answers,
         )
+
+    def challenge_solution(
+        self,
+        answer: Optional[str],
+        input_str: str,
+        sample_instruction: str,
+        additional_information: Optional[str],
+        history: bool,
+    ) -> dict[str, Optional[str]]:
+        challenged_answers: dict[str, Optional[str]] = {}
+        for panelist in self.panelists:
+            agreement = panelist.llm.invoke(
+                panelist.response_generator.generate_challenge_prompt(
+                    panelist,
+                    input_str,
+                    sample_instruction,
+                    (answer or "No answer was provided."),
+                    history,
+                    additional_information,
+                )
+            )
+            if "disagree" in agreement.lower():
+                challenge_result = panelist.llm.invoke(
+                    panelist.response_generator.generate_challenge_new_answer_prompt(
+                        panelist,
+                        input_str,
+                        sample_instruction,
+                        (answer or "No answer was provided."),
+                        history,
+                        additional_information,
+                    )
+                )
+                logger.info(
+                    f"{panelist.persona} disagrees with the final result and proposes a new solution:\n{challenge_result}"
+                )
+                challenged_answers[panelist.id] = challenge_result
+            elif "agree" in agreement.lower():
+                logger.info(f"{panelist.persona} agrees with the final result.")
+                challenged_answers[panelist.id] = None
+            else:
+                logger.info(f"{panelist.persona} failed to challenge the final result.")
+                challenged_answers[panelist.id] = None
+        return challenged_answers
 
     def get_memories(
         self,
