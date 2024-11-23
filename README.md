@@ -1,6 +1,6 @@
 <br />
 <p align="center">
-<a><img src="image/mallm.webp" alt="MALLM" width="128" height="128" title="MALLM"></a>
+<a><img src="https://raw.githubusercontent.com/Multi-Agent-LLMs/mallm/refs/heads/main/image/mallm.webp" alt="MALLM" width="128" height="128" title="MALLM"></a>
   <h3 align="center">MALLM</h3>
   <p align="center">
     Multi-Agent LLMs For Conversational Task-Solving: Framework<br />
