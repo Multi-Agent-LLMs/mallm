@@ -208,7 +208,7 @@ def plot_score_distributions_with_std(df: pd.DataFrame, input_path: str) -> None
         # Filter data for the current score type
         score_data = grouped[grouped["Score Type"] == score_type]
         score_data.to_csv(
-            f"{input_path}/{score_type.replace(" ", "_").lower()}_score.csv",
+            f'{input_path}/{score_type.replace(" ", "_").lower()}_score.csv',
             index=False,
         )
 

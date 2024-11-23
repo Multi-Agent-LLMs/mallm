@@ -9,7 +9,6 @@ from tqdm import tqdm
 
 from mallm.evaluation.metrics.bertscore import BERTScore
 from mallm.evaluation.metrics.bleu import BLEU
-from mallm.evaluation.metrics.distinct import Distinct
 from mallm.evaluation.metrics.ifeval import IFEval
 from mallm.evaluation.metrics.meteor import METEOR
 from mallm.evaluation.metrics.qa import (
@@ -29,7 +28,6 @@ ALL_METRICS = [
     MultiChoiceBoolean(),
     ROUGE(),
     SquadScore(),
-    Distinct(),
     IncludesAnswer(),
     IFEval(),
 ]
@@ -235,12 +233,12 @@ class Evaluator:
                     avg_scores_per_turn[turn] = round(avg_scores_per_turn[turn], 4)
 
             stats[metric] = {
-                "data_size": len(self.data),
-                "sample_size": len(scores),
+                "dataSize": len(self.data),
+                "sampleSize": len(scores),
                 "scores": scores,
-                "average_score": round(average_score, 4),
-                "std_dev_score": round(std_dev_score, 4),
-                "average_scores_per_turn": avg_scores_per_turn,
+                "averageScore": round(average_score, 4),
+                "stdDevScore": round(std_dev_score, 4),
+                "averageScoresPerTurnAggregated": avg_scores_per_turn,
             }
 
         return stats

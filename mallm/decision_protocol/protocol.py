@@ -49,6 +49,29 @@ class DecisionProtocol(ABC):
         self.total_agents: int = len(panelists) + num_neutral_agents
         self.worker_functions = worker_functions
 
+    @staticmethod
+    def remove_duplicate_answers(final_answers: list[str]) -> list[str]:
+        '''
+        Removes duplicate entries from the answer choices, even if they have different capitalization or slightly different writing in multiple-choice format.
+        '''
+        unique_final_answers_lower = []
+        unique_final_answers = []
+        for final_answer in final_answers:
+            if final_answer.lower() not in unique_final_answers_lower:
+                unique_final_answers_lower.append(final_answer.lower())
+                unique_final_answers.append(final_answer)
+        final_answers = unique_final_answers
+
+        unique_items = []
+        seen_prefixes = set()
+
+        for item in final_answers:
+            prefix = item.split(")")[0] if ")" in item else item
+            if prefix not in seen_prefixes:
+                unique_items.append(item)
+                seen_prefixes.add(prefix)
+        return unique_items
+
     def generate_final_answers(
         self, agreements: list[Agreement], question: str, task: str
     ) -> tuple[list[tuple[str, int]], str]:

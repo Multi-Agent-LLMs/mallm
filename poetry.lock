@@ -747,21 +747,6 @@ graph = ["objgraph (>=1.7.2)"]
 profile = ["gprof2dot (>=2022.7.29)"]
 
 [[package]]
-name = "distinct_n"
-version = "0.4.0"
-description = "Distinct-N metric that measures degree of diversity of generated response"
-optional = false
-python-versions = "*"
-files = []
-develop = false
-
-[package.source]
-type = "git"
-url = "https://github.com/neural-dialogue-metrics/Distinct-N.git"
-reference = "HEAD"
-resolved_reference = "e94edcb2e1d2230ff9e0f1821387d7f6d7af0c4f"
-
-[[package]]
 name = "distro"
 version = "1.9.0"
 description = "Distro - an OS platform information API"
@@ -4378,4 +4363,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "a828e7875618a4454113000dfd2f299fd0d2c06be0810c1397eab658ee80c9bf"
+content-hash = "4cc4b9fe2f41be698f87441ff920a806e9c3ae0d02da0612b0087ed2cb713169"
