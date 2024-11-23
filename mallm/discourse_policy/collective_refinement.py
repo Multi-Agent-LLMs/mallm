@@ -56,7 +56,9 @@ class CollectiveRefinement(DiscoursePolicy):
         solution: str,
         config: Config,
         console: Optional[Console] = None,
-    ) -> tuple[Optional[str], int, list[Agreement], bool, dict[int, Any]]:
+    ) -> tuple[
+        Optional[str], int, list[Agreement], bool, dict[int, Optional[VotingResultList]]
+    ]:
         unique_id = 0
         voting_process_string = ""
         additional_voting_results: Optional[VotingResultList] = None
@@ -180,7 +182,7 @@ class CollectiveRefinement(DiscoursePolicy):
             self.print_messages(coordinator, input_str, task_instruction)
 
             if additional_voting_results:
-                voting_results_per_turn[self.turn] = dataclasses.asdict(additional_voting_results)
+                voting_results_per_turn[self.turn] = additional_voting_results
             else:
                 voting_results_per_turn[self.turn] = None
 
