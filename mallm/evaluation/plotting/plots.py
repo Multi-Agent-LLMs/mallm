@@ -17,7 +17,7 @@ def process_stats_file(file_path: str) -> pd.DataFrame:
     data = json.loads(Path(file_path).read_text())
     # Extract only the average scores
     return pd.DataFrame(
-        {k: v["average_score"] for k, v in data.items() if "average_score" in v},
+        {k: v["averageScore"] for k, v in data.items() if "averageScore" in v},
         index=[0],
     )
 
