@@ -7,10 +7,9 @@ import fire
 import json_repair
 from tqdm import tqdm
 
-import mallm.scheduler  # noqa
 from mallm.evaluation.metrics.bertscore import BERTScore
 from mallm.evaluation.metrics.bleu import BLEU
-from mallm.evaluation.metrics.distinct import Distinct
+from mallm.evaluation.metrics.ifeval import IFEval
 from mallm.evaluation.metrics.meteor import METEOR
 from mallm.evaluation.metrics.qa import (
     AnswerabilityBoolean,
@@ -29,8 +28,8 @@ ALL_METRICS = [
     MultiChoiceBoolean(),
     ROUGE(),
     SquadScore(),
-    Distinct(),
     IncludesAnswer(),
+    IFEval(),
 ]
 
 logger = logging.getLogger("mallm")
@@ -91,7 +90,7 @@ class Evaluator:
         return selected_metrics
 
     def calculate_scores(
-        self, answer: str, references: list[str], metric_alteration: str = ""
+        self, answer: str, references: list[str], metric_alteration: str = "", dataset_id: Optional[str] = None
     ) -> dict[str, Any]:
         metrics = []
         if references:
@@ -101,6 +100,8 @@ class Evaluator:
                 metrics.append(AnswerabilityBoolean())
             if any(metric.name == "squad" for metric in self.metrics):
                 metrics.append(SquadScore())
+            if any(metric.name == "IFEval" for metric in self.metrics):
+                metrics.append(IFEval())
         if not metrics:
             logger.warning(f"No metrics to evaluate against references {references}.")
             return {}
@@ -108,15 +109,17 @@ class Evaluator:
         return {
             f"{k}{f'-{metric_alteration}' if metric_alteration else ''}": v
             for metric in metrics
-            for k, v in metric.evaluate(answer, references).items()
+            for k, v in metric.evaluate(answer, references, dataset_id).items()
         }
 
     def add_scores(self) -> None:
-        for item in tqdm(self.data, desc="Calculating scores"):
+        for item in tqdm(self.data, desc=f"Calculating scores of {self.input_file_path}: "):
             main_answer = item.get("finalAnswer", "")
             references = item.get("references", [])
+            dataset_id = item.get("datasetId", None)
             if main_answer:
-                item["scores"] = self.calculate_scores(main_answer, references)
+                item["scores"] = self.calculate_scores(main_answer, references, "", dataset_id)
+
             votes_each_turn = item.get("votesEachTurn", None)
             if votes_each_turn:
                 alterations: dict[str, Any] = votes_each_turn[
@@ -219,8 +222,9 @@ class Evaluator:
         item["scores"].update(new_answer)
 
     def add_scores_extensive(self) -> None:
-        for item in tqdm(self.data):
+        for item in tqdm(self.data, desc="Extensive scores: "):
             references = item.get("references", [])
+            dataset_id = item.get("datasetId", None)
             votes_each_turn = item.get("votesEachTurn", None)
             alterations: dict[str, Any] = votes_each_turn[
                 max(votes_each_turn.keys())
@@ -238,7 +242,7 @@ class Evaluator:
                                 self.calculate_scores(solution, references, alteration)
                             )
                 elif solution:
-                    score = self.calculate_scores(solution, references)
+                    score = self.calculate_scores(solution, references, "", dataset_id)
                     mem["scores"] = score
 
             if votes_each_turn:
@@ -296,9 +300,11 @@ class Evaluator:
                         turn = mem.get("turn", 0)
                         if turn not in avg_scores_per_turn:
                             avg_scores_per_turn[turn] = float(0)
-                        avg_scores_per_turn[turn] += mem.get("scores", {}).get(
+                        turn_score = mem.get("scores", {}).get(
                             metric, 0
                         )
+                        if turn_score:
+                            avg_scores_per_turn[turn] += turn_score
 
                 max_turns = max(item.get("turns", 0) for item in self.data)
                 for turn in range(max_turns + 1)[1:]:
@@ -312,12 +318,12 @@ class Evaluator:
                     avg_scores_per_turn[turn] = round(avg_scores_per_turn[turn], 4)
 
             stats[metric] = {
-                "data_size": len(self.data),
-                "sample_size": len(scores),
+                "dataSize": len(self.data),
+                "sampleSize": len(scores),
                 "scores": scores,
-                "average_score": round(average_score, 4),
-                "std_dev_score": round(std_dev_score, 4),
-                "average_scores_per_turn": avg_scores_per_turn,
+                "averageScore": round(average_score, 4),
+                "stdDevScore": round(std_dev_score, 4),
+                "averageScoresPerTurnAggregated": avg_scores_per_turn,
             }
 
         return stats
