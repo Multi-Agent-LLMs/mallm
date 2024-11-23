@@ -1,6 +1,6 @@
-[project]
+[tool.poetry]
 name = "mallm"
-version = "1.0.2"
+version = "v1.0.1"
 authors = [{ name = "GippLab", email = "projects@gipplab.org" }]
 description = "Multi-Agent Large Language Models for Collaborative Task-Solving."
 readme = "README.md"
@@ -14,13 +14,6 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/Multi-Agent-LLMs/mallm"
 Issues = "https://github.com/Multi-Agent-LLMs/mallm/issues"
-
-[tool.poetry]
-name = "mallm"
-version = "0.1.0"
-description = ""
-authors = ["GippLab <projects@gipplab.org>"]
-readme = "README.md"
 
 [tool.poetry.scripts]
 mallm-run = "mallm.scheduler:main"
