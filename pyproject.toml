@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mallm"
-version = "v1.0.1"
+version = "v1.0.2"
 authors = [{ name = "GippLab", email = "projects@gipplab.org" }]
 description = "Multi-Agent Large Language Models for Collaborative Task-Solving."
 readme = "README.md"
