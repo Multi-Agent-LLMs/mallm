@@ -263,7 +263,7 @@ Current Solution: {data.current_draft}
                 "content": f"You are a participant in a group discussion. Your role: {panelist.persona} ({panelist.persona_description})",
             }
         ]
-        if history:
+        if history and agent_history:
             prompts.append(
                 {
                     "role": "system",
@@ -306,7 +306,7 @@ Current Solution: {data.current_draft}
                 "content": f"You are a participant in a group discussion. Your role: {panelist.persona} ({panelist.persona_description})",
             }
         ]
-        if history:
+        if history and agent_history:
             prompts.append(
                 {
                     "role": "system",

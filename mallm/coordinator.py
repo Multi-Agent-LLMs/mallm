@@ -286,7 +286,9 @@ class Coordinator:
             )
         )
 
-        challenged_answers: ChallengeResult = ChallengeResult(answer)
+        challenged_answers: ChallengeResult = ChallengeResult(
+            answer or "No answer was provided."
+        )
         if config.challenge_final_results:
             logger.info("Challenging final results...")
             challenged_answers.additional_information = (
