@@ -153,6 +153,6 @@ def load_and_execute_downloaders(
             print(f"\033[93m[WARNING]\033[0m No downloader class found in {file.name}")
         print("\033[90m" + "-" * 40 + "\033[0m")  # Separator for clarity
     if len(datasets) != executed_downloaders:
-        print(f"\033[93m[WARNING]\033[0m Some of the datasets were not downloaded. Please also check their spelling (including capitalization).\nThese datasets are available: {", ".join([file.name.replace(".py","") for file in base_path.glob("*.py")][:-1])}")
+        print(f"\033[93m[WARNING]\033[0m Some of the datasets were not downloaded. Please also check their spelling (including capitalization).\nThese datasets are available: {', '.join([file.name.replace('.py','') for file in base_path.glob('*.py')][:-1])}")
 if __name__ == "__main__":
     fire.Fire(load_and_execute_downloaders)
