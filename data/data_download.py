@@ -122,14 +122,14 @@ def load_and_execute_downloaders(
 ):
     # Path to the directory containing downloader modules
     base_path = Path(__file__).parent / directory
+    executed_downloaders = 0
     # Iterate over each file in the directory
     for file in base_path.glob("*.py"):
         if (
-            file.name == "__init__.py"
-            or datasets
-            and file.name.split(".")[0] not in datasets
+            file.name == "__init__.py" or datasets and file.name.split(".")[0] not in datasets
         ):
             continue
+        executed_downloaders += 1
         print(f"\n\033[96m[PROCESSING]\033[0m Processing {file.name}")
         module_name = f"{directory}.{file.stem}"
         # Dynamically import the module
@@ -152,7 +152,7 @@ def load_and_execute_downloaders(
         else:
             print(f"\033[93m[WARNING]\033[0m No downloader class found in {file.name}")
         print("\033[90m" + "-" * 40 + "\033[0m")  # Separator for clarity
-
-
+    if len(datasets) != executed_downloaders:
+        print(f"\033[93m[WARNING]\033[0m Some of the datasets were not downloaded. Please also check their spelling (including capitalization).\nThese datasets are available: {", ".join([file.name.replace(".py","") for file in base_path.glob("*.py")][:-1])}")
 if __name__ == "__main__":
     fire.Fire(load_and_execute_downloaders)
