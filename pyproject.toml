@@ -11,6 +11,10 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 
+[project]
+name = "mallm"
+version = "v1.0.3"
+
 [project.urls]
 Homepage = "https://github.com/Multi-Agent-LLMs/mallm"
 Issues = "https://github.com/Multi-Agent-LLMs/mallm/issues"

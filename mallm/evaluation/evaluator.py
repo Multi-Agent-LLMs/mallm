@@ -138,11 +138,11 @@ class Evaluator:
                         answer = alterations[alteration].get("final_answer", "")
                         if answer and "scores" not in item:
                             item["scores"] = self.calculate_scores(
-                                answer, references, alteration
+                                answer, references, alteration, dataset_id
                             )
                         elif answer:
                             item["scores"].update(
-                                self.calculate_scores(answer, references, alteration)
+                                self.calculate_scores(answer, references, alteration, dataset_id)
                             )
 
             challenged_answers: Any = item.get("challengedAnswers", None)
@@ -158,6 +158,7 @@ class Evaluator:
                         item,
                         references,
                         item["scores"],
+                        dataset_id
                     )
                 if challenged_answers["challenged_answers_wrong"]:
                     self.analyze_challenged_answers(
@@ -166,8 +167,9 @@ class Evaluator:
                         item,
                         references,
                         self.calculate_scores(
-                            challenged_answers["wrong_answer"], references
+                            challenged_answers["wrong_answer"], references, "", dataset_id
                         ),
+                        dataset_id
                     )
                 if challenged_answers["challenged_answers_irrelevant"]:
                     self.analyze_challenged_answers(
@@ -176,8 +178,9 @@ class Evaluator:
                         item,
                         references,
                         self.calculate_scores(
-                            challenged_answers["irrelevant_answer"], references
+                            challenged_answers["irrelevant_answer"], references, "", dataset_id
                         ),
+                        dataset_id
                     )
                 if challenged_answers["challenged_answers_history"]:
                     self.analyze_challenged_answers(
@@ -186,6 +189,7 @@ class Evaluator:
                         item,
                         references,
                         item["scores"],
+                        dataset_id
                     )
                 if challenged_answers["challenged_answers_additional_information"]:
                     self.analyze_challenged_answers(
@@ -194,6 +198,7 @@ class Evaluator:
                         item,
                         references,
                         item["scores"],
+                        dataset_id
                     )
 
     def analyze_challenged_answers(
@@ -203,6 +208,7 @@ class Evaluator:
         item: Any,
         references: list[str],
         previous_score: Any,
+        dataset_id: Optional[str] = None,
     ) -> None:
         new_answer = {
             f"{name}_no_challenge": True,
@@ -219,7 +225,7 @@ class Evaluator:
 
         answer = next(iter(challenged_answers.values()))
         if answer:
-            score = self.calculate_scores(answer, references)
+            score = self.calculate_scores(answer, references, "", dataset_id)
             current_score = (
                 score.get("f1")
                 if score.get("f1", None) is not None
@@ -250,11 +256,11 @@ class Evaluator:
                     for alteration in list(alterations.keys()):
                         if "scores" not in mem:
                             mem["scores"] = self.calculate_scores(
-                                solution, references, alteration
+                                solution, references, alteration, dataset_id
                             )
                         else:
                             mem["scores"].update(
-                                self.calculate_scores(solution, references, alteration)
+                                self.calculate_scores(solution, references, alteration, dataset_id)
                             )
                 elif solution:
                     score = self.calculate_scores(solution, references, "", dataset_id)
@@ -272,6 +278,7 @@ class Evaluator:
                                 ],
                                 references,
                                 alteration,
+                                dataset_id
                             )
 
     def calculate_statistics(self) -> dict[str, Any]:
@@ -321,13 +328,16 @@ class Evaluator:
 
                 max_turns = max(item.get("turns", 0) for item in self.data)
                 for turn in range(max_turns + 1)[1:]:
-                    avg_scores_per_turn[turn] /= sum(
+                    num_scores = sum(
                         1
                         for item in self.data
                         for mem in item.get("globalMemory", [])
                         if mem.get("turn", 0) == turn
                         and metric in mem.get("scores", {})
                     )
+                    if num_scores == 0:
+                        num_scores = 1
+                    avg_scores_per_turn[turn] /= num_scores
                     avg_scores_per_turn[turn] = round(avg_scores_per_turn[turn], 4)
 
             stats[metric] = {
