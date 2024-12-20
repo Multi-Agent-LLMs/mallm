@@ -65,9 +65,11 @@ class Judge(Agent):
             elif self.intervention_type == "policy":
                 # Give the agents tips on how to improve their policy
                 logger.debug("Judge decided to give policy feedback.")
-                response = self.response_generator.policy_intervention(
-                    template_filling, self.chain_of_thought
+                response = self.response_generator.generate_policy_intervention(
+                    template_filling,
+                    provide_labels=False
                 )
+                logger.debug(f"Judge's policy feedback: {response.message}")
                 memory = Memory(
                     message_id=unique_id,
                     turn=turn,
@@ -81,5 +83,6 @@ class Judge(Agent):
                     additional_args={},
                 )
                 self.coordinator.update_memories([memory], self.coordinator.agents)
+                self.coordinator.memory.append(memory)
                 return unique_id+1, False
         return unique_id, False

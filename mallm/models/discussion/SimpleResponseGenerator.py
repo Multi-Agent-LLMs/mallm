@@ -139,3 +139,30 @@ Your role: {data.persona} ({data.persona_description})"""
         if data.agent_memory is not None and data.agent_memory != []:
             prompt += data.agent_memory
         return prompt
+
+    def generate_policy_intervention(self, data: TemplateFilling, provide_labels: bool = True) -> Response:
+        instr_prompt = {
+            "role": "user",
+            "content": "The currect discussion is going badly. Based on the others contributions, give constructive feedback about how to improve the discussion habits so that the other discussion participants can find a better solution.",
+        }
+        if provide_labels:
+            error_categories = [
+                "Task Compliance: off-topic, bad instruction following",
+                "Lack of progress: Inefficiency, Redundancy, Circular Discussion, Repetition, Unproductive Disagreement ",
+                "Low Quality Engagement: Poor collaboration, minimal participation, disjointed contribution, Ignorance",    # TODO: add more
+            ]
+            instr_prompt.content = instr_prompt.content + f"\nThe following problematic error categories exist. If you identify them in the current discussion, they could help you to provide better feedback:\n {error_categories}"
+
+        current_prompt = [
+            *self.get_filled_template(data),
+            instr_prompt,
+        ]
+        return self.generate_response(
+            current_prompt,
+            data.task_instruction,
+            data.input_str,
+            False,
+            None,
+            False,
+            False,
+        )
