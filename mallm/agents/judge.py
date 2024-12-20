@@ -51,12 +51,14 @@ class Judge(Agent):
         turn: int,
         memory_ids: list[int],
         template_filling: TemplateFilling,
-        answer: str) -> bool:
+        answer: str,
+        threshold: float = 0
+        ) -> bool:
         
         self.judgements.append(Evaluator.calculate_score(answer, self.references, self.metric))
         logger.debug(f"Judge's performances: {self.judgements}")
 
-        if len(self.judgements) > 1 and self.judgements[-1] < self.judgements[-2]:  # regenerates at most once per turn
+        if len(self.judgements) > 1 and self.judgements[-1] + threshold < self.judgements[-2]:  # regenerates at most once per turn
 
             if self.intervention_type == "regenerate":
                 # delete and restart the turn
