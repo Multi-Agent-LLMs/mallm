@@ -10,7 +10,7 @@ from rich.text import Text
 
 from mallm.agents.draftProposer import DraftProposer
 from mallm.agents.panelist import Panelist
-from mallm.agents.policyFeedback import PolicyFeedback
+from mallm.agents.judge import Judge
 from mallm.utils.types import Agreement, Memory, TemplateFilling, VotingResultList
 
 if TYPE_CHECKING:
@@ -91,28 +91,8 @@ class DiscoursePolicy(ABC):
                         memory_ids=memory_ids,
                         template_filling=template_filling,
                     )
-                elif isinstance(agent, PolicyFeedback):
-                    discussion_history, memory_ids, current_draft = (
-                        coordinator.get_discussion_history(
-                            context_length=config.visible_turns_in_memory,
-                            turn=self.turn,
-                        )
-                    )
-                    template_filling = TemplateFilling(
-                        task_instruction=task_instruction,
-                        input_str=input_str,
-                        current_draft=current_draft,
-                        persona=agent.persona,
-                        persona_description=agent.persona_description,
-                        agent_memory=discussion_history,
-                    )
-                    self.policy_feedback_call(
-                        policy_feedback=agent,
-                        coordinator=coordinator,
-                        agent_index=i,
-                        memory_ids=memory_ids,
-                        template_filling=template_filling,
-                    )
+                elif isinstance(agent, Judge):
+                    pass    # executes after decision protocol
                 else:
                     logger.error("Agent type not recognized.")
                     raise Exception("Agent type not recognized.")
@@ -136,6 +116,23 @@ class DiscoursePolicy(ABC):
                     voting_results_per_turn[self.turn] = additional_voting_results
                 else:
                     voting_results_per_turn[self.turn] = None
+
+                if isinstance(agent, Judge):
+                    template_filling = TemplateFilling(
+                        task_instruction=task_instruction,
+                        input_str=input_str,
+                        current_draft=current_draft,
+                        persona=agent.persona,
+                        persona_description=agent.persona_description,
+                        agent_memory=discussion_history,
+                    )
+                    self.unique_id, repeat_turn = agent.intervention(self.unique_id, self.turn, memory_ids, template_filling, self.draft)
+                    if repeat_turn:
+                        self.turn -= 1
+                        ids_to_forget = [id for id in memory_ids if id >= self.unique_id]
+                        for a in coordinator.agents:
+                            a.forget_memories(ids_to_forget)
+                            coordinator.forget_memories(ids_to_forget)
 
                 if self.decision:
                     break
@@ -233,24 +230,3 @@ class DiscoursePolicy(ABC):
         template_filling: TemplateFilling,
     ) -> None:
         pass
-
-    def policy_feedback_call(
-        self,
-        policy_feedback: PolicyFeedback,
-        coordinator: Coordinator,
-        agent_index: int,
-        memory_ids: list[int],
-        template_filling: TemplateFilling,
-    ) -> None:
-        _res, memory, self.agreements = policy_feedback.policy_feedback(
-            unique_id=self.unique_id,
-            turn=self.turn,
-            memory_ids=memory_ids,
-            template_filling=template_filling,
-            agreements=self.agreements,
-        )
-        self.memories.append(memory)
-        coordinator.update_memories(
-            self.memories, coordinator.agents
-        )  # policy feedback is visible by everyone
-        self.memories = []

@@ -231,6 +231,13 @@ class Agent:
                     current_draft = memory.solution
 
         return context_memory, memory_ids, current_draft
+    
+    def forget_memories(self, memory_ids: list[int]) -> None:
+        memory_ids.sort(reverse=True)
+        memory_values = self.memory
+        for memory_id in memory_ids:
+            if str(memory_id) in memory_values:
+                del self.memory[str(memory_id)]
 
     def get_own_messages(self, context_length: Optional[int] = None) -> list[str]:
         """

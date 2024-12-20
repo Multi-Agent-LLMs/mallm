@@ -31,7 +31,7 @@ class MultiChoiceBoolean(Metric):
 
         if not match:
             logger.warning(f"No pattern match found in answer: {generated_text}")
-            return {"correct": None}
+            return {"correct": False}
 
         logger.debug(f"Extracted answer: {match.group(1)} from {generated_text}")
         logger.debug(f"Comparing against reference: {reference}")

@@ -189,7 +189,6 @@ class Scheduler:
                 num_neutral_agents=self.config.num_neutral_agents,
                 model=self.llm,
                 agent_generators=self.config.agent_generators_list,
-                policy=self.config.policy,
                 client=client,
                 console=console,
             )
@@ -209,6 +208,7 @@ class Scheduler:
                 decision_success,
                 voting_results_per_turn,
                 challenged_answers,
+                judgements,
             ) = coordinator.discuss(
                 config=self.config, sample=sample, worker_functions=worker_functions
             )
@@ -250,6 +250,7 @@ class Scheduler:
                         for agent in agent_mems
                         if agent
                     ],
+                    "judgements": judgements,
                 }
             )
         except Exception:

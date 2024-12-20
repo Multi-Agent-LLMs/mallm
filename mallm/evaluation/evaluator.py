@@ -89,6 +89,15 @@ class Evaluator:
         logger.info(f"Metrics to calculate: {[m.name for m in selected_metrics]}")
         return selected_metrics
 
+    @staticmethod
+    def calculate_score(
+        answer: str,
+        references: list[str],
+        metric: list[Any],
+        dataset_id: Optional[str] = None,
+    ) -> dict[str, Any]:
+        return list(metric.evaluate(answer, references, dataset_id).values())[0]
+
     def calculate_scores(
         self,
         answer: str,

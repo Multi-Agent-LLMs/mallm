@@ -4,7 +4,7 @@ import uuid
 from collections.abc import Sequence
 from datetime import timedelta
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Any
 
 import httpx
 from rich.progress import Console  # type: ignore
@@ -12,7 +12,7 @@ from rich.progress import Console  # type: ignore
 from mallm.agents.agent import Agent
 from mallm.agents.draftProposer import DraftProposer
 from mallm.agents.panelist import Panelist
-from mallm.agents.policyFeedback import PolicyFeedback
+from mallm.agents.judge import Judge
 from mallm.decision_protocol.protocol import DecisionProtocol
 from mallm.discourse_policy.policy import DiscoursePolicy
 from mallm.models.Chat import Chat
@@ -50,7 +50,6 @@ class Coordinator:
         model: Chat,
         client: httpx.Client,
         agent_generators: Optional[list[str]] = None,
-        policy: Optional[str] = None,
         num_neutral_agents: int = 0,
         console: Optional[Console] = None,
     ):
@@ -68,9 +67,9 @@ class Coordinator:
         self.response_generator: ResponseGenerator = SimpleResponseGenerator(self.llm)
         self.client = client
         self.agent_generators = agent_generators
-        self.policy = policy
         self.memory: list[Memory] = []
         self.console = console or Console()
+        self.judge = None
 
     def init_agents(
         self,
@@ -80,6 +79,8 @@ class Coordinator:
         num_agents: int,
         chain_of_thought: bool,
         sample: InputExample,
+        judge_intervention: Optional[str] = None,
+        judge_metric: Optional[str] = None,
     ) -> None:
         """
         Instantiates the agents by
@@ -87,7 +88,7 @@ class Coordinator:
         2) create agents with the personas
         """
         logger.debug(
-            f"Coordinator {self.id} creates {num_agents} agents ({self.agent_generators}). Policy: {self.policy}"
+            f"Coordinator {self.id} creates {num_agents} agents ({self.agent_generators})."
         )
         self.panelists = []
         self.agents = []
@@ -142,16 +143,22 @@ class Coordinator:
                 "Created only 1 agent. The discussion will be replaced by a self-improvement mechanism."
             )
 
-        if self.policy:
-            policyFeedback = PolicyFeedback(
+        if judge_intervention:
+            judge = Judge(
                 self.llm,
                 self.client,
                 self,
                 response_generator=self.response_generator,
-                persona="Policy Moderator",
-                policy=self.policy,
+                persona="Judge",
+                persona_description="Responsible for evaluating the solutions and providing feedback to the agents.",
+                metric=judge_metric,
+                chain_of_thought=False,
+                drafting_agent=False,
+                intervention_type=judge_intervention,
+                references=sample.references,
             )
-            self.agents.append(policyFeedback)
+            self.agents.append(judge)
+            self.judge = judge
 
     def get_agents(
         self, config: Config, worker_functions: WorkerFunctions
@@ -202,6 +209,7 @@ class Coordinator:
         bool,
         dict[int, Optional[VotingResultList]],
         ChallengeResult,
+        Optional[list[Any]],
     ]:
         """
         The routine responsible for the discussion between agents to solve a task.
@@ -241,6 +249,8 @@ class Coordinator:
             num_agents=config.num_agents,
             chain_of_thought=config.use_chain_of_thought,
             sample=sample,
+            judge_intervention=config.judge_intervention,
+            judge_metric=config.judge_metric,
         )
 
         if config.decision_protocol not in DECISION_PROTOCOLS:
@@ -349,6 +359,7 @@ class Coordinator:
             decision_success,
             voting_results_per_turn,
             challenged_answers,
+            self.judge.judgements,
         )
 
     def challenge_solution(
@@ -431,6 +442,16 @@ class Coordinator:
                     current_draft = memory.solution
 
         return context_memory, memory_ids, current_draft
+    
+    def forget_memories(self, memory_ids: list[int]) -> None:
+        memory_ids.sort(reverse=True)
+        memory_values = self.memory
+        for memory_id in memory_ids:
+            for memory in memory_values:
+                if memory_id == memory.message_id:
+                    self.memory.remove(memory)
+                    logger.debug(f"Memory {memory_id} removed from memory.")
+                    break
 
     def get_discussion_history(
         self,

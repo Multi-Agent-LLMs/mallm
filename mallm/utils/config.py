@@ -47,10 +47,11 @@ class Config:
     shuffle_input_samples: bool = False
     all_agents_generate_first_draft: bool = False
     all_agents_generate_draft: bool = False
-    policy: Optional[str] = None
     voting_protocols_with_alterations: bool = False
     calculate_persona_diversity: bool = False
     challenge_final_results: bool = False
+    judge_intervention: Optional[str] = None
+    judge_metric: Optional[str] = None
 
     def __post_init__(self) -> None:
         if (
@@ -91,6 +92,11 @@ class Config:
         if "api.openai.com" in self.endpoint_url and self.api_key == "-":
             logger.error(
                 "When using the OpenAI API, you need to provide a key with the argument: --api_key=<your key>"
+            )
+            sys.exit(1)
+        if self.judge_intervention and not self.judge_metric:
+            logger.error(
+                "When using judge intervention, you need to provide a metric with the argument: --judge_metric=<your metric>."
             )
             sys.exit(1)
         if not self.agent_generators_list:
