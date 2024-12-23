@@ -231,7 +231,7 @@ class Agent:
                     current_draft = memory.solution
 
         return context_memory, memory_ids, current_draft
-    
+
     def forget_memories(self, memory_ids: list[int]) -> None:
         memory_ids.sort(reverse=True)
         memory_values = self.memory

@@ -140,10 +140,40 @@ Your role: {data.persona} ({data.persona_description})"""
             prompt += data.agent_memory
         return prompt
 
+    def generate_judgement(self, data: TemplateFilling, answer_before: str, answer_after: str) -> Response:
+
+        prompt_template = """Please act as an impartial judge and evaluate the quality of the responses provided by two AI assistants to the user question displayed below. You should choose the assistant that follows the user\'s instructions and answers the user\'s question better.
+        Your evaluation should consider factors such as the helpfulness, relevance, accuracy, depth, creativity, and level of detail of their responses. Avoid any position biases and ensure that the order in which the responses were presented does not influence your decision. Do not allow the length of the responses to influence your evaluation. Do not favor certain names of the assistants. Be as objective as possible.
+        Please directly output your final verdict by strictly following this format: "[[A]]" if assistant A is better, "[[B]]" if assistant B is better.
+
+        [User Question]
+        {input}
+
+        [The Start of Assistant A's Answer]
+        {response_a}
+        [The End of Assistant A's Answer]
+
+        [The Start of Assistant B's Answer]
+        {response_b}
+        [The End of Assistant B's Answer]
+        """
+
+        current_prompt = [{"role": "user", "content": prompt_template.format(input=data.task_instruction, response_a=answer_before, response_b=answer_after)}]
+
+        return self.generate_response(
+            current_prompt,
+            data.task_instruction,
+            data.input_str,
+            False,
+            None,
+            False,
+            False,
+        )
+
     def generate_policy_intervention(self, data: TemplateFilling, provide_labels: bool = True) -> Response:
         instr_prompt = {
             "role": "user",
-            "content": "The currect discussion is going badly. Based on the others contributions, give constructive feedback about how to improve the discussion habits so that the other discussion participants can find a better solution.",
+            "content": "The currect discussion is going badly. Based on the others contributions, give constructive feedback about how to improve the discussion habits. Be concise so that the other discussion participants can find a better solution.",
         }
         if provide_labels:
             error_categories = [
@@ -151,7 +181,7 @@ Your role: {data.persona} ({data.persona_description})"""
                 "Lack of progress: Inefficiency, Redundancy, Circular Discussion, Repetition, Unproductive Disagreement ",
                 "Low Quality Engagement: Poor collaboration, minimal participation, disjointed contribution, Ignorance",    # TODO: add more
             ]
-            instr_prompt.content = instr_prompt.content + f"\nThe following problematic error categories exist. If you identify them in the current discussion, they could help you to provide better feedback:\n {error_categories}"
+            instr_prompt["content"] += f"\nThe following problematic error categories exist. If you identify them in the current discussion, they could help you to provide better feedback:\n {error_categories}"
 
         current_prompt = [
             *self.get_filled_template(data),

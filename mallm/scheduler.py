@@ -22,9 +22,9 @@ import openai
 from contextplus import context
 from datasets import load_dataset
 from openai import OpenAI
-from rich import print
+from rich import print  # noqa: A004
 from rich.logging import RichHandler
-from rich.progress import Console, Progress, TaskID  # type: ignore
+from rich.progress import Console, Progress, TaskID
 from sentence_transformers import SentenceTransformer
 from sentence_transformers.util import cos_sim
 from torch import Tensor
@@ -147,9 +147,15 @@ class Scheduler:
         self.llm = Chat(
             client=OpenAI(
                 base_url=self.config.endpoint_url, api_key=self.config.api_key
-            ),
-            model=self.config.model_name,
+            )
         )
+
+        if self.config.judge_endpoint_url:
+            self.judge_llm = Chat(
+            client=OpenAI(
+                base_url=self.config.judge_endpoint_url, api_key=self.config.judge_api_key
+            )
+            )
 
         if config.response_generator not in RESPONSE_GENERATORS:
             logger.error(f"No valid response generator for {config.response_generator}")
@@ -167,7 +173,6 @@ class Scheduler:
         self.ablation_output_dicts: list[dict[str, Any]] = []
 
         logger.info(f"""Found {self.total_samples} samples to process.""")
-
         logger.info("Finished initializing the scheduler.")
 
     def run_discussion(
@@ -191,6 +196,8 @@ class Scheduler:
                 agent_generators=self.config.agent_generators_list,
                 client=client,
                 console=console,
+                judge_model=self.judge_llm,
+                judge_always_intervene=self.config.judge_always_intervene,
             )
         except Exception as e:
             logger.error("Failed intializing coordinator.")
@@ -209,6 +216,7 @@ class Scheduler:
                 voting_results_per_turn,
                 challenged_answers,
                 judgements,
+                judged_solutions,
             ) = coordinator.discuss(
                 config=self.config, sample=sample, worker_functions=worker_functions
             )
@@ -251,6 +259,7 @@ class Scheduler:
                         if agent
                     ],
                     "judgements": judgements,
+                    "judged_solutions": judged_solutions,
                 }
             )
         except Exception:
@@ -296,7 +305,7 @@ class Scheduler:
                 client, sample, len(self.output_dicts[-1]["globalMemory"])
             )
 
-        return answer
+        return str(answer)
 
     def manage_discussions(self, client: httpx.Client) -> None:
         """

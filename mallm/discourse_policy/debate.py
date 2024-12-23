@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, Optional
 
-from rich.progress import Console  # type: ignore
+from rich.progress import Console
 
 from mallm.agents.draftProposer import DraftProposer
 from mallm.agents.panelist import Panelist
@@ -231,5 +231,5 @@ class DiscourseDebate(DiscoursePolicy):
             self.turn,
             self.agreements,
             self.decision,
-            voting_results_per_turn,
+            voting_results_per_turn
         )

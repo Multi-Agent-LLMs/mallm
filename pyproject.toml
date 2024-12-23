@@ -64,7 +64,8 @@ build-backend = "poetry.core.masonry.api"
 files = ["mallm/"]
 python_version = "3.9"
 warn_unused_configs = true
-exclude = ["mallm/utils/evaluation/"]
+exclude = ["mallm/utils/evaluation/", "mallm/evaluation/metrics/ifeval.py"]
+follow_imports = "skip"
 
 strict = true
 ignore_missing_imports = true

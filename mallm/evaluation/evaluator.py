@@ -11,6 +11,7 @@ from mallm.evaluation.metrics.bertscore import BERTScore
 from mallm.evaluation.metrics.bleu import BLEU
 from mallm.evaluation.metrics.ifeval import IFEval
 from mallm.evaluation.metrics.meteor import METEOR
+from mallm.evaluation.metrics.metric import Metric
 from mallm.evaluation.metrics.qa import (
     AnswerabilityBoolean,
     IncludesAnswer,
@@ -93,10 +94,10 @@ class Evaluator:
     def calculate_score(
         answer: str,
         references: list[str],
-        metric: list[Any],
+        metric: Metric,
         dataset_id: Optional[str] = None,
     ) -> dict[str, Any]:
-        return list(metric.evaluate(answer, references, dataset_id).values())[0]
+        return next(iter(metric.evaluate(answer, references, dataset_id).values()))
 
     def calculate_scores(
         self,

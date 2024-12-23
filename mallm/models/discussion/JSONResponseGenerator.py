@@ -285,3 +285,7 @@ Current solution: {current_solution}
             baseline=True,
             drafting=True,
         )
+
+    def generate_policy_intervention(self, data: TemplateFilling, provide_labels: bool = True) -> Response:
+        logger.error(f"Policy Intervention is not implemented for this response generator. {self.__class__.__name__}")
+        raise NotImplementedError("Policy Intervention is not implemented for this response generator.")

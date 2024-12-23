@@ -610,3 +610,30 @@ Current Solution: {data.current_draft}
                 "content": f"Question: {question} \n\nPlease provide an answer that is irrelevant to the question. Only answer with the irrelevant response.",
             },
         ]
+
+    @abstractmethod
+    def generate_policy_intervention(self, data: TemplateFilling, provide_labels: bool = True) -> Response:
+        """
+        Generates a policy feedback for the given data. The feedback should give tips on how to improve the discussion.
+
+        Parameters:
+        data (TemplateFilling): The data to generate a policy feedback for.
+        provide_labels (bool): Whether to provide labels for the feedback.
+
+        Returns:
+        Response: An object with the attributes "agreement", "message", and "solution".
+        """
+
+    @abstractmethod
+    def generate_judgement(self, data: TemplateFilling, answer_before: str, answer_after: str) -> Response:
+        """
+        Generates the judgement for two solutions, indicating whether discussion is on track or not.
+
+        Parameters:
+        data (TemplateFilling): The data to generate a judgement for.
+        answer_before (str): The first solution.
+        answer_after (str): The second solution.
+
+        Returns:
+        Response: An object with the attributes "agreement", "message", and "solution".
+        """

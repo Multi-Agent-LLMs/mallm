@@ -4,15 +4,15 @@ import uuid
 from collections.abc import Sequence
 from datetime import timedelta
 from pathlib import Path
-from typing import Optional, Any
+from typing import Optional
 
 import httpx
-from rich.progress import Console  # type: ignore
+from rich.progress import Console
 
 from mallm.agents.agent import Agent
 from mallm.agents.draftProposer import DraftProposer
-from mallm.agents.panelist import Panelist
 from mallm.agents.judge import Judge
+from mallm.agents.panelist import Panelist
 from mallm.decision_protocol.protocol import DecisionProtocol
 from mallm.discourse_policy.policy import DiscoursePolicy
 from mallm.models.Chat import Chat
@@ -52,6 +52,8 @@ class Coordinator:
         agent_generators: Optional[list[str]] = None,
         num_neutral_agents: int = 0,
         console: Optional[Console] = None,
+        judge_model: Optional[Chat] = None,
+        judge_always_intervene: bool = False,
     ):
         if agent_generators is None:
             agent_generators = ["expert", "expert", "expert"]
@@ -69,7 +71,8 @@ class Coordinator:
         self.agent_generators = agent_generators
         self.memory: list[Memory] = []
         self.console = console or Console()
-        self.judge = None
+        self.judge_llm = judge_model
+        self.judge_always_intervene = judge_always_intervene
 
     def init_agents(
         self,
@@ -143,22 +146,21 @@ class Coordinator:
                 "Created only 1 agent. The discussion will be replaced by a self-improvement mechanism."
             )
 
-        if judge_intervention:
-            judge = Judge(
-                self.llm,
+        if judge_intervention and self.judge_llm:
+            self.judge = Judge(
+                self.judge_llm,
                 self.client,
                 self,
                 response_generator=self.response_generator,
                 persona="Judge",
                 persona_description="Responsible for evaluating the solutions and providing feedback to the agents.",
-                metric=judge_metric,
+                metric=str(judge_metric),
                 chain_of_thought=False,
                 drafting_agent=False,
                 intervention_type=judge_intervention,
                 references=sample.references,
             )
-            self.agents.append(judge)
-            self.judge = judge
+            self.agents.append(self.judge)
 
     def get_agents(
         self, config: Config, worker_functions: WorkerFunctions
@@ -209,7 +211,8 @@ class Coordinator:
         bool,
         dict[int, Optional[VotingResultList]],
         ChallengeResult,
-        Optional[list[Any]],
+        Optional[list[Optional[bool]]],
+        Optional[list[str]],
     ]:
         """
         The routine responsible for the discussion between agents to solve a task.
@@ -359,7 +362,8 @@ class Coordinator:
             decision_success,
             voting_results_per_turn,
             challenged_answers,
-            self.judge.judgements,
+            self.judge.judgements if self.judge else None,
+            self.judge.judged_solutions if self.judge else None,
         )
 
     def challenge_solution(
@@ -442,7 +446,7 @@ class Coordinator:
                     current_draft = memory.solution
 
         return context_memory, memory_ids, current_draft
-    
+
     def forget_memories(self, memory_ids: list[int]) -> None:
         memory_ids.sort(reverse=True)
         memory_values = self.memory

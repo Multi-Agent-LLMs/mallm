@@ -4,7 +4,7 @@ import sys
 from contextlib import AbstractContextManager
 from typing import Any, TextIO
 
-from rich.progress import Console  # type: ignore
+from rich.progress import Console
 from rich.text import Text
 
 

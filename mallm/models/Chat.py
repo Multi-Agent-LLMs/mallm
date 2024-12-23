@@ -14,8 +14,7 @@ from langchain_core.outputs import LLMResult
 from langchain_core.prompt_values import PromptValue
 from openai import APIError, RateLimitError, OpenAI
 
-
-class Chat(LLM):
+class Chat(LLM):    # type: ignore
     """A custom chat model that queries the chat API of HuggingFace Text Generation Inference
 
     When contributing an implementation to LangChain, carefully document
@@ -57,7 +56,7 @@ class Chat(LLM):
         **kwargs: Any,
     ) -> LLMResult:
         # this is a wrong cast, but we need it because we use a custom call function which can handle this
-        return self.generate(prompts, stop=stop, callbacks=callbacks, **kwargs)  # type: ignore
+        return self.generate(prompts, stop=stop, callbacks=callbacks, **kwargs)
 
     @staticmethod
     def merge_consecutive_messages(
@@ -65,7 +64,7 @@ class Chat(LLM):
     ) -> list[dict[str, str]]:
         if not messages:
             return []
-
+        
         merged_messages = []
         current_role = messages[0]["role"]
         current_content = ""
@@ -116,7 +115,7 @@ class Chat(LLM):
             try:
                 chat_completion = self.client.chat.completions.create(
                     model=self.model,
-                    messages=merged_messages,  # type: ignore
+                    messages=merged_messages,
                     stream=True,
                     stop=self.stop_tokens,
                     max_tokens=self.max_tokens,
@@ -126,8 +125,8 @@ class Chat(LLM):
                 collected_messages = []
                 log_prob_sum = 0.0
                 for message in chat_completion:
-                    message_str = message.choices[0].delta.content  # type: ignore
-                    log_prob_sum += message.choices[0].logprobs.content[0].logprob  # type: ignore
+                    message_str = message.choices[0].delta.content
+                    log_prob_sum += message.choices[0].logprobs.content[0].logprob
                     if message_str and message_str not in self.stop_tokens:
                         collected_messages.append(message_str)
                 log_prob_sum = log_prob_sum / len(collected_messages)
@@ -143,15 +142,6 @@ class Chat(LLM):
                 else:
                     logger.error(f" {e}: Exceeded maximum retries. This sample failed.")
                     raise Exception("Exceeded maximum API retries.")
-            except RateLimitError as e:
-                # Handle rate limit error (we recommend using exponential backoff)
-                print(f"OpenAI API request exceeded rate limit: {e}")
-                # Check if we got a 429 error and wait for the retry-after time
-                if e.status_code == 429:
-                    retry_after = e.response.headers.get("Retry-After")
-                    if retry_after:
-                        time.sleep(min(int(retry_after), 60))
-                continue
         confidence = math.exp(log_prob_sum)
         if "confidence_callback" in kwargs:
             kwargs["confidence_callback"](confidence)

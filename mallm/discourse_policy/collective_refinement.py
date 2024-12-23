@@ -4,7 +4,7 @@ import dataclasses
 import logging
 from typing import TYPE_CHECKING, Any, Optional
 
-from rich.progress import Console  # type: ignore
+from rich.progress import Console
 
 from mallm.agents.draftProposer import DraftProposer
 from mallm.agents.panelist import Panelist

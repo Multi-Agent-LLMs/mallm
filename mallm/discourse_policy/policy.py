@@ -5,12 +5,12 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Optional
 
 from rich.panel import Panel
-from rich.progress import Console  # type: ignore
+from rich.progress import Console
 from rich.text import Text
 
 from mallm.agents.draftProposer import DraftProposer
-from mallm.agents.panelist import Panelist
 from mallm.agents.judge import Judge
+from mallm.agents.panelist import Panelist
 from mallm.utils.types import Agreement, Memory, TemplateFilling, VotingResultList
 
 if TYPE_CHECKING:
@@ -92,7 +92,7 @@ class DiscoursePolicy(ABC):
                         template_filling=template_filling,
                     )
                 elif isinstance(agent, Judge):
-                    pass    # executes after decision protocol
+                    continue    # executes after decision protocol
                 else:
                     logger.error("Agent type not recognized.")
                     raise Exception("Agent type not recognized.")
@@ -117,25 +117,27 @@ class DiscoursePolicy(ABC):
                 else:
                     voting_results_per_turn[self.turn] = None
 
-                if isinstance(agent, Judge):
-                    template_filling = TemplateFilling(
-                        task_instruction=task_instruction,
-                        input_str=input_str,
-                        current_draft=current_draft,
-                        persona=agent.persona,
-                        persona_description=agent.persona_description,
-                        agent_memory=discussion_history,
-                    )
-                    self.unique_id, repeat_turn = agent.intervention(self.unique_id, self.turn, memory_ids, template_filling, self.draft)
-                    if repeat_turn:
-                        self.turn -= 1
-                        ids_to_forget = [id for id in memory_ids if id >= self.unique_id]
-                        for a in coordinator.agents:
-                            a.forget_memories(ids_to_forget)
-                            coordinator.forget_memories(ids_to_forget)
-
                 if self.decision:
                     break
+
+            if coordinator.judge:
+                logger.debug(f"The draft is judged: {self.draft}")
+                logger.debug(f"The voting results are: {voting_results_per_turn!s}")
+                template_filling = TemplateFilling(
+                    task_instruction=task_instruction,
+                    input_str=input_str,
+                    current_draft=self.draft,
+                    persona=coordinator.judge.persona,
+                    persona_description=coordinator.judge.persona_description,
+                    agent_memory=discussion_history,
+                )
+                self.unique_id, repeat_turn = coordinator.judge.intervention(self.unique_id, self.turn, memory_ids, template_filling, self.draft, always_intervene=coordinator.judge_always_intervene)
+                if repeat_turn:
+                    self.turn -= 1
+                    ids_to_forget = [fid for fid in memory_ids if fid >= self.unique_id]
+                    for a in coordinator.agents:
+                        a.forget_memories(ids_to_forget)
+                        coordinator.forget_memories(ids_to_forget)
 
             self.print_messages(coordinator, input_str, task_instruction)
 

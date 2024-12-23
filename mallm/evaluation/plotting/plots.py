@@ -219,7 +219,7 @@ def plot_score_distributions_with_std(df: pd.DataFrame, input_path: str) -> None
             score_data["mean"],
             yerr=score_data["std"],
             capsize=5,
-            color=plt.cm.Set3(range(len(score_data))),  # type: ignore
+            color=plt.cm.Set3(range(len(score_data))),
         )  # Use a color cycle
 
         plt.xlabel("Experiment Condition")
