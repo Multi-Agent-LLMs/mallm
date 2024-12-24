@@ -179,6 +179,7 @@ class CollectiveRefinement(DiscoursePolicy):
                 input_str,
                 config,
             )
+
             self.print_messages(coordinator, input_str, task_instruction)
 
             if additional_voting_results:

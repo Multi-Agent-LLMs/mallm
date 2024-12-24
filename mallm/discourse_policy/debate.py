@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Optional
 from rich.progress import Console
 
 from mallm.agents.draftProposer import DraftProposer
+from mallm.agents.judge import Judge
 from mallm.agents.panelist import Panelist
 from mallm.discourse_policy.policy import DiscoursePolicy
 from mallm.utils.types import Agreement, TemplateFilling, VotingResultList
@@ -179,6 +180,8 @@ class DiscourseDebate(DiscoursePolicy):
                             agents_to_update=agents_to_update,
                             agreements=debate_agreements,
                         )
+                    elif isinstance(a, Judge):
+                        continue    # executes after decision protocol
                     else:
                         logger.error("Agent type not recognized.")
                         raise Exception("Agent type not recognized.")
@@ -216,7 +219,20 @@ class DiscourseDebate(DiscoursePolicy):
 
             if self.decision:
                 break
+
+            if coordinator.judge:
+                template_filling = TemplateFilling(
+                    task_instruction=task_instruction,
+                    input_str=input_str,
+                    current_draft=self.draft,
+                    persona=coordinator.judge.persona,
+                    persona_description=coordinator.judge.persona_description,
+                    agent_memory=discussion_history,
+                )
+                self.unique_id, self.turn = coordinator.judge.intervention(self.unique_id, self.turn, memory_ids, template_filling, self.draft, always_intervene=coordinator.judge_always_intervene)
+
             self.print_messages(coordinator, input_str, task_instruction)
+
         self.print_messages(
             coordinator,
             input_str,

@@ -211,3 +211,7 @@ Current solution: {current_solution}
     def generate_policy_intervention(self, data: TemplateFilling, provide_labels: bool = True) -> Response:
         logger.error(f"Policy Intervention is not implemented for this response generator. {self.__class__.__name__}")
         raise NotImplementedError("Policy Intervention is not implemented for this response generator.")
+
+    def generate_judgement(self, data: TemplateFilling, answer_before: str, answer_after: str) -> Response:
+        logger.error(f"Judgement is not implemented for this response generator. {self.__class__.__name__}")
+        raise NotImplementedError("Judgement is not implemented for this response generator.")

@@ -150,6 +150,7 @@ class Scheduler:
             )
         )
 
+        self.judge_llm = None
         if self.config.judge_endpoint_url:
             self.judge_llm = Chat(
             client=OpenAI(
@@ -196,7 +197,7 @@ class Scheduler:
                 agent_generators=self.config.agent_generators_list,
                 client=client,
                 console=console,
-                judge_model=self.judge_llm,
+                judge_model=self.judge_llm or None,
                 judge_always_intervene=self.config.judge_always_intervene,
             )
         except Exception as e:

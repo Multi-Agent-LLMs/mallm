@@ -121,8 +121,6 @@ class DiscoursePolicy(ABC):
                     break
 
             if coordinator.judge:
-                logger.debug(f"The draft is judged: {self.draft}")
-                logger.debug(f"The voting results are: {voting_results_per_turn!s}")
                 template_filling = TemplateFilling(
                     task_instruction=task_instruction,
                     input_str=input_str,
@@ -131,13 +129,7 @@ class DiscoursePolicy(ABC):
                     persona_description=coordinator.judge.persona_description,
                     agent_memory=discussion_history,
                 )
-                self.unique_id, repeat_turn = coordinator.judge.intervention(self.unique_id, self.turn, memory_ids, template_filling, self.draft, always_intervene=coordinator.judge_always_intervene)
-                if repeat_turn:
-                    self.turn -= 1
-                    ids_to_forget = [fid for fid in memory_ids if fid >= self.unique_id]
-                    for a in coordinator.agents:
-                        a.forget_memories(ids_to_forget)
-                        coordinator.forget_memories(ids_to_forget)
+                self.unique_id, self.turn = coordinator.judge.intervention(self.unique_id, self.turn, memory_ids, template_filling, self.draft, always_intervene=coordinator.judge_always_intervene)
 
             self.print_messages(coordinator, input_str, task_instruction)
 
@@ -175,6 +167,9 @@ class DiscoursePolicy(ABC):
             for memory in coordinator.memory
             if memory.turn == self.turn or not only_current_turn
         ]
+        if not global_memories:
+            return
+
         max_width = min(console.width, 100)
         discussion_text = Text(
             f"Task instruction: {task_instruction}\n\nInput: {input_str}\n-----------\n"

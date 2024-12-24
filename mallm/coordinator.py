@@ -447,15 +447,9 @@ class Coordinator:
 
         return context_memory, memory_ids, current_draft
 
-    def forget_memories(self, memory_ids: list[int]) -> None:
-        memory_ids.sort(reverse=True)
-        memory_values = self.memory
-        for memory_id in memory_ids:
-            for memory in memory_values:
-                if memory_id == memory.message_id:
-                    self.memory.remove(memory)
-                    logger.debug(f"Memory {memory_id} removed from memory.")
-                    break
+    def forget_memories(self, turn: int) -> None:
+        self.memory = [memory for memory in self.memory if memory.turn != turn]
+        logger.debug(f"Memories from turn {turn} have been removed from global memory.")
 
     def get_discussion_history(
         self,

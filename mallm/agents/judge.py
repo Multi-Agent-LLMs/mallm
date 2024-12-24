@@ -73,13 +73,13 @@ class Judge(Agent):
         answer: str,
         threshold: float = 0,
         always_intervene: bool = False,
-        ) -> tuple[int, bool]:
+        ) -> tuple[int, int]:
         self.judged_solutions.append(answer)
 
         if self.coordinator.judge_llm is not None:
             if len(self.judged_solutions) < 2:
                 logger.debug("Judge skipped this turn because there are not enough solutions to judge.")
-                return unique_id, False
+                return unique_id, turn
             on_track = self.llm_as_a_judge(template_filling)
         else:
             self.performances.append(Evaluator.calculate_score(answer, self.references, self.metric)["value"])
@@ -90,7 +90,8 @@ class Judge(Agent):
             if self.intervention_type == "regenerate":
                 # delete and restart the turn
                 logger.debug("Judge decided to regenerate the turn.")
-                return unique_id - len(self.coordinator.agents), True
+                self.coordinator.forget_memories(turn)
+                return unique_id - len(self.coordinator.agents) + 1, turn - 1
             if self.intervention_type == "policy":
                 # Give the agents tips on how to improve their policy
                 logger.debug("Judge decided to give policy feedback.")
@@ -112,5 +113,5 @@ class Judge(Agent):
                 )
                 self.coordinator.update_memories([memory], self.coordinator.agents)
                 self.coordinator.memory.append(memory)
-                return unique_id + 1, False
-        return unique_id, False
+                return unique_id + 1, turn
+        return unique_id, turn
