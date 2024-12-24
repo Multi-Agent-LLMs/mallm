@@ -120,10 +120,14 @@ use_ablation: bool = False
 shuffle_input_samples: bool = False
 all_agents_generate_first_draft: bool = False
 all_agents_generate_draft: bool = False
-policy: Optional[str] = None
 voting_protocols_with_alterations: bool = False
 calculate_persona_diversity: bool = False
 challenge_final_results: bool = False
+judge_intervention: Optional[str] = None
+judge_metric: Optional[str] = None
+judge_endpoint_url: Optional[str] = None
+judge_api_key: str = "-"
+judge_always_intervene: bool = False
 ```
 
 ### Discussion Parameters:
