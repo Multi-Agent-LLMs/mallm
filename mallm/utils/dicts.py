@@ -59,8 +59,8 @@ PERSONA_GENERATORS: dict[str, type[PersonaGenerator]] = {
 }
 
 RESPONSE_GENERATORS: dict[str, type[ResponseGenerator]] = {
-    "json": JSONResponseGenerator,  # type: ignore  # TODO: implement missing methods
-    "freetext": FreeTextResponseGenerator,  # type: ignore
-    "splitfreetext": SplitFreeTextResponseGenerator,  # type: ignore
+    "json": JSONResponseGenerator,  # TODO: implement missing methods
+    "freetext": FreeTextResponseGenerator,
+    "splitfreetext": SplitFreeTextResponseGenerator,
     "simple": SimpleResponseGenerator,
 }
