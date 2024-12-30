@@ -146,6 +146,7 @@ class Coordinator:
                 "Created only 1 agent. The discussion will be replaced by a self-improvement mechanism."
             )
 
+        self.judge = None
         if judge_intervention and self.judge_llm:
             self.judge = Judge(
                 self.judge_llm,
