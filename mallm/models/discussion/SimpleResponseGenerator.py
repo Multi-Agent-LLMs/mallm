@@ -177,9 +177,15 @@ Your role: {data.persona} ({data.persona_description})"""
         }
         if provide_labels:
             error_categories = [
-                "Task Compliance: off-topic, bad instruction following",
-                "Lack of progress: Inefficiency, Redundancy, Circular Discussion, Repetition, Unproductive Disagreement ",
-                "Low Quality Engagement: Poor collaboration, minimal participation, disjointed contribution, Ignorance",    # TODO: add more
+                "Task Compliance: Off-topic, Bad instruction following",
+                "Lack of Progress: Inefficiency, Redundancy, Circular discussion, Repetition, Unproductive disagreement",
+                "Low Quality Engagement: Poor collaboration, Minimal participation, Disjointed contribution, Ignorance",
+                "Low-Quality Feedback: Excessive criticism, Excessive agreement, Self-contradictory feedback, Unhelpful feedback",
+                "Lack of Clarity: Overanalysis, Overgeneralization, Insignificant changes",
+                "Knowledge Gap: Assumptions, Lack of data, Hallucinated facts, Wrongly cited",
+                "Logical Errors: Lack of common sense, Reasoning error",
+                "Linguistic Errors: Fluency, Grammatical errors, False pronouns",
+                "Other: Describe as explanation"
             ]
             instr_prompt["content"] += f"\nThe following problematic error categories exist. If you identify them in the current discussion, they could help you to provide better feedback:\n {error_categories}"
 
