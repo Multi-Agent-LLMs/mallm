@@ -179,7 +179,7 @@ Your role: {data.persona} ({data.persona_description})"""
             error_categories = [
                 "Task Compliance: Off-topic, Bad instruction following",
                 "Lack of Progress: Inefficiency, Redundancy, Circular discussion, Repetition, Unproductive disagreement",
-                "Low Quality Engagement: Poor collaboration, Minimal participation, Disjointed contribution, Ignorance",
+                "Low-Quality Engagement: Poor collaboration, Minimal participation, Disjointed contribution, Ignorance",
                 "Low-Quality Feedback: Excessive criticism, Excessive agreement, Self-contradictory feedback, Unhelpful feedback",
                 "Lack of Clarity: Overanalysis, Overgeneralization, Insignificant changes",
                 "Knowledge Gap: Assumptions, Lack of data, Hallucinated facts, Wrongly cited",
