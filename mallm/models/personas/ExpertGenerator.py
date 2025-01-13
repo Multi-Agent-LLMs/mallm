@@ -80,7 +80,7 @@ New Participant:
                     *current_prompt,
                     {
                         "role": "user",
-                        "content": "Please use the follow the examples to generate a useful persona for the task! Only answer with the JSON for the next persona!",
+                        "content": "Please use the following examples to generate a useful persona for the task! Only answer with the JSON for the next persona!",
                     },
                 ]
             )
