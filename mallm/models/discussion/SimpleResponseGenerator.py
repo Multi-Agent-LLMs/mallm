@@ -173,7 +173,7 @@ Your role: {data.persona} ({data.persona_description})"""
     def generate_policy_intervention(self, data: TemplateFilling, provide_labels: bool = True) -> Response:
         instr_prompt = {
             "role": "user",
-            "content": "The currect discussion is going badly. Based on the others contributions, give constructive feedback about how to improve the discussion habits. Be concise so that the other discussion participants can find a better solution.",
+            "content": "The current discussion is going badly. Based on the others' contributions, give constructive feedback about how to improve the discussion habits. Be concise so that the other discussion participants can find a better solution.",
         }
         if provide_labels:
             error_categories = [
