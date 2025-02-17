@@ -54,15 +54,19 @@ class Judge(Agent):
         self.references = references
 
     def llm_as_a_judge(self, template_filling: TemplateFilling) -> Optional[bool]:
-        # check for drift
-        response = self.response_generator.generate_judgement(
-            template_filling, self.judged_solutions[-2], self.judged_solutions[-1]
-        )
-        if "[[A]]" in response.message:
-            return True     # answer_before is better
-        if "[[B]]" in response.message:
-            return False    # answer_after is better (problem drift)
-        logger.warning(f"Judge verdict is not valid: {response.message}")
+        repeats = 0
+        while repeats < 3:
+            # check for drift
+            response = self.response_generator.generate_judgement(
+                template_filling, self.judged_solutions[-2], self.judged_solutions[-1]
+            )
+            if "[[A]]" in response.message:
+                return True     # answer_before is better
+            if "[[B]]" in response.message:
+                return False    # answer_after is better (problem drift)
+            logger.warning(f"Judge verdict is not valid: {response.message}. Retry number {repeats+1}.")
+            repeats += 1
+        logger.warning(f"Judge verdict is not valid: {response.message}. All retries failed. The verdict will be saved as None.")
         return None
 
     def intervention(self,
