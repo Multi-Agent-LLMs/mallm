@@ -53,7 +53,6 @@ class Coordinator:
         num_neutral_agents: int = 0,
         console: Optional[Console] = None,
         judge_model: Optional[Chat] = None,
-        judge_always_intervene: bool = False,
     ):
         if agent_generators is None:
             agent_generators = ["expert", "expert", "expert"]
@@ -72,7 +71,6 @@ class Coordinator:
         self.memory: list[Memory] = []
         self.console = console or Console()
         self.judge_llm = judge_model
-        self.judge_always_intervene = judge_always_intervene
 
     def init_agents(
         self,

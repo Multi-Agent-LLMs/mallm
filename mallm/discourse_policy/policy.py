@@ -129,7 +129,7 @@ class DiscoursePolicy(ABC):
                     persona_description=coordinator.judge.persona_description,
                     agent_memory=discussion_history,
                 )
-                self.unique_id, self.turn = coordinator.judge.intervention(self.unique_id, self.turn, memory_ids, template_filling, self.draft, always_intervene=coordinator.judge_always_intervene)
+                self.unique_id, self.turn = coordinator.judge.intervention(self.unique_id, self.turn, memory_ids, template_filling, self.draft, always_intervene=config.judge_always_intervene)
 
             self.print_messages(coordinator, input_str, task_instruction)
 
