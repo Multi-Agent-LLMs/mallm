@@ -131,7 +131,7 @@ judge_always_intervene: bool = False
 ```
 
 ### Discussion Parameters:
-Response Generators: `freetext`, `json`, `simple`, `splitfreetext`
+Response Generators: `freetext`, `simple`, `splitfreetext`
 
 Decision Protocols: `approval_voting`, `consensus_voting`, `cumulative_voting`, `hybrid_consensus`, `majority_consensus`, `ranked_voting`, `simple_voting`, `summary`, `supermajority_consensus`, `unanimity_consensus`
 
