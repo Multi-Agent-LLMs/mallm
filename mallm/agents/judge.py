@@ -64,7 +64,7 @@ class Judge(Agent):
                 return True     # answer_before is better
             if "[[B]]" in response.message:
                 return False    # answer_after is better (problem drift)
-            logger.warning(f"Judge verdict is not valid: {response.message}. Retry number {repeats+1}.")
+            logger.warning(f"Judge verdict is not valid: {response.message}. Retry number {repeats + 1}.")
             repeats += 1
         logger.warning(f"Judge verdict is not valid: {response.message}. All retries failed. The verdict will be saved as None.")
         return None
