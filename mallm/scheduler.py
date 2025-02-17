@@ -198,7 +198,6 @@ class Scheduler:
                 client=client,
                 console=console,
                 judge_model=self.judge_llm or None,
-                judge_always_intervene=self.config.judge_always_intervene,
             )
         except Exception as e:
             logger.error("Failed intializing coordinator.")
