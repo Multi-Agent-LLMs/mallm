@@ -167,7 +167,7 @@ class DiscoursePolicy(ABC):
             for memory in coordinator.memory
             if memory.turn == self.turn or not only_current_turn
         ]
-        if not global_memories:
+        if not global_memories: # if the regenerate judge intervention is triggered, the memory is empty
             return
 
         max_width = min(console.width, 100)
