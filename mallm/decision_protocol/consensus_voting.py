@@ -42,6 +42,7 @@ class ConsensusVoting(DecisionProtocol):
     ) -> tuple[str, bool, list[Agreement], str, Optional[VotingResultList]]:
         if len(agreements) > self.total_agents:
             agreements = agreements[-self.total_agents :]
+
         if agent_index != self.total_agents - 1:
             return "", False, agreements, "", None
 
@@ -166,6 +167,10 @@ class ConsensusVoting(DecisionProtocol):
     ) -> tuple[str, Any, bool, str]:
         success = False
         vote_int = int("".join([x for x in vote_str if x.isnumeric()]))
+
+        # if len(final_answers) == 1:    # TODO: Add this in a future PR
+        #    vote_int = 0    # If there is only one answer, the agent must vote for it
+
         if 0 <= vote_int < len(final_answers):
             vote.append(vote_int)
             logger.info(

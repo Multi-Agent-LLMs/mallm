@@ -5,12 +5,12 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Optional
 
 from rich.panel import Panel
-from rich.progress import Console  # type: ignore
+from rich.progress import Console
 from rich.text import Text
 
 from mallm.agents.draftProposer import DraftProposer
+from mallm.agents.judge import Judge
 from mallm.agents.panelist import Panelist
-from mallm.agents.policyFeedback import PolicyFeedback
 from mallm.utils.types import Agreement, Memory, TemplateFilling, VotingResultList
 
 if TYPE_CHECKING:
@@ -91,28 +91,8 @@ class DiscoursePolicy(ABC):
                         memory_ids=memory_ids,
                         template_filling=template_filling,
                     )
-                elif isinstance(agent, PolicyFeedback):
-                    discussion_history, memory_ids, current_draft = (
-                        coordinator.get_discussion_history(
-                            context_length=config.visible_turns_in_memory,
-                            turn=self.turn,
-                        )
-                    )
-                    template_filling = TemplateFilling(
-                        task_instruction=task_instruction,
-                        input_str=input_str,
-                        current_draft=current_draft,
-                        persona=agent.persona,
-                        persona_description=agent.persona_description,
-                        agent_memory=discussion_history,
-                    )
-                    self.policy_feedback_call(
-                        policy_feedback=agent,
-                        coordinator=coordinator,
-                        agent_index=i,
-                        memory_ids=memory_ids,
-                        template_filling=template_filling,
-                    )
+                elif isinstance(agent, Judge):
+                    continue    # executes after decision protocol
                 else:
                     logger.error("Agent type not recognized.")
                     raise Exception("Agent type not recognized.")
@@ -139,6 +119,17 @@ class DiscoursePolicy(ABC):
 
                 if self.decision:
                     break
+
+            if coordinator.judge:
+                template_filling = TemplateFilling(
+                    task_instruction=task_instruction,
+                    input_str=input_str,
+                    current_draft=self.draft,
+                    persona=coordinator.judge.persona,
+                    persona_description=coordinator.judge.persona_description,
+                    agent_memory=discussion_history,
+                )
+                self.unique_id, self.turn = coordinator.judge.intervention(self.unique_id, self.turn, memory_ids, template_filling, self.draft, always_intervene=config.judge_always_intervene)
 
             self.print_messages(coordinator, input_str, task_instruction)
 
@@ -176,6 +167,9 @@ class DiscoursePolicy(ABC):
             for memory in coordinator.memory
             if memory.turn == self.turn or not only_current_turn
         ]
+        if not global_memories:  # if the regenerate judge intervention is triggered, the memory is empty
+            return
+
         max_width = min(console.width, 100)
         discussion_text = Text(
             f"Task instruction: {task_instruction}\n\nInput: {input_str}\n-----------\n"
@@ -233,24 +227,3 @@ class DiscoursePolicy(ABC):
         template_filling: TemplateFilling,
     ) -> None:
         pass
-
-    def policy_feedback_call(
-        self,
-        policy_feedback: PolicyFeedback,
-        coordinator: Coordinator,
-        agent_index: int,
-        memory_ids: list[int],
-        template_filling: TemplateFilling,
-    ) -> None:
-        _res, memory, self.agreements = policy_feedback.policy_feedback(
-            unique_id=self.unique_id,
-            turn=self.turn,
-            memory_ids=memory_ids,
-            template_filling=template_filling,
-            agreements=self.agreements,
-        )
-        self.memories.append(memory)
-        coordinator.update_memories(
-            self.memories, coordinator.agents
-        )  # policy feedback is visible by everyone
-        self.memories = []

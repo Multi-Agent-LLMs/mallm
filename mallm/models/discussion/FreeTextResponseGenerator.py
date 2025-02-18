@@ -16,8 +16,9 @@ class FreeTextResponseGenerator(ResponseGenerator):
 
     _name = "freetext"
 
-    def __init__(self, llm: Chat):
+    def __init__(self, llm: Chat, judge_llm: Optional[Chat] = None):
         self.llm = llm
+        self.judge_llm = judge_llm
         self.base_prompt = {
             "role": "system",
             "content": "You are participating in a discussion to solve the provided task.",
@@ -54,6 +55,7 @@ Input: {input_str}
         agreement: Optional[bool],
         baseline: bool,
         drafting: bool,
+        judging: bool = False,
     ) -> Response:
         if chain_of_thought:
             current_prompt.append(
@@ -77,7 +79,7 @@ Input: {input_str}
                 solution=self.extract_result(res, task_instruction, input_str),
             )
 
-            if response.agreement is None and not drafting and not baseline:
+            if response.agreement is None and not drafting and not baseline and not judging:
                 retry += 1
                 continue
             break  # success
@@ -175,7 +177,7 @@ Input: {input_str}
             task=task_instruction,
             previous_answer=result
         )
-        return self.llm.invoke(current_prompt)
+        return str(self.llm.invoke(current_prompt))
 
     def generate_ablation(
         self,
@@ -205,3 +207,11 @@ Current solution: {current_solution}
             baseline=True,
             drafting=True,
         )
+
+    def generate_policy_intervention(self, data: TemplateFilling, provide_labels: bool = True) -> Response:
+        logger.error(f"Policy Intervention is not implemented for this response generator. {self.__class__.__name__}")
+        raise NotImplementedError("Policy Intervention is not implemented for this response generator.")
+
+    def generate_judgement(self, data: TemplateFilling, answer_before: str, answer_after: str) -> Response:
+        logger.error(f"Judgement is not implemented for this response generator. {self.__class__.__name__}")
+        raise NotImplementedError("Judgement is not implemented for this response generator.")

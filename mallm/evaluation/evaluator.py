@@ -11,6 +11,7 @@ from mallm.evaluation.metrics.bertscore import BERTScore
 from mallm.evaluation.metrics.bleu import BLEU
 from mallm.evaluation.metrics.ifeval import IFEval
 from mallm.evaluation.metrics.meteor import METEOR
+from mallm.evaluation.metrics.metric import Metric
 from mallm.evaluation.metrics.qa import (
     AnswerabilityBoolean,
     IncludesAnswer,
@@ -88,6 +89,15 @@ class Evaluator:
             raise ValueError(f"No metrics found for {metrics}")
         logger.info(f"Metrics to calculate: {[m.name for m in selected_metrics]}")
         return selected_metrics
+
+    @staticmethod
+    def calculate_score(
+        answer: str,
+        references: list[str],
+        metric: Metric,
+        dataset_id: Optional[str] = None,
+    ) -> dict[str, Any]:
+        return next(iter(metric.evaluate(answer, references, dataset_id).values()))
 
     def calculate_scores(
         self,

@@ -1,3 +1,4 @@
+# noqa: A005
 from dataclasses import dataclass
 from typing import Any, Callable, Optional
 
