@@ -7,11 +7,11 @@ import fire
 import json_repair
 from tqdm import tqdm
 
-import mallm.scheduler  # noqa
 from mallm.evaluation.metrics.bertscore import BERTScore
 from mallm.evaluation.metrics.bleu import BLEU
-from mallm.evaluation.metrics.distinct import Distinct
+from mallm.evaluation.metrics.ifeval import IFEval
 from mallm.evaluation.metrics.meteor import METEOR
+from mallm.evaluation.metrics.metric import Metric
 from mallm.evaluation.metrics.qa import (
     AnswerabilityBoolean,
     IncludesAnswer,
@@ -29,8 +29,8 @@ ALL_METRICS = [
     MultiChoiceBoolean(),
     ROUGE(),
     SquadScore(),
-    Distinct(),
     IncludesAnswer(),
+    IFEval(),
 ]
 
 logger = logging.getLogger("mallm")
@@ -90,8 +90,21 @@ class Evaluator:
         logger.info(f"Metrics to calculate: {[m.name for m in selected_metrics]}")
         return selected_metrics
 
+    @staticmethod
+    def calculate_score(
+        answer: str,
+        references: list[str],
+        metric: Metric,
+        dataset_id: Optional[str] = None,
+    ) -> dict[str, Any]:
+        return next(iter(metric.evaluate(answer, references, dataset_id).values()))
+
     def calculate_scores(
-        self, answer: str, references: list[str], metric_alteration: str = ""
+        self,
+        answer: str,
+        references: list[str],
+        metric_alteration: str = "",
+        dataset_id: Optional[str] = None,
     ) -> dict[str, Any]:
         metrics = []
         if references:
@@ -101,6 +114,8 @@ class Evaluator:
                 metrics.append(AnswerabilityBoolean())
             if any(metric.name == "squad" for metric in self.metrics):
                 metrics.append(SquadScore())
+            if any(metric.name == "IFEval" for metric in self.metrics):
+                metrics.append(IFEval())
         if not metrics:
             logger.warning(f"No metrics to evaluate against references {references}.")
             return {}
@@ -108,15 +123,21 @@ class Evaluator:
         return {
             f"{k}{f'-{metric_alteration}' if metric_alteration else ''}": v
             for metric in metrics
-            for k, v in metric.evaluate(answer, references).items()
+            for k, v in metric.evaluate(answer, references, dataset_id).items()
         }
 
     def add_scores(self) -> None:
-        for item in tqdm(self.data, desc="Calculating scores"):
-            answer = item.get("finalAnswer", "")
+        for item in tqdm(
+            self.data, desc=f"Calculating scores of {self.input_file_path}: "
+        ):
+            main_answer = item.get("finalAnswer", "")
             references = item.get("references", [])
-            if answer:
-                item["scores"] = self.calculate_scores(answer, references)
+            dataset_id = item.get("datasetId", None)
+            if main_answer:
+                item["scores"] = self.calculate_scores(
+                    main_answer, references, "", dataset_id
+                )
+
             votes_each_turn = item.get("votesEachTurn", None)
             if votes_each_turn:
                 alterations: dict[str, Any] = votes_each_turn[
@@ -127,16 +148,114 @@ class Evaluator:
                         answer = alterations[alteration].get("final_answer", "")
                         if answer and "scores" not in item:
                             item["scores"] = self.calculate_scores(
-                                answer, references, alteration
+                                answer, references, alteration, dataset_id
                             )
                         elif answer:
                             item["scores"].update(
-                                self.calculate_scores(answer, references, alteration)
+                                self.calculate_scores(answer, references, alteration, dataset_id)
                             )
 
+            challenged_answers: Any = item.get("challengedAnswers", None)
+            if challenged_answers:
+                if "scores" not in item:
+                    continue
+                if "correct" not in item["scores"] and "f1" not in item["scores"]:
+                    continue
+                if challenged_answers["challenged_answers"]:
+                    self.analyze_challenged_answers(
+                        "normal",
+                        challenged_answers["challenged_answers"],
+                        item,
+                        references,
+                        item["scores"],
+                        dataset_id
+                    )
+                if challenged_answers["challenged_answers_wrong"]:
+                    self.analyze_challenged_answers(
+                        "wrong",
+                        challenged_answers["challenged_answers_wrong"],
+                        item,
+                        references,
+                        self.calculate_scores(
+                            challenged_answers["wrong_answer"], references, "", dataset_id
+                        ),
+                        dataset_id
+                    )
+                if challenged_answers["challenged_answers_irrelevant"]:
+                    self.analyze_challenged_answers(
+                        "irrelevant",
+                        challenged_answers["challenged_answers_irrelevant"],
+                        item,
+                        references,
+                        self.calculate_scores(
+                            challenged_answers["irrelevant_answer"], references, "", dataset_id
+                        ),
+                        dataset_id
+                    )
+                if challenged_answers["challenged_answers_history"]:
+                    self.analyze_challenged_answers(
+                        "history",
+                        challenged_answers["challenged_answers_history"],
+                        item,
+                        references,
+                        item["scores"],
+                        dataset_id
+                    )
+                if challenged_answers["challenged_answers_additional_information"]:
+                    self.analyze_challenged_answers(
+                        "information",
+                        challenged_answers["challenged_answers_additional_information"],
+                        item,
+                        references,
+                        item["scores"],
+                        dataset_id
+                    )
+
+    def analyze_challenged_answers(
+        self,
+        name: str,
+        challenged_answers: dict[str, Optional[str]],
+        item: Any,
+        references: list[str],
+        previous_score: Any,
+        dataset_id: Optional[str] = None,
+    ) -> None:
+        new_answer = {
+            f"{name}_no_challenge": True,
+            f"{name}_challenge_failed": False,
+            f"{name}_challenge_higher": False,
+            f"{name}_challenge_lower": False,
+            f"{name}_challenge_same": False,
+        }
+        previous_score = (
+            previous_score.get("f1")
+            if previous_score.get("f1", None) is not None
+            else previous_score.get("correct", None)
+        )
+
+        answer = next(iter(challenged_answers.values()))
+        if answer:
+            score = self.calculate_scores(answer, references, "", dataset_id)
+            current_score = (
+                score.get("f1")
+                if score.get("f1", None) is not None
+                else score.get("correct", None)
+            )
+            if current_score is None or previous_score is None:
+                new_answer[f"{name}_challenge_failed"] = True
+            elif current_score > previous_score:
+                new_answer[f"{name}_challenge_higher"] = True
+            elif current_score < previous_score:
+                new_answer[f"{name}_challenge_lower"] = True
+            elif current_score == previous_score:
+                new_answer[f"{name}_challenge_same"] = True
+            new_answer[f"{name}_no_challenge"] = False
+        item["scores"].update(new_answer)
+
     def add_scores_extensive(self) -> None:
-        for item in tqdm(self.data):
+        for item in tqdm(self.data, desc="Extensive scores: "):
             references = item.get("references", [])
+            dataset_id = item.get("datasetId", None)
             votes_each_turn = item.get("votesEachTurn", None)
             alterations: dict[str, Any] = votes_each_turn[
                 max(votes_each_turn.keys())
@@ -147,14 +266,14 @@ class Evaluator:
                     for alteration in list(alterations.keys()):
                         if "scores" not in mem:
                             mem["scores"] = self.calculate_scores(
-                                solution, references, alteration
+                                solution, references, alteration, dataset_id
                             )
                         else:
                             mem["scores"].update(
-                                self.calculate_scores(solution, references, alteration)
+                                self.calculate_scores(solution, references, alteration, dataset_id)
                             )
                 elif solution:
-                    score = self.calculate_scores(solution, references)
+                    score = self.calculate_scores(solution, references, "", dataset_id)
                     mem["scores"] = score
 
             if votes_each_turn:
@@ -169,6 +288,7 @@ class Evaluator:
                                 ],
                                 references,
                                 alteration,
+                                dataset_id
                             )
 
     def calculate_statistics(self) -> dict[str, Any]:
@@ -212,28 +332,31 @@ class Evaluator:
                         turn = mem.get("turn", 0)
                         if turn not in avg_scores_per_turn:
                             avg_scores_per_turn[turn] = float(0)
-                        avg_scores_per_turn[turn] += mem.get("scores", {}).get(
-                            metric, 0
-                        )
+                        turn_score = mem.get("scores", {}).get(metric, 0)
+                        if turn_score:
+                            avg_scores_per_turn[turn] += turn_score
 
                 max_turns = max(item.get("turns", 0) for item in self.data)
                 for turn in range(max_turns + 1)[1:]:
-                    avg_scores_per_turn[turn] /= sum(
+                    num_scores = sum(
                         1
                         for item in self.data
                         for mem in item.get("globalMemory", [])
                         if mem.get("turn", 0) == turn
                         and metric in mem.get("scores", {})
                     )
+                    if num_scores == 0:
+                        num_scores = 1
+                    avg_scores_per_turn[turn] /= num_scores
                     avg_scores_per_turn[turn] = round(avg_scores_per_turn[turn], 4)
 
             stats[metric] = {
-                "data_size": len(self.data),
-                "sample_size": len(scores),
+                "dataSize": len(self.data),
+                "sampleSize": len(scores),
                 "scores": scores,
-                "average_score": round(average_score, 4),
-                "std_dev_score": round(std_dev_score, 4),
-                "average_scores_per_turn": avg_scores_per_turn,
+                "averageScore": round(average_score, 4),
+                "stdDevScore": round(std_dev_score, 4),
+                "averageScoresPerTurnAggregated": avg_scores_per_turn,
             }
 
         return stats

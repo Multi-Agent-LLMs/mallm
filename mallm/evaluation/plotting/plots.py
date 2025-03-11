@@ -17,7 +17,7 @@ def process_stats_file(file_path: str) -> pd.DataFrame:
     data = json.loads(Path(file_path).read_text())
     # Extract only the average scores
     return pd.DataFrame(
-        {k: v["average_score"] for k, v in data.items() if "average_score" in v},
+        {k: v["averageScore"] for k, v in data.items() if "averageScore" in v},
         index=[0],
     )
 
@@ -208,7 +208,7 @@ def plot_score_distributions_with_std(df: pd.DataFrame, input_path: str) -> None
         # Filter data for the current score type
         score_data = grouped[grouped["Score Type"] == score_type]
         score_data.to_csv(
-            f"{input_path}/{score_type.replace(" ", "_").lower()}_score.csv",
+            f'{input_path}/{score_type.replace(" ", "_").lower()}_score.csv',
             index=False,
         )
 
@@ -219,7 +219,7 @@ def plot_score_distributions_with_std(df: pd.DataFrame, input_path: str) -> None
             score_data["mean"],
             yerr=score_data["std"],
             capsize=5,
-            color=plt.cm.Set3(range(len(score_data))),  # type: ignore
+            color=plt.cm.Set3(range(len(score_data))),
         )  # Use a color cycle
 
         plt.xlabel("Experiment Condition")

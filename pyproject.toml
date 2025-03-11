@@ -1,26 +1,23 @@
-[project]
+[tool.poetry]
 name = "mallm"
-version = "v1.0.1"
-authors = [{ name = "GippLab", email = "projects@gipplab.org" }]
+version = "v1.0.4"
+authors = ["GippLab <projects@gipplab.org>"]
 description = "Multi-Agent Large Language Models for Collaborative Task-Solving."
 readme = "README.md"
-requires-python = ">=3.9"
+license = "Apache-2.0"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
 ]
 
+[project]
+name = "mallm"
+version = "v1.0.3"
+
 [project.urls]
 Homepage = "https://github.com/Multi-Agent-LLMs/mallm"
 Issues = "https://github.com/Multi-Agent-LLMs/mallm/issues"
-
-[tool.poetry]
-name = "mallm"
-version = "0.1.0"
-description = ""
-authors = ["GippLab <projects@gipplab.org>"]
-readme = "README.md"
 
 [tool.poetry.scripts]
 mallm-run = "mallm.scheduler:main"
@@ -44,9 +41,10 @@ rouge-score = "^0.1.2"
 bert-score = "^0.3.13"
 evaluate = "^0.4.2"
 json-repair = "^0.25.1"
-distinct-n = { git = "https://github.com/neural-dialogue-metrics/Distinct-N.git" }
 rich = "^13.7.1"
 contextplus = "^0.1.3"
+langdetect = "^1.0.9"
+immutabledict = "^4.2.0"
 
 [tool.poetry.group.dev.dependencies]
 tqdm = "^4.66.2"
@@ -66,6 +64,8 @@ build-backend = "poetry.core.masonry.api"
 files = ["mallm/"]
 python_version = "3.9"
 warn_unused_configs = true
+exclude = ["mallm/utils/evaluation/", "mallm/evaluation/metrics/ifeval.py"]
+follow_imports = "skip"
 
 strict = true
 ignore_missing_imports = true

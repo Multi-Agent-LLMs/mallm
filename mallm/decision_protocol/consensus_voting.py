@@ -1,5 +1,6 @@
 import json
 import logging
+import random
 from collections import Counter
 from typing import Any, Optional
 
@@ -41,6 +42,7 @@ class ConsensusVoting(DecisionProtocol):
     ) -> tuple[str, bool, list[Agreement], str, Optional[VotingResultList]]:
         if len(agreements) > self.total_agents:
             agreements = agreements[-self.total_agents :]
+
         if agent_index != self.total_agents - 1:
             return "", False, agreements, "", None
 
@@ -52,6 +54,8 @@ class ConsensusVoting(DecisionProtocol):
         for agreement in agreements:
             voting_process_string += f"{agreement.persona} final answer: {agreement.solution}\n"
             final_answers.append(agreement.solution)
+
+        final_answers = self.remove_duplicate_answers(final_answers)
 
         for panelist in self.panelists:
             retries = 0
@@ -143,13 +147,14 @@ class ConsensusVoting(DecisionProtocol):
                 f"Voted for answer from agent {self.panelists[most_voted].persona}"
             )
         else:
+            random_voted = random.randint(0, len(final_answers) - 1)
             all_votes[alteration.value] = VotingResult(
                 votes=votes,
-                most_voted=-1,
-                final_answer="",
+                most_voted=random_voted,
+                final_answer=final_answers[random_voted],
                 agreed=False,
             )
-            logger.info("There was a tie. Going for another round of voting.")
+            logger.info("There was a tie. Selecting a random solution. agreed=false marks this unsuccessful decision.")
         return all_votes
 
     def process_votes(
@@ -162,6 +167,10 @@ class ConsensusVoting(DecisionProtocol):
     ) -> tuple[str, Any, bool, str]:
         success = False
         vote_int = int("".join([x for x in vote_str if x.isnumeric()]))
+
+        # if len(final_answers) == 1:    # TODO: Add this in a future PR
+        #    vote_int = 0    # If there is only one answer, the agent must vote for it
+
         if 0 <= vote_int < len(final_answers):
             vote.append(vote_int)
             logger.info(

@@ -22,9 +22,9 @@ import openai
 from contextplus import context
 from datasets import load_dataset
 from openai import OpenAI
-from rich import print
+from rich import print  # noqa: A004
 from rich.logging import RichHandler
-from rich.progress import Console, Progress, TaskID  # type: ignore
+from rich.progress import Console, Progress, TaskID
 from sentence_transformers import SentenceTransformer
 from sentence_transformers.util import cos_sim
 from torch import Tensor
@@ -147,9 +147,16 @@ class Scheduler:
         self.llm = Chat(
             client=OpenAI(
                 base_url=self.config.endpoint_url, api_key=self.config.api_key
-            ),
-            model=self.config.model_name,
+            )
         )
+
+        self.judge_llm = None
+        if self.config.judge_endpoint_url:
+            self.judge_llm = Chat(
+            client=OpenAI(
+                base_url=self.config.judge_endpoint_url, api_key=self.config.judge_api_key
+            )
+            )
 
         if config.response_generator not in RESPONSE_GENERATORS:
             logger.error(f"No valid response generator for {config.response_generator}")
@@ -167,7 +174,6 @@ class Scheduler:
         self.ablation_output_dicts: list[dict[str, Any]] = []
 
         logger.info(f"""Found {self.total_samples} samples to process.""")
-
         logger.info("Finished initializing the scheduler.")
 
     def run_discussion(
@@ -189,9 +195,9 @@ class Scheduler:
                 num_neutral_agents=self.config.num_neutral_agents,
                 model=self.llm,
                 agent_generators=self.config.agent_generators_list,
-                policy=self.config.policy,
                 client=client,
                 console=console,
+                judge_model=self.judge_llm or None,
             )
         except Exception as e:
             logger.error("Failed intializing coordinator.")
@@ -209,6 +215,8 @@ class Scheduler:
                 decision_success,
                 voting_results_per_turn,
                 challenged_answers,
+                judgements,
+                judged_solutions,
             ) = coordinator.discuss(
                 config=self.config, sample=sample, worker_functions=worker_functions
             )
@@ -233,7 +241,7 @@ class Scheduler:
                         for voting_round, voting_result in voting_results_per_turn.items()
                         if voting_result is not None
                     },
-                    "challengedAnswers": challenged_answers,
+                    "challengedAnswers": dataclasses.asdict(challenged_answers),
                     "references": sample.references,
                     "metadata": sample.metadata,
                     "decisionSuccess": decision_success,
@@ -250,6 +258,8 @@ class Scheduler:
                         for agent in agent_mems
                         if agent
                     ],
+                    "judgements": judgements,
+                    "judged_solutions": judged_solutions,
                 }
             )
         except Exception:
@@ -295,7 +305,7 @@ class Scheduler:
                 client, sample, len(self.output_dicts[-1]["globalMemory"])
             )
 
-        return answer
+        return str(answer)
 
     def manage_discussions(self, client: httpx.Client) -> None:
         """

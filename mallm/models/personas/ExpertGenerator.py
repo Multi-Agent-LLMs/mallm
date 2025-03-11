@@ -80,7 +80,7 @@ New Participant:
                     *current_prompt,
                     {
                         "role": "user",
-                        "content": "Please use the follow the examples to generate a useful persona for the task! Only answer with the JSON for the next persona!",
+                        "content": "Please use the following examples to generate a useful persona for the task! Only answer with the JSON for the next persona!",
                     },
                 ]
             )
@@ -97,7 +97,7 @@ New Participant:
                     continue
                 agent: dict[str, str] = new_agent
                 break
-            except json.decoder.JSONDecodeError as e:
+            except (json.decoder.JSONDecodeError, TypeError) as e:
                 retry += 1
                 logger.debug(
                     f"Could not decode json (will attempt retry no. {retry!s}): "

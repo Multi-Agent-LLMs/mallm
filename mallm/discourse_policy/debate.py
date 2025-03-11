@@ -3,11 +3,11 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, Optional
 
-from rich.progress import Console  # type: ignore
+from rich.progress import Console
 
 from mallm.agents.draftProposer import DraftProposer
+from mallm.agents.judge import Judge
 from mallm.agents.panelist import Panelist
-from mallm.agents.policyFeedback import PolicyFeedback
 from mallm.discourse_policy.policy import DiscoursePolicy
 from mallm.utils.types import Agreement, TemplateFilling, VotingResultList
 
@@ -32,16 +32,6 @@ class DiscourseDebate(DiscoursePolicy):
     def panelist_call(
         self,
         agent: Panelist,
-        coordinator: Coordinator,
-        agent_index: int,
-        memory_ids: list[int],
-        template_filling: TemplateFilling,
-    ) -> None:
-        pass
-
-    def policy_feedback_call(
-        self,
-        policy_feedback: PolicyFeedback,
         coordinator: Coordinator,
         agent_index: int,
         memory_ids: list[int],
@@ -90,7 +80,7 @@ class DiscourseDebate(DiscoursePolicy):
             not self.decision or config.skip_decision_making
         ) and self.turn < config.max_turns:
             self.turn += 1
-            logger.info("Ongoing. Current turn: " + str(self.turn))
+            logger.debug("Ongoing. Current turn: " + str(self.turn))
 
             # ---- Agent A1
             discussion_history, memory_ids, current_draft = coordinator.agents[
@@ -190,29 +180,8 @@ class DiscourseDebate(DiscoursePolicy):
                             agents_to_update=agents_to_update,
                             agreements=debate_agreements,
                         )
-                    elif isinstance(a, PolicyFeedback):
-                        discussion_history, memory_ids, current_draft = (
-                            coordinator.get_discussion_history(
-                                context_length=config.visible_turns_in_memory,
-                                turn=self.turn,
-                            )
-                        )
-                        template_filling = TemplateFilling(
-                            task_instruction=task_instruction,
-                            input_str=input_str,
-                            current_draft=current_draft,
-                            persona=a.persona,
-                            persona_description=a.persona_description,
-                            agent_memory=discussion_history,
-                        )
-                        _res, debate_memory, debate_agreements = a.policy_feedback(
-                            unique_id=unique_id,
-                            turn=self.turn,
-                            memory_ids=memory_ids,
-                            template_filling=template_filling,
-                            agreements=debate_agreements,
-                        )
-                        memories.append(debate_memory)
+                    elif isinstance(a, Judge):
+                        continue    # executes after decision protocol
                     else:
                         logger.error("Agent type not recognized.")
                         raise Exception("Agent type not recognized.")
@@ -250,7 +219,20 @@ class DiscourseDebate(DiscoursePolicy):
 
             if self.decision:
                 break
+
+            if coordinator.judge:
+                template_filling = TemplateFilling(
+                    task_instruction=task_instruction,
+                    input_str=input_str,
+                    current_draft=self.draft,
+                    persona=coordinator.judge.persona,
+                    persona_description=coordinator.judge.persona_description,
+                    agent_memory=discussion_history,
+                )
+                self.unique_id, self.turn = coordinator.judge.intervention(self.unique_id, self.turn, memory_ids, template_filling, self.draft, always_intervene=config.judge_always_intervene)
+
             self.print_messages(coordinator, input_str, task_instruction)
+
         self.print_messages(
             coordinator,
             input_str,
@@ -265,5 +247,5 @@ class DiscourseDebate(DiscoursePolicy):
             self.turn,
             self.agreements,
             self.decision,
-            voting_results_per_turn,
+            voting_results_per_turn
         )

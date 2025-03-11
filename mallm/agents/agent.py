@@ -232,6 +232,12 @@ class Agent:
 
         return context_memory, memory_ids, current_draft
 
+    def forget_memories(self, turn: int) -> None:
+        keys_to_delete = [key for key, memory in self.memory.items() if memory.turn == turn]
+        for key in keys_to_delete:
+            del self.memory[key]
+        logger.debug(f"Forgot memories {keys_to_delete} from turn {turn} from agent {self.id}")
+
     def get_own_messages(self, context_length: Optional[int] = None) -> list[str]:
         """
         Retrieves memory from the agents memory bucket as a string

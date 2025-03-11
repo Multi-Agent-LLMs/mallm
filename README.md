@@ -1,6 +1,6 @@
 <br />
 <p align="center">
-<a><img src="image/mallm.webp" alt="MALLM" width="128" height="128" title="MALLM"></a>
+<a><img src="https://raw.githubusercontent.com/Multi-Agent-LLMs/mallm/refs/heads/main/image/mallm.webp" alt="MALLM" width="128" height="128" title="MALLM"></a>
   <h3 align="center">MALLM</h3>
   <p align="center">
     Multi-Agent LLMs For Conversational Task-Solving: Framework<br />
@@ -32,7 +32,7 @@ Install as a package:
 ### Create Data
 Download and create the test data: `python data/data_downloader.py --datasets=[SQuAD2,ETPC]`
 
-You can use any dataset for this project as long as it follows [this basic format](https://github.com/Multi-Agent-LLMs/mallm/blob/main/data/datasets/etpc_debugging.json). These datasets are supported by our automated formatting pipeline: `BBQGenderIdentity`, `BTVote`, `ETHICS`, `ETPC`, `Europarl`, `GPQA`, `GSM8K`, `IFEval`, `MMLU`, `MMLUPro`, `MUSR`, `MathLvl5`, `MoCaMoral`, `MoralExceptQA`, `MultiNews`, `SQuAD2`, `SimpleEthicalQuestions`, `StrategyQA`, `WMT19DeEn`, `WinoGrande`, `XSum`
+You can use any dataset for this project as long as it follows [this basic format](https://github.com/Multi-Agent-LLMs/mallm/blob/main/data/datasets/etpc_debugging.json). These datasets are supported by our automated formatting pipeline: `AquaRat`, `BBQGenderIdentity`, `BTVote`, `ETHICS`, `ETPC`, `Europarl`, `GPQA`, `GSM8K`, `IFEval`, `MMLU`, `MMLUPro`, `MUSR`, `MathLvl5`, `MoCaMoral`, `MoralExceptQA`, `MultiNews`, `SQuAD2`, `SimpleEthicalQuestions`, `StrategyQA`, `WMT19DeEn`, `WinoGrande`, `XSum`
 
 ### Run from Terminal
 MALLM relies on an external API like OpenAI or Text Generation Inference by Huggingface.
@@ -120,14 +120,18 @@ use_ablation: bool = False
 shuffle_input_samples: bool = False
 all_agents_generate_first_draft: bool = False
 all_agents_generate_draft: bool = False
-policy: Optional[str] = None
 voting_protocols_with_alterations: bool = False
 calculate_persona_diversity: bool = False
 challenge_final_results: bool = False
+judge_intervention: Optional[str] = None
+judge_metric: Optional[str] = None
+judge_endpoint_url: Optional[str] = None
+judge_api_key: str = "-"
+judge_always_intervene: bool = False
 ```
 
 ### Discussion Parameters:
-Response Generators: `freetext`, `json`, `simple`, `splitfreetext`
+Response Generators: `freetext`, `simple`, `splitfreetext`
 
 Decision Protocols: `approval_voting`, `consensus_voting`, `cumulative_voting`, `hybrid_consensus`, `majority_consensus`, `ranked_voting`, `simple_voting`, `summary`, `supermajority_consensus`, `unanimity_consensus`
 
@@ -138,7 +142,7 @@ Discussion Paradigms: `collective_refinement`, `debate`, `memory`, `relay`, `rep
 ## Evaluation
 
 We provide some basic evaluation metrics that can be directly applied to the output json of mallm.
-Supported metrics: `answerability`, `bertscore`, `bleu`, `distinct`, `includes_answer`, `meteor`, `multichoice`, `rouge`, `squad`
+Supported metrics: `answerability`, `bertscore`, `bleu`, `ifeval`, `includes_answer`, `meteor`, `multichoice`, `rouge`, `squad`
 
 From terminal:
 

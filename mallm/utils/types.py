@@ -1,3 +1,4 @@
+# noqa: A005
 from dataclasses import dataclass
 from typing import Any, Callable, Optional
 
@@ -60,6 +61,19 @@ class VotingResultList:
     type: str
     voting_process_string: str
     alterations: dict[str, VotingResult]
+
+
+@dataclass
+class ChallengeResult:
+    answer: str
+    additional_information: Optional[str] = None
+    wrong_answer: Optional[str] = None
+    irrelevant_answer: Optional[str] = None
+    challenged_answers: Optional[dict[str, Optional[str]]] = None
+    challenged_answers_history: Optional[dict[str, Optional[str]]] = None
+    challenged_answers_wrong: Optional[dict[str, Optional[str]]] = None
+    challenged_answers_irrelevant: Optional[dict[str, Optional[str]]] = None
+    challenged_answers_additional_information: Optional[dict[str, Optional[str]]] = None
 
 
 @dataclass

@@ -4,7 +4,7 @@ import dataclasses
 import logging
 from typing import TYPE_CHECKING, Any, Optional
 
-from rich.progress import Console  # type: ignore
+from rich.progress import Console
 
 from mallm.agents.draftProposer import DraftProposer
 from mallm.agents.panelist import Panelist
@@ -56,7 +56,9 @@ class CollectiveRefinement(DiscoursePolicy):
         solution: str,
         config: Config,
         console: Optional[Console] = None,
-    ) -> tuple[Optional[str], int, list[Agreement], bool, dict[int, Any]]:
+    ) -> tuple[
+        Optional[str], int, list[Agreement], bool, dict[int, Optional[VotingResultList]]
+    ]:
         unique_id = 0
         voting_process_string = ""
         additional_voting_results: Optional[VotingResultList] = None
@@ -86,7 +88,7 @@ class CollectiveRefinement(DiscoursePolicy):
             not self.decision or config.skip_decision_making
         ) and self.turn < config.max_turns:
             self.turn += 1
-            logger.info("Ongoing. Current turn: " + str(self.turn))
+            logger.debug("Ongoing. Current turn: " + str(self.turn))
 
             round_memories: list[Memory] = []
             for index, agent in enumerate(coordinator.agents):
@@ -177,10 +179,11 @@ class CollectiveRefinement(DiscoursePolicy):
                 input_str,
                 config,
             )
+
             self.print_messages(coordinator, input_str, task_instruction)
 
             if additional_voting_results:
-                voting_results_per_turn[self.turn] = dataclasses.asdict(additional_voting_results)
+                voting_results_per_turn[self.turn] = additional_voting_results
             else:
                 voting_results_per_turn[self.turn] = None
 

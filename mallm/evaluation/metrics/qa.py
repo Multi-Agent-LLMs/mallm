@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Any, cast
+from typing import Any, Optional, cast
 
 from evaluate import load
 
@@ -19,7 +19,7 @@ class MultiChoiceBoolean(Metric):
     ANSWER_PATTERN_MULTICHOICE_BACKUP = r"([A-Z])([)\]:]|$)"
 
     @staticmethod
-    def evaluate(generated_text: str, reference_texts: list[str]) -> dict[str, Any]:
+    def evaluate(generated_text: str, reference_texts: list[str], dataset_id: Optional[str]) -> dict[str, Any]:
 
         reference = reference_texts[0][0]  # first character should always be the label
         match = re.search(MultiChoiceBoolean.ANSWER_PATTERN_MULTICHOICE, generated_text)
@@ -31,7 +31,7 @@ class MultiChoiceBoolean(Metric):
 
         if not match:
             logger.warning(f"No pattern match found in answer: {generated_text}")
-            return {"correct": None}
+            return {"correct": False}
 
         logger.debug(f"Extracted answer: {match.group(1)} from {generated_text}")
         logger.debug(f"Comparing against reference: {reference}")
@@ -52,7 +52,7 @@ class AnswerabilityBoolean(Metric):
 
     @staticmethod
     def evaluate(
-        generated_text: str, reference_texts: list[str], answer_pattern: str = "unknown"
+        generated_text: str, reference_texts: list[str], dataset_id: Optional[str], answer_pattern: str = "unknown"
     ) -> dict[str, Any]:
         if reference_texts == []:
             return {"answerability_correct": answer_pattern in generated_text.lower()}
@@ -69,7 +69,7 @@ class SquadScore(Metric):
 
     @staticmethod
     def evaluate(
-        generated_text: str, reference_texts: list[str], answer_pattern: str = "unknown"
+        generated_text: str, reference_texts: list[str], dataset_id: Optional[str], answer_pattern: str = "unknown"
     ) -> dict[str, Any]:
         if answer_pattern in generated_text.lower():
             generated_text = ""
@@ -108,7 +108,7 @@ class IncludesAnswer(Metric):
     _name = "includes_answer"
 
     @staticmethod
-    def evaluate(generated_text: str, reference_texts: list[str]) -> dict[str, Any]:
+    def evaluate(generated_text: str, reference_texts: list[str], dataset_id: Optional[str]) -> dict[str, Any]:
         if any(ref.lower() in generated_text.lower() for ref in reference_texts):
             return {"includes_answer": 1}
         return {"includes_answer": 0}
