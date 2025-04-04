@@ -257,9 +257,9 @@ class Evaluator:
             references = item.get("references", [])
             dataset_id = item.get("datasetId", None)
             votes_each_turn = item.get("votesEachTurn", None)
-            alterations = None
+            alterations: dict[str, Any] = {}
             if votes_each_turn:
-                alterations: dict[str, Any] = votes_each_turn[
+                alterations = votes_each_turn[
                     max(votes_each_turn.keys())
                 ].get("alterations", None)
             for mem in item.get("globalMemory", []):
