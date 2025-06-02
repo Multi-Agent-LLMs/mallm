@@ -126,7 +126,8 @@ class Chat(LLM):    # type: ignore
                 log_prob_sum = 0.0
                 for message in chat_completion:
                     message_str = message.choices[0].delta.content
-                    log_prob_sum += message.choices[0].logprobs.content[0].logprob
+                    if message.choices[0].logprobs:
+                        log_prob_sum += message.choices[0].logprobs.content[0].logprob
                     if message_str and message_str not in self.stop_tokens:
                         collected_messages.append(message_str)
                 log_prob_sum = log_prob_sum / len(collected_messages)

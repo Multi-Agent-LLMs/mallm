@@ -53,6 +53,7 @@ class Config:
     judge_intervention: Optional[str] = None
     judge_metric: Optional[str] = None
     judge_endpoint_url: Optional[str] = None
+    judge_model_name: Optional[str] = None
     judge_api_key: str = "-"
     judge_always_intervene: bool = False
 
@@ -117,15 +118,6 @@ class Config:
         if self.endpoint_url.endswith("/"):
             logger.warning("Removing trailing / from the endpoint url.")
             self.endpoint_url = self.endpoint_url[:-1]
-        try:
-            logger.info("Testing availability of the endpoint...")
-            page = requests.head(self.endpoint_url.replace("/v1", ""))
-            logger.info("Status: " + str(page.status_code))
-            assert page.status_code == 200
-        except Exception as e:
-            logger.error("HTTP Error: Could not connect to the provided endpoint url.")
-            logger.error(e)
-            sys.exit(1)
         if self.concurrent_api_requests > 250:
             logger.warning(
                 "concurrent_api_requests is very large. Please make sure the API endpoint you are using can handle that many simultaneous requests."

@@ -147,15 +147,18 @@ class Scheduler:
         self.llm = Chat(
             client=OpenAI(
                 base_url=self.config.endpoint_url, api_key=self.config.api_key
-            )
+            ),
+            model=self.config.model_name
         )
 
         self.judge_llm = None
         if self.config.judge_endpoint_url:
             self.judge_llm = Chat(
-            client=OpenAI(
-                base_url=self.config.judge_endpoint_url, api_key=self.config.judge_api_key
-            )
+                client=OpenAI(
+                    base_url=self.config.judge_endpoint_url,
+                    api_key=self.config.judge_api_key,
+                ),
+                model=self.config.judge_model_name,
             )
 
         if config.response_generator not in RESPONSE_GENERATORS:

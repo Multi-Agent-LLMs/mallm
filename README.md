@@ -126,6 +126,7 @@ challenge_final_results: bool = False
 judge_intervention: Optional[str] = None
 judge_metric: Optional[str] = None
 judge_endpoint_url: Optional[str] = None
+judge_model_name: Optional[str] = None
 judge_api_key: str = "-"
 judge_always_intervene: bool = False
 ```
