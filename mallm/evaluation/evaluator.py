@@ -122,6 +122,10 @@ class Evaluator:
                 if solution:
                     score = self.calculate_scores(solution, references)
                     mem["scores"] = score
+                    
+    def calculate_statistics(self) -> None:
+        # For each numeric metric, calculate the average and standard deviation
+        reported_metrics = self.data[-1]["scores"].keys()
 
     def calculate_statistics(self) -> dict[str, Any]:
         reported_metrics = set()

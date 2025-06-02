@@ -437,6 +437,16 @@ class Scheduler:
             discussion_time = timedelta(
                 seconds=time.perf_counter() - start_time
             ).total_seconds()
+
+            extracted_answer = extract_draft(answer)
+            if not extracted_answer:
+                extracted_answer = extract_draft(answer, "correct answer")
+            if not extracted_answer:
+                extracted_answer = extract_draft(answer, "final answer")
+            if not extracted_answer:
+                extracted_answer = extract_draft(answer, "solution")
+            if not extracted_answer:
+                extracted_answer = extract_draft(answer, "answer")
         except Exception as e:
             logger.error("Failed running baseline.")
             logger.error(e)
@@ -447,6 +457,9 @@ class Scheduler:
             f"""--> Baseline LM generated the final answer within {f'{discussion_time:.2f}'} seconds: \n"""
             + str(answer.solution)
         )
+
+        if not extracted_answer:
+            logger.warning("Answer extraction failed.")
 
         self.output_dicts.append(
             {

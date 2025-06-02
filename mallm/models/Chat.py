@@ -43,7 +43,7 @@ class Chat(LLM):
         "<|eot_id|>",
         "<|reserved_special_token",
     ]
-    max_tokens: int = 1024
+    max_tokens: int = 2048
 
     # Overwrite to send direct chat structure to tgi endpoint
     def _convert_input(self, input: LanguageModelInput) -> PromptValue:

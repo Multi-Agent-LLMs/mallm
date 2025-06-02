@@ -1,0 +1,28 @@
+{
+  "common": {
+    "endpoint_url": "http://gwdg.larskaesberg.de:8081/v1",
+    "paradigm": "memory",
+    "response_generator": "simple",
+    "decision_protocol": "hybrid_consensus",
+    "context_length": 2,
+    "max_concurrent_requests": 30,
+    "chain_of_thought": true,
+    "agent_generator": "ipip",
+    "data": "data/data/datasets/gpqa.json",
+    "instruction_prompt": "Answer the following question."
+  },
+  "runs": [
+    {
+      "out": "final_ipip2-1.json",
+      "num_agents": 2
+    },
+    {
+      "out": "final_ipip2-2.json",
+      "num_agents": 2
+    },
+    {
+      "out": "final_ipip2-3.json",
+      "num_agents": 2
+    }
+  ]
+}

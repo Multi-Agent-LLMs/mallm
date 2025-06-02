@@ -19,11 +19,11 @@ plt.rcParams.update(
 
 # Updated data with precomputed CIs
 data = {
-    "2 Agents": {"mean": 31.07, "ci": 2.3},
-    "3 Agents": {"mean": 29.55, "ci": 2.3},
-    "4 Agents": {"mean": 30.70, "ci": 2.9},
-    "5 Agents": {"mean": 30.07, "ci": 2.2},
-    "6 Agents": {"mean": 29.92, "ci": 2.7},
+    "2 Agents": {"mean": 43.1, "ci": 2.5},
+    "3 Agents": {"mean": 42.5, "ci": 2.5},
+    "4 Agents": {"mean": 41.1, "ci": 2.5},
+    "5 Agents": {"mean": 43.0, "ci": 3.4},
+    #"6 Agents": {"mean": 29.92, "ci": 2.7},
 }
 
 # Convert percentages to proportions
@@ -56,18 +56,18 @@ ax.yaxis.set_major_locator(loc)
 ax.yaxis.grid(True, linestyle="--", which="both", color="grey", alpha=0.6)
 
 # Adding baseline data
-baseline_mean = 30.6 / 100
-baseline_ci = 1.7 / 100
+baseline_mean = 39.5 / 100
+baseline_ci = 0 / 100
 ax.hlines(
     baseline_mean,
     xmin=0.5,
-    xmax=5.5,
+    xmax=4.5,
     colors="gray",
     linestyles="dashed",
-    label="Baseline (our)",
+    label="Baseline (Meta)",
 )
 ax.fill_between(
-    [0.5, 5.5],
+    [0.5, 4.5],
     baseline_mean - baseline_ci,
     baseline_mean + baseline_ci,
     color="gray",
@@ -81,4 +81,4 @@ ax.set_yticklabels(["{:.0%}".format(x) for x in ax.get_yticks()])
 ax.set_ylabel("Accuracy")
 ax.legend()
 
-plt.savefig("Figue1.png", dpi=300)
+plt.savefig("Figue1-final.png", dpi=300)
