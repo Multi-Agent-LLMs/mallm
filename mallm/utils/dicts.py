@@ -1,22 +1,22 @@
-from mallm.decision_protocol.approval_voting import ApprovalVoting
-from mallm.decision_protocol.consensus import (
+from mallm.decision_protocols.approval_voting import ApprovalVoting
+from mallm.decision_protocols.consensus import (
     HybridMajorityConsensus,
     MajorityConsensus,
     SupermajorityConsensus,
     UnanimityConsensus,
 )
-from mallm.decision_protocol.consensus_voting import ConsensusVoting
-from mallm.decision_protocol.cumulative_voting import CumulativeVoting
-from mallm.decision_protocol.protocol import DecisionProtocol
-from mallm.decision_protocol.ranked_voting import RankedVoting
-from mallm.decision_protocol.simple_voting import SimpleVoting
-from mallm.decision_protocol.summary import Summary
-from mallm.discourse_policy.collective_refinement import CollectiveRefinement
-from mallm.discourse_policy.debate import DiscourseDebate
-from mallm.discourse_policy.memory import DiscourseMemory
-from mallm.discourse_policy.policy import DiscoursePolicy
-from mallm.discourse_policy.relay import DiscourseRelay
-from mallm.discourse_policy.report import DiscourseReport
+from mallm.decision_protocols.consensus_voting import ConsensusVoting
+from mallm.decision_protocols.cumulative_voting import CumulativeVoting
+from mallm.decision_protocols.protocol import DecisionProtocol
+from mallm.decision_protocols.ranked_voting import RankedVoting
+from mallm.decision_protocols.simple_voting import SimpleVoting
+from mallm.decision_protocols.summary import Summary
+from mallm.discussion_paradigms.collective_refinement import CollectiveRefinement
+from mallm.discussion_paradigms.debate import DiscussionDebate
+from mallm.discussion_paradigms.memory import DiscussionMemory
+from mallm.discussion_paradigms.paradigm import DiscussionParadigm
+from mallm.discussion_paradigms.relay import DiscussionRelay
+from mallm.discussion_paradigms.report import DiscussionReport
 from mallm.models.discussion.CriticalResponseGenerator import CriticalResponseGenerator
 from mallm.models.discussion.FreeTextResponseGenerator import FreeTextResponseGenerator
 from mallm.models.discussion.ReasoningResponseGenerator import (
@@ -46,11 +46,11 @@ DECISION_PROTOCOLS: dict[str, type[DecisionProtocol]] = {
     "summary": Summary,
 }
 
-DISCUSSION_PARADIGMS: dict[str, type[DiscoursePolicy]] = {
-    "memory": DiscourseMemory,
-    "report": DiscourseReport,
-    "relay": DiscourseRelay,
-    "debate": DiscourseDebate,
+DISCUSSION_PARADIGMS: dict[str, type[DiscussionParadigm]] = {
+    "memory": DiscussionMemory,
+    "report": DiscussionReport,
+    "relay": DiscussionRelay,
+    "debate": DiscussionDebate,
     "collective_refinement": CollectiveRefinement,
 }
 

@@ -2,7 +2,7 @@ import logging
 from typing import Any, Optional
 
 from mallm.agents.panelist import Panelist
-from mallm.decision_protocol.protocol import DecisionProtocol
+from mallm.decision_protocols.protocol import DecisionProtocol
 from mallm.models.discussion.ResponseGenerator import ResponseGenerator
 from mallm.utils.config import Config
 from mallm.utils.enums import DecisionAlteration

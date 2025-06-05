@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from mallm.agents.draftProposer import DraftProposer
 from mallm.agents.panelist import Panelist
-from mallm.discourse_policy.policy import DiscoursePolicy
+from mallm.discussion_paradigms.paradigm import DiscussionParadigm
 from mallm.utils.types import TemplateFilling
 
 if TYPE_CHECKING:
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger("mallm")
 
 
-class DiscourseReport(DiscoursePolicy):
+class DiscussionReport(DiscussionParadigm):
     def __init__(self) -> None:
         super().__init__(
             """Paradigm: Report

@@ -8,7 +8,7 @@ from rich.progress import Console
 
 from mallm.agents.draftProposer import DraftProposer
 from mallm.agents.panelist import Panelist
-from mallm.discourse_policy.policy import DiscoursePolicy
+from mallm.discussion_paradigms.paradigm import DiscussionParadigm
 from mallm.utils.types import Agreement, Memory, TemplateFilling, VotingResultList
 
 if TYPE_CHECKING:
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger("mallm")
 
 
-class CollectiveRefinement(DiscoursePolicy):
+class CollectiveRefinement(DiscussionParadigm):
     """
     A discussion protocol where agents improve their answers through multiple rounds of feedback.
 
