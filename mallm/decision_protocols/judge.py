@@ -11,9 +11,9 @@ from mallm.utils.types import Agreement, VotingResult, VotingResultList, WorkerF
 logger = logging.getLogger("mallm")
 
 
-class Summary(DecisionProtocol):
+class Judge(DecisionProtocol):
     """
-    The Summary decision protocol creates a summary of all answers after a certain number of turns.
+    The Judge decision protocol creates a summary of all answers after a certain number of turns.
     """
 
     _name = "summary"

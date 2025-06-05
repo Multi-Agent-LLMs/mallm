@@ -10,7 +10,7 @@ from mallm.decision_protocols.cumulative_voting import CumulativeVoting
 from mallm.decision_protocols.protocol import DecisionProtocol
 from mallm.decision_protocols.ranked_voting import RankedVoting
 from mallm.decision_protocols.simple_voting import SimpleVoting
-from mallm.decision_protocols.summary import Summary
+from mallm.decision_protocols.judge import Judge
 from mallm.discussion_paradigms.collective_refinement import CollectiveRefinement
 from mallm.discussion_paradigms.debate import DiscussionDebate
 from mallm.discussion_paradigms.memory import DiscussionMemory
@@ -43,7 +43,7 @@ DECISION_PROTOCOLS: dict[str, type[DecisionProtocol]] = {
     "cumulative_voting": CumulativeVoting,
     "ranked_voting": RankedVoting,
     "consensus_voting": ConsensusVoting,
-    "summary": Summary,
+    "summary": Judge,
 }
 
 DISCUSSION_PARADIGMS: dict[str, type[DiscussionParadigm]] = {
