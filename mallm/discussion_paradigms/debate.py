@@ -120,7 +120,8 @@ class DiscussionDebate(DiscussionParadigm):
                 logger.debug(
                     f"Discussion {coordinator.id} goes into debate round: {r!s}"
                 )
-                debate_agreements: list[Agreement] = []
+                if r == 0:
+                    debate_agreements = self.agreements
                 for i, a in enumerate(
                     coordinator.agents[1:]
                 ):  # similar to relay paradigm
