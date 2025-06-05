@@ -1,9 +1,9 @@
-import ast
 import logging
+from collections import Counter
 from typing import Any, Optional
 
 from mallm.agents.panelist import Panelist
-from mallm.decision_protocol.protocol import DecisionProtocol
+from mallm.decision_protocols.protocol import DecisionProtocol
 from mallm.models.discussion.ResponseGenerator import ResponseGenerator
 from mallm.utils.config import Config
 from mallm.utils.enums import DecisionAlteration
@@ -12,13 +12,12 @@ from mallm.utils.types import Agreement, VotingResult, VotingResultList, WorkerF
 logger = logging.getLogger("mallm")
 
 
-class CumulativeVoting(DecisionProtocol):
+class SimpleVoting(DecisionProtocol):
     """
-    The Cumulative Voting decision protocol allows panelists to distribute 10 points among the solutions.
-    The solution with the highest total points is selected as the final decision.
+    The Voting decision protocol allows panelists to vote for the best answer after a certain number of turns.
     """
 
-    _name = "cumulative_voting"
+    _name = "simple_voting"
 
     def __init__(
         self,
@@ -41,7 +40,6 @@ class CumulativeVoting(DecisionProtocol):
     ) -> tuple[str, bool, list[Agreement], str, Optional[VotingResultList]]:
         if len(agreements) > self.total_agents:
             agreements = agreements[-self.total_agents :]
-
         if turn < self.vote_turn or agent_index != self.total_agents - 1:
             return "", False, agreements, "", None
 
@@ -56,7 +54,7 @@ class CumulativeVoting(DecisionProtocol):
                 task,
                 voting_process_string,
                 self._name,
-                ResponseGenerator.generate_cumulative_voting_prompt,
+                ResponseGenerator.generate_voting_prompt,
                 config.voting_protocols_with_alterations,
             )
         )
@@ -73,30 +71,32 @@ class CumulativeVoting(DecisionProtocol):
         all_votes: dict[str, VotingResult],
         alteration: DecisionAlteration,
         final_answers: list[str],
-        votes: Any,
+        votes: list[int],
     ) -> dict[str, VotingResult]:
-        # Aggregate points for each solution
-        total_points = [0] * len(final_answers)
-        for points in votes:
-            for index, point in points.items():
-                total_points[index] += point
-        # Determine the solution with the highest points, break ties by selecting the first solution and go for another round
-        max_points = max(total_points)
-        best_solution_index = total_points.index(max_points)
-        best_answers = [
-            final_answers[i]
-            for i, score in enumerate(total_points)
-            if score == max_points
-        ]
-        if len(best_answers) == 1:
+        winners = []
+        most_voted = -1
+        if votes:
+            vote_counts = Counter(votes)
+            most_common = vote_counts.most_common()
+            most_voted = most_common[0][0]
+            most_voted_count = most_common[0][1]
+
+            # Check if there are multiple winners with the same vote count
+            winners = [
+                candidate
+                for candidate, count in vote_counts.items()
+                if count == most_voted_count
+            ]
+
+        if len(winners) == 1:
             all_votes[alteration.value] = VotingResult(
                 votes=votes,
-                most_voted=best_solution_index,
-                final_answer=final_answers[best_solution_index],
+                most_voted=most_voted,
+                final_answer=final_answers[most_voted],
                 agreed=True,
             )
             logger.info(
-                f"Selected answer from agent {self.panelists[best_solution_index].short_id} with {max_points} points"
+                f"Voted for answer from agent {self.panelists[most_voted].persona}"
             )
         else:
             all_votes[alteration.value] = VotingResult(
@@ -117,26 +117,12 @@ class CumulativeVoting(DecisionProtocol):
         voting_process_string: str,
     ) -> tuple[str, Any, bool, str]:
         success = False
-        vote_str = vote_str.replace("\n", "").replace(" ", "").strip()
-        points_dict = ast.literal_eval(vote_str)
-        points_dict = {int(k): int(v) for k, v in points_dict.items()}
-        if self.validate_points_distribution(points_dict, len(final_answers)):
-            vote.append(points_dict)
-            logger.info(f"{panelist.persona} allocated points: {points_dict}")
-            voting_process_string += (
-                f"{panelist.persona} allocated points: {points_dict}\n"
+        vote_int = int("".join([x for x in vote_str if x.isnumeric()]))
+        if 0 <= vote_int < len(final_answers):
+            vote.append(vote_int)
+            logger.info(
+                f"{panelist.persona} voted for answer from {self.panelists[vote_int].persona}"
             )
+            voting_process_string += f"{panelist.persona} voted for answer from {self.panelists[vote_int].persona}\n"
             success = True
         return vote_str, vote, success, voting_process_string
-
-    @staticmethod
-    def validate_points_distribution(
-        points_dict: dict[int, int], num_solutions: int
-    ) -> bool:
-        total_points = sum(points_dict.values())
-        if total_points != 10:
-            return False
-        for index in points_dict:
-            if not isinstance(index, int) or not (0 <= index < num_solutions):
-                return False
-        return not any(x < 0 for x in points_dict.values())

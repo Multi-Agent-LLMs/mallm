@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from mallm.agents.draftProposer import DraftProposer
 from mallm.agents.panelist import Panelist
-from mallm.discourse_policy.policy import DiscoursePolicy
+from mallm.discussion_paradigms.paradigm import DiscussionParadigm
 from mallm.utils.types import TemplateFilling
 
 if TYPE_CHECKING:
@@ -13,19 +13,19 @@ if TYPE_CHECKING:
 logger = logging.getLogger("mallm")
 
 
-class DiscourseMemory(DiscoursePolicy):
+class DiscussionRelay(DiscussionParadigm):
     def __init__(self) -> None:
         super().__init__(
-            """Paradigm: Memory
+            """Paradigm: Relay
                     ┌───┐
-                    │A 1│
-                    ├───┘
-                    │   ▲
-                    │   │
-                    ▼   │
-        ┌───┬──────►┌───┤◄──────┬───┐
-        │A 3│       │MEM│       │A 2│
-        └───┘◄──────┴───┴──────►└───┘
+          ┌────────►│A 1│─────────┐
+          │         └───┘         │
+          │                       │
+          │                       │
+          │                       ▼
+        ┌─┴─┐                   ┌───┐
+        │A 3│◄──────────────────┤A 2│
+        └───┘                   └───┘
         """
         )
 
@@ -37,13 +37,14 @@ class DiscourseMemory(DiscoursePolicy):
         memory_ids: list[int],
         template_filling: TemplateFilling,
     ) -> None:
+        next_agent = (agent_index + 1) % len(coordinator.agents)
         self.agreements = agent.participate(
             memories=self.memories,
             unique_id=self.unique_id,
             turn=self.turn,
             memory_ids=memory_ids,
             template_filling=template_filling,
-            agents_to_update=coordinator.agents,
+            agents_to_update=[agent, coordinator.agents[next_agent]],
             agreements=self.agreements,
         )
 
@@ -55,6 +56,7 @@ class DiscourseMemory(DiscoursePolicy):
         memory_ids: list[int],
         template_filling: TemplateFilling,
     ) -> None:
+        next_agent = (agent_index + 1) % len(coordinator.agents)
         _res, memory, self.agreements = draft_proposer.draft(
             unique_id=self.unique_id,
             turn=self.turn,
@@ -64,5 +66,7 @@ class DiscourseMemory(DiscoursePolicy):
             is_neutral=True,
         )
         self.memories.append(memory)
-        coordinator.update_memories(self.memories, coordinator.agents)
+        coordinator.update_memories(
+            self.memories, [draft_proposer, coordinator.agents[next_agent]]
+        )
         self.memories = []

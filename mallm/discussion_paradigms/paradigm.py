@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger("mallm")
 
 
-class DiscoursePolicy(ABC):
+class DiscussionParadigm(ABC):
     def __init__(self, paradigm_str: str = "") -> None:
         self.paradigm_str = paradigm_str
         self.decision = False

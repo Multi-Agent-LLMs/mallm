@@ -8,7 +8,7 @@ from rich.progress import Console
 from mallm.agents.draftProposer import DraftProposer
 from mallm.agents.judge import Judge
 from mallm.agents.panelist import Panelist
-from mallm.discourse_policy.policy import DiscoursePolicy
+from mallm.discussion_paradigms.paradigm import DiscussionParadigm
 from mallm.utils.types import Agreement, TemplateFilling, VotingResultList
 
 if TYPE_CHECKING:
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger("mallm")
 
 
-class DiscourseDebate(DiscoursePolicy):
+class DiscussionDebate(DiscussionParadigm):
     def draft_proposer_call(
         self,
         draft_proposer: DraftProposer,
@@ -120,7 +120,8 @@ class DiscourseDebate(DiscoursePolicy):
                 logger.debug(
                     f"Discussion {coordinator.id} goes into debate round: {r!s}"
                 )
-                debate_agreements: list[Agreement] = []
+                if r == 0:
+                    debate_agreements = self.agreements
                 for i, a in enumerate(
                     coordinator.agents[1:]
                 ):  # similar to relay paradigm

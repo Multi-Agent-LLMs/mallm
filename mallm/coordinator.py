@@ -13,8 +13,8 @@ from mallm.agents.agent import Agent
 from mallm.agents.draftProposer import DraftProposer
 from mallm.agents.judge import Judge
 from mallm.agents.panelist import Panelist
-from mallm.decision_protocol.protocol import DecisionProtocol
-from mallm.discourse_policy.policy import DiscoursePolicy
+from mallm.decision_protocols.protocol import DecisionProtocol
+from mallm.discussion_paradigms.paradigm import DiscussionParadigm
 from mallm.models.Chat import Chat
 from mallm.models.discussion.ResponseGenerator import ResponseGenerator
 from mallm.models.discussion.SimpleResponseGenerator import SimpleResponseGenerator
@@ -273,7 +273,7 @@ class Coordinator:
             raise Exception(
                 f"No valid discourse policy for paradigm {config.discussion_paradigm}"
             )
-        policy: DiscoursePolicy = DISCUSSION_PARADIGMS[config.discussion_paradigm]()
+        policy: DiscussionParadigm = DISCUSSION_PARADIGMS[config.discussion_paradigm]()
 
         logger.info(
             f"""Starting discussion with coordinator {self.id}...

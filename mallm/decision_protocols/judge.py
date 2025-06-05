@@ -2,7 +2,7 @@ import logging
 from typing import Any, Optional
 
 from mallm.agents.panelist import Panelist
-from mallm.decision_protocol.protocol import DecisionProtocol
+from mallm.decision_protocols.protocol import DecisionProtocol
 from mallm.models.discussion.ResponseGenerator import ResponseGenerator
 from mallm.utils.config import Config
 from mallm.utils.enums import DecisionAlteration
@@ -11,9 +11,9 @@ from mallm.utils.types import Agreement, VotingResult, VotingResultList, WorkerF
 logger = logging.getLogger("mallm")
 
 
-class Summary(DecisionProtocol):
+class Judge(DecisionProtocol):
     """
-    The Summary decision protocol creates a summary of all answers after a certain number of turns.
+    The Judge decision protocol creates a summary of all answers after a certain number of turns.
     """
 
     _name = "summary"

@@ -1,7 +1,7 @@
 from mallm.agents.draftProposer import DraftProposer
 from mallm.agents.panelist import Panelist
 from mallm.coordinator import Coordinator
-from mallm.decision_protocol.consensus import (
+from mallm.decision_protocols.consensus import (
     HybridMajorityConsensus,
     UnanimityConsensus,
 )
