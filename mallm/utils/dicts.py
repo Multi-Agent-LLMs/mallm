@@ -43,7 +43,7 @@ DECISION_PROTOCOLS: dict[str, type[DecisionProtocol]] = {
     "cumulative_voting": CumulativeVoting,
     "ranked_voting": RankedVoting,
     "consensus_voting": ConsensusVoting,
-    "summary": Judge,
+    "judge": Judge,
 }
 
 DISCUSSION_PARADIGMS: dict[str, type[DiscussionParadigm]] = {

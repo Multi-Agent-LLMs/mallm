@@ -16,7 +16,7 @@ class Judge(DecisionProtocol):
     The Judge decision protocol creates a summary of all answers after a certain number of turns.
     """
 
-    _name = "summary"
+    _name = "judge"
 
     def __init__(
         self,
