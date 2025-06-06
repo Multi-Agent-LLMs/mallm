@@ -134,7 +134,7 @@ judge_always_intervene: bool = False
 ### Discussion Parameters:
 Response Generators: `critical`, `freetext`, `reasoning`, `simple`, `splitfreetext`
 
-Decision Protocols: `approval_voting`, `consensus_voting`, `cumulative_voting`, `hybrid_consensus`, `majority_consensus`, `ranked_voting`, `simple_voting`, `summary`, `supermajority_consensus`, `unanimity_consensus`
+Decision Protocols: `approval_voting`, `consensus_voting`, `cumulative_voting`, `hybrid_consensus`, `judge`, `majority_consensus`, `ranked_voting`, `simple_voting`, `supermajority_consensus`, `unanimity_consensus`
 
 Persona Generators: `expert`, `ipip`, `mock`, `nopersona`
 
