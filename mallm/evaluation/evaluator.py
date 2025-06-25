@@ -418,10 +418,12 @@ def run_evaluator(
     extensive: bool = False,
 ) -> None:
     if Path(input_json_file_path).is_dir():
+        print(f"Processing directory: {input_json_file_path}")
         batch_process_dir_path(
             input_json_file_path, output_dir_path, metrics, extensive
         )
     else:
+        print(f"Processing file: {input_json_file_path}")
         evaluator = Evaluator(input_json_file_path, output_dir_path, metrics, extensive)
         evaluator.process()
 

@@ -13,6 +13,11 @@ def process_eval_file(file_path: str) -> pd.DataFrame:
     return pd.DataFrame(data)
 
 
+def format_metric(text: str) -> str:
+    text = text.replace("_", " ")
+    return text.capitalize().replace("Correct", "Accuracy").replace("Correct", "Accuracy").replace("Rougel", "ROUGE-L").replace("Rouge1", "ROUGE-1").replace("Rouge2", "ROUGE-2").replace("Bleu", "BLEU").replace("Distinct1", "Distinct-1").replace("Distinct2", "Distinct-2")
+
+
 def process_stats_file(file_path: str) -> pd.DataFrame:
     data = json.loads(Path(file_path).read_text())
     # Extract only the average scores
@@ -79,7 +84,7 @@ def plot_turns_with_std(df: pd.DataFrame, input_path: str) -> None:
     plt.title("Mean Turns with Standard Deviation by Experiment Condition")
     plt.xticks(
         index,
-        [f"{row['option']}_{row['dataset']}" for _, row in grouped.iterrows()],
+        get_unique_labels(grouped),
         rotation=45,
         ha="right",
     )
@@ -114,7 +119,7 @@ def plot_clock_seconds_with_std(df: pd.DataFrame, input_path: str) -> None:
     plt.title("Mean Clock Seconds with Standard Deviation by Experiment Condition")
     plt.xticks(
         index,
-        [f"{row['option']}_{row['dataset']}" for _, row in grouped.iterrows()],
+        get_unique_labels(grouped),
         rotation=45,
         ha="right",
     )
@@ -158,7 +163,7 @@ def plot_decision_success_with_std(df: pd.DataFrame, input_path: str) -> None:
     )
     plt.xticks(
         index,
-        [f"{row['option']}_{row['dataset']}" for _, row in grouped.iterrows()],
+        get_unique_labels(grouped),
         rotation=45,
         ha="right",
     )
@@ -167,6 +172,45 @@ def plot_decision_success_with_std(df: pd.DataFrame, input_path: str) -> None:
     plt.tight_layout()
     plt.savefig(f"{input_path}/decision_success_with_std_dev.png")
     plt.close()
+
+
+def get_unique_labels(df: pd.DataFrame) -> list[str]:
+    labels = [f"{row['option']}_{row['dataset']}" for _, row in df.iterrows()]
+    # Extract unique parts by finding the longest common prefix and suffix
+    if not labels:
+        return []
+
+    # Find the longest common prefix
+    common_prefix = ""
+    if labels:
+        first_label = labels[0]
+        for i in range(len(first_label)):
+            if all(label.startswith(first_label[:i + 1]) for label in labels):
+                common_prefix = first_label[:i + 1]
+            else:
+                break
+
+    # Find the longest common suffix
+    common_suffix = ""
+    if labels:
+        first_label = labels[0]
+        for i in range(len(first_label)):
+            if all(label.endswith(first_label[-(i + 1):]) for label in labels):
+                common_suffix = first_label[-(i + 1):]
+            else:
+                break
+
+    # Extract unique parts by removing common prefix and suffix
+    unique_labels = []
+    for label in labels:
+        unique_part = label
+        if common_prefix and label.startswith(common_prefix):
+            unique_part = unique_part[len(common_prefix):]
+        if common_suffix and unique_part.endswith(common_suffix):
+            unique_part = unique_part[:-len(common_suffix)]
+        unique_labels.append(format_metric(unique_part))
+
+    return unique_labels
 
 
 def plot_score_distributions_with_std(df: pd.DataFrame, input_path: str) -> None:
@@ -224,10 +268,10 @@ def plot_score_distributions_with_std(df: pd.DataFrame, input_path: str) -> None
 
         plt.xlabel("Experiment Condition")
         plt.ylabel("Average Score")
-        plt.title(f"Mean {score_type} Score with Standard Deviation")
+        plt.title(f"Mean {format_metric(score_type)} Score with Standard Deviation")
         plt.xticks(
             x,
-            [f"{row['option']}_{row['dataset']}" for _, row in score_data.iterrows()],
+            get_unique_labels(score_data),
             rotation=45,
             ha="right",
         )
