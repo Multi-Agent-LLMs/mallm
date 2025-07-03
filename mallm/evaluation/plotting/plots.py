@@ -10,8 +10,8 @@ import numpy as np
 from tqdm import tqdm
 
 # Set the style for beautiful plots
-plt.style.use('seaborn-v0_8-whitegrid')
-sns.set_palette("husl")
+plt.style.use('seaborn-v0_8-pastel')
+sns.set_palette("pastel")
 
 # Define a beautiful color palette
 COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8']
@@ -23,6 +23,22 @@ def get_colors(n_colors):
     else:
         # Use a colormap for more colors
         return plt.cm.Set3(np.linspace(0, 1, n_colors))
+
+
+def get_consistent_color_mapping(options):
+    """Create consistent color mapping based on option names"""
+    # Sort options to ensure consistent assignment
+    unique_options = sorted(set(options))
+    
+    # Generate enough colors
+    if len(unique_options) <= len(COLORS):
+        colors = COLORS[:len(unique_options)]
+    else:
+        colors = plt.cm.Set3(np.linspace(0, 1, len(unique_options)))
+    
+    # Create mapping
+    return dict(zip(unique_options, colors))
+
 
 def process_eval_file(file_path: str) -> pd.DataFrame:
     data = json.loads(Path(file_path).read_text())
@@ -77,7 +93,7 @@ def aggregate_data(
     return eval_df, stats_df
 
 
-def plot_turns_with_std(df: pd.DataFrame, input_path: str) -> None:
+def plot_turns_with_std(df: pd.DataFrame, input_path: str, global_color_mapping: dict = None) -> None:
     """Create a beautiful violin plot for turns distribution"""
     # Filter out rows with missing or invalid turns data
     df = df.dropna(subset=['turns'])
@@ -87,42 +103,68 @@ def plot_turns_with_std(df: pd.DataFrame, input_path: str) -> None:
         print("Warning: No valid turns data found. Skipping turns plot.")
         return
     
-    # Create combination labels for better grouping
-    df['condition'] = df['option'] + '_' + df['dataset']
-    unique_labels = get_unique_labels_from_conditions(df['condition'].unique())
+    # Create grouped data like other plots for consistent color assignment
+    grouped_data = df.groupby(['option', 'dataset']).agg({
+        'turns': list  # Keep all turns values for violin plot
+    }).reset_index()
     
-    # Create a mapping from full condition to unique label
-    condition_to_label = dict(zip(df['condition'].unique(), unique_labels))
-    df['condition_label'] = df['condition'].map(condition_to_label)
+    # Create unique labels like other plots
+    unique_labels = get_unique_labels(grouped_data)
+    grouped_data['label'] = unique_labels
+    
+    # Use global color mapping if provided, otherwise create local one
+    if global_color_mapping is None:
+        color_mapping = get_consistent_color_mapping(grouped_data['option'].unique())
+    else:
+        color_mapping = global_color_mapping
+    
+    # Create color palette based on option order in grouped data
+    colors = [color_mapping[option] for option in grouped_data['option']]
+    
+    # Expand the grouped data back to individual rows for violin plot
+    expanded_data = []
+    for i, row in grouped_data.iterrows():
+        for turn_value in row['turns']:
+            expanded_data.append({
+                'option': row['option'],
+                'dataset': row['dataset'], 
+                'label': row['label'],
+                'turns': turn_value
+            })
+    
+    plot_df = pd.DataFrame(expanded_data)
     
     plt.figure(figsize=(10, 4))
     
-    # Create violin plot with individual points
-    ax = sns.violinplot(data=df, x='condition_label', y='turns', 
-                       hue='condition_label', palette=get_colors(len(df['condition_label'].unique())), 
-                       inner=None, alpha=0.7, legend=False)
+    # Create violin plot with the same label order as other plots
+    ax = sns.violinplot(data=plot_df, x='label', y='turns', 
+                       order=grouped_data['label'], palette=colors, 
+                       inner=None, legend=False)
     
     # Add individual points with jitter
-    sns.stripplot(data=df, x='condition_label', y='turns', 
-                  color='white', size=6, alpha=0.8, edgecolor='black', linewidth=0.5)
+    sns.stripplot(data=plot_df, x='label', y='turns', 
+                  order=grouped_data['label'], color='white', size=6, 
+                  edgecolor='black', linewidth=0.5)
+    
+    # Set all plot elements above grid
+    for collection in ax.collections:
+        collection.set_zorder(4)
     
     # Add red diamond mean markers that align correctly with violin plots
-    unique_conditions = df['condition_label'].unique()
-    
-    for i, condition in enumerate(unique_conditions):
-        mean_val = df[df['condition_label'] == condition]['turns'].mean()
+    for i, label in enumerate(grouped_data['label']):
+        mean_val = plot_df[plot_df['label'] == label]['turns'].mean()
         # Use red diamond markers positioned correctly
         ax.plot(i, mean_val, marker='D', color='red', markersize=8, 
-                markeredgecolor='white', markeredgewidth=1, zorder=10)
+                markeredgecolor='white', markeredgewidth=1, zorder=5)
     
     # Styling
     ax.set_xlabel('')  # Remove automatic seaborn x-axis label
-    ax.set_ylabel('Number of Turns', fontsize=14, fontweight='bold')
+    ax.set_ylabel('Number of Turns', fontsize=14)
     
     # Rotate labels and improve spacing
     plt.xticks(rotation=45, ha='right', fontsize=14)
     plt.yticks(fontsize=14)
-    plt.grid(True, alpha=0.3)
+    ax.grid(True, alpha=0.3, zorder=0)
     # Add a subtle background
     ax.set_facecolor('#fafafa')
     
@@ -133,7 +175,7 @@ def plot_turns_with_std(df: pd.DataFrame, input_path: str) -> None:
     plt.close()
 
 
-def plot_clock_seconds_with_std(df: pd.DataFrame, input_path: str) -> None:
+def plot_clock_seconds_with_std(df: pd.DataFrame, input_path: str, global_color_mapping: dict = None) -> None:
     """Create a beautiful horizontal lollipop chart for clock seconds"""
     grouped = (
         df.groupby(["option", "dataset"])["clockSeconds"]
@@ -161,16 +203,22 @@ def plot_clock_seconds_with_std(df: pd.DataFrame, input_path: str) -> None:
     
     # Create discrete marker chart (no stems)
     y_pos = np.arange(len(grouped))
-    colors = get_colors(len(grouped))
+    
+    # Use global color mapping if provided, otherwise create local one
+    if global_color_mapping is None:
+        color_mapping = get_consistent_color_mapping(grouped['option'].unique())
+    else:
+        color_mapping = global_color_mapping
+    colors = [color_mapping[option] for option in grouped['option']]
     
     # Draw discrete circular markers only
     scatter = ax.scatter(grouped['mean'], y_pos, 
                         s=250, c=colors, 
-                        alpha=0.9, edgecolors='white', linewidth=3, zorder=10)
+                        edgecolors='white', linewidth=3, zorder=5)
     
-    # Add subtle error bars
+    # Add error bars
     ax.errorbar(grouped['mean'], y_pos, xerr=grouped['std'], 
-                fmt='none', color='gray', alpha=0.5, capsize=6, linewidth=2)
+                fmt='none', color='gray', capsize=6, linewidth=2, zorder=4)
     
     # Add value labels with better positioning to avoid circle overlap
     for i, (_, row) in enumerate(grouped.iterrows()):
@@ -178,13 +226,12 @@ def plot_clock_seconds_with_std(df: pd.DataFrame, input_path: str) -> None:
         offset = max(row['std'] + max(grouped['mean']) * 0.08, max(grouped['mean']) * 0.05)
         ax.text(row['mean'] + offset, i, 
                 f'{row["mean"]:.1f}s', 
-                va='center', ha='left', fontweight='bold', fontsize=14,
-                bbox=dict(boxstyle='round,pad=0.15', facecolor='white', alpha=0.8, edgecolor='none'))
+                va='center', ha='left', fontsize=14, zorder=6)
     
     # Styling
     ax.set_yticks(y_pos)
     ax.set_yticklabels(grouped['label'], fontsize=14)
-    ax.set_xlabel('Execution Time (seconds)', fontsize=14, fontweight='bold')
+    ax.set_xlabel('Execution Time (seconds)', fontsize=14)
     
     # Set x-axis limits with proper margins for labels
     max_val = max(grouped['mean'] + grouped['std'])
@@ -196,7 +243,7 @@ def plot_clock_seconds_with_std(df: pd.DataFrame, input_path: str) -> None:
     ax.spines['left'].set_color('#cccccc')
     ax.spines['bottom'].set_color('#cccccc')
     ax.tick_params(axis='x', labelsize=14)
-    ax.grid(True, alpha=0.3, axis='x', linestyle='-', linewidth=0.5)
+    ax.grid(True, alpha=0.3, axis='x', zorder=0)
     ax.set_facecolor('#fafafa')
     
     plt.tight_layout()
@@ -205,7 +252,7 @@ def plot_clock_seconds_with_std(df: pd.DataFrame, input_path: str) -> None:
     plt.close()
 
 
-def plot_decision_success_with_std(df: pd.DataFrame, input_path: str) -> None:
+def plot_decision_success_with_std(df: pd.DataFrame, input_path: str, global_color_mapping: dict = None) -> None:
     """Create a beautiful horizontal bar chart for decision success rates"""
     if "decisionSuccess" not in df.columns:
         print(
@@ -234,18 +281,22 @@ def plot_decision_success_with_std(df: pd.DataFrame, input_path: str) -> None:
     
     fig, ax = plt.subplots(figsize=(10, 3))
     
-    # Create gradient colors based on success rate
-    colors = plt.cm.RdYlGn(grouped['mean'])
+    # Use global color mapping if provided, otherwise create local one
+    if global_color_mapping is None:
+        color_mapping = get_consistent_color_mapping(grouped['option'].unique())
+    else:
+        color_mapping = global_color_mapping
+    colors = [color_mapping[option] for option in grouped['option']]
     
     # Create horizontal bars
     bars = ax.barh(range(len(grouped)), grouped['mean'], 
-                   color=colors, alpha=0.8, height=0.6)
+                   color=colors, height=0.6, zorder=3)
     
     # Add percentage labels on bars
     for i, (_, row) in enumerate(grouped.iterrows()):
         percentage = row['mean'] * 100
         ax.text(row['mean'] + 0.02, i, f'{percentage:.1f}%', 
-                va='center', ha='left', fontweight='bold', fontsize=14)
+                va='center', ha='left', fontsize=14, zorder=6)
     
     # Add a subtle pattern to bars
     for bar, rate in zip(bars, grouped['mean']):
@@ -255,7 +306,7 @@ def plot_decision_success_with_std(df: pd.DataFrame, input_path: str) -> None:
     # Styling
     ax.set_yticks(range(len(grouped)))
     ax.set_yticklabels(grouped['label'], fontsize=14)
-    ax.set_xlabel('Decision Success Rate', fontsize=14, fontweight='bold')
+    ax.set_xlabel('Decision Success Rate', fontsize=14)
     ax.set_xlim(0, 1.1)
     
     # Add percentage ticks
@@ -265,7 +316,7 @@ def plot_decision_success_with_std(df: pd.DataFrame, input_path: str) -> None:
     # Remove spines and add grid
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
-    ax.grid(True, alpha=0.3, axis='x')
+    ax.grid(True, alpha=0.3, axis='x', zorder=0)
     ax.set_facecolor('#fafafa')
     
     plt.tight_layout()
@@ -355,7 +406,7 @@ def get_unique_labels_from_conditions(conditions) -> list[str]:
     return unique_labels
 
 
-def plot_score_distributions_with_std(df: pd.DataFrame, input_path: str) -> None:
+def plot_score_distributions_with_std(df: pd.DataFrame, input_path: str, global_color_mapping: dict = None) -> None:
     """Create beautiful enhanced bar charts for score distributions"""
     print("Shape of stats_df:", df.shape)
     print("Columns in stats_df:", df.columns)
@@ -409,16 +460,21 @@ def plot_score_distributions_with_std(df: pd.DataFrame, input_path: str) -> None
             index=False,
         )
 
-        # Create beautiful bar plot with gradient colors
+        # Create beautiful bar plot with consistent colors
         x = np.arange(len(score_data))
-        colors = plt.cm.viridis(np.linspace(0, 1, len(score_data)))
+        
+        # Use global color mapping if provided, otherwise create local one
+        if global_color_mapping is None:
+            color_mapping = get_consistent_color_mapping(score_data['option'].unique())
+        else:
+            color_mapping = global_color_mapping
+        colors = [color_mapping[option] for option in score_data['option']]
         
         bars = ax.bar(x, score_data["mean"], 
                      yerr=score_data["std"],
                      capsize=8,
-                     color=colors, alpha=0.8,
-                     edgecolor='white', linewidth=2,
-                     width=0.6)  # Slightly narrower bars for more discrete look
+                     color=colors,
+                     width=0.6, zorder=3)  # Slightly narrower bars for more discrete look
 
         # Calculate proper y-axis limits
         max_height = max(score_data["mean"] + score_data["std"])
@@ -430,17 +486,10 @@ def plot_score_distributions_with_std(df: pd.DataFrame, input_path: str) -> None
             height = mean_val + std_val
             ax.text(bar.get_x() + bar.get_width()/2., height + y_range * 0.05,
                    f'{mean_val:.3f}', ha='center', va='bottom', 
-                   fontweight='bold', fontsize=14,
-                   bbox=dict(boxstyle='round,pad=0.2', facecolor='white', alpha=0.8))
-            
-            # Add gradient effect to bars
-            gradient = np.linspace(0, 1, 256).reshape(256, -1)
-            ax.imshow(gradient, extent=[bar.get_x(), bar.get_x() + bar.get_width(), 
-                                      0, bar.get_height()], 
-                     aspect='auto', alpha=0.3, cmap='viridis')
+                   fontsize=14, zorder=6)
 
         # Styling
-        ax.set_ylabel('Average Score', fontsize=14, fontweight='bold')
+        ax.set_ylabel('Average Score', fontsize=14)
         
         # Set x-axis with proper spacing and labels
         ax.set_xticks(x)
@@ -452,7 +501,7 @@ def plot_score_distributions_with_std(df: pd.DataFrame, input_path: str) -> None
         
         # Add grid and styling
         ax.tick_params(axis='y', labelsize=14)
-        ax.grid(True, alpha=0.3, axis='y')
+        ax.grid(True, alpha=0.3, axis='y', zorder=0)
         ax.set_facecolor('#fafafa')
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
@@ -481,22 +530,31 @@ def create_plots_for_path(input_dir_path: str, output_dir_path: str) -> None:
     print("First few rows of eval_df:")
     print(eval_df.head())
 
+    # Create global color mapping for all options across all plots
+    all_options = set()
+    if not eval_df.empty and 'option' in eval_df.columns:
+        all_options.update(eval_df['option'].unique())
+    if not stats_df.empty and 'option' in stats_df.columns:
+        all_options.update(stats_df['option'].unique())
+    
+    global_color_mapping = get_consistent_color_mapping(list(all_options))
+
     available_columns = eval_df.columns
 
     if "turns" in available_columns:
-        plot_turns_with_std(eval_df, output_dir_path)
+        plot_turns_with_std(eval_df, output_dir_path, global_color_mapping)
     else:
         print("Warning: 'turns' column not found. Skipping turns plot.")
 
     if "clockSeconds" in available_columns:
-        plot_clock_seconds_with_std(eval_df, output_dir_path)
+        plot_clock_seconds_with_std(eval_df, output_dir_path, global_color_mapping)
     else:
         print("Warning: 'clockSeconds' column not found. Skipping clock seconds plot.")
 
-    plot_decision_success_with_std(eval_df, output_dir_path)
+    plot_decision_success_with_std(eval_df, output_dir_path, global_color_mapping)
 
     if not stats_df.empty:
-        plot_score_distributions_with_std(stats_df, output_dir_path)
+        plot_score_distributions_with_std(stats_df, output_dir_path, global_color_mapping)
     else:
         print("Warning: No stats data available. Skipping score distributions plot.")
 
