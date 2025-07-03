@@ -20,6 +20,10 @@
   </p>
 </p>
 
+## What does MALLM do?
+
+Take a look at our [demo](https://mallm.gipplab.org/) to understand how MALLM structures multi-agent debates and what customization options it has.
+
 ## Install
 
 Create an environment with:
