@@ -7,10 +7,10 @@ from mallm.decision_protocols.consensus import (
 )
 from mallm.decision_protocols.consensus_voting import ConsensusVoting
 from mallm.decision_protocols.cumulative_voting import CumulativeVoting
+from mallm.decision_protocols.judge import Judge
 from mallm.decision_protocols.protocol import DecisionProtocol
 from mallm.decision_protocols.ranked_voting import RankedVoting
 from mallm.decision_protocols.simple_voting import SimpleVoting
-from mallm.decision_protocols.judge import Judge
 from mallm.discussion_paradigms.collective_refinement import CollectiveRefinement
 from mallm.discussion_paradigms.debate import DiscussionDebate
 from mallm.discussion_paradigms.memory import DiscussionMemory

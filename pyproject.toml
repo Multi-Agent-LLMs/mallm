@@ -45,6 +45,7 @@ rich = "^13.7.1"
 contextplus = "^0.1.3"
 langdetect = "^1.0.9"
 immutabledict = "^4.2.0"
+seaborn = "^0.13.2"
 
 [tool.poetry.group.dev.dependencies]
 tqdm = "^4.66.2"
