@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 from pathlib import Path
+from typing import Optional, Any, Union
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -16,16 +17,16 @@ sns.set_palette("pastel")
 # Define a beautiful color palette
 COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8']
 
-def get_colors(n_colors):
+def get_colors(n_colors: int) -> Union[list[str], np.ndarray[Any, Any]]:
     """Generate enough colors for n_colors by cycling or using colormap"""
     if n_colors <= len(COLORS):
         return COLORS[:n_colors]
     else:
         # Use a colormap for more colors
-        return plt.cm.Set3(np.linspace(0, 1, n_colors))
+        return plt.cm.Set3(np.linspace(0, 1, n_colors))  # type: ignore
 
 
-def get_consistent_color_mapping(options):
+def get_consistent_color_mapping(options: list[str]) -> dict[str, Any]:
     """Create consistent color mapping based on option names"""
     # Sort options to ensure consistent assignment
     unique_options = sorted(set(options))
@@ -93,7 +94,7 @@ def aggregate_data(
     return eval_df, stats_df
 
 
-def plot_turns_with_std(df: pd.DataFrame, input_path: str, global_color_mapping: dict = None) -> None:
+def plot_turns_with_std(df: pd.DataFrame, input_path: str, global_color_mapping: Optional[dict[str, Any]] = None) -> None:
     """Create a beautiful violin plot for turns distribution"""
     # Filter out rows with missing or invalid turns data
     df = df.dropna(subset=['turns'])
@@ -114,7 +115,7 @@ def plot_turns_with_std(df: pd.DataFrame, input_path: str, global_color_mapping:
     
     # Use global color mapping if provided, otherwise create local one
     if global_color_mapping is None:
-        color_mapping = get_consistent_color_mapping(grouped_data['option'].unique())
+        color_mapping = get_consistent_color_mapping(grouped_data['option'].unique().tolist())
     else:
         color_mapping = global_color_mapping
     
@@ -175,7 +176,7 @@ def plot_turns_with_std(df: pd.DataFrame, input_path: str, global_color_mapping:
     plt.close()
 
 
-def plot_clock_seconds_with_std(df: pd.DataFrame, input_path: str, global_color_mapping: dict = None) -> None:
+def plot_clock_seconds_with_std(df: pd.DataFrame, input_path: str, global_color_mapping: Optional[dict[str, Any]] = None) -> None:
     """Create a beautiful horizontal lollipop chart for clock seconds"""
     grouped = (
         df.groupby(["option", "dataset"])["clockSeconds"]
@@ -187,7 +188,7 @@ def plot_clock_seconds_with_std(df: pd.DataFrame, input_path: str, global_color_
     grouped['label'] = unique_labels
     
     # Sort data: baselines first, then others by shortest time
-    def sort_key(row):
+    def sort_key(row: pd.Series) -> tuple[int, float]:
         option = row['option'].lower()
         if option.startswith('baseline'):
             return (0, row['mean'])  # Baselines first, sorted by time
@@ -206,7 +207,7 @@ def plot_clock_seconds_with_std(df: pd.DataFrame, input_path: str, global_color_
     
     # Use global color mapping if provided, otherwise create local one
     if global_color_mapping is None:
-        color_mapping = get_consistent_color_mapping(grouped['option'].unique())
+        color_mapping = get_consistent_color_mapping(grouped['option'].unique().tolist())
     else:
         color_mapping = global_color_mapping
     colors = [color_mapping[option] for option in grouped['option']]
@@ -252,7 +253,7 @@ def plot_clock_seconds_with_std(df: pd.DataFrame, input_path: str, global_color_
     plt.close()
 
 
-def plot_decision_success_with_std(df: pd.DataFrame, input_path: str, global_color_mapping: dict = None) -> None:
+def plot_decision_success_with_std(df: pd.DataFrame, input_path: str, global_color_mapping: Optional[dict[str, Any]] = None) -> None:
     """Create a beautiful horizontal bar chart for decision success rates"""
     if "decisionSuccess" not in df.columns:
         print(
@@ -283,7 +284,7 @@ def plot_decision_success_with_std(df: pd.DataFrame, input_path: str, global_col
     
     # Use global color mapping if provided, otherwise create local one
     if global_color_mapping is None:
-        color_mapping = get_consistent_color_mapping(grouped['option'].unique())
+        color_mapping = get_consistent_color_mapping(grouped['option'].unique().tolist())
     else:
         color_mapping = global_color_mapping
     colors = [color_mapping[option] for option in grouped['option']]
@@ -364,38 +365,41 @@ def get_unique_labels(df: pd.DataFrame) -> list[str]:
     return unique_labels
 
 
-def get_unique_labels_from_conditions(conditions) -> list[str]:
+def get_unique_labels_from_conditions(conditions: Union[list[str], np.ndarray[Any, Any]]) -> list[str]:
     """Helper function to get unique labels from condition strings"""
     # Convert to list if it's a numpy array
+    condition_list: list[str]
     if hasattr(conditions, 'tolist'):
-        conditions = conditions.tolist()
+        condition_list = conditions.tolist()
+    else:
+        condition_list = conditions
     
-    if len(conditions) == 0:
+    if len(condition_list) == 0:
         return []
 
     # Find the longest common prefix
     common_prefix = ""
-    if len(conditions) > 0:
-        first_condition = conditions[0]
+    if len(condition_list) > 0:
+        first_condition = condition_list[0]
         for i in range(len(first_condition)):
-            if all(condition.startswith(first_condition[:i + 1]) for condition in conditions):
+            if all(condition.startswith(first_condition[:i + 1]) for condition in condition_list):
                 common_prefix = first_condition[:i + 1]
             else:
                 break
 
     # Find the longest common suffix
     common_suffix = ""
-    if len(conditions) > 0:
-        first_condition = conditions[0]
+    if len(condition_list) > 0:
+        first_condition = condition_list[0]
         for i in range(len(first_condition)):
-            if all(condition.endswith(first_condition[-(i + 1):]) for condition in conditions):
+            if all(condition.endswith(first_condition[-(i + 1):]) for condition in condition_list):
                 common_suffix = first_condition[-(i + 1):]
             else:
                 break
 
     # Extract unique parts by removing common prefix and suffix
     unique_labels = []
-    for condition in conditions:
+    for condition in condition_list:
         unique_part = condition
         if common_prefix and condition.startswith(common_prefix):
             unique_part = unique_part[len(common_prefix):]
@@ -406,7 +410,7 @@ def get_unique_labels_from_conditions(conditions) -> list[str]:
     return unique_labels
 
 
-def plot_score_distributions_with_std(df: pd.DataFrame, input_path: str, global_color_mapping: dict = None) -> None:
+def plot_score_distributions_with_std(df: pd.DataFrame, input_path: str, global_color_mapping: Optional[dict[str, Any]] = None) -> None:
     """Create beautiful enhanced bar charts for score distributions"""
     print("Shape of stats_df:", df.shape)
     print("Columns in stats_df:", df.columns)
@@ -445,7 +449,7 @@ def plot_score_distributions_with_std(df: pd.DataFrame, input_path: str, global_
         score_data = grouped[grouped["Score Type"] == score_type].copy()
         
         # Sort data: baselines first, then alphabetically
-        def sort_key(row):
+        def sort_key(row: pd.Series) -> tuple[int, str]:
             option = row['option'].lower()
             if option.startswith('baseline'):
                 return (0, option)  # Baselines first
@@ -465,7 +469,7 @@ def plot_score_distributions_with_std(df: pd.DataFrame, input_path: str, global_
         
         # Use global color mapping if provided, otherwise create local one
         if global_color_mapping is None:
-            color_mapping = get_consistent_color_mapping(score_data['option'].unique())
+            color_mapping = get_consistent_color_mapping(score_data['option'].unique().tolist())
         else:
             color_mapping = global_color_mapping
         colors = [color_mapping[option] for option in score_data['option']]
