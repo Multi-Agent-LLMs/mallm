@@ -5,7 +5,6 @@
   <p align="center">
     Multi-Agent LLMs For Conversational Task-Solving: Framework<br />
     <p align="center">
-  <a href="https://arxiv.org/abs/2410.22932"><img src="https://img.shields.io/badge/arXiv-2410.22932-red" alt="arXiv"></a>
   <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="Black"></a>
   <a href="https://github.com/Multi-Agent-LLMs/mallm/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Multi-Agent-LLMs/mallm" alt="License"></a>
   <a href="https://github.com/Multi-Agent-LLMs/mallm/actions/workflows/python-package.yml"><img src="https://github.com/Multi-Agent-LLMs/mallm/actions/workflows/python-package.yml/badge.svg" alt="Pipeline"></a>
@@ -271,16 +270,8 @@ You can run unit tests locally:
 `pytest ./test/`
 
 ## Citation
-If you use this repository or the [paper](https://arxiv.org/abs/2410.22932) for your research work, please cite it in the following way.
+If you use this repository for your research work, please cite it in the following way.
 
 ```
-@misc{becker2024multiagentlargelanguagemodels,
-      title={Multi-Agent Large Language Models for Conversational Task-Solving}, 
-      author={Jonas Becker},
-      year={2024},
-      eprint={2410.22932},
-      archivePrefix={arXiv},
-      primaryClass={cs.CL},
-      url={https://arxiv.org/abs/2410.22932}, 
-}
+comming soon
 ```
