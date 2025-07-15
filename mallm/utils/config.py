@@ -56,6 +56,7 @@ class Config:
     judge_model_name: Optional[str] = None
     judge_api_key: str = "-"
     judge_always_intervene: bool = False
+    agent_informations: list[Optional[str]] = field(default_factory=list[Optional[str]])
 
     def __post_init__(self) -> None:
         if (
@@ -115,6 +116,16 @@ class Config:
                 f"The length of the provided agent generators ({self.agent_generators_list}) does not match the number of agents (3). Setting num_agents={len(self.agent_generators_list)}."
             )
             self.num_agents = len(self.agent_generators_list)
+        if self.agent_generator == "informed" and not any(self.agent_informations):
+            logger.error(
+                "Informed personas are used but no information was given. Specify a list of informations by the field --agent_informations."
+            )
+            sys.exit(1)
+        if self.agent_generator == "informed" and self.num_agents != len(self.agent_informations):
+            logger.error(
+                "The number of agents does not match the length of the agent informations."
+            )
+            sys.exit(1)
         if self.endpoint_url.endswith("/"):
             logger.warning("Removing trailing / from the endpoint url.")
             self.endpoint_url = self.endpoint_url[:-1]
