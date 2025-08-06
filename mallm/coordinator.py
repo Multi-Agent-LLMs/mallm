@@ -82,7 +82,6 @@ class Coordinator:
         sample: InputExample,
         judge_intervention: Optional[str] = None,
         judge_metric: Optional[str] = None,
-        agent_informations: Optional[list[Optional[str]]] = None,
     ) -> None:
         """
         Instantiates the agents by
@@ -105,23 +104,13 @@ class Coordinator:
                 )
                 raise Exception("Invalid persona generator.")
 
-            if hasattr(PERSONA_GENERATORS[agent_generator], "generate_persona_with_informations"):
-                persona = PERSONA_GENERATORS[agent_generator](
-                    llm=self.llm
-                ).generate_persona(
-                    task_description=f"{task_instruction} {input_str}",
-                    already_generated_personas=personas,
-                    sample=sample,
-                    informations=agent_informations,
-                )
-            else:
-                persona = PERSONA_GENERATORS[agent_generator](
-                    llm=self.llm
-                ).generate_persona(
-                    task_description=f"{task_instruction} {input_str}",
-                    already_generated_personas=personas,
-                    sample=sample,
-                )
+            persona = PERSONA_GENERATORS[agent_generator](
+                llm=self.llm
+            ).generate_persona(
+                task_description=f"{task_instruction} {input_str}",
+                already_generated_personas=personas,
+                sample=sample,
+            )
             personas.append(persona)
 
         logger.debug(f"Created {len(personas)} personas: \n" + str(personas))

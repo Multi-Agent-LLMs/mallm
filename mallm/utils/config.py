@@ -56,7 +56,6 @@ class Config:
     judge_model_name: Optional[str] = None
     judge_api_key: str = "-"
     judge_always_intervene: bool = False
-    agent_informations: list[Optional[str]] = field(default_factory=list[Optional[str]])
 
     def __post_init__(self) -> None:
         if (
@@ -75,8 +74,8 @@ class Config:
             )
             sys.exit(1)
         if os.path.isfile(self.input_json_file_path):
-            if not self.input_json_file_path.endswith(".json"):
-                logger.error("The dataset path does not seem to be a json file.")
+            if not self.input_json_file_path.endswith(".json") and not self.input_json_file_path.endswith(".jsonl"):
+                logger.error("The dataset path does not seem to be a json or jsonl file.")
                 sys.exit(1)
         else:
             headers = {"Authorization": f"Bearer {self.hf_token}"}
@@ -116,16 +115,6 @@ class Config:
                 f"The length of the provided agent generators ({self.agent_generators_list}) does not match the number of agents (3). Setting num_agents={len(self.agent_generators_list)}."
             )
             self.num_agents = len(self.agent_generators_list)
-        if self.agent_generator == "informed" and not any(self.agent_informations):
-            logger.error(
-                "Informed personas are used but no information was given. Specify a list of informations by the field --agent_informations."
-            )
-            sys.exit(1)
-        if self.agent_generator == "informed" and self.num_agents != len(self.agent_informations):
-            logger.error(
-                "The number of agents does not match the length of the agent informations."
-            )
-            sys.exit(1)
         if self.endpoint_url.endswith("/"):
             logger.warning("Removing trailing / from the endpoint url.")
             self.endpoint_url = self.endpoint_url[:-1]

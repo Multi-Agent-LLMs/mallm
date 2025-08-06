@@ -75,8 +75,22 @@ class Scheduler:
             )
             with open(config.input_json_file_path) as f:
                 self.dataset_name = f.name
-                json_data = json.loads(f.readline())
-                self.data = [InputExample(**data) for data in json_data]
+                # Try to read as standard JSON array first
+                try:
+                    json_data = json.load(f)
+                    if isinstance(json_data, list):
+                        self.data = [InputExample(**data) for data in json_data]
+                    else:
+                        raise ValueError("JSON data is not a list")
+                except (json.JSONDecodeError, ValueError):
+                    # If that fails, try JSON Lines format
+                    f.seek(0)  # Reset file pointer
+                    self.data = []
+                    for line in f:
+                        line = line.strip()
+                        if line:  # Skip empty lines
+                            data = json.loads(line)
+                            self.data.append(InputExample(**data))
         except Exception as e:
             logger.warning(
                 f"""Could not read {config.input_json_file_path} from file: {e}. Trying Hugging Face"""
