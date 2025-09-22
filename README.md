@@ -273,5 +273,13 @@ You can run unit tests locally:
 If you use this repository for your research work, please cite it in the following way.
 
 ```
-comming soon
+@misc{becker2025mallmmultiagentlargelanguage,
+      title={MALLM: Multi-Agent Large Language Models Framework}, 
+      author={Jonas Becker and Lars Benedikt Kaesberg and Niklas Bauer and Jan Philip Wahle and Terry Ruas and Bela Gipp},
+      year={2025},
+      eprint={2509.11656},
+      archivePrefix={arXiv},
+      primaryClass={cs.MA},
+      url={https://arxiv.org/abs/2509.11656}, 
+}
 ```
