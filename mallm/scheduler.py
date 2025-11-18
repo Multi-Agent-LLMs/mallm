@@ -12,12 +12,12 @@ from datetime import timedelta
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from threading import Lock
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 try:
-    import fire  # type: ignore
+    import fire
 except Exception:  # pragma: no cover - optional dependency
-    fire = None  # type: ignore[assignment]
+    fire = None
 import httpx
 import langchain
 import langchain_core
@@ -29,7 +29,7 @@ from mallm.models.MockOpenAI import MockOpenAI
 try:
     from datasets import load_dataset
 except Exception:  # pragma: no cover - optional for file-only runs
-    load_dataset = None  # type: ignore[assignment]
+    load_dataset = None
 from openai import OpenAI
 from rich import print  # noqa: A004
 from rich.logging import RichHandler
@@ -39,9 +39,9 @@ try:
     from sentence_transformers import SentenceTransformer
     from sentence_transformers.util import cos_sim
 except Exception:  # pragma: no cover - fallback for lightweight/mock runs
-    SentenceTransformer = None  # type: ignore[assignment]
+    SentenceTransformer = None
 
-    def cos_sim(a: Any, b: Any) -> Any:  # type: ignore[no-redef]
+    def cos_sim(a: Any, b: Any) -> Any:
         return [[1.0]]
 
 try:
@@ -385,7 +385,7 @@ class Scheduler:
             # Acquire the lock before using the model
             if paraphrase_model is not None:
                 with paraphrase_lock:
-                    return paraphrase_model.encode(input_data)  # type: ignore[attr-defined]
+                    return cast(list[Any], paraphrase_model.encode(input_data))
             # Fallback lightweight deterministic embeddings
             return [[1.0, 0.0] for _ in input_data]
 
@@ -402,14 +402,14 @@ class Scheduler:
             # Acquire the lock before using the model
             if all_model is not None and SentenceTransformer is not None:
                 with persona_diversity_lock:
-                    embeddings = all_model.encode(input_data, convert_to_tensor=True)  # type: ignore[attr-defined]
+                    embeddings = all_model.encode(input_data, convert_to_tensor=True)
                     cos_sims = cos_sim(embeddings, embeddings)
-                    similarities = [
+                    similarities: list[float] = [
                         cos_sims[i][j].item()
                         for i in range(len(input_data))
                         for j in range(i)
                     ]
-                    persona_diversity = sum(similarities) / len(similarities)
+                    persona_diversity: float = float(sum(similarities) / len(similarities)) if similarities else 0.0
                 return round(persona_diversity, 4)
             # Fallback: neutral value
             return 0.0
@@ -720,7 +720,7 @@ def main() -> None:
     if fire is None:
         print("Fire is not available. Please run via batch_mallm.py or provide a Config programmatically.")
         return
-    config = fire.Fire(Config, serialize=print)  # type: ignore[attr-defined]
+    config = fire.Fire(Config, serialize=print)
     print("\n" + "=" * width)
     print("END OF CONFIGURATION PARAMETERS".center(width))
     print("=" * width + "\n")
