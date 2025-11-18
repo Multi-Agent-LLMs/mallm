@@ -32,7 +32,7 @@ class Chat(LLM):    # type: ignore
                                  [HumanMessage(content="world")]])
     """
 
-    client: OpenAI
+    client: Any
     timeout: int = 120
     model: str = "gpt-3.5-turbo"
     stop_tokens: list[str] = [

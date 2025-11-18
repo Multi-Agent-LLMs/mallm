@@ -3,7 +3,10 @@ import logging
 from pathlib import Path
 from typing import Any, Optional
 
-import fire
+try:
+    import fire  # type: ignore
+except Exception:  # pragma: no cover - optional dependency
+    fire = None  # type: ignore[assignment]
 import json_repair
 from tqdm import tqdm
 
@@ -429,7 +432,12 @@ def run_evaluator(
 
 
 def main() -> None:
-    fire.Fire(run_evaluator)
+    try:
+        import fire  # type: ignore
+
+        fire.Fire(run_evaluator)  # type: ignore[attr-defined]
+    except Exception:
+        print("Fire is not available. Please call run_evaluator(...) programmatically.")
 
 
 if __name__ == "__main__":

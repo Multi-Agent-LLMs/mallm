@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any, Optional
 from rich.progress import Console
 
 from mallm.agents.draftProposer import DraftProposer
-from mallm.agents.judge import Judge
 from mallm.agents.panelist import Panelist
 from mallm.discussion_paradigms.paradigm import DiscussionParadigm
 from mallm.utils.types import Agreement, TemplateFilling, VotingResultList
@@ -181,7 +180,7 @@ class DiscussionDebate(DiscussionParadigm):
                             agents_to_update=agents_to_update,
                             agreements=debate_agreements,
                         )
-                    elif isinstance(a, Judge):
+                    elif a.__class__.__name__ == "Judge":
                         continue    # executes after decision protocol
                     else:
                         logger.error("Agent type not recognized.")
