@@ -4,4 +4,3 @@ def context(input_text: str) -> str:
     Returns an empty string to avoid external dependencies.
     """
     return ""
-

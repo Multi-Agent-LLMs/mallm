@@ -22,7 +22,10 @@ import httpx
 import langchain
 import langchain_core
 import openai
+
 from contextplus import context
+from mallm.models.MockOpenAI import MockOpenAI
+
 try:
     from datasets import load_dataset
 except Exception:  # pragma: no cover - optional for file-only runs
@@ -31,6 +34,7 @@ from openai import OpenAI
 from rich import print  # noqa: A004
 from rich.logging import RichHandler
 from rich.progress import Console, Progress, TaskID
+
 try:
     from sentence_transformers import SentenceTransformer
     from sentence_transformers.util import cos_sim
@@ -103,8 +107,8 @@ class Scheduler:
                     # If that fails, try JSON Lines format
                     f.seek(0)  # Reset file pointer
                     self.data = []
-                    for line in f:
-                        line = line.strip()
+                    for raw_line in f:
+                        line = raw_line.strip()
                         if line:  # Skip empty lines
                             data = json.loads(line)
                             self.data.append(InputExample(**data))
@@ -177,8 +181,6 @@ class Scheduler:
         self.config = config
         # Use a mock client for tests if requested
         if str(self.config.endpoint_url).startswith("mock://"):
-            from mallm.models.MockOpenAI import MockOpenAI
-
             openai_client = MockOpenAI(
                 base_url=self.config.endpoint_url, api_key=self.config.api_key
             )
@@ -715,13 +717,10 @@ def main() -> None:
     print("\n" + "=" * width)
     print("CONFIGURATION PARAMETERS".center(width))
     print("=" * width + "\n")
-    try:
-        import fire  # type: ignore
-
-        config = fire.Fire(Config, serialize=print)  # type: ignore[attr-defined]
-    except Exception:
+    if fire is None:
         print("Fire is not available. Please run via batch_mallm.py or provide a Config programmatically.")
         return
+    config = fire.Fire(Config, serialize=print)  # type: ignore[attr-defined]
     print("\n" + "=" * width)
     print("END OF CONFIGURATION PARAMETERS".center(width))
     print("=" * width + "\n")

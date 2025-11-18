@@ -89,6 +89,7 @@ target-version = "py39"
 [tool.ruff]
 preview = true
 target-version = "py39"
+unsafe-fixes = true
 extend-exclude = [
     "data/",
     "mallm/models/Chat.py",

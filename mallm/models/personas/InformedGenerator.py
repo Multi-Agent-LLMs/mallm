@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 from mallm.models.Chat import Chat
 from mallm.models.personas.PersonaGenerator import PersonaGenerator
@@ -25,9 +24,12 @@ class InformedGenerator(PersonaGenerator):
     ) -> dict[str, str]:
         idx = len(already_generated_personas)
         info = None
-        if hasattr(sample, "informations") and sample.informations is not None:
-            if idx < len(sample.informations):
-                info = sample.informations[idx]
+        if (
+            hasattr(sample, "informations")
+            and sample.informations is not None
+            and idx < len(sample.informations)
+        ):
+            info = sample.informations[idx]
         if info is not None:
             return {
                 "role": f"Participant {idx + 1}",

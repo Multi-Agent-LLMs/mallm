@@ -124,7 +124,7 @@ def plot_turns_with_std(df: pd.DataFrame, input_path: str, global_color_mapping:
 
     # Expand the grouped data back to individual rows for violin plot
     expanded_data = []
-    for i, row in grouped_data.iterrows():
+    for _i, row in grouped_data.iterrows():
         expanded_data.extend({
                 'option': row['option'],
                 'dataset': row['dataset'],

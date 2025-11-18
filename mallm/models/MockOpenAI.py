@@ -2,7 +2,8 @@
 # python -m mallm.scripts.batch_mallm <your_config_file>
 
 import re
-from typing import Any, Iterator, Optional
+from collections.abc import Iterator
+from typing import Any, Optional
 
 
 class _Delta:
@@ -82,8 +83,8 @@ def _extract_final_solution_from_messages(messages: list[dict[str, str]]) -> str
 
 
 class _Completions:
+    @staticmethod
     def create(
-        self,
         model: str,
         messages: list[dict[str, str]],
         stream: bool = True,
@@ -116,5 +117,3 @@ class MockOpenAI:
         self.base_url = base_url
         self.api_key = api_key
         self.chat = _Chat()
-
-

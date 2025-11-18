@@ -432,11 +432,9 @@ def run_evaluator(
 
 
 def main() -> None:
-    try:
-        import fire  # type: ignore
-
+    if fire is not None:
         fire.Fire(run_evaluator)  # type: ignore[attr-defined]
-    except Exception:
+    else:
         print("Fire is not available. Please call run_evaluator(...) programmatically.")
 
 

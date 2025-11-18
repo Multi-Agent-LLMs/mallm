@@ -146,7 +146,7 @@ class Coordinator:
         self.judge = None
         if judge_intervention and self.judge_llm:
             # Lazy import to avoid heavy evaluation dependencies when judge is not used
-            from mallm.agents.judge import Judge  # type: ignore
+            from mallm.agents.judge import Judge  # type: ignore  # noqa: PLC0415
 
             self.judge = Judge(
                 self.judge_llm,
