@@ -139,7 +139,7 @@ Response Generators: `critical`, `freetext`, `reasoning`, `simple`, `splitfreete
 
 Decision Protocols: `approval_voting`, `consensus_voting`, `cumulative_voting`, `hybrid_consensus`, `judge`, `majority_consensus`, `ranked_voting`, `simple_voting`, `supermajority_consensus`, `unanimity_consensus`
 
-Persona Generators: `expert`, `ipip`, `mock`, `nopersona`
+Persona Generators: `expert`, `informed`, `ipip`, `mock`, `nopersona`
 
 Discussion Paradigms: `collective_refinement`, `debate`, `memory`, `relay`, `report`
 
