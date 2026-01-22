@@ -12,7 +12,7 @@ from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import LLMResult
 from langchain_core.prompt_values import PromptValue
-from openai import APIError, RateLimitError, OpenAI
+from openai import APIError, APIConnectionError, RateLimitError, OpenAI
 
 class Chat(LLM):    # type: ignore
     """A custom chat model that queries the chat API of HuggingFace Text Generation Inference
@@ -132,7 +132,7 @@ class Chat(LLM):    # type: ignore
                         collected_messages.append(message_str)
                 log_prob_sum = log_prob_sum / len(collected_messages)
                 break
-            except APIError as e:
+            except (APIError, APIConnectionError, RateLimitError) as e:
                 # Handle API error here, e.g. retry or log
                 retries += 1
                 if retries < 5:

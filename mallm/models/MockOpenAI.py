@@ -64,13 +64,30 @@ def _extract_final_solution_from_messages(messages: list[dict[str, str]]) -> str
 
     # Extraction prompts
     if "extract the final solution" in last.lower():
-        # Try to extract from "Your previous response:" if present
-        m = re.search(r"previous response:\s*(.*)$", last, re.IGNORECASE | re.DOTALL)
-        if m:
-            # Return the previous response as-is (test-friendly)
-            return m.group(1).strip()
-        # Fallback
-        return "Final Solution"
+        # Prefer extracting from the message that actually contains "Your previous response:"
+        src = ""
+        for msg in reversed(messages):
+            content = msg.get("content", "") or ""
+            if re.search(r"\bprevious response:\b", content, re.IGNORECASE):
+                src = content
+                break
+        if not src:
+            src = last
+
+        m = re.search(r"previous response:\s*(.*)$", src, re.IGNORECASE | re.DOTALL)
+        extracted = (m.group(1) if m else src).strip()
+
+        # If the extraction instruction was merged into the same user message, strip it off.
+        cut = re.search(r"\n\s*extract the final solution\b", extracted, re.IGNORECASE)
+        if cut:
+            extracted = extracted[: cut.start()].strip()
+
+        # If the previous response contains a "Final Solution:" marker, return only the solution part.
+        m2 = re.search(r"final solution:\s*(.*)$", extracted, re.IGNORECASE | re.DOTALL)
+        if m2:
+            return m2.group(1).strip()
+
+        return extracted or "Final Solution"
 
     # Task-specific simple heuristics
     if "capital of france" in joined.lower():

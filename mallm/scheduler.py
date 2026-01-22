@@ -22,8 +22,6 @@ import httpx
 import langchain
 import langchain_core
 import openai
-
-from contextplus import context
 from mallm.models.MockOpenAI import MockOpenAI
 
 try:
@@ -373,8 +371,9 @@ class Scheduler:
         all_model = None
         if not str(self.config.endpoint_url).startswith("mock://") and SentenceTransformer is not None:
             try:
-                paraphrase_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
-                all_model = SentenceTransformer("all-MiniLM-L6-v2")
+                # Force CPU to avoid contention with the main LLM GPU server
+                paraphrase_model = SentenceTransformer("paraphrase-MiniLM-L6-v2", device="cpu")
+                all_model = SentenceTransformer("all-MiniLM-L6-v2", device="cpu")
             except Exception:
                 paraphrase_model = None
                 all_model = None
@@ -390,11 +389,19 @@ class Scheduler:
             return [[1.0, 0.0] for _ in input_data]
 
         def worker_context_function(input_data: str) -> str:
-            # Acquire the lock before using the model
-            text: str
+            # Optionally disable heavy context retrieval to avoid GPU memory conflicts.
+            # Default: disabled, unless explicitly enabled via MALLM_ENABLE_CONTEXT=1.
+            if os.environ.get("MALLM_DISABLE_CONTEXT", "0") == "1":
+                return ""
+            if os.environ.get("MALLM_ENABLE_CONTEXT", "0") != "1":
+                return ""
+            # Acquire the lock before using the model; import lazily to avoid loading on module import.
             with context_lock:
-                text = context(input_data)
-            return text
+                try:
+                    from contextplus import context as cp_context  # type: ignore
+                    return cp_context(input_data)
+                except Exception:
+                    return ""
 
         def worker_persona_diversity_function(
             input_data: list[str],
