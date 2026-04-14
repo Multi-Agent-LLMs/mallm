@@ -1,5 +1,6 @@
 import logging
 import math
+import re
 import time
 from collections.abc import Iterator
 from typing import Any, Optional, Union, cast
@@ -42,6 +43,36 @@ class Chat(LLM):    # type: ignore
         "<|reserved_special_token",
     ]
     max_tokens: int = 1024
+
+    @staticmethod
+    def _context_limited_max_tokens(error: Exception, current_max_tokens: int) -> Optional[int]:
+        """Shrink max_tokens only when the API reports a context-window overflow."""
+        message = str(error)
+        max_ctx_match = re.search(r"maximum context length is (\d+) tokens", message)
+        if not max_ctx_match:
+            return None
+
+        max_context_tokens = int(max_ctx_match.group(1))
+        input_tokens = None
+        for pattern in (
+            r"parameter=input_tokens,\s*value=(\d+)",
+            r"contains at least (\d+) input tokens",
+            r"prompt_tokens=(\d+)",
+        ):
+            input_tokens_match = re.search(pattern, message)
+            if input_tokens_match:
+                input_tokens = int(input_tokens_match.group(1))
+                break
+        if input_tokens is None:
+            return None
+
+        # Leave a small buffer because the API reports "at least" input tokens.
+        available_output_tokens = max_context_tokens - input_tokens - 32
+        if available_output_tokens <= 0:
+            return None
+        if available_output_tokens >= current_max_tokens:
+            return None
+        return max(16, available_output_tokens)
 
     # Overwrite to send direct chat structure to tgi endpoint
     def _convert_input(self, input: LanguageModelInput) -> PromptValue:
@@ -111,6 +142,7 @@ class Chat(LLM):    # type: ignore
         """
         merged_messages = self.merge_consecutive_messages(prompt)
         retries = 0
+        request_max_tokens = self.max_tokens
         while retries < 5:
             try:
                 chat_completion = self.client.chat.completions.create(
@@ -118,7 +150,7 @@ class Chat(LLM):    # type: ignore
                     messages=merged_messages,
                     stream=True,
                     stop=self.stop_tokens,
-                    max_tokens=self.max_tokens,
+                    max_tokens=request_max_tokens,
                     logprobs=True,
                 )
                 # iterate and print stream
@@ -134,6 +166,16 @@ class Chat(LLM):    # type: ignore
                 break
             except (APIError, APIConnectionError, RateLimitError) as e:
                 # Handle API error here, e.g. retry or log
+                adjusted_max_tokens = self._context_limited_max_tokens(e, request_max_tokens)
+                if adjusted_max_tokens is not None and adjusted_max_tokens < request_max_tokens:
+                    logger.warning(
+                        "Reducing max_tokens from %s to %s to fit the model context window.",
+                        request_max_tokens,
+                        adjusted_max_tokens,
+                    )
+                    request_max_tokens = adjusted_max_tokens
+                    # Retry immediately with the adjusted token budget.
+                    continue
                 retries += 1
                 if retries < 5:
                     logger.warning(

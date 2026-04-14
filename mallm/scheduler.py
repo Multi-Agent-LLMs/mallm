@@ -186,7 +186,11 @@ class Scheduler:
             openai_client = OpenAI(
                 base_url=self.config.endpoint_url, api_key=self.config.api_key
             )
-        self.llm = Chat(client=openai_client, model=self.config.model_name)
+        self.llm = Chat(
+            client=openai_client,
+            model=self.config.model_name,
+            max_tokens=self.config.max_tokens,
+        )
 
         self.judge_llm = None
         if self.config.judge_endpoint_url:
@@ -196,6 +200,7 @@ class Scheduler:
                     api_key=self.config.judge_api_key,
                 ),
                 model=self.config.judge_model_name,
+                max_tokens=self.config.max_tokens,
             )
 
         if config.response_generator not in RESPONSE_GENERATORS:

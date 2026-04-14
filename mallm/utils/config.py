@@ -28,6 +28,7 @@ class Config:
     decision_protocol: str = "hybrid_consensus"
     visible_turns_in_memory: int = 2
     debate_rounds: int = 2
+    max_tokens: int = 1024
     concurrent_api_requests: int = 100
     use_baseline: bool = False
     use_chain_of_thought: bool = True
@@ -122,6 +123,9 @@ class Config:
             logger.warning(
                 "concurrent_api_requests is very large. Please make sure the API endpoint you are using can handle that many simultaneous requests."
             )
+        if self.max_tokens <= 0:
+            logger.error("max_tokens must be a positive integer.")
+            sys.exit(1)
         # import here to avoid circular imports
         from mallm.utils.dicts import (  # noqa PLC0415
             DECISION_PROTOCOLS,
