@@ -106,6 +106,7 @@ response_generator: str = "simple"
 decision_protocol: str = "hybrid_consensus"
 visible_turns_in_memory: int = 2
 debate_rounds: int = 2
+max_tokens: int = 1024
 concurrent_api_requests: int = 100
 use_baseline: bool = False
 use_chain_of_thought: bool = True
@@ -141,7 +142,7 @@ Response Generators: `critical`, `freetext`, `reasoning`, `simple`, `splitfreete
 
 Decision Protocols: `approval_voting`, `consensus_voting`, `cumulative_voting`, `hybrid_consensus`, `judge`, `majority_consensus`, `ranked_voting`, `simple_voting`, `supermajority_consensus`, `unanimity_consensus`
 
-Persona Generators: `expert`, `ipip`, `mock`, `nopersona`
+Persona Generators: `expert`, `informed`, `ipip`, `mock`, `nopersona`
 
 Discussion Paradigms: `collective_refinement`, `debate`, `memory`, `relay`, `report`
 

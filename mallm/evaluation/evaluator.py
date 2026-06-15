@@ -3,7 +3,10 @@ import logging
 from pathlib import Path
 from typing import Any, Optional
 
-import fire
+try:
+    import fire
+except Exception:  # pragma: no cover - optional dependency
+    fire = None
 import json_repair
 from tqdm import tqdm
 
@@ -429,7 +432,10 @@ def run_evaluator(
 
 
 def main() -> None:
-    fire.Fire(run_evaluator)
+    if fire is not None:
+        fire.Fire(run_evaluator)
+    else:
+        print("Fire is not available. Please call run_evaluator(...) programmatically.")
 
 
 if __name__ == "__main__":

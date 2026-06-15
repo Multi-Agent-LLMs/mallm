@@ -28,6 +28,7 @@ from mallm.models.discussion.SplitFreeTextResponseGenerator import (
     SplitFreeTextResponseGenerator,
 )
 from mallm.models.personas.ExpertGenerator import ExpertGenerator
+from mallm.models.personas.InformedGenerator import InformedGenerator
 from mallm.models.personas.IPIPPersonaGenerator import IPIPPersonaGenerator
 from mallm.models.personas.MockGenerator import MockGenerator
 from mallm.models.personas.NoPersonaGenerator import NoPersonaGenerator
@@ -59,6 +60,7 @@ PERSONA_GENERATORS: dict[str, type[PersonaGenerator]] = {
     "ipip": IPIPPersonaGenerator,
     "nopersona": NoPersonaGenerator,
     "mock": MockGenerator,
+    "informed": InformedGenerator,
 }
 
 RESPONSE_GENERATORS: dict[str, type[ResponseGenerator]] = {

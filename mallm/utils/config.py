@@ -28,6 +28,7 @@ class Config:
     decision_protocol: str = "hybrid_consensus"
     visible_turns_in_memory: int = 2
     debate_rounds: int = 2
+    max_tokens: int = 1024
     concurrent_api_requests: int = 100
     use_baseline: bool = False
     use_chain_of_thought: bool = True
@@ -74,8 +75,8 @@ class Config:
             )
             sys.exit(1)
         if os.path.isfile(self.input_json_file_path):
-            if not self.input_json_file_path.endswith(".json"):
-                logger.error("The dataset path does not seem to be a json file.")
+            if not self.input_json_file_path.endswith(".json") and not self.input_json_file_path.endswith(".jsonl"):
+                logger.error("The dataset path does not seem to be a json or jsonl file.")
                 sys.exit(1)
         else:
             headers = {"Authorization": f"Bearer {self.hf_token}"}
@@ -122,6 +123,9 @@ class Config:
             logger.warning(
                 "concurrent_api_requests is very large. Please make sure the API endpoint you are using can handle that many simultaneous requests."
             )
+        if self.max_tokens <= 0:
+            logger.error("max_tokens must be a positive integer.")
+            sys.exit(1)
         # import here to avoid circular imports
         from mallm.utils.dicts import (  # noqa PLC0415
             DECISION_PROTOCOLS,

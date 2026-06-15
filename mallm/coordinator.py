@@ -11,7 +11,6 @@ from rich.progress import Console
 
 from mallm.agents.agent import Agent
 from mallm.agents.draftProposer import DraftProposer
-from mallm.agents.judge import Judge
 from mallm.agents.panelist import Panelist
 from mallm.decision_protocols.protocol import DecisionProtocol
 from mallm.discussion_paradigms.paradigm import DiscussionParadigm
@@ -146,6 +145,9 @@ class Coordinator:
 
         self.judge = None
         if judge_intervention and self.judge_llm:
+            # Lazy import to avoid heavy evaluation dependencies when judge is not used
+            from mallm.agents.judge import Judge  # noqa: PLC0415
+
             self.judge = Judge(
                 self.judge_llm,
                 self.client,

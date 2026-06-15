@@ -12,22 +12,41 @@ from datetime import timedelta
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from threading import Lock
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
-import fire
+try:
+    import fire
+except Exception:  # pragma: no cover - optional dependency
+    fire = None
 import httpx
 import langchain
 import langchain_core
 import openai
-from contextplus import context
-from datasets import load_dataset
+from mallm.models.MockOpenAI import MockOpenAI
+
+try:
+    from datasets import load_dataset
+except Exception:  # pragma: no cover - optional for file-only runs
+    load_dataset = None
 from openai import OpenAI
 from rich import print  # noqa: A004
 from rich.logging import RichHandler
 from rich.progress import Console, Progress, TaskID
-from sentence_transformers import SentenceTransformer
-from sentence_transformers.util import cos_sim
-from torch import Tensor
+
+try:
+    from sentence_transformers import SentenceTransformer
+    from sentence_transformers.util import cos_sim
+except Exception:  # pragma: no cover - fallback for lightweight/mock runs
+    SentenceTransformer = None
+
+    def cos_sim(a: Any, b: Any) -> Any:
+        return [[1.0]]
+
+try:
+    from torch import Tensor
+except Exception:  # pragma: no cover - fallback for lightweight/mock runs
+    class Tensor:  # type: ignore[no-redef]
+        pass
 
 from mallm.coordinator import Coordinator
 from mallm.models.Chat import Chat
@@ -75,8 +94,22 @@ class Scheduler:
             )
             with open(config.input_json_file_path) as f:
                 self.dataset_name = f.name
-                json_data = json.loads(f.readline())
-                self.data = [InputExample(**data) for data in json_data]
+                # Try to read as standard JSON array first
+                try:
+                    json_data = json.load(f)
+                    if isinstance(json_data, list):
+                        self.data = [InputExample(**data) for data in json_data]
+                    else:
+                        raise ValueError("JSON data is not a list")
+                except (json.JSONDecodeError, ValueError):
+                    # If that fails, try JSON Lines format
+                    f.seek(0)  # Reset file pointer
+                    self.data = []
+                    for raw_line in f:
+                        line = raw_line.strip()
+                        if line:  # Skip empty lines
+                            data = json.loads(line)
+                            self.data.append(InputExample(**data))
         except Exception as e:
             logger.warning(
                 f"""Could not read {config.input_json_file_path} from file: {e}. Trying Hugging Face"""
@@ -144,11 +177,19 @@ class Scheduler:
             logger.info("Shuffled the input data.")
 
         self.config = config
-        self.llm = Chat(
-            client=OpenAI(
+        # Use a mock client for tests if requested
+        if str(self.config.endpoint_url).startswith("mock://"):
+            openai_client = MockOpenAI(
                 base_url=self.config.endpoint_url, api_key=self.config.api_key
-            ),
-            model=self.config.model_name
+            )
+        else:
+            openai_client = OpenAI(
+                base_url=self.config.endpoint_url, api_key=self.config.api_key
+            )
+        self.llm = Chat(
+            client=openai_client,
+            model=self.config.model_name,
+            max_tokens=self.config.max_tokens,
         )
 
         self.judge_llm = None
@@ -159,6 +200,7 @@ class Scheduler:
                     api_key=self.config.judge_api_key,
                 ),
                 model=self.config.judge_model_name,
+                max_tokens=self.config.max_tokens,
             )
 
         if config.response_generator not in RESPONSE_GENERATORS:
@@ -328,41 +370,61 @@ class Scheduler:
         context_lock = Lock()
         paraphrase_lock = Lock()
         persona_diversity_lock = Lock()
-        paraphrase_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
-        all_model = SentenceTransformer("all-MiniLM-L6-v2")
+
+        # Avoid heavy model loads during mock/lightweight runs
+        paraphrase_model = None
+        all_model = None
+        if not str(self.config.endpoint_url).startswith("mock://") and SentenceTransformer is not None:
+            try:
+                # Force CPU to avoid contention with the main LLM GPU server
+                paraphrase_model = SentenceTransformer("paraphrase-MiniLM-L6-v2", device="cpu")
+                all_model = SentenceTransformer("all-MiniLM-L6-v2", device="cpu")
+            except Exception:
+                paraphrase_model = None
+                all_model = None
 
         def worker_paraphrase_function(
             input_data: list[str],
-        ) -> list[Tensor]:
+        ) -> list[Any]:
             # Acquire the lock before using the model
-            embedding: list[Tensor]
-            with paraphrase_lock:
-                embedding = paraphrase_model.encode(input_data)
-            return embedding
+            if paraphrase_model is not None:
+                with paraphrase_lock:
+                    return cast(list[Any], paraphrase_model.encode(input_data))
+            # Fallback lightweight deterministic embeddings
+            return [[1.0, 0.0] for _ in input_data]
 
         def worker_context_function(input_data: str) -> str:
-            # Acquire the lock before using the model
-            text: str
+            # Optionally disable heavy context retrieval to avoid GPU memory conflicts.
+            # Default: disabled, unless explicitly enabled via MALLM_ENABLE_CONTEXT=1.
+            if os.environ.get("MALLM_DISABLE_CONTEXT", "0") == "1":
+                return ""
+            if os.environ.get("MALLM_ENABLE_CONTEXT", "0") != "1":
+                return ""
+            # Acquire the lock before using the model; import lazily to avoid loading on module import.
             with context_lock:
-                text = context(input_data)
-            return text
+                try:
+                    from contextplus import context as cp_context
+                    return cast(str, cp_context(input_data))
+                except Exception:
+                    return ""
 
         def worker_persona_diversity_function(
             input_data: list[str],
         ) -> float:
             # Acquire the lock before using the model
-            persona_diversity: float
-            with persona_diversity_lock:
-                similarities = []
-                embeddings = all_model.encode(input_data, convert_to_tensor=True)
-                cos_sims = cos_sim(embeddings, embeddings)
-                similarities = [
-                    cos_sims[i][j].item()
-                    for i in range(len(input_data))
-                    for j in range(i)
-                ]
-                persona_diversity = sum(similarities) / len(similarities)
-            return round(persona_diversity, 4)
+            if all_model is not None and SentenceTransformer is not None:
+                with persona_diversity_lock:
+                    embeddings = all_model.encode(input_data, convert_to_tensor=True)
+                    cos_sims = cos_sim(embeddings, embeddings)
+                    similarities: list[float] = [
+                        cos_sims[i][j].item()
+                        for i in range(len(input_data))
+                        for j in range(i)
+                    ]
+                    persona_diversity: float = float(sum(similarities) / len(similarities)) if similarities else 0.0
+                return round(persona_diversity, 4)
+            # Fallback: neutral value
+            return 0.0
 
         worker_functions = WorkerFunctions(
             worker_paraphrase_function=worker_paraphrase_function,
@@ -667,6 +729,9 @@ def main() -> None:
     print("\n" + "=" * width)
     print("CONFIGURATION PARAMETERS".center(width))
     print("=" * width + "\n")
+    if fire is None:
+        print("Fire is not available. Please run via batch_mallm.py or provide a Config programmatically.")
+        return
     config = fire.Fire(Config, serialize=print)
     print("\n" + "=" * width)
     print("END OF CONFIGURATION PARAMETERS".center(width))

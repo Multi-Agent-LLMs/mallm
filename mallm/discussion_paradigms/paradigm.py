@@ -9,7 +9,6 @@ from rich.progress import Console
 from rich.text import Text
 
 from mallm.agents.draftProposer import DraftProposer
-from mallm.agents.judge import Judge
 from mallm.agents.panelist import Panelist
 from mallm.utils.types import Agreement, Memory, TemplateFilling, VotingResultList
 
@@ -91,7 +90,7 @@ class DiscussionParadigm(ABC):
                         memory_ids=memory_ids,
                         template_filling=template_filling,
                     )
-                elif isinstance(agent, Judge):
+                elif agent.__class__.__name__ == "Judge":
                     continue    # executes after decision protocol
                 else:
                     logger.error("Agent type not recognized.")
