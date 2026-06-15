@@ -403,8 +403,8 @@ class Scheduler:
             # Acquire the lock before using the model; import lazily to avoid loading on module import.
             with context_lock:
                 try:
-                    from contextplus import context as cp_context  # type: ignore
-                    return cp_context(input_data)
+                    from contextplus import context as cp_context
+                    return cast(str, cp_context(input_data))
                 except Exception:
                     return ""
 
