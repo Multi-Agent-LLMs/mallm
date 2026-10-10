@@ -1,4 +1,5 @@
 import logging
+import os
 import math
 import re
 import time
@@ -155,14 +156,53 @@ class Chat(LLM):    # type: ignore
                 )
                 # iterate and print stream
                 collected_messages = []
+                collected_reasoning = []
                 log_prob_sum = 0.0
+                log_prob_steps = 0
                 for message in chat_completion:
-                    message_str = message.choices[0].delta.content
-                    if message.choices[0].logprobs:
-                        log_prob_sum += message.choices[0].logprobs.content[0].logprob
-                    if message_str and message_str not in self.stop_tokens:
-                        collected_messages.append(message_str)
-                log_prob_sum = log_prob_sum / len(collected_messages)
+                    delta = message.choices[0].delta
+                    content_str = getattr(delta, "content", None)
+                    reasoning_str = getattr(delta, "reasoning", None) or getattr(
+                        delta, "reasoning_content", None
+                    )
+                    lp = message.choices[0].logprobs
+                    if lp is not None:
+                        content_lps = getattr(lp, "content", None)
+                        if content_lps:
+                            log_prob_sum += content_lps[0].logprob
+                            log_prob_steps += 1
+                    if content_str and content_str not in self.stop_tokens:
+                        collected_messages.append(content_str)
+                    if reasoning_str and reasoning_str not in self.stop_tokens:
+                        collected_reasoning.append(reasoning_str)
+                # Reasoning-parser servers (vLLM --reasoning-parser) stream the thinking as
+                # delta.reasoning / reasoning_content. Keep only the answer channel so that
+                # peers and the answer extraction see the final answer, not the thinking.
+                # Fallback: if the model produced no answer text at all (e.g. thinking used
+                # the whole token budget), use the reasoning text. MALLM_INCLUDE_REASONING=1
+                # restores the old behaviour (thinking + answer concatenated).
+                # vLLM's glm45 streaming parser leaks the last thinking tokens plus the closing
+                # tag into the content channel ("...nal Solution: 4</think>The answer ..."):
+                # the answer is whatever follows the LAST "</think>".
+                joined = "".join(collected_messages)
+                if "</think>" in joined:
+                    pre, _, post = joined.rpartition("</think>")
+                    collected_reasoning = collected_reasoning + [pre]
+                    collected_messages = [post] if post else []
+                if os.environ.get("MALLM_INCLUDE_REASONING", "").strip().lower() in ("1", "true", "yes"):
+                    collected_messages = collected_reasoning + collected_messages
+                elif not collected_messages:
+                    joined_reasoning = "".join(collected_reasoning)
+                    if "</think>" in joined_reasoning:
+                        joined_reasoning = joined_reasoning.rpartition("</think>")[2]
+                    collected_messages = [joined_reasoning] if joined_reasoning else collected_reasoning
+                denom = len(collected_messages)
+                if denom == 0 and log_prob_steps > 0:
+                    denom = log_prob_steps
+                if denom > 0:
+                    log_prob_sum /= denom
+                else:
+                    log_prob_sum = float("-inf")
                 break
             except (APIError, APIConnectionError, RateLimitError) as e:
                 # Handle API error here, e.g. retry or log

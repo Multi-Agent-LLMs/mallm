@@ -1,6 +1,7 @@
 import logging
+import re
 from collections import Counter
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 from mallm.agents.panelist import Panelist
 from mallm.decision_protocols.protocol import DecisionProtocol
@@ -10,6 +11,100 @@ from mallm.utils.enums import DecisionAlteration
 from mallm.utils.types import Agreement, VotingResult, VotingResultList, WorkerFunctions
 
 logger = logging.getLogger("mallm")
+
+
+def _parse_trailing_digit_block(
+    vote_str: str, num_answers: int, in_range: Callable[[int], bool]
+) -> Optional[int]:
+    """
+    Last contiguous digit run at the end of the string (after trailing spaces).
+    If that integer is out of range and ``num_answers <= 10``, use the last digit
+    of the run when it alone is a valid index (e.g. ``...12`` -> ``2``).
+    """
+    s = vote_str.rstrip()
+    if not s:
+        return None
+    i = len(s) - 1
+    while i >= 0 and not s[i].isdigit():
+        i -= 1
+    if i < 0:
+        return None
+    j = i
+    while j >= 0 and s[j].isdigit():
+        j -= 1
+    block = s[j + 1 : i + 1]
+    v = int(block)
+    if in_range(v):
+        return v
+    if num_answers <= 10 and len(block) > 1:
+        last_d = int(block[-1])
+        if in_range(last_d):
+            return last_d
+    return None
+
+
+def parse_vote_from_last_line(vote_str: str, num_answers: int) -> Optional[int]:
+    """
+    Extract a solution index from an LLM voting reply. Tiers run from strict to
+    permissive so obvious formats win; loose tiers reduce invalid-vote retries.
+
+    1. Bottom-up: a line that is **only** digits and in ``[0, num_answers)``.
+    2. Bottom-up: ``Final Answer: <int>`` (case-insensitive).
+    3. Bottom-up: common phrases (``Vote: N``, ``vote for solution N``, etc.).
+    4. **Rightmost** ``\\d+`` substring in the full text whose value is in range.
+    5. Trailing digit block at end of string (plus last-digit fallback for small
+       ``num_answers``; see ``_parse_trailing_digit_block``).
+    """
+    if num_answers <= 0:
+        return None
+
+    def in_range(v: int) -> bool:
+        return 0 <= v < num_answers
+
+    lines = [ln.strip() for ln in vote_str.splitlines() if ln.strip()]
+
+    for line in reversed(lines):
+        if re.fullmatch(r"\d+", line):
+            v = int(line)
+            if in_range(v):
+                return v
+
+    final_answer_re = re.compile(r"(?i)final\s+answer\s*:\s*(\d+)")
+    for line in reversed(lines):
+        m = final_answer_re.search(line)
+        if m:
+            v = int(m.group(1))
+            if in_range(v):
+                return v
+
+    # Phrases often used when the model ignores "answer with the number only".
+    line_phrase_res = (
+        re.compile(r"(?i)\b(?:my\s+)?vote\s*:\s*(\d+)\b"),
+        re.compile(r"(?i)\bcast(?:ing)?\s+(?:my\s+)?vote\s+for\s+solution\s*(\d+)\b"),
+        re.compile(r"(?i)\bvote\s+for\s+(?:solution|option)\s*#?\s*(\d+)\b"),
+        re.compile(r"(?i)\bvote\s+for\s+\*\*solution\s*(\d+)\*\*"),
+        re.compile(r"(?i)\b(?:choose|pick|select)(?:ing)?\s+solution\s*(\d+)\b"),
+        re.compile(r"(?i)\b(?:solution|option)\s*#?\s*(\d+)\s*(?:\.|!|\)|\]|,|;|:)?\s*$"),
+        re.compile(r"(?i)\*\*solution\s*(\d+)\*\*"),
+    )
+    for line in reversed(lines):
+        for rx in line_phrase_res:
+            m = rx.search(line)
+            if m:
+                v = int(m.group(1))
+                if in_range(v):
+                    return v
+
+    for m in reversed(list(re.finditer(r"\d+", vote_str))):
+        v = int(m.group(0))
+        if in_range(v):
+            return v
+
+    tail = _parse_trailing_digit_block(vote_str, num_answers, in_range)
+    if tail is not None:
+        return tail
+
+    return None
 
 
 class SimpleVoting(DecisionProtocol):
@@ -117,8 +212,8 @@ class SimpleVoting(DecisionProtocol):
         voting_process_string: str,
     ) -> tuple[str, Any, bool, str]:
         success = False
-        vote_int = int("".join([x for x in vote_str if x.isnumeric()]))
-        if 0 <= vote_int < len(final_answers):
+        vote_int = parse_vote_from_last_line(vote_str, len(final_answers))
+        if vote_int is not None:
             vote.append(vote_int)
             logger.info(
                 f"{panelist.persona} voted for answer from {self.panelists[vote_int].persona}"
