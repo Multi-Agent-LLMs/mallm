@@ -1,7 +1,7 @@
 import logging
 import re
 from collections import Counter
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 from mallm.agents.panelist import Panelist
 from mallm.decision_protocols.protocol import DecisionProtocol
@@ -14,7 +14,7 @@ logger = logging.getLogger("mallm")
 
 
 def _parse_trailing_digit_block(
-    vote_str: str, num_answers: int, in_range
+    vote_str: str, num_answers: int, in_range: Callable[[int], bool]
 ) -> Optional[int]:
     """
     Last contiguous digit run at the end of the string (after trailing spaces).
@@ -57,8 +57,6 @@ def parse_vote_from_last_line(vote_str: str, num_answers: int) -> Optional[int]:
     """
     if num_answers <= 0:
         return None
-    if not isinstance(vote_str, str):
-        vote_str = str(vote_str)
 
     def in_range(v: int) -> bool:
         return 0 <= v < num_answers
